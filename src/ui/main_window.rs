@@ -1,0 +1,102 @@
+use std::{path::PathBuf, fs};
+
+use eframe::egui::{self, menu, TopBottomPanel};
+use egui_dock::{DockArea, Style,  Tree};
+use icy_engine::BitFont;
+use rfd::FileDialog;
+
+use crate::{Document, FontEditor};
+
+pub struct MainWindow {
+    tree: Tree<(String, Box<dyn Document>)>,
+}
+
+impl MainWindow {
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+        let mut tree = Tree::new(Vec::new());
+
+        let view = MainWindow {
+            tree
+        };
+        view
+    }
+
+    pub fn open_file(&mut self, path: PathBuf) {
+        if let Some(ext) = path.extension()  {
+            match ext.to_str().unwrap() { 
+                "psf" => {
+                    if let Ok(data) = fs::read(&path) {
+                        let file_name = path.file_name();
+                        if file_name.is_none() {
+                            return;
+                        }
+                        let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
+                        if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
+                            self.tree.push_to_focused_leaf((path.to_str().unwrap().to_string(), Box::new(FontEditor::new(font))));
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
+
+struct TabViewer {
+
+}
+
+impl egui_dock::TabViewer for TabViewer {
+    type Tab = (String, Box<dyn Document>);
+
+    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+        tab.1.show_ui(ui);
+    }
+
+    fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
+        let mut title = tab.1.get_title();
+        if tab.1.is_dirty() {
+            title.push('*');
+        }
+        title.into()
+    }
+}
+
+impl eframe::App for MainWindow {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            menu::bar(ui, |ui| {
+                ui.menu_button("File", |ui| {
+                    if ui.button("Open").clicked() {
+                        let files = FileDialog::new().pick_files();
+                        if let Some(paths) = files {
+                            for path in paths {
+                                self.open_file(path);
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                    if ui.button("Save").clicked() {
+                        if let Some(t) = self.tree.find_active_focused() {
+                            let str = &t.1.0;
+                            t.1.1.save(str);
+                        }
+
+                        ui.close_menu();
+                    }
+                });
+            });
+        });
+        
+        DockArea::new(&mut self.tree)
+            .style(Style::from_egui(ctx.style().as_ref()))
+            .show(ctx, &mut TabViewer {});
+    }
+
+    fn on_exit(&mut self, gl: Option<&glow::Context>) {
+        if let Some(gl) = gl {
+         //   self.buffer_view.lock().destroy(gl);
+        }
+    }
+}
