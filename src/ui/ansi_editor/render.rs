@@ -3,7 +3,7 @@ use glow::NativeTexture;
 use icy_engine::Buffer;
 use std::{
     cmp::max,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH}, sync::Arc,
 };
 
 use super::BufferView;
@@ -99,26 +99,26 @@ impl BufferView {
                             -1.0,
                         );
                     } else {
-                        if sel.anchor.y.floor() < sel.lead.y.floor()
-                            || sel.anchor.y.floor() == sel.lead.y.floor()
-                                && sel.anchor.x < sel.lead.x
+                        if sel.anchor.1.floor() < sel.lead.1.floor()
+                            || sel.anchor.1.floor() == sel.lead.1.floor()
+                                && sel.anchor.0 < sel.lead.0
                         {
                             gl.uniform_4_f32(
                                 gl.get_uniform_location(self.program, "u_selection")
                                     .as_ref(),
-                                sel.anchor.x.floor(),
-                                sel.anchor.y.floor() - sbl,
-                                sel.lead.x.floor(),
-                                sel.lead.y.floor() - sbl,
+                                sel.anchor.0.floor(),
+                                sel.anchor.1.floor() - sbl,
+                                sel.lead.0.floor(),
+                                sel.lead.1.floor() - sbl,
                             );
                         } else {
                             gl.uniform_4_f32(
                                 gl.get_uniform_location(self.program, "u_selection")
                                     .as_ref(),
-                                sel.lead.x.floor(),
-                                sel.lead.y.floor() - sbl,
-                                sel.anchor.x.floor(),
-                                sel.anchor.y.floor() - sbl,
+                                sel.lead.0.floor(),
+                                sel.lead.1.floor() - sbl,
+                                sel.anchor.0.floor(),
+                                sel.anchor.1.floor() - sbl,
                             );
                         }
                         if sel.block_selection {
@@ -283,7 +283,7 @@ impl BufferView {
         }
     }
 
-    pub fn update_buffer(&mut self, gl: &glow::Context) {
+    pub fn update_buffer(&mut self, gl: &Arc<glow::Context>) {
         self.update_sixels(gl);
 
         let start = SystemTime::now();
@@ -416,7 +416,7 @@ fn conv_color(c: u32, colors: u32) -> u8 {
     r
 }
 
-pub fn create_palette_texture(gl: &glow::Context, buf: &Buffer, palette_texture: NativeTexture) {
+pub fn create_palette_texture(gl: &Arc<glow::Context>, buf: &Buffer, palette_texture: NativeTexture) {
     let mut palette_data = Vec::new();
     for i in 0..buf.palette.colors.len() {
         let (r, g, b) = buf.palette.colors[i].get_rgb();
@@ -442,7 +442,7 @@ pub fn create_palette_texture(gl: &glow::Context, buf: &Buffer, palette_texture:
     }
 }
 
-pub fn create_font_texture(gl: &glow::Context, buf: &Buffer, font_texture: NativeTexture) {
+pub fn create_font_texture(gl: &Arc<glow::Context>, buf: &Buffer, font_texture: NativeTexture) {
     let w = buf.font_table[0].size.width as usize;
     let h = buf.font_table[0].size.height as usize;
 
@@ -506,7 +506,7 @@ pub fn create_font_texture(gl: &glow::Context, buf: &Buffer, font_texture: Nativ
 }
 
 pub fn create_buffer_texture(
-    gl: &glow::Context,
+    gl: &Arc<glow::Context>,
     buf: &Buffer,
     scroll_back_line: i32,
     buffer_texture: NativeTexture,

@@ -1,27 +1,34 @@
-use std::{path::PathBuf, fs};
+use std::{path::PathBuf, fs, sync::Arc};
 
 use eframe::egui::{self, menu, TopBottomPanel};
 use egui_dock::{DockArea, Style,  Tree};
-use icy_engine::BitFont;
+use glow::Context;
+use icy_engine::{BitFont, Buffer};
 use rfd::FileDialog;
 
 use crate::{Document, FontEditor};
 
+use super::ansi_editor::AnsiEditor;
+
 pub struct MainWindow {
     tree: Tree<(String, Box<dyn Document>)>,
+    gl: Arc<Context>
 }
 
 impl MainWindow {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        let mut tree = Tree::new(Vec::new());
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let tree = Tree::new(Vec::new());
 
         let view = MainWindow {
-            tree
+            tree,
+            gl: cc.gl.clone().unwrap()
         };
         view
     }
 
     pub fn open_file(&mut self, path: PathBuf) {
+        let full_path = path.to_str().unwrap().to_string();
+
         if let Some(ext) = path.extension()  {
             match ext.to_str().unwrap() { 
                 "psf" => {
@@ -32,13 +39,20 @@ impl MainWindow {
                         }
                         let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
                         if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
-                            self.tree.push_to_focused_leaf((path.to_str().unwrap().to_string(), Box::new(FontEditor::new(font))));
+                            self.tree.push_to_focused_leaf((full_path, Box::new(FontEditor::new(font))));
+                            return;
                         }
                     }
                 }
                 _ => {}
             }
         }
+        let buf = Buffer::load_buffer(&path).unwrap();
+        
+        let editor = AnsiEditor::new(&self.gl, buf);
+
+        self.tree.push_to_focused_leaf((full_path, Box::new(editor)));
+
     }
 }
 

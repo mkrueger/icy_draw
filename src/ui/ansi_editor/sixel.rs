@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use glow::{HasContext, NativeTexture};
 use icy_engine::{Position, SixelReadStatus};
 
@@ -24,7 +26,7 @@ impl SixelCacheEntry {
 }
 
 impl BufferView {
-    pub fn update_sixels(&mut self, gl: &glow::Context) -> bool {
+    pub fn update_sixels(&mut self, gl: &Arc<glow::Context>) -> bool {
         let buffer = &self.buf;
         let l = buffer.layers[0].sixels.len();
         if l == 0 {
@@ -188,7 +190,7 @@ impl BufferView {
         res
     }
 
-    pub fn clear_invisible_sixel_cache(&mut self, gl: &glow::Context, j: usize) {
+    pub fn clear_invisible_sixel_cache(&mut self, gl: &Arc<glow::Context>, j: usize) {
         // remove cache entries that are removed by the engine
         if j > 0 {
             let cur_rect = self.sixel_cache[j].rect();

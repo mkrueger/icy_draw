@@ -1,17 +1,12 @@
-use std::cmp::{max, min};
-use eframe::epaint::Vec2;
+use std::{cmp::{max, min}, fs, path::PathBuf, sync::Arc};
+use eframe::{epaint::{Vec2, Rect, mutex::Mutex}, egui::{CursorIcon, self, ScrollArea}};
 use glow::NativeTexture;
 
-use icy_engine::{Buffer, BufferParser, CallbackAction, Caret, EngineResult, Position};
+use icy_engine::{Buffer, BufferParser, CallbackAction, Caret, EngineResult, Position, SaveOptions, Selection, AnsiParser};
 
-pub mod render;
-pub use render::*;
+use crate::{Document, TerminalResult, ui::ansi_editor::{create_buffer_texture, create_palette_texture, create_font_texture}};
 
-pub mod sixel;
-pub use sixel::*;
-
-pub mod selection;
-pub use selection::*;
+use super::SixelCacheEntry;
 
 pub struct Blink {
     is_on: bool,
@@ -45,7 +40,7 @@ impl Blink {
 
 pub struct BufferView {
     pub buf: Buffer,
-    sixel_cache: Vec<SixelCacheEntry>,
+    pub sixel_cache: Vec<SixelCacheEntry>,
     pub caret: Caret,
 
     pub caret_blink: Blink,
@@ -58,38 +53,33 @@ pub struct BufferView {
 
     pub selection_opt: Option<Selection>,
 
-    program: glow::Program,
-    vertex_array: glow::VertexArray,
+    pub program: glow::Program,
+    pub vertex_array: glow::VertexArray,
 
-    redraw_view: bool,
+    pub redraw_view: bool,
 
-    redraw_palette: bool,
-    colors: usize,
+    pub redraw_palette: bool,
+    pub colors: usize,
 
-    redraw_font: bool,
-    fonts: usize,
+    pub redraw_font: bool,
+    pub fonts: usize,
     //scaling: Scaling,
     // post_processing: PostProcessing,
 
-    font_texture: NativeTexture,
-    buffer_texture: NativeTexture,
-    palette_texture: NativeTexture,
-    framebuffer: glow::NativeFramebuffer,
-    render_texture: NativeTexture,
-    render_buffer_size: Vec2,
-    draw_program: glow::NativeProgram,
-    sixel_shader: glow::NativeProgram,
-    sixel_render_texture: NativeTexture,
+    pub font_texture: NativeTexture,
+    pub buffer_texture: NativeTexture,
+    pub palette_texture: NativeTexture,
+    pub framebuffer: glow::NativeFramebuffer,
+    pub render_texture: NativeTexture,
+    pub render_buffer_size: Vec2,
+    pub draw_program: glow::NativeProgram,
+    pub sixel_shader: glow::NativeProgram,
+    pub sixel_render_texture: NativeTexture,
 }
 
 impl BufferView {
-    pub fn new(gl: &glow::Context) -> Self {
-        let mut buf = Buffer::create(80, 25);
-        buf.layers[0].is_transparent = false;
-        buf.is_terminal_buffer = true;
-
+    pub fn new(gl: &Arc<glow::Context>, buf: Buffer) -> Self {
         use glow::HasContext as _;
-
         unsafe {
             let sixel_shader = gl.create_program().expect("Cannot create program");
             let (vertex_shader_source, fragment_shader_source) = (
@@ -583,3 +573,4 @@ void main() {
         self.post_processing = post_processing;
     }*/
 }
+
