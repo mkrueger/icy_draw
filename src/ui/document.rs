@@ -8,4 +8,6 @@ pub trait Document {
     fn save(&mut self, file_name: &str) -> TerminalResult<()>;
 
     fn show_ui(&mut self, ui: &mut egui::Ui);
+
+    fn destroy(&self, gl: &glow::Context);
 }

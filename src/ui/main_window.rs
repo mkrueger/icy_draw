@@ -1,7 +1,7 @@
-use std::{path::PathBuf, fs, sync::Arc};
+use std::{path::PathBuf, fs, sync::Arc, time::Duration};
 
 use eframe::egui::{self, menu, TopBottomPanel};
-use egui_dock::{DockArea, Style,  Tree};
+use egui_dock::{DockArea, Style,  Tree, Node};
 use glow::Context;
 use icy_engine::{BitFont, Buffer};
 use rfd::FileDialog;
@@ -106,11 +106,19 @@ impl eframe::App for MainWindow {
         DockArea::new(&mut self.tree)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut TabViewer {});
+
+        ctx.request_repaint_after(Duration::from_millis(150));
     }
 
     fn on_exit(&mut self, gl: Option<&glow::Context>) {
         if let Some(gl) = gl {
-         //   self.buffer_view.lock().destroy(gl);
+            for t in self.tree.iter() {
+                if let Node::Leaf { tabs, .. } = t  {
+                    for (s, t) in tabs {
+                        t.destroy(gl);
+                    }
+                }
+            }
         }
     }
 }

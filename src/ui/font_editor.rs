@@ -165,4 +165,6 @@ impl Document for FontEditor {
         self.is_dirty = false;
         Ok(())
     }
+    fn destroy(&self, gl: &glow::Context) {
+    }
 }

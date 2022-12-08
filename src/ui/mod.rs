@@ -1,5 +1,4 @@
 mod ansi_editor;
-mod terminal_window;
 mod main_window;
 use std::error::Error;
 

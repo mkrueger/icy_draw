@@ -16,7 +16,6 @@ pub use key_maps::*;
 
 use crate::{Document, TerminalResult};
 
-
 pub struct AnsiEditor {
     is_dirty: bool,
     buffer_view: Arc<Mutex<BufferView>>,
@@ -267,7 +266,10 @@ impl Document for AnsiEditor {
                 response.interact_pointer_pos = None;
                 response
             });
+    }
 
+    fn destroy(&self, gl: &glow::Context) {
+        self.buffer_view.lock().destroy(gl);
     }
 }
 
