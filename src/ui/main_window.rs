@@ -1,16 +1,19 @@
 use std::{path::PathBuf, fs, sync::Arc, time::Duration};
 
-use eframe::egui::{self, menu, TopBottomPanel, SidePanel};
+use eframe::{egui::{self, menu, TopBottomPanel, SidePanel}, epaint::ahash::HashMap};
 use egui_dock::{DockArea, Style,  Tree, Node};
+use egui_extras::RetainedImage;
 use glow::Context;
 use icy_engine::{BitFont, Buffer};
 use rfd::FileDialog;
 
-use crate::{Document, FontEditor};
+use crate::{Document, FontEditor, model::Tool};
 
 use super::ansi_editor::AnsiEditor;
 
 pub struct MainWindow {
+    pub tools: Vec<Box<dyn Tool>>,
+    pub selected_tool: usize,
     tree: Tree<(String, Box<dyn Document>)>,
     gl: Arc<Context>
 }
@@ -19,7 +22,70 @@ impl MainWindow {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let tree = Tree::new(Vec::new());
 
+        let mut tools: Vec<Box::<dyn Tool>> = Vec::new();
+       
+        tools.push(Box::new(crate::model::click_imp::ClickTool { }));
+        tools.push(Box::new(crate::model::brush_imp::BrushTool {
+            size: 3, 
+            use_back: true,
+            use_fore: true,
+            brush_type: crate::model::brush_imp::BrushType::Shade,
+            char_code: 176,
+        }));
+        tools.push(Box::new(crate::model::erase_imp::EraseTool { size: 3, brush_type: crate::model::erase_imp::EraseType::Shade }));
+        tools.push(Box::new(crate::model::pipette_imp::PipetteTool { }));
+        tools.push(Box::new(crate::model::line_imp::LineTool {
+            draw_mode: crate::model::DrawMode::Line, 
+            use_fore: true, 
+            use_back: true, 
+            attr: icy_engine::TextAttribute::default(), 
+            char_code: 176,
+            old_pos: icy_engine::Position { x: 0, y: 0 }
+        }));
+        tools.push(Box::new(crate::model::draw_rectangle_imp::DrawRectangleTool { 
+            draw_mode: crate::model::DrawMode::Line, 
+            use_fore: true, 
+            use_back: true, 
+            attr: icy_engine::TextAttribute::default(), 
+            char_code: 176
+        }));
+
+        tools.push(Box::new(crate::model::draw_rectangle_filled_imp::DrawRectangleFilledTool { 
+            draw_mode: crate::model::DrawMode::Line, 
+            use_fore: true, 
+            use_back: true, 
+            attr: icy_engine::TextAttribute::default(), 
+            char_code: 176
+        }));
+        tools.push(Box::new(crate::model::draw_ellipse_imp::DrawEllipseTool {
+            draw_mode: crate::model::DrawMode::Line, 
+            use_fore: true, 
+            use_back: true, 
+            attr: icy_engine::TextAttribute::default(), 
+            char_code: 176
+        }));
+
+        tools.push(Box::new(crate::model::draw_ellipse_filled_imp::DrawEllipseFilledTool {
+            draw_mode: crate::model::DrawMode::Line, 
+            use_fore: true, 
+            use_back: true, 
+            attr: icy_engine::TextAttribute::default(), 
+            char_code: 176
+        }));
+
+        tools.push(Box::new(crate::model::fill_imp::FillTool {
+            use_char: true,
+            use_fore: true,
+            use_back: true,
+            char_code: 176,
+            attr: icy_engine::TextAttribute::default()
+        }));
+
+        tools.push(Box::new(crate::model::move_layer_imp::MoveLayer { pos: icy_engine::Position { x: 0, y: 0 } }));
+
         let view = MainWindow {
+            tools,
+            selected_tool: 0,
             tree,
             gl: cc.gl.clone().unwrap()
         };
@@ -54,6 +120,7 @@ impl MainWindow {
         self.tree.push_to_focused_leaf((full_path, Box::new(editor)));
 
     }
+
 }
 
 
@@ -109,6 +176,7 @@ impl eframe::App for MainWindow {
                 buffer_opt = t.1.get_buffer_view();
             }
             ui.add(crate::palette_editor_16(buffer_opt));
+            crate::add_tool_switcher(ctx, ui, self);
         });
 
         DockArea::new(&mut self.tree)
@@ -130,3 +198,4 @@ impl eframe::App for MainWindow {
         }
     }
 }
+

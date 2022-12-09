@@ -3,3 +3,6 @@
 
 mod editor;
 pub use editor::*;
+
+mod tool;
+pub use tool::*;
