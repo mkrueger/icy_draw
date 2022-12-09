@@ -1,9 +1,11 @@
-use std::fs;
+use std::{fs, sync::{Arc, Mutex}};
 
 use eframe::{egui::{self, Sense}, epaint::{Color32, Rounding, Vec2, Rect, Pos2}};
 use icy_engine::{BitFont};
 
 use crate::{Document, TerminalResult};
+
+use super::ansi_editor::BufferView;
 
 pub struct FontEditor {
     font: BitFont,
@@ -165,6 +167,11 @@ impl Document for FontEditor {
         self.is_dirty = false;
         Ok(())
     }
+
+    fn get_buffer_view(&self) -> Option<Arc<Mutex<BufferView>>> {
+        None
+    }
+    
     fn destroy(&self, gl: &glow::Context) {
     }
 }

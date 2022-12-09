@@ -1,6 +1,6 @@
 use std::{path::PathBuf, fs, sync::Arc, time::Duration};
 
-use eframe::egui::{self, menu, TopBottomPanel};
+use eframe::egui::{self, menu, TopBottomPanel, SidePanel};
 use egui_dock::{DockArea, Style,  Tree, Node};
 use glow::Context;
 use icy_engine::{BitFont, Buffer};
@@ -78,7 +78,7 @@ impl egui_dock::TabViewer for TabViewer {
 }
 
 impl eframe::App for MainWindow {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -103,6 +103,14 @@ impl eframe::App for MainWindow {
             });
         });
         
+        SidePanel::left("left_panel").show(ctx, |ui| {
+            let mut buffer_opt = None;
+            if let Some((_, t)) = self.tree.find_active_focused() {
+                buffer_opt = t.1.get_buffer_view();
+            }
+            ui.add(crate::palette_editor_16(buffer_opt));
+        });
+
         DockArea::new(&mut self.tree)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut TabViewer {});
@@ -114,7 +122,7 @@ impl eframe::App for MainWindow {
         if let Some(gl) = gl {
             for t in self.tree.iter() {
                 if let Node::Leaf { tabs, .. } = t  {
-                    for (s, t) in tabs {
+                    for (_, t) in tabs {
                         t.destroy(gl);
                     }
                 }

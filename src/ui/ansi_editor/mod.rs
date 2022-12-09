@@ -1,5 +1,5 @@
-use std::{cmp::{max}, fs, path::PathBuf, sync::Arc};
-use eframe::{epaint::{Vec2, Rect, mutex::Mutex}, egui::{CursorIcon, self, ScrollArea, PointerButton}};
+use std::{cmp::{max}, fs, path::PathBuf, sync::{Arc, Mutex}};
+use eframe::{epaint::{Vec2, Rect}, egui::{CursorIcon, self, ScrollArea, PointerButton}};
 use icy_engine::{Buffer, SaveOptions, AnsiParser, Selection, BufferParser};
 
 pub mod render;
@@ -25,7 +25,7 @@ pub struct AnsiEditor {
 impl AnsiEditor {
     pub fn new(gl: &Arc<glow::Context>, buf: Buffer) -> Self {
         let buffer_view = Arc::new(Mutex::new(BufferView::new(gl, buf)));
-        let mut buffer_parser = AnsiParser::new();
+        let buffer_parser = AnsiParser::new();
 
         Self {
             is_dirty: false,
@@ -44,13 +44,13 @@ impl AnsiEditor {
     }
 
     pub fn print_char(&mut self, c: u8) -> Result<(), Box<dyn std::error::Error>> {
-        let result = self
+        self
             .buffer_view
-            .lock()
+            .lock().unwrap()
             .print_char(&mut self.buffer_parser, unsafe {
                 char::from_u32_unchecked(c as u32)
             })?;
-        self.buffer_view.lock().redraw_view();
+        self.buffer_view.lock().unwrap().redraw_view();
         Ok(())
     }
 
@@ -59,7 +59,7 @@ impl AnsiEditor {
 
 impl Document for AnsiEditor {
     fn get_title(&self) -> String {
-        if let Some(file_name) = &self.buffer_view.lock().buf.file_name {
+        if let Some(file_name) = &self.buffer_view.lock().unwrap().buf.file_name {
             file_name.file_name().unwrap().to_str().unwrap().to_string()
         } else {
             "Untitled".to_string()
@@ -73,7 +73,7 @@ impl Document for AnsiEditor {
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
         let file =  PathBuf::from(file_name);
         let options = SaveOptions::new();
-        let bytes = self.buffer_view.lock().buf.to_bytes(file.extension().unwrap().to_str().unwrap(), &options)?;
+        let bytes = self.buffer_view.lock().unwrap().buf.to_bytes(file.extension().unwrap().to_str().unwrap(), &options)?;
         fs::write(file_name, bytes)?;
         self.is_dirty = false;
         Ok(())
@@ -81,10 +81,10 @@ impl Document for AnsiEditor {
 
     fn show_ui(&mut self, ui: &mut eframe::egui::Ui) {
         let size = ui.max_rect().size();
-        let buf_w = self.buffer_view.lock().buf.get_buffer_width();
-        let buf_h = self.buffer_view.lock().buf.get_buffer_height();
-        // let h = max(buf_h, buffer_view.lock().buf.get_real_buffer_height());
-        let font_dimensions = self.buffer_view.lock().buf.get_font_dimensions();
+        let buf_w = self.buffer_view.lock().unwrap().buf.get_buffer_width();
+        let buf_h = self.buffer_view.lock().unwrap().buf.get_buffer_height();
+        // let h = max(buf_h, buffer_view.lock().unwrap().buf.get_real_buffer_height());
+        let font_dimensions = self.buffer_view.lock().unwrap().buf.get_font_dimensions();
 
         let mut scale_x = (size.x - 4.0) / font_dimensions.width as f32 / buf_w as f32;
         let mut scale_y = size.y / font_dimensions.height as f32 / buf_h as f32;
@@ -104,7 +104,7 @@ impl Document for AnsiEditor {
         let rect_h = buf_h as f32 * char_size.y;
         let top_margin_height = ui.min_rect().top();
 
-        let output = ScrollArea::vertical()
+        let _output = ScrollArea::vertical()
             .auto_shrink([false; 2])
             .stick_to_bottom(true)
             .show_viewport(ui, |ui, viewport| {
@@ -122,16 +122,16 @@ impl Document for AnsiEditor {
                         .ceil(),
                     Vec2::new(rect_w, rect_h),
                 );
-                let real_height = self.buffer_view.lock().buf.get_real_buffer_height();
+                let real_height = self.buffer_view.lock().unwrap().buf.get_real_buffer_height();
                 let max_lines = max(0, real_height - buf_h);
                 ui.set_height(scale_y * max_lines as f32 * font_dimensions.height as f32);
 
                 let first_line = (viewport.top() / char_size.y) as i32;
                 let scroll_back_line = max(0, max_lines - first_line);
 
-                if scroll_back_line != self.buffer_view.lock().scroll_back_line {
-                    self.buffer_view.lock().scroll_back_line = scroll_back_line;
-                    self.buffer_view.lock().redraw_view();
+                if scroll_back_line != self.buffer_view.lock().unwrap().scroll_back_line {
+                    self.buffer_view.lock().unwrap().scroll_back_line = scroll_back_line;
+                    self.buffer_view.lock().unwrap().redraw_view();
                 }
                 
                 let buffer_view  = self.buffer_view.clone();
@@ -139,8 +139,8 @@ impl Document for AnsiEditor {
                     rect,
                     callback: std::sync::Arc::new(egui_glow::CallbackFn::new(
                         move |_info, painter| {
-                            buffer_view.lock().update_buffer(painter.gl());
-                            buffer_view.lock().paint(painter.gl(), rect);
+                            buffer_view.lock().unwrap().update_buffer(painter.gl());
+                            buffer_view.lock().unwrap().paint(painter.gl(), rect);
                         },
                     )),
                 };
@@ -158,7 +158,7 @@ impl Document for AnsiEditor {
                         }
                         | egui::Event::Copy => {
                             let buffer_view = self.buffer_view.clone();
-                            let mut l = buffer_view.lock();
+                            let mut l = buffer_view.lock().unwrap();
                             if let Some(txt) = l.get_copy_text(&self.buffer_parser) {
                                 ui.output().copied_text = txt;
                             }
@@ -184,10 +184,10 @@ impl Document for AnsiEditor {
                                     (*pos - rect.min - Vec2::new(0., top_margin_height))
                                         / char_size
                                         + Vec2::new(0.0, first_line as f32);
-                                buffer_view.lock().selection_opt =
+                                buffer_view.lock().unwrap().selection_opt =
                                     Some(Selection::new((click_pos.x, click_pos.y)));
                                 buffer_view
-                                    .lock()
+                                    .lock().unwrap()
                                     .selection_opt
                                     .as_mut()
                                     .unwrap()
@@ -201,7 +201,7 @@ impl Document for AnsiEditor {
                             ..
                         } => {
                             let buffer_view = self.buffer_view.clone();
-                            let mut l = buffer_view.lock();
+                            let mut l = buffer_view.lock().unwrap();
                             if let Some(sel) = &mut l.selection_opt {
                                 sel.locked = true;
                             }
@@ -209,7 +209,7 @@ impl Document for AnsiEditor {
 
                         egui::Event::PointerMoved(pos) => {
                             let buffer_view = self.buffer_view.clone();
-                            let mut l = buffer_view.lock();
+                            let mut l = buffer_view.lock().unwrap();
                             if let Some(sel) = &mut l.selection_opt {
                                 if !sel.locked {
                                     let click_pos =
@@ -268,8 +268,12 @@ impl Document for AnsiEditor {
             });
     }
 
+    fn get_buffer_view(&self) -> Option<Arc<Mutex<buffer_view::BufferView>>> {
+        Some(self.buffer_view.clone())
+    }
+
     fn destroy(&self, gl: &glow::Context) {
-        self.buffer_view.lock().destroy(gl);
+        self.buffer_view.lock().unwrap().destroy(gl);
     }
 }
 

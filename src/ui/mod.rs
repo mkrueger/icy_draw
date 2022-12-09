@@ -10,4 +10,7 @@ pub use document::*;
 mod font_editor;
 pub use font_editor::*;
 
+mod palette_editor;
+pub use palette_editor::*;
+
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;

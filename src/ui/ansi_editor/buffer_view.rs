@@ -1,10 +1,10 @@
-use std::{cmp::{max, min}, fs, path::PathBuf, sync::Arc};
-use eframe::{epaint::{Vec2, Rect, mutex::Mutex}, egui::{CursorIcon, self, ScrollArea}};
+use std::{cmp::{max, min},  sync::Arc};
+use eframe::{epaint::{Vec2}};
 use glow::NativeTexture;
 
-use icy_engine::{Buffer, BufferParser, CallbackAction, Caret, EngineResult, Position, SaveOptions, Selection, AnsiParser};
+use icy_engine::{Buffer, BufferParser, CallbackAction, Caret, EngineResult, Position, Selection};
 
-use crate::{Document, TerminalResult, ui::ansi_editor::{create_buffer_texture, create_palette_texture, create_font_texture}};
+use crate::{ui::ansi_editor::{create_buffer_texture, create_palette_texture, create_font_texture}};
 
 use super::SixelCacheEntry;
 

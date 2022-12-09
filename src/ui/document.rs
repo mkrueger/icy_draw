@@ -1,5 +1,9 @@
-use eframe::egui;
+use std::sync::{Arc, Mutex};
+
+use eframe::{egui};
 use crate::TerminalResult;
+
+use super::ansi_editor::BufferView;
 
 pub trait Document {
     fn get_title(&self) -> String;
@@ -10,4 +14,6 @@ pub trait Document {
     fn show_ui(&mut self, ui: &mut egui::Ui);
 
     fn destroy(&self, gl: &glow::Context);
+    
+    fn get_buffer_view(&self) -> Option<Arc<Mutex<BufferView>>>;
 }
