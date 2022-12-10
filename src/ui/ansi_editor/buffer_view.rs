@@ -2,9 +2,9 @@ use std::{cmp::{max, min},  sync::Arc};
 use eframe::{epaint::{Vec2}};
 use glow::NativeTexture;
 
-use icy_engine::{Buffer, BufferParser, CallbackAction, Caret, EngineResult, Position, Selection};
+use icy_engine::{Buffer, BufferParser, CallbackAction, EngineResult, Position, Selection};
 
-use crate::{ui::ansi_editor::{create_buffer_texture, create_palette_texture, create_font_texture}};
+use crate::{ui::ansi_editor::{create_buffer_texture, create_palette_texture, create_font_texture}, model::Editor};
 
 use super::SixelCacheEntry;
 
@@ -39,9 +39,8 @@ impl Blink {
 }
 
 pub struct BufferView {
-    pub buf: Buffer,
+    pub editor: Editor,
     pub sixel_cache: Vec<SixelCacheEntry>,
-    pub caret: Caret,
 
     pub caret_blink: Blink,
     pub character_blink: Blink,
@@ -442,8 +441,7 @@ void main() {
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
 
             Self {
-                buf,
-                caret: Caret::default(),
+                editor: Editor::new(0, buf),
                 caret_blink: Blink::new((1000.0 / 1.875) as u128 / 2),
                 character_blink: Blink::new((1000.0 / 1.8) as u128),
                 scale: 1.0,
@@ -476,7 +474,7 @@ void main() {
     }
 
     pub fn clear(&mut self) {
-        self.caret.ff(&mut self.buf);
+        self.editor.caret.ff(&mut self.editor.buf);
     }
 
     pub fn get_copy_text(&mut self, buffer_parser: &Box<dyn BufferParser>) -> Option<String> {
@@ -496,7 +494,7 @@ void main() {
             );
             for y in start.y..=end.y {
                 for x in start.x..end.x {
-                    let ch = self.buf.get_char(Position::new(x, y)).unwrap();
+                    let ch = self.editor.get_char(Position::new(x, y)).unwrap();
                     res.push(buffer_parser.to_unicode(ch.ch));
                 }
                 res.push('\n');
@@ -508,25 +506,25 @@ void main() {
                 (selection.lead_pos, selection.anchor_pos)
             };
             if start.y != end.y {
-                for x in start.x..self.buf.get_line_length(start.y) {
-                    let ch = self.buf.get_char(Position::new(x, start.y)).unwrap();
+                for x in start.x..self.editor.buf.get_line_length(start.y) {
+                    let ch = self.editor.get_char(Position::new(x, start.y)).unwrap();
                     res.push(buffer_parser.to_unicode(ch.ch));
                 }
                 res.push('\n');
                 for y in start.y + 1..end.y {
-                    for x in 0..self.buf.get_line_length(y) {
-                        let ch = self.buf.get_char(Position::new(x, y)).unwrap();
+                    for x in 0..self.editor.buf.get_line_length(y) {
+                        let ch = self.editor.get_char(Position::new(x, y)).unwrap();
                         res.push(buffer_parser.to_unicode(ch.ch));
                     }
                     res.push('\n');
                 }
                 for x in 0..=end.x {
-                    let ch = self.buf.get_char(Position::new(x, end.y)).unwrap();
+                    let ch = self.editor.get_char(Position::new(x, end.y)).unwrap();
                     res.push(buffer_parser.to_unicode(ch.ch));
                 }
             } else {
                 for x in start.x..=end.x {
-                    let ch = self.buf.get_char(Position::new(x, start.y)).unwrap();
+                    let ch = self.editor.get_char(Position::new(x, start.y)).unwrap();
                     res.push(buffer_parser.to_unicode(ch.ch));
                 }
             }
@@ -552,7 +550,7 @@ void main() {
         parser: &mut Box<dyn BufferParser>,
         c: char,
     ) -> EngineResult<CallbackAction> {
-        let res = parser.print_char(&mut self.buf, &mut self.caret, c);
+        let res = parser.print_char(&mut self.editor.buf, &mut self.editor.caret, c);
         self.redraw_view();
         res
     }

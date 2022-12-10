@@ -27,8 +27,8 @@ impl SixelCacheEntry {
 
 impl BufferView {
     pub fn update_sixels(&mut self, gl: &Arc<glow::Context>) -> bool {
-        let buffer = &self.buf;
-        let l = buffer.layers[0].sixels.len();
+        let buf = &self.editor.buf;
+        let l = buf.layers[0].sixels.len();
         if l == 0 {
             for sx in &self.sixel_cache {
                 if let Some(tex) = sx.texture_opt {
@@ -43,7 +43,7 @@ impl BufferView {
         let mut res = false;
         let mut i = 0;
         while i < l {
-            let sixel = &buffer.layers[0].sixels[i];
+            let sixel = &buf.layers[0].sixels[i];
 
             if sixel.width() == 0 || sixel.height() == 0 {
                 i += 1;
@@ -205,7 +205,7 @@ impl BufferView {
                         }
                     }
 
-                    self.buf.layers[0].sixels.remove(i);
+                    self.editor.buf.layers[0].sixels.remove(i);
                 }
                 if i == 0 {
                     break;

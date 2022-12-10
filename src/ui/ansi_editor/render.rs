@@ -42,18 +42,18 @@ impl BufferView {
                 0.0,
             );
 
-            let sbl = (self.buf.get_first_visible_line() - self.scroll_back_line) as f32;
+            let sbl = (self.editor.buf.get_first_visible_line() - self.scroll_back_line) as f32;
             gl.uniform_4_f32(
                 gl.get_uniform_location(self.program, "u_caret_position")
                     .as_ref(),
-                self.caret.get_position().x as f32,
-                self.caret.get_position().y as f32 - sbl,
-                if self.caret_blink.is_on() && self.caret.is_visible {
+                self.editor.caret.get_position().x as f32,
+                self.editor.caret.get_position().y as f32 - sbl,
+                if self.caret_blink.is_on() && self.editor.caret.is_visible {
                     1.0
                 } else {
                     0.0
                 },
-                if self.caret.insert_mode { 1.0 } else { 0.0 }, // shape
+                if self.editor.caret.insert_mode { 1.0 } else { 0.0 }, // shape
             );
 
             gl.uniform_1_f32(
@@ -68,8 +68,8 @@ impl BufferView {
             gl.uniform_2_f32(
                 gl.get_uniform_location(self.program, "u_terminal_size")
                     .as_ref(),
-                self.buf.get_buffer_width() as f32 - 0.0001,
-                self.buf.get_buffer_height() as f32 - 0.0001,
+                self.editor.buf.get_buffer_width() as f32 - 0.0001,
+                self.editor.buf.get_buffer_height() as f32 - 0.0001,
             );
 
             gl.uniform_1_i32(gl.get_uniform_location(self.program, "u_fonts").as_ref(), 0);
@@ -211,8 +211,8 @@ impl BufferView {
                         self.render_buffer_size.y,
                     );
 
-                    let x = sixel.pos.x as f32 * self.buf.get_font_dimensions().width as f32;
-                    let y = sixel.pos.y as f32 * self.buf.get_font_dimensions().height as f32;
+                    let x = sixel.pos.x as f32 * self.editor.buf.get_font_dimensions().width as f32;
+                    let y = sixel.pos.y as f32 * self.editor.buf.get_font_dimensions().height as f32;
 
                     let w = sixel.size.width as f32;
                     let h = sixel.size.height as f32;
@@ -297,24 +297,24 @@ impl BufferView {
 
         if self.redraw_view {
             self.redraw_view = false;
-            create_buffer_texture(gl, &self.buf, self.scroll_back_line, self.buffer_texture);
+            create_buffer_texture(gl, &self.editor.buf, self.scroll_back_line, self.buffer_texture);
         }
 
-        if self.redraw_palette || self.colors != self.buf.palette.colors.len() {
+        if self.redraw_palette || self.colors != self.editor.buf.palette.colors.len() {
             self.redraw_palette = false;
-            create_palette_texture(gl, &self.buf, self.palette_texture);
-            self.colors = self.buf.palette.colors.len();
+            create_palette_texture(gl, &self.editor.buf, self.palette_texture);
+            self.colors = self.editor.buf.palette.colors.len();
         }
 
-        if self.redraw_font || self.fonts != self.buf.font_table.len() {
+        if self.redraw_font || self.fonts != self.editor.buf.font_table.len() {
             self.redraw_font = false;
-            create_font_texture(gl, &self.buf, self.palette_texture);
-            self.fonts = self.buf.font_table.len();
+            create_font_texture(gl, &self.editor.buf, self.palette_texture);
+            self.fonts = self.editor.buf.font_table.len();
         }
-        let buf = &self.buf;
+        let editor = &self.editor;
         let render_buffer_size = Vec2::new(
-            buf.get_font_dimensions().width as f32 * buf.get_buffer_width() as f32,
-            buf.get_font_dimensions().height as f32 * buf.get_buffer_height() as f32,
+            editor.buf.get_font_dimensions().width as f32 * editor.buf.get_buffer_width() as f32,
+            editor.buf.get_font_dimensions().height as f32 * editor.buf.get_buffer_height() as f32,
         );
 
         if render_buffer_size != self.render_buffer_size {

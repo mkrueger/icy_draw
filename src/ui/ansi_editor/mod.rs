@@ -59,7 +59,7 @@ impl AnsiEditor {
 
 impl Document for AnsiEditor {
     fn get_title(&self) -> String {
-        if let Some(file_name) = &self.buffer_view.lock().unwrap().buf.file_name {
+        if let Some(file_name) = &self.buffer_view.lock().unwrap().editor.buf.file_name {
             file_name.file_name().unwrap().to_str().unwrap().to_string()
         } else {
             "Untitled".to_string()
@@ -73,7 +73,7 @@ impl Document for AnsiEditor {
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
         let file =  PathBuf::from(file_name);
         let options = SaveOptions::new();
-        let bytes = self.buffer_view.lock().unwrap().buf.to_bytes(file.extension().unwrap().to_str().unwrap(), &options)?;
+        let bytes = self.buffer_view.lock().unwrap().editor.buf.to_bytes(file.extension().unwrap().to_str().unwrap(), &options)?;
         fs::write(file_name, bytes)?;
         self.is_dirty = false;
         Ok(())
@@ -81,10 +81,10 @@ impl Document for AnsiEditor {
 
     fn show_ui(&mut self, ui: &mut eframe::egui::Ui) {
         let size = ui.max_rect().size();
-        let buf_w = self.buffer_view.lock().unwrap().buf.get_buffer_width();
-        let buf_h = self.buffer_view.lock().unwrap().buf.get_buffer_height();
+        let buf_w = self.buffer_view.lock().unwrap().editor.buf.get_buffer_width();
+        let buf_h = self.buffer_view.lock().unwrap().editor.buf.get_buffer_height();
         // let h = max(buf_h, buffer_view.lock().unwrap().buf.get_real_buffer_height());
-        let font_dimensions = self.buffer_view.lock().unwrap().buf.get_font_dimensions();
+        let font_dimensions = self.buffer_view.lock().unwrap().editor.buf.get_font_dimensions();
 
         let mut scale_x = (size.x - 4.0) / font_dimensions.width as f32 / buf_w as f32;
         let mut scale_y = size.y / font_dimensions.height as f32 / buf_h as f32;
@@ -122,7 +122,7 @@ impl Document for AnsiEditor {
                         .ceil(),
                     Vec2::new(rect_w, rect_h),
                 );
-                let real_height = self.buffer_view.lock().unwrap().buf.get_real_buffer_height();
+                let real_height = self.buffer_view.lock().unwrap().editor.buf.get_real_buffer_height();
                 let max_lines = max(0, real_height - buf_h);
                 ui.set_height(scale_y * max_lines as f32 * font_dimensions.height as f32);
 

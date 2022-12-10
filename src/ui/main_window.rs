@@ -175,6 +175,9 @@ impl eframe::App for MainWindow {
             if let Some((_, t)) = self.tree.find_active_focused() {
                 buffer_opt = t.1.get_buffer_view();
             }
+            ui.vertical_centered(|ui| {
+                ui.add(crate::palette_switcher(ctx, buffer_opt.clone()));
+            });
             ui.add(crate::palette_editor_16(buffer_opt));
             crate::add_tool_switcher(ctx, ui, self);
         });

@@ -15,5 +15,7 @@ pub use palette_editor::*;
 
 mod tool_switcher;
 pub use tool_switcher::*;
+mod icons;
+pub use icons::*;
 
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
