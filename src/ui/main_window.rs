@@ -1,12 +1,10 @@
 use std::{path::PathBuf, fs, sync::Arc, time::Duration};
 
-use eframe::{egui::{self, menu, TopBottomPanel, SidePanel}, epaint::ahash::HashMap};
+use eframe::{egui::{self, menu, TopBottomPanel, SidePanel}};
 use egui_dock::{DockArea, Style,  Tree, Node};
-use egui_extras::RetainedImage;
 use glow::Context;
 use icy_engine::{BitFont, Buffer};
 use rfd::FileDialog;
-
 use crate::{Document, FontEditor, model::Tool};
 
 use super::ansi_editor::AnsiEditor;
@@ -21,7 +19,7 @@ pub struct MainWindow {
 impl MainWindow {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let tree = Tree::new(Vec::new());
-
+  
         let mut tools: Vec<Box::<dyn Tool>> = Vec::new();
        
         tools.push(Box::new(crate::model::click_imp::ClickTool { }));
@@ -30,7 +28,8 @@ impl MainWindow {
             use_back: true,
             use_fore: true,
             brush_type: crate::model::brush_imp::BrushType::Shade,
-            char_code: 176,
+            char_code: '\u{00B0}',
+            font_page: 0
         }));
         tools.push(Box::new(crate::model::erase_imp::EraseTool { size: 3, brush_type: crate::model::erase_imp::EraseType::Shade }));
         tools.push(Box::new(crate::model::pipette_imp::PipetteTool { }));
@@ -146,6 +145,21 @@ impl egui_dock::TabViewer for TabViewer {
 
 impl eframe::App for MainWindow {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        use egui::FontFamily::Proportional;
+        use egui::FontId;
+        use egui::TextStyle::*;
+
+        let mut style: egui::Style = (*ctx.style()).clone();
+        style.text_styles = [
+            (Heading, FontId::new(30.0, Proportional)),
+            (Body, FontId::new(20.0, Proportional)),
+            (Monospace, FontId::new(20.0, Proportional)),
+            (Button, FontId::new(20.0, Proportional)),
+            (Small, FontId::new(16.0, Proportional)),
+        ].into();
+        ctx.set_style(style);
+
+        
         TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -178,8 +192,12 @@ impl eframe::App for MainWindow {
             ui.vertical_centered(|ui| {
                 ui.add(crate::palette_switcher(ctx, buffer_opt.clone()));
             });
-            ui.add(crate::palette_editor_16(buffer_opt));
+            ui.add(crate::palette_editor_16(buffer_opt.clone()));
             crate::add_tool_switcher(ctx, ui, self);
+
+            if let Some(tool) = self.tools.get_mut(self.selected_tool) {
+                tool.show_ui(ctx, ui, buffer_opt.clone());
+            }
         });
 
         DockArea::new(&mut self.tree)

@@ -1,6 +1,7 @@
 
 use std::{rc::Rc, cell::RefCell};
 
+use eframe::egui;
 use egui_extras::RetainedImage;
 
 use crate::model::Selection;
@@ -12,6 +13,10 @@ pub struct ClickTool {}
 impl Tool for ClickTool
 {
     fn get_icon_name(&self) -> &'static RetainedImage { &super::icons::CURSOR_SVG }
+
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    {
+    }
 /* 
     fn handle_click(&mut self, editor: Rc<RefCell<Editor>>, button: u32, pos: Position) -> Event {
         if button == 1 {

@@ -1,3 +1,4 @@
+use eframe::egui;
 use icy_engine::TextAttribute;
 
 use super::{Editor, Event, MKey, MKeyCode, MModifiers, Position, Tool, DrawMode, Plottable, plot_point};
@@ -119,6 +120,9 @@ impl LineTool {
 impl Tool for LineTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage { &super::icons::LINE_SVG }
     fn use_selection(&self) -> bool { false }
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    {
+    }
 /*
     fn handle_key(
         &mut self,

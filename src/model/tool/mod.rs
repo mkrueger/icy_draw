@@ -16,6 +16,7 @@ pub mod flip_imp;
 pub mod move_layer_imp;
 mod icons;
 
+use eframe::{egui};
 use egui_extras::RetainedImage;
 use icy_engine::{Position, TextAttribute};
 pub use scan_lines::*;
@@ -95,6 +96,9 @@ pub trait Tool
     fn use_caret(&self) -> bool { true }
     
     fn use_selection(&self) -> bool { true }
+
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>);
+    
       /* 
     fn handle_key(&mut self, editor: Rc<RefCell<Editor>>, key: MKey, key_code: MKeyCode, modifier: MModifiers) -> Event
     {

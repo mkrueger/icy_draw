@@ -1,6 +1,6 @@
 use std::{fs, sync::{Arc, Mutex}};
 
-use eframe::{egui::{self, Sense}, epaint::{Color32, Rounding, Vec2, Rect, Pos2}};
+use eframe::{egui::{self, Sense, RichText}, epaint::{Color32, Rounding, Vec2, Rect, Pos2}};
 use icy_engine::{BitFont};
 
 use crate::{Document, TerminalResult};
@@ -154,8 +154,14 @@ impl Document for FontEditor {
             ui.horizontal_wrapped(|ui| {
                 for i in 0..self.font.length {
                     ui.add(self.draw_glyph( unsafe { char::from_u32_unchecked(i as u32) })).on_hover_ui(|ui| {
-                        ui.label(format!("char {0}/0x{0:02X}", i));
-                        ui.label(format!("ASCII '{0}'", unsafe { char::from_u32_unchecked(i as u32) }));
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("Char").small());
+                            ui.label(RichText::new(format!("{0}/0x{0:02X}", i)).small().color(Color32::WHITE));
+                        });
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("ASCII").small());
+                            ui.label(RichText::new(format!("'{0}'", unsafe { char::from_u32_unchecked(i as u32) })).small().color(Color32::WHITE));
+                        });
                     });
                 }
             })

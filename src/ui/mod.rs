@@ -1,4 +1,5 @@
-mod ansi_editor;
+pub mod ansi_editor;
+
 mod main_window;
 use std::error::Error;
 

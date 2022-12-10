@@ -1,4 +1,5 @@
 
+use eframe::egui;
 use icy_engine::TextAttribute;
 
 use super::{Editor, Event, Position, Tool, DrawMode, Plottable, ScanLines};
@@ -28,6 +29,9 @@ impl Tool for DrawRectangleTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage { &super::icons::RECTANGLE_OUTLINE_SVG }
     fn use_caret(&self) -> bool { false }
     fn use_selection(&self) -> bool { false }
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    {
+    }
 /* 
     fn handle_drag(&self, editor: Rc<RefCell<Editor>>,  mut start: Position, mut cur: Position) -> Event {
         if let Some(layer) = editor.borrow_mut().get_overlay_layer() {

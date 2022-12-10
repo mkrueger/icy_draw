@@ -1,8 +1,13 @@
-use std::{cell::{RefCell}, rc::Rc};
+use std::{cell::{RefCell}, rc::Rc, sync::{Arc, Mutex}};
 use egui_extras::RetainedImage;
+use eframe::{egui::{self, Sense, RichText}, epaint::{Vec2, Color32, Rounding, Rect, Pos2}};
+use icy_engine::Buffer;
+
+use crate::ansi_editor::BufferView;
 
 use super::{ Tool, Editor, Position};
 
+#[derive(PartialEq, Eq)]
 pub enum BrushType {
     Shade,
     Solid,
@@ -13,7 +18,8 @@ pub struct BrushTool {
     pub use_fore: bool,
     pub use_back: bool,
     pub size: i32,
-    pub char_code: u16,
+    pub char_code: char,
+    pub font_page: usize,
 
     pub brush_type: BrushType
 }
@@ -87,7 +93,36 @@ impl BrushTool {
 impl Tool for BrushTool
 {
     fn get_icon_name(&self) -> &'static RetainedImage { &super::icons::BRUSH_SVG }
+    
     fn use_caret(&self) -> bool { false }
+
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    {
+        ui.vertical_centered(|ui| {
+            ui.horizontal(|ui| {
+                if ui.selectable_label(self.use_fore, "Fg").clicked() {
+                    self.use_fore = !self.use_fore;
+                }
+                if ui.selectable_label(self.use_back, "Bg").clicked() {
+                    self.use_back = !self.use_back;
+                }
+            });
+        });
+        ui.horizontal(|ui| {
+            ui.label("Size:");
+            ui.add(egui::DragValue::new(&mut self.size).clamp_range(1..=20).speed(1));
+        });
+        ui.radio_value(&mut self.brush_type, BrushType::Shade, "Shade");
+        ui.horizontal(|ui| {
+            ui.radio_value(&mut self.brush_type, BrushType::Solid, "Character");
+
+            if let Some(b) = &buffer_opt {
+                ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
+            }
+        });
+        ui.radio_value(&mut self.brush_type, BrushType::Color, "Colorize");
+    }
+    
 /* 
     fn handle_click(&mut self, editor: Rc<RefCell<Editor>>, button: u32, pos: Position) -> super::Event {
         if button == 1 {
@@ -101,4 +136,43 @@ impl Tool for BrushTool
         self.paint_brush(&editor, cur);
         super::Event::None
     }*/
+}
+
+
+pub fn draw_glyph(buf: Arc<Mutex<BufferView>>, ch: char, font_page: usize) ->  impl egui::Widget {
+    move |ui: &mut egui::Ui| {
+        let font  = &buf.lock().unwrap().editor.buf.font_table[font_page];
+        let scale = 1.5;
+        let (id, stroke_rect) = ui.allocate_space(Vec2::new(scale * font.size.width as f32, scale * font.size.height as f32));
+        let mut response = ui.interact(stroke_rect, id, Sense::click());
+       
+        let col = if response.hovered() { Color32::WHITE } else { Color32::GRAY };
+        
+        let painter = ui.painter_at(stroke_rect);
+        painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+        let s = font.size;
+        if let Some(glyph) = font.get_glyph(ch) {
+            for y in 0..s.height {
+                for x in 0..s.width {
+                    if glyph.data[y as usize] & (128 >> x) != 0  {
+                        painter.rect_filled( Rect::from_min_size(
+                            Pos2::new(stroke_rect.left() + x as f32 * scale, stroke_rect.top() + y as f32 * scale),
+                            Vec2::new(scale, scale)
+                        ), Rounding::none(), col);
+                    }
+                }
+            }
+            response = response.on_hover_ui(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new("Char").small());
+                    ui.label(RichText::new(format!("{0}/0x{0:02X}", ch as u32)).small().color(Color32::WHITE));
+                });
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new("Font").small());
+                    ui.label(RichText::new(font.name.to_string()).small().color(Color32::WHITE));
+                });
+            });
+        }
+        response
+    }
 }

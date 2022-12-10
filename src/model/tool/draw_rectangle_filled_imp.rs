@@ -1,3 +1,4 @@
+use eframe::egui;
 use icy_engine::TextAttribute;
 
 use super::{Editor, Event, Position, Tool, DrawMode, Plottable, plot_point, ScanLines};
@@ -28,6 +29,10 @@ impl Tool for DrawRectangleFilledTool {
 
     fn use_caret(&self) -> bool { false }
     fn use_selection(&self) -> bool { false }
+
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    {
+    }
 /* 
     fn handle_drag(&self, editor: Rc<RefCell<Editor>>,  start: Position, cur: Position) -> Event {
         if let Some(layer) = editor.borrow_mut().get_overlay_layer() {

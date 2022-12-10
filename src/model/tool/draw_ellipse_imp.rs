@@ -1,3 +1,4 @@
+use eframe::egui;
 use icy_engine::TextAttribute;
 
 use super::{ DrawMode, Editor, Event, Plottable, Position, Tool, ScanLines};
@@ -38,6 +39,10 @@ impl Tool for DrawEllipseTool {
     }
     fn use_selection(&self) -> bool {
         false
+    }
+
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    {
     }
 /*
     fn handle_drag(&self, editor: Rc<RefCell<Editor>>, mut start: Position, mut cur: Position) -> Event {
