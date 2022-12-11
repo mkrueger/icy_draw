@@ -1,7 +1,8 @@
 use eframe::egui;
+use i18n_embed_fl::fl;
 use icy_engine::TextAttribute;
 
-use super::{ DrawMode, Editor, Event, Plottable, Position, Tool, ScanLines};
+use super::{ DrawMode, Editor, Event, Plottable, Position, Tool, ScanLines, brush_imp::draw_glyph};
 use std::{
     cell::RefCell,
     rc::Rc,
@@ -13,7 +14,8 @@ pub struct DrawEllipseTool {
     pub use_fore: bool,
     pub use_back: bool,
     pub attr: TextAttribute,
-    pub char_code: u16,
+    pub char_code: char,
+    pub font_page: usize,
 }
 
 impl Plottable for DrawEllipseTool {
@@ -26,7 +28,7 @@ impl Plottable for DrawEllipseTool {
     fn get_use_back(&self) -> bool {
         self.use_back
     }
-    fn get_char_code(&self) -> u16 {
+    fn get_char_code(&self) -> char {
         self.char_code
     }
 }
@@ -43,7 +45,29 @@ impl Tool for DrawEllipseTool {
 
     fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
     {
+        ui.vertical_centered(|ui| {
+            ui.horizontal(|ui| {
+                if ui.selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg")).clicked() {
+                    self.use_fore = !self.use_fore;
+                }
+                if ui.selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg")).clicked() {
+                    self.use_back = !self.use_back;
+                }
+            });
+        });
+
+        ui.radio_value(&mut self.draw_mode, DrawMode::Line, fl!(crate::LANGUAGE_LOADER, "tool-line"));
+        ui.horizontal(|ui| {
+            ui.radio_value(&mut self.draw_mode, DrawMode::Char, fl!(crate::LANGUAGE_LOADER, "tool-character"));
+
+            if let Some(b) = &buffer_opt {
+                ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
+            }
+        });
+        ui.radio_value(&mut self.draw_mode, DrawMode::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
+        ui.radio_value(&mut self.draw_mode, DrawMode::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
     }
+
 /*
     fn handle_drag(&self, editor: Rc<RefCell<Editor>>, mut start: Position, mut cur: Position) -> Event {
         if let Some(layer) = editor.borrow_mut().get_overlay_layer() {

@@ -1,6 +1,7 @@
 use std::{fs, sync::{Arc, Mutex}};
 
 use eframe::{egui::{self, Sense, RichText}, epaint::{Color32, Rounding, Vec2, Rect, Pos2}};
+use i18n_embed_fl::fl;
 use icy_engine::{BitFont};
 
 use crate::{Document, TerminalResult};
@@ -149,7 +150,7 @@ impl Document for FontEditor {
             ui.add(self.edit_glyph())
         });
 
-        ui.label(format!("Char table 0-{}:", self.font.length - 1));
+        ui.label(fl!(crate::LANGUAGE_LOADER, "font-editor-table", length=(self.font.length - 1).to_string()));
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 for i in 0..self.font.length {

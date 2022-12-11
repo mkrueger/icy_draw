@@ -341,7 +341,7 @@ trait Plottable {
 
     fn get_use_fore(&self) -> bool;
     fn get_use_back(&self) -> bool;
-    fn get_char_code(&self) -> u16;
+    fn get_char_code(&self) -> char;
 }
 
 fn plot_point(editor: &Rc<RefCell<Editor>>, tool: &dyn Plottable, pos: Position)

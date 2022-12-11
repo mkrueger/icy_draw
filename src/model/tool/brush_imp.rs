@@ -1,6 +1,7 @@
 use std::{cell::{RefCell}, rc::Rc, sync::{Arc, Mutex}};
 use egui_extras::RetainedImage;
 use eframe::{egui::{self, Sense, RichText}, epaint::{Vec2, Color32, Rounding, Rect, Pos2}};
+use i18n_embed_fl::fl;
 use icy_engine::Buffer;
 
 use crate::ansi_editor::BufferView;
@@ -100,27 +101,27 @@ impl Tool for BrushTool
     {
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
-                if ui.selectable_label(self.use_fore, "Fg").clicked() {
+                if ui.selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg")).clicked() {
                     self.use_fore = !self.use_fore;
                 }
-                if ui.selectable_label(self.use_back, "Bg").clicked() {
+                if ui.selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg")).clicked() {
                     self.use_back = !self.use_back;
                 }
             });
         });
         ui.horizontal(|ui| {
-            ui.label("Size:");
+            ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
             ui.add(egui::DragValue::new(&mut self.size).clamp_range(1..=20).speed(1));
         });
-        ui.radio_value(&mut self.brush_type, BrushType::Shade, "Shade");
+        ui.radio_value(&mut self.brush_type, BrushType::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
         ui.horizontal(|ui| {
-            ui.radio_value(&mut self.brush_type, BrushType::Solid, "Character");
+            ui.radio_value(&mut self.brush_type, BrushType::Solid, fl!(crate::LANGUAGE_LOADER, "tool-character"));
 
             if let Some(b) = &buffer_opt {
                 ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
             }
         });
-        ui.radio_value(&mut self.brush_type, BrushType::Color, "Colorize");
+        ui.radio_value(&mut self.brush_type, BrushType::Color, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
     }
     
 /* 

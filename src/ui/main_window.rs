@@ -3,6 +3,7 @@ use std::{path::PathBuf, fs, sync::Arc, time::Duration};
 use eframe::{egui::{self, menu, TopBottomPanel, SidePanel}};
 use egui_dock::{DockArea, Style,  Tree, Node};
 use glow::Context;
+use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer};
 use rfd::FileDialog;
 use crate::{Document, FontEditor, model::Tool};
@@ -38,7 +39,8 @@ impl MainWindow {
             use_fore: true, 
             use_back: true, 
             attr: icy_engine::TextAttribute::default(), 
-            char_code: 176,
+            char_code: '\u{00B0}',
+            font_page: 0,
             old_pos: icy_engine::Position { x: 0, y: 0 }
         }));
         tools.push(Box::new(crate::model::draw_rectangle_imp::DrawRectangleTool { 
@@ -46,7 +48,8 @@ impl MainWindow {
             use_fore: true, 
             use_back: true, 
             attr: icy_engine::TextAttribute::default(), 
-            char_code: 176
+            char_code: '\u{00B0}',
+            font_page: 0
         }));
 
         tools.push(Box::new(crate::model::draw_rectangle_filled_imp::DrawRectangleFilledTool { 
@@ -54,14 +57,16 @@ impl MainWindow {
             use_fore: true, 
             use_back: true, 
             attr: icy_engine::TextAttribute::default(), 
-            char_code: 176
+            char_code: '\u{00B0}',
+            font_page: 0
         }));
         tools.push(Box::new(crate::model::draw_ellipse_imp::DrawEllipseTool {
             draw_mode: crate::model::DrawMode::Line, 
             use_fore: true, 
             use_back: true, 
             attr: icy_engine::TextAttribute::default(), 
-            char_code: 176
+            char_code: '\u{00B0}',
+            font_page: 0
         }));
 
         tools.push(Box::new(crate::model::draw_ellipse_filled_imp::DrawEllipseFilledTool {
@@ -69,14 +74,16 @@ impl MainWindow {
             use_fore: true, 
             use_back: true, 
             attr: icy_engine::TextAttribute::default(), 
-            char_code: 176
+            char_code: '\u{00B0}',
+            font_page: 0
         }));
 
         tools.push(Box::new(crate::model::fill_imp::FillTool {
-            use_char: true,
             use_fore: true,
             use_back: true,
-            char_code: 176,
+            char_code: '\u{00B0}',
+            font_page: 0,
+            fill_type: crate::model::fill_imp::FillType::Character,
             attr: icy_engine::TextAttribute::default()
         }));
 
@@ -158,12 +165,11 @@ impl eframe::App for MainWindow {
             (Small, FontId::new(16.0, Proportional)),
         ].into();
         ctx.set_style(style);
-
         
         TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Open").clicked() {
+                ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
+                    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-open")).clicked() {
                         let files = FileDialog::new().pick_files();
                         if let Some(paths) = files {
                             for path in paths {
@@ -172,12 +178,11 @@ impl eframe::App for MainWindow {
                         }
                         ui.close_menu();
                     }
-                    if ui.button("Save").clicked() {
+                    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-save")).clicked() {
                         if let Some(t) = self.tree.find_active_focused() {
                             let str = &t.1.0;
                             t.1.1.save(str);
                         }
-
                         ui.close_menu();
                     }
                 });

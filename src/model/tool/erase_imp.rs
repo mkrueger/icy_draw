@@ -1,9 +1,11 @@
 use std::{cell::{RefCell}, rc::Rc};
 
 use eframe::egui;
+use i18n_embed_fl::fl;
 
 use super::{ Tool, Editor, Position};
 
+#[derive(PartialEq, Eq)]
 pub enum EraseType {
     Shade,
     Solid
@@ -12,8 +14,8 @@ pub enum EraseType {
 pub struct EraseTool {
     pub size: i32,
     pub brush_type: EraseType
-
 }
+
 impl EraseTool {
 /* 
     fn paint_brush(&self, editor: &Rc<RefCell<Editor>>, pos: Position)
@@ -74,8 +76,15 @@ impl Tool for EraseTool
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage { &super::icons::ERASER_SVG }
    
     fn use_caret(&self) -> bool { false }
+
     fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
     {
+        ui.horizontal(|ui| {
+            ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
+            ui.add(egui::DragValue::new(&mut self.size).clamp_range(1..=20).speed(1));
+        });
+        ui.radio_value(&mut self.brush_type, EraseType::Solid, fl!(crate::LANGUAGE_LOADER, "tool-solid"));
+        ui.radio_value(&mut self.brush_type, EraseType::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
     }
 /*
     fn handle_click(&mut self, editor: Rc<RefCell<Editor>>, button: u32, pos: Position) -> super::Event {
