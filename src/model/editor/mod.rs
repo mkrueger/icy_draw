@@ -50,6 +50,7 @@ pub struct Editor {
 
     cur_outline: i32,
     pub is_inactive: bool,
+    pub cur_font_page: usize,
 
     pub reference_image: Option<PathBuf>,
     pub cur_layer: i32,
@@ -93,6 +94,7 @@ impl Editor
            //outline_changed: Box::new(|_| {}),
            // request_refresh: Box::new(|| {}),
             cur_layer: 0,
+            cur_font_page: 0,
             atomic_undo_stack: Vec::new(),
             //pos_changed: Box::new(|_, _| {}),
             //attr_changed: Box::new(|_| {}),

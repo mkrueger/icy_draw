@@ -1,6 +1,6 @@
 use std::{path::PathBuf, fs, sync::Arc, time::Duration};
 
-use eframe::{egui::{self, menu, TopBottomPanel, SidePanel}};
+use eframe::{egui::{self, menu, TopBottomPanel, SidePanel, CentralPanel}};
 use egui_dock::{DockArea, Style,  Tree, Node};
 use glow::Context;
 use i18n_embed_fl::fl;
@@ -203,6 +203,14 @@ impl eframe::App for MainWindow {
             if let Some(tool) = self.tools.get_mut(self.selected_tool) {
                 tool.show_ui(ctx, ui, buffer_opt.clone());
             }
+        });
+
+        TopBottomPanel::bottom("bottom_panel").resizable(true).show(ctx, |ui| {
+            let mut buffer_opt = None;
+            if let Some((_, t)) = self.tree.find_active_focused() {
+                buffer_opt = t.1.get_buffer_view();
+            }
+            ui.add(crate::show_char_table(ctx, buffer_opt.clone()));
         });
 
         DockArea::new(&mut self.tree)
