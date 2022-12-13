@@ -108,7 +108,8 @@ impl Document for AnsiEditor {
             .auto_shrink([false; 2])
             .stick_to_bottom(true)
             .show_viewport(ui, |ui, viewport| {
-                let (draw_area, mut response) = ui.allocate_at_least(size, egui::Sense::click());
+                let (id, draw_area) = ui.allocate_space(size);
+                let mut response = ui.interact(draw_area, id, egui::Sense::click());
 
                 let rect = Rect::from_min_size(
                     draw_area.left_top()
@@ -136,11 +137,12 @@ impl Document for AnsiEditor {
                 
                 let buffer_view  = self.buffer_view.clone();
                 let callback = egui::PaintCallback {
-                    rect,
+                    rect: draw_area,
                     callback: std::sync::Arc::new(egui_glow::CallbackFn::new(
-                        move |_info, painter| {
+                        move |info, painter| {
+
                             buffer_view.lock().unwrap().update_buffer(painter.gl());
-                            buffer_view.lock().unwrap().paint(painter.gl(), rect);
+                            buffer_view.lock().unwrap().paint(painter.gl(), info, draw_area, rect);
                         },
                     )),
                 };

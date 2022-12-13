@@ -1,4 +1,4 @@
-use eframe::epaint::{Rect, Vec2};
+use eframe::epaint::{Rect, Vec2, PaintCallbackInfo};
 use glow::NativeTexture;
 use icy_engine::Buffer;
 use std::{
@@ -9,7 +9,7 @@ use std::{
 use super::BufferView;
 
 impl BufferView {
-    pub fn paint(&self, gl: &glow::Context, rect: Rect) {
+    pub fn paint(&self, gl: &glow::Context, info: PaintCallbackInfo, draw_rect: Rect, rect: Rect) {
         use glow::HasContext as _;
         unsafe {
             gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.framebuffer));
@@ -236,14 +236,18 @@ impl BufferView {
                 }
             }
 
+            println!("{:?} / {:?}", draw_rect, rect);
+
             // draw Framebuffer
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+
+
             gl.viewport(
-                rect.left() as i32,
-                rect.top() as i32,
-                rect.width() as i32,
-                rect.height() as i32,
+                draw_rect.left() as i32,
+                (info.screen_size_px[1] as f32 - draw_rect.max.y * info.pixels_per_point) as i32,
+                draw_rect.width() as i32,
+                draw_rect.height() as i32,
             );
             gl.use_program(Some(self.draw_program));
             gl.active_texture(glow::TEXTURE0);
@@ -263,18 +267,22 @@ impl BufferView {
                     crate::ui::main_window::PostProcessing::CRT1 => 1.0,
                 },*/
             );
-
-            gl.uniform_2_f32(
-                gl.get_uniform_location(self.draw_program, "u_resolution")
+            gl.uniform_4_f32(
+                gl.get_uniform_location(self.draw_program, "u_draw_rect")
                     .as_ref(),
-                rect.width(),
-                rect.height(),
+                    draw_rect.left(),
+                draw_rect.top(),
+                draw_rect.width(),
+                draw_rect.height(),
             );
-            gl.uniform_2_f32(
-                gl.get_uniform_location(self.draw_program, "u_position")
+
+            gl.uniform_4_f32(
+                gl.get_uniform_location(self.draw_program, "u_draw_area")
                     .as_ref(),
-                rect.left(),
-                rect.top(),
+                    draw_rect.left() + rect.left(),
+                    draw_rect.top() + rect.top(),
+                    draw_rect.left() + rect.right(),
+                    draw_rect.top() + rect.bottom()
             );
 
             gl.bind_vertex_array(Some(self.vertex_array));
