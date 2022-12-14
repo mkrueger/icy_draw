@@ -1,5 +1,5 @@
-use std::{cmp::{max}, fs, path::PathBuf, sync::{Arc, Mutex}};
-use eframe::{epaint::{Vec2, Rect}, egui::{CursorIcon, self, ScrollArea, PointerButton}};
+use std::{cmp::{max, min}, fs, path::PathBuf, sync::{Arc, Mutex}};
+use eframe::{epaint::{Vec2, Rect, Pos2}, egui::{CursorIcon, self, ScrollArea, PointerButton}};
 use icy_engine::{Buffer, SaveOptions, AnsiParser, Selection, BufferParser};
 
 pub mod render;
@@ -82,51 +82,44 @@ impl Document for AnsiEditor {
     fn show_ui(&mut self, ui: &mut eframe::egui::Ui) {
         let size = ui.max_rect().size();
         let buf_w = self.buffer_view.lock().unwrap().editor.buf.get_buffer_width();
-        let buf_h = self.buffer_view.lock().unwrap().editor.buf.get_buffer_height();
+        let buf_h = self.buffer_view.lock().unwrap().editor.buf.get_real_buffer_height();
+        let scale = self.buffer_view.lock().unwrap().scale;
         // let h = max(buf_h, buffer_view.lock().unwrap().buf.get_real_buffer_height());
         let font_dimensions = self.buffer_view.lock().unwrap().editor.buf.get_font_dimensions();
 
-        let mut scale_x = (size.x - 4.0) / font_dimensions.width as f32 / buf_w as f32;
-        let mut scale_y = size.y / font_dimensions.height as f32 / buf_h as f32;
-
-        if scale_x < scale_y {
-            scale_y = scale_x;
-        } else {
-            scale_x = scale_y;
-        }
-
         let char_size = Vec2::new(
-            font_dimensions.width as f32 * scale_x,
-            font_dimensions.height as f32 * scale_y,
+            font_dimensions.width as f32 * scale,
+            font_dimensions.height as f32 * scale,
         );
 
         let rect_w = buf_w as f32 * char_size.x;
         let rect_h = buf_h as f32 * char_size.y;
         let top_margin_height = ui.min_rect().top();
+        let available_rect = ui.available_rect_before_wrap();
 
-        let _output = ScrollArea::vertical()
+        let _output = ScrollArea::both()
             .auto_shrink([false; 2])
             .stick_to_bottom(true)
             .show_viewport(ui, |ui, viewport| {
                 let (id, draw_area) = ui.allocate_space(size);
                 let mut response = ui.interact(draw_area, id, egui::Sense::click());
 
+                let rect_h = min(rect_h as i32, draw_area.height() as i32) as f32;
+
                 let rect = Rect::from_min_size(
-                    draw_area.left_top()
-                        + Vec2::new(
-                            (-4.0 + draw_area.width() - rect_w) / 2.,
-                            (-top_margin_height
-                                + viewport.top()
-                                + (draw_area.height() - rect_h) / 2.)
-                                .floor(),
+                    //draw_area.left_top() + 
+                    Pos2::new(
+                            if rect_w < draw_area.width() { (draw_area.width() - rect_w) / 2. } else { 0. },
+                            0.,
                         )
                         .ceil(),
                     Vec2::new(rect_w, rect_h),
                 );
+
                 let real_height = self.buffer_view.lock().unwrap().editor.buf.get_real_buffer_height();
                 let max_lines = max(0, real_height - buf_h);
-                ui.set_height(scale_y * max_lines as f32 * font_dimensions.height as f32);
-
+                ui.set_height(scale * max_lines as f32 * font_dimensions.height as f32);
+                ui.set_width(rect_w);
                 let first_line = (viewport.top() / char_size.y) as i32;
                 let scroll_back_line = max(0, max_lines - first_line);
 
@@ -140,12 +133,12 @@ impl Document for AnsiEditor {
                     rect: draw_area,
                     callback: std::sync::Arc::new(egui_glow::CallbackFn::new(
                         move |info, painter| {
-
                             buffer_view.lock().unwrap().update_buffer(painter.gl());
                             buffer_view.lock().unwrap().paint(painter.gl(), info, draw_area, rect);
                         },
                     )),
                 };
+
 
                 ui.painter().add(callback);
                 response = response.context_menu(terminal_context_menu);

@@ -2,7 +2,7 @@ use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::TextAttribute;
 
-use super::{Editor, Event, Position, Tool, DrawMode, Plottable, plot_point, ScanLines, brush_imp::draw_glyph};
+use super::{ Tool, DrawMode, Plottable, plot_point, ScanLines, brush_imp::draw_glyph};
 use std::{
     cell::{RefCell},
     rc::Rc,
