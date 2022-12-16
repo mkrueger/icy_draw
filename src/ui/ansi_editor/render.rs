@@ -12,7 +12,7 @@ impl BufferView {
     pub fn paint(&self, gl: &glow::Context, info: PaintCallbackInfo, draw_rect: Rect, rect: Rect) {
         use glow::HasContext as _;
         unsafe {
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.framebuffer));
+            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.framebuffer));            
             gl.framebuffer_texture(
                 glow::FRAMEBUFFER,
                 glow::COLOR_ATTACHMENT0,

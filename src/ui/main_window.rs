@@ -5,16 +5,19 @@ use egui_dock::{DockArea, Style,  Tree, Node};
 use glow::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer};
-use rfd::FileDialog;
 use crate::{Document, FontEditor, model::Tool};
 
 use super::ansi_editor::AnsiEditor;
+use egui_file::FileDialog;
 
 pub struct MainWindow {
     pub tools: Vec<Box<dyn Tool>>,
     pub selected_tool: usize,
     tree: Tree<(String, Box<dyn Document>)>,
-    gl: Arc<Context>
+    gl: Arc<Context>,
+
+    opened_file: Option<PathBuf>,
+    open_file_dialog: Option<FileDialog>,
 }
 
 impl MainWindow {
@@ -93,7 +96,9 @@ impl MainWindow {
             tools,
             selected_tool: 0,
             tree,
-            gl: cc.gl.clone().unwrap()
+            gl: cc.gl.clone().unwrap(),
+            opened_file: None,
+            open_file_dialog: None,        
         };
         view
     }
@@ -168,13 +173,10 @@ impl eframe::App for MainWindow {
             menu::bar(ui, |ui| {
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
                     if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-open")).clicked() {
-                        let files = FileDialog::new().pick_files();
-                        if let Some(paths) = files {
-                            for path in paths {
-                                self.open_file(path);
-                            }
-                        }
-                        println!("close menu!");
+                        let mut dialog = FileDialog::open_file(self.opened_file.clone());
+                        dialog.open();
+                        self.open_file_dialog = Some(dialog);
+
                         ui.close_menu();
                     }
                     if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-save")).clicked() {
@@ -215,6 +217,13 @@ impl eframe::App for MainWindow {
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut TabViewer {});
 
+        if let Some(dialog) = &mut self.open_file_dialog {
+            if dialog.show(ctx).selected() {
+                if let Some(file) = dialog.path() {
+                    self.open_file(file);
+                }
+            }
+        }
         ctx.request_repaint_after(Duration::from_millis(150));
     }
 

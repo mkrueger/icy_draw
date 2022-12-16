@@ -28,8 +28,8 @@ void main() {
 
 	if (from.x <= uv.x && uv.x < to.x && 
 	    from.y <= uv.y && uv.y < to.y) {
-		vec2 v = (uv - from) / abs(u_draw_area.xw - u_draw_area.zy);
- 		color = texture(u_render_texture, v).xyz;
+		vec2 v = (uv - from) / (to - from);
+		color = texture(u_render_texture, v).xyz;
 	} else {
 		draw_background();
 	}
