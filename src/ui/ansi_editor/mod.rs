@@ -109,8 +109,8 @@ impl Document for AnsiEditor {
                 let rect = Rect::from_min_size(
                     //draw_area.left_top() + 
                     Pos2::new(
-                            if rect_w < draw_area.width() { (draw_area.width() - rect_w) / 2. } else { 0. },
-                            0.,
+                        if rect_w < draw_area.width() { (draw_area.width() - rect_w) / 2. } else { 0. },
+                        if rect_h < draw_area.height() { (draw_area.height() - rect_h) / 2. } else { 0. },
                         )
                         .ceil(),
                     Vec2::new(rect_w, rect_h),

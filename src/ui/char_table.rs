@@ -1,12 +1,10 @@
-use std::cmp::min;
 use std::sync::{Arc, Mutex};
-use eframe::epaint::{Vec2, Rect, Pos2, Rounding, Color32, Stroke};
-use eframe::egui::{self, Sense};
+use eframe::egui::{self};
 use icy_engine::{AsciiParser, BufferParser};
 use crate::ansi_editor::BufferView;
 use crate::model::brush_imp::draw_glyph;
 
-pub fn show_char_table(ctx: &egui::Context, buffer_opt: Option<Arc<Mutex<BufferView>>>) -> impl egui::Widget {
+pub fn show_char_table(buffer_opt: Option<Arc<Mutex<BufferView>>>) -> impl egui::Widget {
     move |ui: &mut egui::Ui| {
         let Some(buffer) = &buffer_opt else { 
             return ui.label("no selected editor");
@@ -23,12 +21,15 @@ pub fn show_char_table(ctx: &egui::Context, buffer_opt: Option<Arc<Mutex<BufferV
                         if let Ok(b) = &mut buffer.lock() {
                             let mut p = AsciiParser::new();
                             let editor = &mut b.editor;
-                            BufferParser::print_char(
+                            let res = BufferParser::print_char(
                                 &mut p,
                                 &mut editor.buf,
                                 &mut editor.caret,
                                 ch,
                             );
+                            if let Err(err) = res {
+                                eprintln!("{}", err);
+                            }
                             b.redraw_view();
                         }
                     }

@@ -69,7 +69,7 @@ impl BufferView {
                 gl.get_uniform_location(self.program, "u_terminal_size")
                     .as_ref(),
                 self.editor.buf.get_buffer_width() as f32 - 0.0001,
-                self.editor.buf.get_buffer_height() as f32 - 0.0001,
+                self.editor.buf.get_real_buffer_height() as f32 - 0.0001,
             );
 
             gl.uniform_1_i32(gl.get_uniform_location(self.program, "u_fonts").as_ref(), 0);
@@ -239,16 +239,24 @@ impl BufferView {
             // draw Framebuffer
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-            println!("{:?}, {:?} ||| {:?}", draw_rect, rect, info.clip_rect);
 
+            let view_port = info.clip_rect_in_pixels();
             gl.viewport(
-                info.clip_rect.left() as i32,
-                (info.screen_size_px[1] as f32 - info.clip_rect.max.y * info.pixels_per_point) as i32,
-                info.clip_rect.width() as i32,
-                info.clip_rect.height() as i32,
+                view_port.left_px as i32,
+                view_port.from_bottom_px as i32,
+                view_port.width_px as i32,
+                view_port.height_px as i32,
             );
             gl.use_program(Some(self.draw_program));
             gl.active_texture(glow::TEXTURE0);
+
+            println!("{:?} == {:?}", draw_rect, rect);
+            gl.uniform_2_f32(
+                gl.get_uniform_location(self.program, "u_position").as_ref(),
+                draw_rect.left(),
+                draw_rect.top(),
+            );
+
             gl.uniform_1_i32(
                 gl.get_uniform_location(self.draw_program, "u_render_texture")
                     .as_ref(),
@@ -260,22 +268,23 @@ impl BufferView {
                     .as_ref(),
                     0.0
             );
+
             gl.uniform_4_f32(
                 gl.get_uniform_location(self.draw_program, "u_draw_rect")
                     .as_ref(),
-                draw_rect.left(),
-                draw_rect.top(),
-                draw_rect.width(),
-                draw_rect.height(),
+                draw_rect.left() * info.pixels_per_point / view_port.width_px,
+                (info.screen_size_px[1] as f32 - info.clip_rect.max.y * info.pixels_per_point) / view_port.height_px,
+                view_port.width_px,
+                view_port.height_px,
             );
-
+            
             gl.uniform_4_f32(
                 gl.get_uniform_location(self.draw_program, "u_draw_area")
                     .as_ref(),
-                    rect.left(),
-                    rect.top(),
-                    rect.right(),
-                    rect.bottom()
+                    rect.left() * info.pixels_per_point / view_port.width_px,
+                    (info.clip_rect.height() - rect.bottom()) * info.pixels_per_point / view_port.height_px,
+                    rect.right() * info.pixels_per_point / view_port.width_px,
+                    (info.clip_rect.height() - rect.top()) * info.pixels_per_point / view_port.height_px,
             );
 
             gl.bind_vertex_array(Some(self.vertex_array));
@@ -315,7 +324,7 @@ impl BufferView {
         let editor = &self.editor;
         let render_buffer_size = Vec2::new(
             editor.buf.get_font_dimensions().width as f32 * editor.buf.get_buffer_width() as f32,
-            editor.buf.get_font_dimensions().height as f32 * editor.buf.get_buffer_height() as f32,
+            editor.buf.get_font_dimensions().height as f32 * editor.buf.get_real_buffer_height() as f32,
         );
 
         if render_buffer_size != self.render_buffer_size {
@@ -512,17 +521,14 @@ pub fn create_buffer_texture(
     scroll_back_line: i32,
     buffer_texture: NativeTexture,
 ) {
-    let first_line = max(
-        0,
-        buf.layers[0].lines.len() as i32 - buf.get_buffer_height(),
-    );
+    let first_line = 0;
     let mut buffer_data = Vec::with_capacity(
         2 * buf.get_buffer_width() as usize * 4 * buf.get_real_buffer_height() as usize,
     );
     let colors = buf.palette.colors.len() as u32 - 1;
     let mut y = 0;
 
-    while y < buf.get_buffer_height() {
+    while y < buf.get_real_buffer_height() {
         let mut is_double_height = false;
 
         for x in 0..buf.get_buffer_width() {
@@ -591,7 +597,7 @@ pub fn create_buffer_texture(
         }
     }
     y = 0;
-    while y < buf.get_buffer_height() {
+    while y < buf.get_real_buffer_height() {
         let mut is_double_height = false;
 
         for x in 0..buf.get_buffer_width() {
@@ -666,7 +672,7 @@ pub fn create_buffer_texture(
             0,
             glow::RGBA32F as i32,
             buf.get_buffer_width(),
-            buf.get_buffer_height(),
+            buf.get_real_buffer_height(),
             2,
             0,
             glow::RGBA,

@@ -1,6 +1,6 @@
 use std::{path::PathBuf, fs, sync::Arc, time::Duration};
 
-use eframe::{egui::{self, menu, TopBottomPanel, SidePanel, CentralPanel}};
+use eframe::{egui::{self, menu, TopBottomPanel, SidePanel}};
 use egui_dock::{DockArea, Style,  Tree, Node};
 use glow::Context;
 use i18n_embed_fl::fl;
@@ -120,9 +120,7 @@ impl MainWindow {
             }
         }
         let buf = Buffer::load_buffer(&path).unwrap();
-        
         let editor = AnsiEditor::new(&self.gl, buf);
-
         self.tree.push_to_focused_leaf((full_path, Box::new(editor)));
 
     }
@@ -176,6 +174,7 @@ impl eframe::App for MainWindow {
                                 self.open_file(path);
                             }
                         }
+                        println!("close menu!");
                         ui.close_menu();
                     }
                     if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-save")).clicked() {
@@ -188,7 +187,6 @@ impl eframe::App for MainWindow {
                 });
             });
         });
-        
         SidePanel::left("left_panel").show(ctx, |ui| {
             let mut buffer_opt = None;
             if let Some((_, t)) = self.tree.find_active_focused() {
@@ -210,7 +208,7 @@ impl eframe::App for MainWindow {
             if let Some((_, t)) = self.tree.find_active_focused() {
                 buffer_opt = t.1.get_buffer_view();
             }
-            ui.add(crate::show_char_table(ctx, buffer_opt.clone()));
+            ui.add(crate::show_char_table(buffer_opt.clone()));
         });
 
         DockArea::new(&mut self.tree)

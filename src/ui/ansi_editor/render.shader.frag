@@ -3,6 +3,7 @@
 in vec2 UV;
 
 uniform sampler2D u_render_texture;
+uniform vec2      u_position;
 uniform vec4      u_draw_rect;
 uniform vec4      u_draw_area;
 uniform float     u_effect;
@@ -21,12 +22,14 @@ void draw_background() {
 }
 
 void main() {
-	vec2 uv   = (gl_FragCoord.xy - u_draw_rect.xy) / u_draw_rect.zw;
-	vec2 from = u_draw_area.xy / u_draw_rect.zw;
-	vec2 to   = u_draw_area.zw / u_draw_rect.zw;
+	vec2 uv   = (gl_FragCoord.xy) / u_draw_rect.zw - u_draw_rect.xy;
+	vec2 from = u_draw_area.xy;
+	vec2 to   = u_draw_area.zw;
+
 	if (from.x <= uv.x && uv.x < to.x && 
 	    from.y <= uv.y && uv.y < to.y) {
-		color = texture(u_render_texture, (uv - from) / (to - from) ).xyz;
+		vec2 v = (uv - from) / abs(u_draw_area.xw - u_draw_area.zy);
+ 		color = texture(u_render_texture, v).xyz;
 	} else {
 		draw_background();
 	}

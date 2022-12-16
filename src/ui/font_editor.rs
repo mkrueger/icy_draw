@@ -179,6 +179,6 @@ impl Document for FontEditor {
         None
     }
     
-    fn destroy(&self, gl: &glow::Context) {
+    fn destroy(&self, _gl: &glow::Context) {
     }
 }
