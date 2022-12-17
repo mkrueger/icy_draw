@@ -1,5 +1,5 @@
 use eframe::epaint::{Rect, Vec2, PaintCallbackInfo};
-use glow::NativeTexture;
+use glow::{NativeTexture, HasContext};
 use icy_engine::Buffer;
 use std::{
     cmp::max,
@@ -12,14 +12,32 @@ impl BufferView {
     pub fn paint(&self, gl: &glow::Context, info: PaintCallbackInfo, draw_rect: Rect, rect: Rect) {
         use glow::HasContext as _;
         unsafe {
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.framebuffer));            
+            let fb = gl.create_framebuffer().unwrap();
+            let render_texture = gl.create_texture().unwrap();
+            gl.bind_texture(glow::TEXTURE_2D, Some(render_texture));
+
+            gl.scissor(0, 0,self.render_buffer_size.x as i32, self.render_buffer_size.y as i32);
+            gl.tex_image_2d(
+                glow::TEXTURE_2D,
+                0,
+                glow::RGBA as i32,
+                self.render_buffer_size.x as i32,
+                self.render_buffer_size.y as i32,
+                0,
+                glow::RGBA,
+                glow::UNSIGNED_BYTE,
+                None,
+            );
+            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::NEAREST as i32);
+            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST as i32);
+            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(fb));            
             gl.framebuffer_texture(
                 glow::FRAMEBUFFER,
                 glow::COLOR_ATTACHMENT0,
-                Some(self.render_texture),
+                Some(render_texture),
                 0,
             );
-            gl.bind_texture(glow::TEXTURE_2D, Some(self.render_texture));
+
             gl.viewport(
                 0,
                 0,
@@ -163,9 +181,15 @@ impl BufferView {
             gl.bind_vertex_array(Some(self.vertex_array));
             gl.draw_arrays(glow::TRIANGLES, 0, 3);
             gl.draw_arrays(glow::TRIANGLES, 3, 3);
+            gl.delete_framebuffer(fb);
+            
+            gl.scissor(info.clip_rect_in_pixels().left_px as i32, 
+            info.clip_rect_in_pixels().from_bottom_px as i32,
+            info.clip_rect_in_pixels().width_px as i32,
+            info.clip_rect_in_pixels().height_px as i32);
 
             // draw sixels
-            let mut render_texture = self.render_texture;
+            let mut render_texture = render_texture;
             let mut sixel_render_texture = self.sixel_render_texture;
 
             for sixel in &self.sixel_cache {
@@ -239,7 +263,7 @@ impl BufferView {
             // draw Framebuffer
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-
+            
             let view_port = info.clip_rect_in_pixels();
             gl.viewport(
                 view_port.left_px as i32,
@@ -248,7 +272,6 @@ impl BufferView {
                 view_port.height_px as i32,
             );
             gl.use_program(Some(self.draw_program));
-            gl.active_texture(glow::TEXTURE0);
 
             println!("{:?} == {:?}", draw_rect, rect);
             gl.uniform_2_f32(
@@ -260,8 +283,9 @@ impl BufferView {
             gl.uniform_1_i32(
                 gl.get_uniform_location(self.draw_program, "u_render_texture")
                     .as_ref(),
-                0,
+                1,
             );
+            gl.active_texture(glow::TEXTURE0 + 1);
             gl.bind_texture(glow::TEXTURE_2D, Some(render_texture));
             gl.uniform_1_f32(
                 gl.get_uniform_location(self.draw_program, "u_effect")
@@ -290,6 +314,7 @@ impl BufferView {
             gl.bind_vertex_array(Some(self.vertex_array));
             gl.draw_arrays(glow::TRIANGLES, 0, 3);
             gl.draw_arrays(glow::TRIANGLES, 3, 3);
+            gl.delete_texture(render_texture);
         }
     }
 
@@ -418,6 +443,7 @@ impl BufferView {
                 self.render_buffer_size = render_buffer_size;
             }
         }
+
     }
 }
 
