@@ -1,4 +1,6 @@
-use std::{rc::Rc, cell::{RefCell, RefMut}, cmp::{max, min}};
+use std::{sync::{Arc, Mutex}};
+use crate::ansi_editor::BufferView;
+
 pub use super::{Editor, Event};
 
 pub mod brush_imp;
@@ -18,7 +20,7 @@ mod icons;
 
 use eframe::{egui};
 use egui_extras::RetainedImage;
-use icy_engine::{Position, TextAttribute};
+use icy_engine::{Position, AttributedChar};
 pub use scan_lines::*;
 pub mod scan_lines;
 
@@ -289,22 +291,20 @@ pub trait Tool
         }
         Event::None
     }
-
-    fn handle_click(&mut self, _editor: Rc<RefCell<Editor>>, _button: u32, _pos: Position) -> Event {
+*/
+    fn handle_click(&mut self, _buffer_view: Arc<Mutex<BufferView>>, _button: i32, _pos: Position) -> Event {
         Event::None
     }
 
-    fn handle_drag_begin(&mut self, _editor: Rc<RefCell<Editor>>, _start: Position, _cur: Position) -> Event {
+    fn handle_drag_begin(&mut self, _buffer_view: Arc<Mutex<BufferView>>, _start: Position, _cur: Position) -> Event {
         Event::None
     }
-
-    fn handle_drag(&self, _editor: Rc<RefCell<Editor>>, _start: Position, _cur: Position) -> Event {
+    fn handle_drag(&self, _buffer_view: Arc<Mutex<BufferView>>, _start: Position, _cur: Position) -> Event {
         Event::None
     }
-
-    fn handle_drag_end(&self, _editor: Rc<RefCell<Editor>>, _start: Position, _cur: Position) -> Event {
+    fn handle_drag_end(&self, _buffer_view: Arc<Mutex<BufferView>>, _start: Position, _cur: Position) -> Event {
         Event::None
-    }*/
+    }
 }
 
 
@@ -344,10 +344,10 @@ trait Plottable {
     fn get_char_code(&self) -> char;
 }
 
-fn plot_point(editor: &Rc<RefCell<Editor>>, tool: &dyn Plottable, pos: Position)
+fn plot_point(editor: &mut Editor, tool: &dyn Plottable, pos: Position)
 {
-  /*   let ch = editor.borrow().get_char_from_cur_layer(pos).unwrap_or_default();
-    let editor_attr = editor.borrow().caret.get_attribute();
+    let ch = editor.get_char_from_cur_layer(pos).unwrap_or_default();
+    let editor_attr = editor.caret.get_attribute();
     let mut attribute= ch.attribute;
     if tool.get_use_back() {
         attribute.set_background(editor_attr.get_background());
@@ -358,61 +358,49 @@ fn plot_point(editor: &Rc<RefCell<Editor>>, tool: &dyn Plottable, pos: Position)
 
     match tool.get_draw_mode() {
         DrawMode::Line => {
-            if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
+            if let Some(layer) = editor.get_overlay_layer() {
                 layer.set_char(
                     pos,
-                    Some(DosChar {
-                        char_code: 219,
-                        attribute,
-                    }),
+                    Some(AttributedChar::new(unsafe { char::from_u32_unchecked(219) }, attribute)),
                 );
             }
         },
         DrawMode::Char => {
-            if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
+            if let Some(layer) = editor.get_overlay_layer() {
                 layer.set_char(
                     pos,
-                    Some(DosChar {
-                        char_code: tool.get_char_code(),
-                        attribute,
-                    }),
+                    Some(AttributedChar::new(tool.get_char_code(),attribute)),
                 );
             }
         },
         DrawMode::Shade => {
             let mut char_code = SHADE_GRADIENT[0];
-            if ch.char_code == SHADE_GRADIENT[SHADE_GRADIENT.len() -1] {
+            if ch.ch == SHADE_GRADIENT[SHADE_GRADIENT.len() -1] {
                 char_code = SHADE_GRADIENT[SHADE_GRADIENT.len() -1];
             } else {
                 for i in 0..SHADE_GRADIENT.len() - 1 {
-                    if ch.char_code == SHADE_GRADIENT[i] {
+                    if ch.ch == SHADE_GRADIENT[i] {
                         char_code = SHADE_GRADIENT[i + 1];
                         break;
                     }
                 }
             }
-            if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
+            if let Some(layer) = editor.get_overlay_layer() {
                 layer.set_char(
                     pos,
-                    Some(DosChar {
-                        char_code,
-                        attribute,
-                    }),
+                    Some(AttributedChar::new(char_code, attribute)),
                 );
             }
         }
         DrawMode::Colorize => {
-            if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
+            if let Some(layer) = editor.get_overlay_layer() {
                 layer.set_char(
                     pos,
-                    Some(DosChar {
-                        char_code: ch.char_code,
-                        attribute,
-                    }),
+                    Some(AttributedChar::new(ch.ch, attribute)),
                 );
             }
         }
-    }*/
+    }
 }
 
-pub static SHADE_GRADIENT: [u16;4] = [176, 177, 178, 219];
+pub static SHADE_GRADIENT: [char;4] = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];

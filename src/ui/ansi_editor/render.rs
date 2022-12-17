@@ -1,8 +1,7 @@
 use eframe::epaint::{Rect, Vec2, PaintCallbackInfo};
-use glow::{NativeTexture, HasContext};
+use glow::{NativeTexture};
 use icy_engine::Buffer;
 use std::{
-    cmp::max,
     time::{SystemTime, UNIX_EPOCH}, sync::Arc,
 };
 
@@ -273,7 +272,6 @@ impl BufferView {
             );
             gl.use_program(Some(self.draw_program));
 
-            println!("{:?} == {:?}", draw_rect, rect);
             gl.uniform_2_f32(
                 gl.get_uniform_location(self.program, "u_position").as_ref(),
                 draw_rect.left(),

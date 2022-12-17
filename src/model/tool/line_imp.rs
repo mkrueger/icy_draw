@@ -1,9 +1,12 @@
+use std::sync::{Arc, Mutex};
+
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::TextAttribute;
+use icy_engine::{TextAttribute, AttributedChar, Rectangle};
 
-use super::{Editor, Event, MKey, MKeyCode, MModifiers, Position, Tool, DrawMode, Plottable, plot_point, brush_imp::draw_glyph};
-use std::{cell::RefCell, rc::Rc};
+use crate::{ansi_editor::BufferView, model::ScanLines};
+
+use super::{Editor, Position, Tool, DrawMode, Plottable, brush_imp::draw_glyph, Event, plot_point};
 
 pub struct LineTool {
     pub draw_mode: DrawMode,
@@ -40,8 +43,7 @@ const HORIZ_UP_CHAR:i32 = 8;
 const HORIZ_DOWN_CHAR:i32 = 9;
 
 impl LineTool {
-/*
-    pub fn get_new_horiz_char(editor: &std::cell::RefMut<Editor>, new_char: u16, to_left: bool) -> i32
+    pub fn get_new_horiz_char(editor: &mut Editor, new_char: u16, to_left: bool) -> i32
     {
         if new_char == editor.get_outline_char_code(VERTICAL_CHAR).unwrap() {
             if to_left { 
@@ -58,7 +60,7 @@ impl LineTool {
         }
     }
 
-    pub fn get_old_horiz_char(&self, editor: &std::cell::RefMut<Editor>, old_char: u16, to_left: bool) -> Option<u16>
+    pub fn get_old_horiz_char(&self, editor:  &mut Editor, old_char: u16, to_left: bool) -> Option<u16>
     {
         let pos = editor.get_caret_position();
         if old_char == editor.get_outline_char_code(VERTICAL_CHAR).unwrap() {
@@ -78,7 +80,7 @@ impl LineTool {
         }
     }
 
-    pub fn get_new_vert_char(editor: &std::cell::RefMut<Editor>, new_char: u16, to_left: bool) -> i32
+    pub fn get_new_vert_char(editor: &mut Editor, new_char: u16, to_left: bool) -> i32
     {
         if new_char == editor.get_outline_char_code(HORIZONTAL_CHAR).unwrap() {
             if to_left { 
@@ -95,7 +97,7 @@ impl LineTool {
         }
     }
 
-    pub fn get_old_vert_char(&self, editor: &std::cell::RefMut<Editor>, old_char: u16, to_left: bool) -> Option<u16>
+    pub fn get_old_vert_char(&self, editor: &mut Editor, old_char: u16, to_left: bool) -> Option<u16>
     {
         let pos = editor.get_caret_position();
         if old_char == editor.get_outline_char_code(HORIZONTAL_CHAR).unwrap() {
@@ -112,8 +114,6 @@ impl LineTool {
             None
         }
     }
-
-*/
 }
 
 // block tools:
@@ -123,7 +123,7 @@ impl Tool for LineTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage { &super::icons::LINE_SVG }
     fn use_selection(&self) -> bool { false }
     
-    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
     {
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
@@ -155,7 +155,7 @@ impl Tool for LineTool {
         _key_code: MKeyCode,
         modifier: MModifiers,
     ) -> Event {
-        let mut e = editor.borrow_mut();
+        let mut e = editor;
         let old_pos = e.get_caret_position();
         match key {
             MKey::Down => {
@@ -283,42 +283,45 @@ impl Tool for LineTool {
 
         self.old_pos = old_pos;
         Event::None
-    }
+    }*/
 
-    fn handle_click(&mut self, editor: Rc<RefCell<Editor>>, button: u32, pos: Position) -> Event {
-        let mut editor = editor.borrow_mut();
+    fn handle_click(&mut self, buffer_view: Arc<Mutex<BufferView>>, button: i32, pos: Position) -> Event {
         if button == 1 {
-            std::borrow::BorrowMut::borrow_mut(&mut editor)
-                .set_caret_position(pos);
+            let editor = &mut buffer_view.lock().unwrap().editor;
+            editor.set_caret_position(pos);
         }
         Event::None
     }
 
 
-    fn handle_drag(&self, editor: Rc<RefCell<Editor>>, start: Position, cur: Position) -> Event
+    fn handle_drag(&self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event
     {
-        if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
+        if let Some(layer) = buffer_view.lock().unwrap().editor.get_overlay_layer() {
             layer.clear();
         }
 
         let mut lines = ScanLines::new(1);
         if self.draw_mode == DrawMode::Line {
-            lines.add_line(Position::from(start.x, start.y * 2), Position::from(cur.x, cur.y * 2));
-            let col = editor.borrow().caret.get_attribute().get_foreground();
+            lines.add_line(Position::new(start.x, start.y * 2), Position::new(cur.x, cur.y * 2));
+            let col = buffer_view.lock().unwrap().editor.caret.get_attribute().get_foreground();
+            let buffer_view = buffer_view.clone();
             let draw = move |rect: Rectangle| {
+                let editor = &mut buffer_view.lock().unwrap().editor;
                 for y in 0..rect.size.height {
                     for x in 0..rect.size.width {
-                        set_half_block(&editor, Position::from(rect.start.x + x, rect.start.y + y ), col);
+                        set_half_block(editor, Position::new(rect.start.x + x, rect.start.y + y ), col);
                     }
                 }
             };
             lines.fill(draw);
         } else {
             lines.add_line(start, cur);
+            let buffer_view = buffer_view.clone();
             let draw = move |rect: Rectangle| {
+                let editor = &mut buffer_view.lock().unwrap().editor;
                 for y in 0..rect.size.height {
                     for x in 0..rect.size.width {
-                        plot_point(&editor, self, Position::from(rect.start.x + x, rect.start.y + y));
+                        plot_point(editor, self, Position::new(rect.start.x + x, rect.start.y + y));
                     }
                 }
             };
@@ -328,8 +331,8 @@ impl Tool for LineTool {
         Event::None
     }
 
-    fn handle_drag_end(&self, editor: Rc<RefCell<Editor>>, start: Position, cur: Position) -> Event {
-        let mut editor = editor.borrow_mut();
+    fn handle_drag_end(&self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event {
+        let editor = &mut buffer_view.lock().unwrap().editor;
         if start == cur {
             editor.buf.remove_overlay();
         } else {
@@ -339,11 +342,11 @@ impl Tool for LineTool {
     }
 }
 
-fn get_half_block(editor: &Rc<RefCell<Editor>>, pos: Position) -> (Position, i32, bool, bool, u8, u8, u8 ,u8, bool, u8, u8)
+fn get_half_block(editor: &mut Editor, pos: Position) -> (Position, i32, bool, bool, u32, u32, u32 ,u32, bool, u32, u32)
 {
     let text_y = pos.y / 2;
     let is_top = pos.y % 2 == 0;
-    let block = editor.borrow_mut().get_char(Position::from(pos.x, text_y)).unwrap_or_default();
+    let block = editor.get_char(Position::new(pos.x, text_y)).unwrap_or_default();
 
     let mut upper_block_color = 0;
     let mut lower_block_color = 0;
@@ -351,7 +354,7 @@ fn get_half_block(editor: &Rc<RefCell<Editor>>, pos: Position) -> (Position, i32
     let mut right_block_color = 0;
     let mut is_blocky = false;
     let mut is_vertically_blocky = false;
-    match block.char_code {
+    match block.ch as u8 {
         0 | 32 |255 => { upper_block_color = block.attribute.get_background(); lower_block_color = block.attribute.get_background(); is_blocky = true; }
         220 => { upper_block_color = block.attribute.get_background(); lower_block_color = block.attribute.get_foreground(); is_blocky = true; }
         223 => { upper_block_color = block.attribute.get_foreground(); lower_block_color = block.attribute.get_background(); is_blocky = true; }
@@ -383,9 +386,9 @@ fn get_half_block(editor: &Rc<RefCell<Editor>>, pos: Position) -> (Position, i32
     )
 }
 
-pub fn set_half_block(editor: &Rc<RefCell<Editor>>, pos: Position, col: u8) {
-    let w = editor.borrow().buf.width as i32;
-    let h = editor.borrow().buf.height as i32;
+pub fn set_half_block(editor: &mut Editor, pos: Position, col: u32) {
+    let w = editor.buf.get_buffer_width() as i32;
+    let h = editor.buf.get_real_buffer_height() as i32;
 
     if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 { return }
 
@@ -393,52 +396,52 @@ pub fn set_half_block(editor: &Rc<RefCell<Editor>>, pos: Position, col: u8) {
         upper_block_color, lower_block_color, _,  _, 
         is_top, _, block_back) = get_half_block(editor, pos);
     
-        let pos = Position::from(pos.x, text_y);
+        let pos = Position::new(pos.x, text_y);
         if is_blocky {
         if (is_top && lower_block_color == col) || (!is_top && upper_block_color == col) {
-            if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                layer.set_char(pos,Some(DosChar::from(219, TextAttribute::from_color(col, 0))));
+            if let Some(layer) = editor.get_overlay_layer() {
+                layer.set_char(pos,Some(AttributedChar::new('\u{00DB}', TextAttribute::new(col, 0))));
             }
         } else if is_top {
-            if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                layer.set_char(pos,Some(DosChar::from(223, TextAttribute::from_color(col, lower_block_color))));
+            if let Some(layer) = editor.get_overlay_layer() {
+                layer.set_char(pos,Some(AttributedChar::new('\u{00DF}', TextAttribute::new(col, lower_block_color))));
             }
-        } else if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-            layer.set_char(pos,Some(DosChar::from(220, TextAttribute::from_color(col, upper_block_color))));
+        } else if let Some(layer) = editor.get_overlay_layer() {
+            layer.set_char(pos,Some(AttributedChar::new('\u{00DC}', TextAttribute::new(col, upper_block_color))));
         }
     } else if is_top {
-        if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-            layer.set_char(pos,Some(DosChar::from(223, TextAttribute::from_color(col, block_back))));
+        if let Some(layer) = editor.get_overlay_layer() {
+            layer.set_char(pos,Some(AttributedChar::new('\u{00DF}', TextAttribute::new(col, block_back))));
         }
-    } else if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-        layer.set_char(pos,Some(DosChar::from(220, TextAttribute::from_color(col, block_back))));
+    } else if let Some(layer) = editor.get_overlay_layer() {
+        layer.set_char(pos,Some(AttributedChar::new('\u{00DC}', TextAttribute::new(col, block_back))));
     }
-    optimize_block(editor ,Position::from(pos.x, text_y));
+    optimize_block(editor ,Position::new(pos.x, text_y));
 }
 
 
-fn optimize_block(editor: &Rc<RefCell<Editor>>, pos: Position) {
-    let block = if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
+fn optimize_block(editor: &mut Editor, pos: Position) {
+    let block = if let Some(layer) = editor.get_overlay_layer() {
         layer.get_char(pos).unwrap_or_default()
     }  else {
-        DosChar::new()
+        AttributedChar::default()
     };
 
     if block.attribute.get_foreground() == 0 {
-        if block.attribute.get_background() == 0 || block.char_code == 219 {
-            if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                layer.set_char(pos,Some(DosChar::new()));
+        if block.attribute.get_background() == 0 || block.ch == '\u{00DB}' {
+            if let Some(layer) = editor.get_overlay_layer() {
+                layer.set_char(pos,Some(AttributedChar::default()));
             }
         } else {
-            match block.char_code {
+            match block.ch as u8 {
                 220 => { 
-                    if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                        layer.set_char(pos,Some(DosChar::from(223, TextAttribute::from_color(block.attribute.get_background(), block.attribute.get_foreground()))));
+                    if let Some(layer) = editor.get_overlay_layer() {
+                        layer.set_char(pos,Some(AttributedChar::new('\u{00DF}', TextAttribute::new(block.attribute.get_background(), block.attribute.get_foreground()))));
                     }
                 }
                 223 => { 
-                    if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                        layer.set_char(pos,Some(DosChar::from(220, TextAttribute::from_color(block.attribute.get_background(), block.attribute.get_foreground()))));
+                    if let Some(layer) = editor.get_overlay_layer() {
+                        layer.set_char(pos,Some(AttributedChar::new('\u{00DC}', TextAttribute::new(block.attribute.get_background(), block.attribute.get_foreground()))));
                     }
                 }
                 _ => {}
@@ -450,33 +453,33 @@ fn optimize_block(editor: &Rc<RefCell<Editor>>, pos: Position) {
             _, _, _) = get_half_block(editor, pos);
 
         if is_blocky {
-            match block.char_code {
+            match block.ch as u8 {
                 220 => { 
-                    if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                        layer.set_char(pos,Some(DosChar::from(223, TextAttribute::from_color(block.attribute.get_background(), block.attribute.get_foreground()))));
+                    if let Some(layer) = editor.get_overlay_layer() {
+                        layer.set_char(pos,Some(AttributedChar::new('\u{00DF}', TextAttribute::new(block.attribute.get_background(), block.attribute.get_foreground()))));
                     }
                 }
                 223 => { 
-                    if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                        layer.set_char(pos,Some(DosChar::from(220, TextAttribute::from_color(block.attribute.get_background(), block.attribute.get_foreground()))));
+                    if let Some(layer) = editor.get_overlay_layer() {
+                        layer.set_char(pos,Some(AttributedChar::new('\u{00DC}', TextAttribute::new(block.attribute.get_background(), block.attribute.get_foreground()))));
                     }
                 }
                 _ => {}
             }
         } else if is_vertically_blocky {
-            match block.char_code {
+            match block.ch as u8 {
                 221 => { 
-                    if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                        layer.set_char(pos,Some(DosChar::from(222, TextAttribute::from_color(block.attribute.get_background(), block.attribute.get_foreground()))));
+                    if let Some(layer) = editor.get_overlay_layer() {
+                        layer.set_char(pos,Some(AttributedChar::new('\u{00DE}', TextAttribute::new(block.attribute.get_background(), block.attribute.get_foreground()))));
                     }
                 }
                 222 => { 
-                    if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
-                        layer.set_char(pos,Some(DosChar::from(221, TextAttribute::from_color(block.attribute.get_background(), block.attribute.get_foreground()))));
+                    if let Some(layer) = editor.get_overlay_layer() {
+                        layer.set_char(pos,Some(AttributedChar::new('\u{00DD}', TextAttribute::new(block.attribute.get_background(), block.attribute.get_foreground()))));
                     }
                 }
                 _ => {}
             }
         }
-    }*/
+    }
 }

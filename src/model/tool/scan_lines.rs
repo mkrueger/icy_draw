@@ -132,8 +132,8 @@ impl ScanLines {
         }
     }*/
 
-    pub fn fill<T>(&self, draw: T) where
-        T: Fn(Rectangle),
+    pub fn fill<T>(&self, mut draw: T) where
+        T: FnMut(Rectangle),
     {
         for row in &self.rows {
             let (min, max) = row.1.get_min_max();
@@ -202,6 +202,7 @@ impl ScanLines {
             rows: HashMap::new(),
         }
     }
+
     pub fn outline<T>(&self, draw: T)
         where
             T: Fn(Rectangle)

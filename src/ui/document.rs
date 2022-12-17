@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::{egui};
-use crate::TerminalResult;
+use crate::{TerminalResult, model::Tool};
 
 use super::ansi_editor::BufferView;
 
@@ -11,7 +11,7 @@ pub trait Document {
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()>;
 
-    fn show_ui(&mut self, ui: &mut egui::Ui);
+    fn show_ui(&mut self, ui: &mut egui::Ui, cur_tool: &mut Box<dyn Tool>);
 
     fn destroy(&self, gl: &glow::Context);
     

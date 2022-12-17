@@ -11,8 +11,7 @@ use super::ansi_editor::AnsiEditor;
 use egui_file::FileDialog;
 
 pub struct MainWindow {
-    pub tools: Vec<Box<dyn Tool>>,
-    pub selected_tool: usize,
+    pub tab_viewer: TabViewer,
     tree: Tree<(String, Box<dyn Document>)>,
     gl: Arc<Context>,
 
@@ -93,8 +92,10 @@ impl MainWindow {
         tools.push(Box::new(crate::model::move_layer_imp::MoveLayer { pos: icy_engine::Position { x: 0, y: 0 } }));
 
         let view = MainWindow {
-            tools,
-            selected_tool: 0,
+            tab_viewer: TabViewer {
+                tools,
+                selected_tool: 0
+            },
             tree,
             gl: cc.gl.clone().unwrap(),
             opened_file: None,
@@ -133,15 +134,16 @@ impl MainWindow {
 }
 
 
-struct TabViewer {
-
+pub struct TabViewer {
+    pub tools: Vec<Box<dyn Tool>>,
+    pub selected_tool: usize,
 }
 
 impl egui_dock::TabViewer for TabViewer {
     type Tab = (String, Box<dyn Document>);
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        tab.1.show_ui(ui);
+        tab.1.show_ui(ui, &mut self.tools[self.selected_tool]);
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
@@ -200,7 +202,7 @@ impl eframe::App for MainWindow {
             ui.add(crate::palette_editor_16(buffer_opt.clone()));
             crate::add_tool_switcher(ctx, ui, self);
 
-            if let Some(tool) = self.tools.get_mut(self.selected_tool) {
+            if let Some(tool) = self.tab_viewer.tools.get_mut(self.tab_viewer.selected_tool) {
                 tool.show_ui(ctx, ui, buffer_opt.clone());
             }
         });
@@ -215,7 +217,7 @@ impl eframe::App for MainWindow {
 
         DockArea::new(&mut self.tree)
             .style(Style::from_egui(ctx.style().as_ref()))
-            .show(ctx, &mut TabViewer {});
+            .show(ctx, &mut self.tab_viewer);
 
         if let Some(dialog) = &mut self.open_file_dialog {
             if dialog.show(ctx).selected() {

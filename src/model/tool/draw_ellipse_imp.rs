@@ -1,12 +1,12 @@
+use std::sync::{Arc, Mutex};
+
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::TextAttribute;
+use icy_engine::{TextAttribute, Rectangle};
 
-use super::{ DrawMode, Editor, Event, Plottable, Position, Tool, ScanLines, brush_imp::draw_glyph};
-use std::{
-    cell::RefCell,
-    rc::Rc,
-};
+use crate::ansi_editor::BufferView;
+
+use super::{ DrawMode, Event, Plottable, Position, Tool, ScanLines, brush_imp::draw_glyph, line_imp::set_half_block};
 
 pub struct DrawEllipseTool {
     pub draw_mode: DrawMode,
@@ -43,7 +43,7 @@ impl Tool for DrawEllipseTool {
         false
     }
 
-    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
     {
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
@@ -68,9 +68,8 @@ impl Tool for DrawEllipseTool {
         ui.radio_value(&mut self.draw_mode, DrawMode::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
     }
 
-/*
-    fn handle_drag(&self, editor: Rc<RefCell<Editor>>, mut start: Position, mut cur: Position) -> Event {
-        if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
+    fn handle_drag(&self, buffer_view: Arc<Mutex<BufferView>>, mut start: Position, mut cur: Position) -> Event {
+        if let Some(layer) = buffer_view.lock().unwrap().editor.get_overlay_layer() {
             layer.clear();
         }
 
@@ -87,11 +86,13 @@ impl Tool for DrawEllipseTool {
             lines.add_ellipse(Rectangle::from_pt(cur, start));
         }
 
-        let col = editor.borrow().caret.get_attribute().get_foreground();
+        let col = buffer_view.lock().unwrap().editor.caret.get_attribute().get_foreground();
+        let buffer_view = buffer_view.clone();
         let draw = move |rect: Rectangle| {
+            let editor = &mut buffer_view.lock().unwrap().editor;
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
-                    set_half_block(&editor, Position::from(rect.start.x + x, rect.start.y + y ), col);
+                    set_half_block(editor, Position::new(rect.start.x + x, rect.start.y + y ), col);
                 }
             }
         };
@@ -101,16 +102,16 @@ impl Tool for DrawEllipseTool {
 
     fn handle_drag_end(
         &self,
-        editor: Rc<RefCell<Editor>>,
+        buffer_view: Arc<Mutex<BufferView>>,
         start: Position,
         cur: Position,
     ) -> Event {
-        let mut editor = editor.borrow_mut();
+        let editor = &mut buffer_view.lock().unwrap().editor;
         if start == cur {
             editor.buf.remove_overlay();
         } else {
             editor.join_overlay();
         }
         Event::None
-    }*/
+    }
 }

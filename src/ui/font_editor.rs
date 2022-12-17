@@ -4,7 +4,7 @@ use eframe::{egui::{self, Sense, RichText}, epaint::{Color32, Rounding, Vec2, Re
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont};
 
-use crate::{Document, TerminalResult};
+use crate::{Document, TerminalResult, model::Tool};
 
 use super::ansi_editor::BufferView;
 
@@ -145,7 +145,7 @@ impl Document for FontEditor {
         self.is_dirty
     }
 
-    fn show_ui(&mut self, ui: &mut eframe::egui::Ui) {
+    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, cur_tool: &mut Box<dyn Tool>) {
         ui.vertical_centered(|ui| {
             ui.add(self.edit_glyph())
         });

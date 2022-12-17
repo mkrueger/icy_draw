@@ -1,12 +1,12 @@
+use std::sync::{Arc, Mutex};
+
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::TextAttribute;
+use icy_engine::{TextAttribute, Rectangle};
 
-use super::{plot_point, DrawMode, Editor, Event, Plottable, Position, Tool, ScanLines, brush_imp::draw_glyph };
-use std::{
-    cell::RefCell,
-    rc::Rc,
-};
+use crate::ansi_editor::BufferView;
+
+use super::{plot_point, DrawMode, Event, Plottable, Position, Tool, ScanLines, brush_imp::draw_glyph };
 
 pub struct DrawEllipseFilledTool {
     pub draw_mode: DrawMode,
@@ -43,7 +43,7 @@ impl Tool for DrawEllipseFilledTool {
         false
     }
 
-    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
     {
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
@@ -68,9 +68,8 @@ impl Tool for DrawEllipseFilledTool {
         ui.radio_value(&mut self.draw_mode, DrawMode::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
     }
 
-/*
-    fn handle_drag(&self, editor: Rc<RefCell<Editor>>, start: Position, cur: Position) -> Event {
-        if let Some(layer) = editor.borrow_mut().get_overlay_layer() {
+    fn handle_drag(&self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event {
+        if let Some(layer) = buffer_view.lock().unwrap().editor.get_overlay_layer() {
             layer.clear();
         }
 
@@ -83,9 +82,10 @@ impl Tool for DrawEllipseFilledTool {
         }
 
         let draw = move |rect: Rectangle| {
+            let editor = &mut buffer_view.lock().unwrap().editor;
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
-                    plot_point(&editor, self, Position::from(rect.start.x + x, rect.start.y + y));
+                    plot_point(editor, self, Position::new(rect.start.x + x, rect.start.y + y));
                 }
             }
         };
@@ -95,16 +95,16 @@ impl Tool for DrawEllipseFilledTool {
 
     fn handle_drag_end(
         &self,
-        editor: Rc<RefCell<Editor>>,
+        buffer_view: Arc<Mutex<BufferView>>,
         start: Position,
         cur: Position,
     ) -> Event {
-        let mut editor = editor.borrow_mut();
+        let editor = &mut buffer_view.lock().unwrap().editor;
         if start == cur {
             editor.buf.remove_overlay();
         } else {
             editor.join_overlay();
         }
         Event::None
-    } */
+    } 
 }
