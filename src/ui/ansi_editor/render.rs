@@ -99,9 +99,9 @@ impl BufferView {
                 4,
             );
 
-            match &self.selection_opt {
+            match &self.editor.cur_selection {
                 Some(sel) => {
-                    if sel.is_empty() {
+                    if sel.rectangle.size.width == 0 {
                         gl.uniform_4_f32(
                             gl.get_uniform_location(self.program, "u_selection")
                                 .as_ref(),
@@ -116,41 +116,19 @@ impl BufferView {
                             -1.0,
                         );
                     } else {
-                        if sel.anchor.1.floor() < sel.lead.1.floor()
-                            || sel.anchor.1.floor() == sel.lead.1.floor()
-                                && sel.anchor.0 < sel.lead.0
-                        {
-                            gl.uniform_4_f32(
-                                gl.get_uniform_location(self.program, "u_selection")
-                                    .as_ref(),
-                                sel.anchor.0.floor(),
-                                sel.anchor.1.floor() - sbl,
-                                sel.lead.0.floor(),
-                                sel.lead.1.floor() - sbl,
-                            );
-                        } else {
-                            gl.uniform_4_f32(
-                                gl.get_uniform_location(self.program, "u_selection")
-                                    .as_ref(),
-                                sel.lead.0.floor(),
-                                sel.lead.1.floor() - sbl,
-                                sel.anchor.0.floor(),
-                                sel.anchor.1.floor() - sbl,
-                            );
-                        }
-                        if sel.block_selection {
-                            gl.uniform_1_f32(
-                                gl.get_uniform_location(self.program, "u_selection_attr")
-                                    .as_ref(),
-                                1.0,
-                            );
-                        } else {
-                            gl.uniform_1_f32(
-                                gl.get_uniform_location(self.program, "u_selection_attr")
-                                    .as_ref(),
-                                0.0,
-                            );
-                        }
+                        gl.uniform_4_f32(
+                            gl.get_uniform_location(self.program, "u_selection")
+                                .as_ref(),
+                                sel.rectangle.start.x as f32,
+                                sel.rectangle.start.y as f32 - self.scroll_first_line as f32,
+                                sel.rectangle.lower_right().x as f32 - 1.,
+                                sel.rectangle.lower_right().y as f32 - self.scroll_first_line as f32 - 1.,
+                        );
+                        gl.uniform_1_f32(
+                            gl.get_uniform_location(self.program, "u_selection_attr")
+                                .as_ref(),
+                            1.0,
+                        );
                     }
                 }
                 None => {

@@ -268,6 +268,7 @@ impl ScanLines {
         }
 
         // fill top/bottom
+        if rows.len() == 0 { return; }
         let row = rows[0];
         draw(Rectangle::from_coords(row.1, row.0, row.2, row.0));
         let row = rows[rows.len() - 1];

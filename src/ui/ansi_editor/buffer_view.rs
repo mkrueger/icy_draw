@@ -1,8 +1,8 @@
-use std::{cmp::{max, min},  sync::Arc};
+use std::{sync::Arc};
 use eframe::{epaint::{Vec2}};
 use glow::NativeTexture;
 
-use icy_engine::{Buffer, BufferParser, CallbackAction, EngineResult, Position, Selection};
+use icy_engine::{Buffer, BufferParser, CallbackAction, EngineResult, Position};
 
 use crate::{ui::ansi_editor::{create_buffer_texture, create_palette_texture, create_font_texture}, model::Editor};
 
@@ -49,8 +49,6 @@ pub struct BufferView {
     pub scroll_first_line: i32,
 
     pub button_pressed: bool,
-
-    pub selection_opt: Option<Selection>,
 
     pub program: glow::Program,
     pub vertex_array: glow::VertexArray,
@@ -451,7 +449,6 @@ void main() {
                 redraw_palette: false,
                 redraw_font: false,
                 scroll_first_line: 0,
-                selection_opt: None,
                 colors,
                 fonts,
                 program,
@@ -478,58 +475,23 @@ void main() {
     }
 
     pub fn get_copy_text(&mut self, buffer_parser: &Box<dyn BufferParser>) -> Option<String> {
-        let Some(selection) = &self.selection_opt else {
+        let Some(selection) = &self.editor.cur_selection else {
             return None;
         };
 
         let mut res = String::new();
-        if selection.block_selection {
-            let start = Position::new(
-                min(selection.anchor_pos.x, selection.lead_pos.x),
-                min(selection.anchor_pos.y, selection.lead_pos.y),
-            );
-            let end = Position::new(
-                max(selection.anchor_pos.x, selection.lead_pos.x),
-                max(selection.anchor_pos.y, selection.lead_pos.y),
-            );
-            for y in start.y..=end.y {
-                for x in start.x..end.x {
-                    let ch = self.editor.get_char(Position::new(x, y)).unwrap();
-                    res.push(buffer_parser.to_unicode(ch.ch));
-                }
-                res.push('\n');
+
+        let start = selection.rectangle.start;
+        let end = selection.rectangle.lower_right();
+
+        for y in start.y..=end.y {
+            for x in start.x..end.x {
+                let ch = self.editor.get_char(Position::new(x, y)).unwrap();
+                res.push(buffer_parser.to_unicode(ch.ch));
             }
-        } else {
-            let (start, end) = if selection.anchor_pos < selection.lead_pos {
-                (selection.anchor_pos, selection.lead_pos)
-            } else {
-                (selection.lead_pos, selection.anchor_pos)
-            };
-            if start.y != end.y {
-                for x in start.x..self.editor.buf.get_line_length(start.y) {
-                    let ch = self.editor.get_char(Position::new(x, start.y)).unwrap();
-                    res.push(buffer_parser.to_unicode(ch.ch));
-                }
-                res.push('\n');
-                for y in start.y + 1..end.y {
-                    for x in 0..self.editor.buf.get_line_length(y) {
-                        let ch = self.editor.get_char(Position::new(x, y)).unwrap();
-                        res.push(buffer_parser.to_unicode(ch.ch));
-                    }
-                    res.push('\n');
-                }
-                for x in 0..=end.x {
-                    let ch = self.editor.get_char(Position::new(x, end.y)).unwrap();
-                    res.push(buffer_parser.to_unicode(ch.ch));
-                }
-            } else {
-                for x in start.x..=end.x {
-                    let ch = self.editor.get_char(Position::new(x, start.y)).unwrap();
-                    res.push(buffer_parser.to_unicode(ch.ch));
-                }
-            }
+            res.push('\n');
         }
-        self.selection_opt = None;
+        self.editor.cur_selection = None;
         Some(res)
     }
 

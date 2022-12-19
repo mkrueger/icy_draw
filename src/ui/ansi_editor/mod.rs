@@ -187,10 +187,7 @@ impl Document for AnsiEditor {
                         } => {
                             if rect.contains(*pos) {
                                 let buffer_view = self.buffer_view.clone();
-                                let click_pos =
-                                    (*pos - rect.min - Vec2::new(0., top_margin_height))
-                                        / char_size
-                                        + Vec2::new(0.0, first_line as f32);
+                                let click_pos = calc_click_pos(pos, rect, top_margin_height, char_size, first_line);
                                 let b = match button {
                                     PointerButton::Primary => 1,
                                     PointerButton::Secondary => 2,
@@ -212,20 +209,14 @@ impl Document for AnsiEditor {
                         } => {
                             self.pressed_button = -1;
                             let buffer_view = self.buffer_view.clone();
-                            let click_pos =
-                                (*pos - rect.min - Vec2::new(0., top_margin_height))
-                                    / char_size
-                                    + Vec2::new(0.0, first_line as f32);
+                            let click_pos = calc_click_pos(pos, rect, top_margin_height, char_size, first_line);
                             cur_tool.handle_drag_end(buffer_view, self.drag_start, Position::new(click_pos.x as i32, click_pos.y as i32));
                         }
 
                         egui::Event::PointerMoved(pos) => {
                             if self.pressed_button >= 0 {
                                 let buffer_view = self.buffer_view.clone();
-                                let click_pos =
-                                    (*pos - rect.min - Vec2::new(0., top_margin_height))
-                                        / char_size
-                                        + Vec2::new(0.0, first_line as f32);
+                                let click_pos = calc_click_pos(pos, rect, top_margin_height, char_size, first_line);
                                 let cur  =Position::new(click_pos.x as i32, click_pos.y as i32);
                                 if self.drag_pos != cur {
                                     self.drag_pos = cur;
@@ -288,6 +279,12 @@ impl Document for AnsiEditor {
     fn destroy(&self, gl: &glow::Context) {
         self.buffer_view.lock().unwrap().destroy(gl);
     }
+}
+
+fn calc_click_pos(pos: &Pos2, rect: Rect, top_margin_height: f32, char_size: Vec2, first_line: i32) -> Vec2 {
+    (*pos - rect.min - Vec2::new(0., top_margin_height))
+        / char_size
+        + Vec2::new(0.0, first_line as f32)
 }
 
 fn terminal_context_menu(ui: &mut egui::Ui) {

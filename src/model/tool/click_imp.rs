@@ -3,8 +3,9 @@ use std::{sync::{Arc, Mutex}};
 
 use eframe::egui;
 use egui_extras::RetainedImage;
+use icy_engine::{ Rectangle};
 
-use crate::{ansi_editor::BufferView};
+use crate::{ansi_editor::BufferView, model::{Shape, Selection}};
 
 use super::{Event, Position, Tool};
 
@@ -26,45 +27,48 @@ impl Tool for ClickTool
         }
         Event::None
     }
-/* 
+
     fn handle_drag(&self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event
     {
-        let mut editor = editor.borrow_mut();
+        let editor = &mut buffer_view.lock().unwrap().editor;
         let mut cur = cur;
         if start < cur {
-            cur = cur + Position::from(1, 1);
+            cur = cur + Position::new(1, 1);
         }
         if start == cur { 
             editor.cur_selection = None;
         } else {
             editor.cur_selection = Some(Selection { 
-                rectangle: crate::model::Rectangle::from_pt(start, cur),
+                rectangle: Rectangle::from_pt(start, cur),
                 is_preview: true,
-                shape: crate::model::Shape::Rectangle
+                shape: Shape::Rectangle
             });
+            println!("{:?} - {:?} = {:?}", start, cur, Rectangle::from_pt(start, cur));
+
         }
         editor.set_caret_position(cur);
         Event::None
     }
 
     fn handle_drag_end(&self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event {
-        let mut editor = editor.borrow_mut();
+        let editor = &mut buffer_view.lock().unwrap().editor;
         let mut cur = cur;
         if start < cur {
-            cur = cur + Position::from(1, 1);
+            cur = cur + Position::new(1, 1);
         }
 
         if start == cur { 
             editor.cur_selection = None;
         } else {
             editor.cur_selection = Some(Selection { 
-                rectangle: crate::model::Rectangle::from_pt(start, cur),
+                rectangle: Rectangle::from_pt(start, cur),
                 is_preview: false,
-                shape: crate::model::Shape::Rectangle
+                shape: Shape::Rectangle
             });
+
         }
         editor.set_caret_position(cur);
 
         Event::None
-    } */
+    }
 }
