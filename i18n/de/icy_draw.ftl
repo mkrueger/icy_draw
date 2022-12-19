@@ -12,3 +12,7 @@ tool-character=Zeichen
 tool-shade=Schattiert
 tool-colorize=Einfärben
 tool-size-label=Größe:
+
+toolbar-new=Neu
+
+new-file-title=Neue Datei

@@ -9,14 +9,60 @@ use crate::{Document, FontEditor, model::Tool};
 
 use super::ansi_editor::AnsiEditor;
 use egui_file::FileDialog;
+pub struct NewFileDialog {
+    width: i32,
+    height: i32,
+
+    create: bool
+}
+
+impl NewFileDialog {
+    pub fn new() -> Self {
+        NewFileDialog {
+            width: 80,
+            height: 25,
+            create: false
+        }
+    }
+
+    pub fn show(&mut self, ctx: &egui::Context) -> bool {
+        let mut open = true;
+        let mut create_file = true;
+        egui::Window::new(fl!(crate::LANGUAGE_LOADER, "new-file-title"))
+        .open(&mut open)
+        .collapsible(false)
+        .resizable(false)
+        .show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
+                let mut my_f32 = self.width as f32;
+                ui.add(egui::DragValue::new(&mut my_f32).speed(1));
+                self.width = my_f32 as i32;
+            });
+            ui.horizontal(|ui| {
+                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+                let mut my_f32 = self.height as f32;
+                ui.add(egui::DragValue::new(&mut my_f32).speed(1));
+                self.height = my_f32 as i32;
+            });
+            if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-ok")).clicked() {
+                self.create = true;
+                create_file = false;
+            }
+        });
+
+        !(open && create_file)
+    }
+}
 
 pub struct MainWindow {
     pub tab_viewer: TabViewer,
-    tree: Tree<(String, Box<dyn Document>)>,
+    tree: Tree<(Option<String>, Box<dyn Document>)>,
     gl: Arc<Context>,
 
     opened_file: Option<PathBuf>,
     open_file_dialog: Option<FileDialog>,
+    new_file_dialog: Option<NewFileDialog>,
 }
 
 impl MainWindow {
@@ -100,6 +146,7 @@ impl MainWindow {
             gl: cc.gl.clone().unwrap(),
             opened_file: None,
             open_file_dialog: None,        
+            new_file_dialog: None
         };
         view
     }
@@ -117,7 +164,7 @@ impl MainWindow {
                         }
                         let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
                         if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
-                            self.tree.push_to_focused_leaf((full_path, Box::new(FontEditor::new(font))));
+                            self.tree.push_to_focused_leaf((Some(full_path), Box::new(FontEditor::new(font))));
                             return;
                         }
                     }
@@ -127,7 +174,7 @@ impl MainWindow {
         }
         let buf = Buffer::load_buffer(&path).unwrap();
         let editor = AnsiEditor::new(&self.gl, buf);
-        self.tree.push_to_focused_leaf((full_path, Box::new(editor)));
+        self.tree.push_to_focused_leaf((Some(full_path), Box::new(editor)));
 
     }
 
@@ -140,7 +187,7 @@ pub struct TabViewer {
 }
 
 impl egui_dock::TabViewer for TabViewer {
-    type Tab = (String, Box<dyn Document>);
+    type Tab = (Option<String>, Box<dyn Document>);
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         tab.1.show_ui(ui, &mut self.tools[self.selected_tool]);
@@ -183,13 +230,18 @@ impl eframe::App for MainWindow {
                     }
                     if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-save")).clicked() {
                         if let Some(t) = self.tree.find_active_focused() {
-                            let str = &t.1.0;
-                            t.1.1.save(str);
+                            if let Some(str) = &t.1.0 {
+                                t.1.1.save(str);
+                            }
                         }
                         ui.close_menu();
                     }
                 });
             });
+
+            if ui.button(fl!(crate::LANGUAGE_LOADER, "toolbar-new")).clicked() {
+                self.new_file_dialog = Some(NewFileDialog::new());
+            }
         });
         SidePanel::left("left_panel").show(ctx, |ui| {
             let mut buffer_opt = None;
@@ -226,6 +278,18 @@ impl eframe::App for MainWindow {
                 }
             }
         }
+        
+        if let Some(dialog) = &mut self.new_file_dialog {
+            if dialog.show(ctx) {
+                if dialog.create {
+                    let buf = Buffer::create(dialog.width, dialog.height);
+                    let editor = AnsiEditor::new(&self.gl, buf);
+                    self.tree.push_to_focused_leaf((None, Box::new(editor)));
+                }
+                self.new_file_dialog = None;
+            }
+        }
+            
         ctx.request_repaint_after(Duration::from_millis(150));
     }
 

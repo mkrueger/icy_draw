@@ -12,3 +12,10 @@ tool-character=Character
 tool-shade=Shade
 tool-colorize=Colorize
 tool-size-label=Size:
+
+toolbar-new=New
+
+new-file-title=New File
+new-file-width=Width
+new-file-height=Height
+new-file-ok=Ok
