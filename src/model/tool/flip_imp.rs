@@ -1,23 +1,36 @@
-
-use std::{sync::{Arc, Mutex}};
+use std::sync::{Arc, Mutex};
 
 use eframe::egui;
 
 use crate::ansi_editor::BufferView;
 
-use super::{Tool,  Position, Event};
+use super::{Event, Position, Tool};
 pub struct FlipTool {}
 
-impl Tool for FlipTool
-{
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage { &super::icons::FILL_SVG }
-    fn use_caret(&self) -> bool { false }
-    fn use_selection(&self) -> bool { false }
-    fn show_ui(&mut self, _ctx: &egui::Context, _ui: &mut egui::Ui, _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
-    {
+impl Tool for FlipTool {
+    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+        &super::icons::FILL_SVG
     }
-    
-    fn handle_click(&mut self, buffer_view: Arc<Mutex<BufferView>>, button: i32, pos: Position) -> Event {
+    fn use_caret(&self) -> bool {
+        false
+    }
+    fn use_selection(&self) -> bool {
+        false
+    }
+    fn show_ui(
+        &mut self,
+        _ctx: &egui::Context,
+        _ui: &mut egui::Ui,
+        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+    ) {
+    }
+
+    fn handle_click(
+        &mut self,
+        buffer_view: Arc<Mutex<BufferView>>,
+        button: i32,
+        pos: Position,
+    ) -> Event {
         if button == 1 {
             let editor = &mut buffer_view.lock().unwrap().editor;
             let mut ch = editor.get_char(pos).unwrap_or_default();
@@ -26,10 +39,10 @@ impl Tool for FlipTool
                 ch.ch = '\u{00DD}';
             } else if ch.ch as u8 == 221 {
                 ch.ch = '\u{00DB}';
-            } else { 
+            } else {
                 ch.ch = '\u{00DE}';
             }
-            
+
             editor.set_char(pos, Some(ch));
         }
         Event::None

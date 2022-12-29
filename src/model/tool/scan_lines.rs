@@ -1,4 +1,8 @@
-use std::{collections::HashMap, cmp::{max, min}, f64::consts};
+use std::{
+    cmp::{max, min},
+    collections::HashMap,
+    f64::consts,
+};
 
 use icy_engine::Rectangle;
 
@@ -30,20 +34,33 @@ impl ScanLines {
         let mut rw = rectangle.size.width;
         let mut rh = rectangle.size.height;
 
-        if rw < 2 {  rw = 2; }
-        if rh < 2 { rh = 2; }
+        if rw < 2 {
+            rw = 2;
+        }
+        if rh < 2 {
+            rh = 2;
+        }
 
-        if (rw % 2) == 0 { rw += 1; }
-        if (rh % 2) == 0 { rh += 1; }
+        if (rw % 2) == 0 {
+            rw += 1;
+        }
+        if (rh % 2) == 0 {
+            rh += 1;
+        }
 
         let mx = rectangle.start.x + rw / 2;
         let my = rectangle.start.y + rh / 2;
 
-        self.add_ellipse_internal(mx, my, rw / 2, rh / 2/*, 0, 360*/);
+        self.add_ellipse_internal(mx, my, rw / 2, rh / 2 /*, 0, 360*/);
     }
 
-    fn add_ellipse_internal(&mut self, x: i32, y: i32, radius_x: i32, radius_y: i32/*, mut start_angle: i32, mut end_angle: i32*/) {
-
+    fn add_ellipse_internal(
+        &mut self,
+        x: i32,
+        y: i32,
+        radius_x: i32,
+        radius_y: i32, /*, mut start_angle: i32, mut end_angle: i32*/
+    ) {
         // check if valid angles
         //if start_angle > end_angle {
         //    std::mem::swap(&mut start_angle, &mut end_angle);
@@ -64,7 +81,7 @@ impl ScanLines {
         let inc_x = 8 * dx * dx;
         let inc_y = 8 * dy * dy;
 
-        let aspect = (radius_x as f64)  / (radius_y as f64);
+        let aspect = (radius_x as f64) / (radius_y as f64);
 
         // calculate horizontal fill angle
         let horizontal_angle = if radius_x < radius_y {
@@ -76,10 +93,17 @@ impl ScanLines {
 
         loop {
             let e2 = 2 * err;
-            let angle = ((yoffset as f64 * aspect / (xoffset as f64)).atan() * ScanLines::RAD2DEG).round() as i32;
-            self.symmetry_scan (x, y, /*start_angle, end_angle, */xoffset, yoffset/*, angle, angle <= horizontal_angle*/);
+            let angle = ((yoffset as f64 * aspect / (xoffset as f64)).atan() * ScanLines::RAD2DEG)
+                .round() as i32;
+            self.symmetry_scan(
+                x, y, /*start_angle, end_angle, */ xoffset,
+                yoffset, /*, angle, angle <= horizontal_angle*/
+            );
             if (angle - horizontal_angle).abs() < 1 {
-                self.symmetry_scan (x, y, /*start_angle, end_angle,*/ xoffset, yoffset/*, angle, angle > horizontal_angle*/);
+                self.symmetry_scan(
+                    x, y, /*start_angle, end_angle,*/ xoffset,
+                    yoffset, /*, angle, angle > horizontal_angle*/
+                );
             }
 
             if e2 <= stop_y {
@@ -99,10 +123,17 @@ impl ScanLines {
 
         xoffset += 1;
         while yoffset < radius_y {
-            let angle = ((yoffset as f64 * aspect / (xoffset as f64)).atan() * ScanLines::RAD2DEG).round() as i32;
-            self.symmetry_scan (x, y, /*start_angle, end_angle, */xoffset, yoffset/*, angle as i32, angle <= horizontal_angle*/);
+            let angle = ((yoffset as f64 * aspect / (xoffset as f64)).atan() * ScanLines::RAD2DEG)
+                .round() as i32;
+            self.symmetry_scan(
+                x, y, /*start_angle, end_angle, */ xoffset,
+                yoffset, /*, angle as i32, angle <= horizontal_angle*/
+            );
             if angle == horizontal_angle {
-                self.symmetry_scan (x, y, /*start_angle, end_angle,*/ xoffset, yoffset/*, angle as i32, angle > horizontal_angle*/);
+                self.symmetry_scan(
+                    x, y, /*start_angle, end_angle,*/ xoffset,
+                    yoffset, /*, angle as i32, angle > horizontal_angle*/
+                );
             }
             yoffset += 1;
         }
@@ -132,7 +163,8 @@ impl ScanLines {
         }
     }*/
 
-    pub fn fill<T>(&self, mut draw: T) where
+    pub fn fill<T>(&self, mut draw: T)
+    where
         T: FnMut(Rectangle),
     {
         for row in &self.rows {
@@ -141,7 +173,7 @@ impl ScanLines {
         }
     }
 
-   /* fn in_angle(angle: i32, start_angle: i32, end_angle: i32) -> bool {
+    /* fn in_angle(angle: i32, start_angle: i32, end_angle: i32) -> bool {
         angle >= start_angle && angle <= end_angle
     }*/
 
@@ -161,33 +193,42 @@ impl ScanLines {
         let dy = -(pos1.y - pos0.y).abs();
         let sy = if pos0.y < pos1.y { 1 } else { -1 };
         let mut error = dx + dy;
-        
+
         loop {
             self.add(pos0.x, pos0.y);
-            
-            if pos0.x == pos1.x && pos0.y == pos1.y { break; }
+
+            if pos0.x == pos1.x && pos0.y == pos1.y {
+                break;
+            }
             let e2 = 2 * error;
             if e2 >= dy {
-                if pos0.x == pos1.x { break; }
+                if pos0.x == pos1.x {
+                    break;
+                }
                 error += dy;
                 pos0.x += sx;
             }
             if e2 <= dx {
-                if pos0.y == pos1.y { break; }
+                if pos0.y == pos1.y {
+                    break;
+                }
                 error += dx;
                 pos0.y += sy;
             }
         }
     }
 
-    pub fn add_rectangle(&mut self, rectangle: Rectangle)
-    {
+    pub fn add_rectangle(&mut self, rectangle: Rectangle) {
         for i in 0..rectangle.size.height {
-            self.add_horizontal(rectangle.start.x, rectangle.start.y + i, rectangle.size.width);
+            self.add_horizontal(
+                rectangle.start.x,
+                rectangle.start.y + i,
+                rectangle.size.width,
+            );
         }
     }
 
-  /*  pub fn is_inside(&self, point: Position) -> bool {
+    /*  pub fn is_inside(&self, point: Position) -> bool {
         if let Some(row) = self.rows.get(&point.y) {
             let (min, max) = row.get_min_max();
             min <= point.x && point.x <= max
@@ -204,8 +245,8 @@ impl ScanLines {
     }
 
     pub fn outline<T>(&self, draw: T)
-        where
-            T: Fn(Rectangle)
+    where
+        T: Fn(Rectangle),
     {
         let mut lastx = 0;
 
@@ -230,7 +271,12 @@ impl ScanLines {
                 if cur_x < lastx {
                     draw(Rectangle::from_coords(cur_x, cur_y, lastx - 1, cur_y));
                 } else if cur_x > lastx + 1 {
-                    draw(Rectangle::from_coords(lastx + 1, cur_y - 1, cur_x - 1, cur_y - 1));
+                    draw(Rectangle::from_coords(
+                        lastx + 1,
+                        cur_y - 1,
+                        cur_x - 1,
+                        cur_y - 1,
+                    ));
                     draw(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
                 } else {
                     draw(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
@@ -255,7 +301,12 @@ impl ScanLines {
                 if cur_x > lastx {
                     draw(Rectangle::from_coords(lastx + 1, cur_y, cur_x, cur_y));
                 } else if cur_x < lastx - 1 {
-                    draw(Rectangle::from_coords(cur_x + 1, cur_y - 1, lastx - 1, cur_y - 1));
+                    draw(Rectangle::from_coords(
+                        cur_x + 1,
+                        cur_y - 1,
+                        lastx - 1,
+                        cur_y - 1,
+                    ));
                     draw(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
                 } else {
                     draw(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
@@ -268,57 +319,65 @@ impl ScanLines {
         }
 
         // fill top/bottom
-        if rows.len() == 0 { return; }
+        if rows.len() == 0 {
+            return;
+        }
         let row = rows[0];
         draw(Rectangle::from_coords(row.1, row.0, row.2, row.0));
         let row = rows[rows.len() - 1];
         draw(Rectangle::from_coords(row.1, row.0, row.2, row.0));
     }
 
-    fn symmetry_scan(&mut self, x: i32, y: i32, /* start_angle: i32, end_angle: i32, */xoffset: i32, yoffset: i32/*, angle: i32, horizontal: bool*/) {
+    fn symmetry_scan(
+        &mut self,
+        x: i32,
+        y: i32,
+        /* start_angle: i32, end_angle: i32, */ xoffset: i32,
+        yoffset: i32, /*, angle: i32, horizontal: bool*/
+    ) {
         if self.line_thickness == 1 {
             //if ScanLines::in_angle(angle, start_angle, end_angle) {
-                self.add(x + xoffset, y - yoffset);
+            self.add(x + xoffset, y - yoffset);
             //}
             //if ScanLines::in_angle(180 - angle, start_angle, end_angle) {
-                self.add(x - xoffset, y - yoffset);
+            self.add(x - xoffset, y - yoffset);
             //}
             //if ScanLines::in_angle(180 + angle, start_angle, end_angle) {
-                self.add(x - xoffset, y + yoffset);
+            self.add(x - xoffset, y + yoffset);
             //}
             //if ScanLines::in_angle(360 - angle, start_angle, end_angle) {
-                self.add(x + xoffset, y + yoffset);
+            self.add(x + xoffset, y + yoffset);
             //}
         } /*else {
-            let offset = self.line_thickness / 2;
-            if horizontal {
-                if ScanLines::in_angle(angle, start_angle, end_angle) {
-                    self.add_horizontal(x + xoffset - offset, y - yoffset, self.line_thickness);
-                }
-                if ScanLines::in_angle(180 - angle, start_angle, end_angle) {
-                    self.add_horizontal(x - xoffset - offset, y - yoffset, self.line_thickness);
-                }
-                if ScanLines::in_angle(180 + angle, start_angle, end_angle) {
-                    self.add_horizontal(x - xoffset - offset, y + yoffset, self.line_thickness);
-                }
-                if ScanLines::in_angle(360 - angle, start_angle, end_angle) {
-                    self.add_horizontal(x + xoffset - offset, y + yoffset, self.line_thickness);
-                }
-            } else {
-                if ScanLines::in_angle(angle, start_angle, end_angle) {
-                    self.add_vertical(x + xoffset, y - yoffset - offset, self.line_thickness);
-                }
-                if ScanLines::in_angle(180 - angle, start_angle, end_angle) {
-                    self.add_vertical(x - xoffset, y - yoffset - offset, self.line_thickness);
-                }
-                if ScanLines::in_angle(180 + angle, start_angle, end_angle) {
-                    self.add_vertical(x - xoffset, y + yoffset - offset, self.line_thickness);
-                }
-                if ScanLines::in_angle(360 - angle, start_angle, end_angle) {
-                    self.add_vertical(x + xoffset, y + yoffset - offset, self.line_thickness);
-                }
-            }
-        }*/
+              let offset = self.line_thickness / 2;
+              if horizontal {
+                  if ScanLines::in_angle(angle, start_angle, end_angle) {
+                      self.add_horizontal(x + xoffset - offset, y - yoffset, self.line_thickness);
+                  }
+                  if ScanLines::in_angle(180 - angle, start_angle, end_angle) {
+                      self.add_horizontal(x - xoffset - offset, y - yoffset, self.line_thickness);
+                  }
+                  if ScanLines::in_angle(180 + angle, start_angle, end_angle) {
+                      self.add_horizontal(x - xoffset - offset, y + yoffset, self.line_thickness);
+                  }
+                  if ScanLines::in_angle(360 - angle, start_angle, end_angle) {
+                      self.add_horizontal(x + xoffset - offset, y + yoffset, self.line_thickness);
+                  }
+              } else {
+                  if ScanLines::in_angle(angle, start_angle, end_angle) {
+                      self.add_vertical(x + xoffset, y - yoffset - offset, self.line_thickness);
+                  }
+                  if ScanLines::in_angle(180 - angle, start_angle, end_angle) {
+                      self.add_vertical(x - xoffset, y - yoffset - offset, self.line_thickness);
+                  }
+                  if ScanLines::in_angle(180 + angle, start_angle, end_angle) {
+                      self.add_vertical(x - xoffset, y + yoffset - offset, self.line_thickness);
+                  }
+                  if ScanLines::in_angle(360 - angle, start_angle, end_angle) {
+                      self.add_vertical(x + xoffset, y + yoffset - offset, self.line_thickness);
+                  }
+              }
+          }*/
     }
 }
 
@@ -328,9 +387,7 @@ struct ScanRow {
 
 impl ScanRow {
     pub fn new() -> Self {
-        ScanRow {
-            points: Vec::new(),
-        }
+        ScanRow { points: Vec::new() }
     }
     pub fn get_min_max(&self) -> (i32, i32) {
         let mut min_point = i32::MAX;

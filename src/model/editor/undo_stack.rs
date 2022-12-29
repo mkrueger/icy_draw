@@ -2,7 +2,7 @@ use icy_engine::AttributedChar;
 
 use super::{Buffer, Layer, Position, Size};
 
-pub trait UndoOperation : Send {
+pub trait UndoOperation: Send {
     fn undo(&self, buffer: &mut Buffer);
     fn redo(&self, buffer: &mut Buffer);
 }

@@ -1,10 +1,13 @@
-use std::{sync::Arc};
-use eframe::{epaint::{Vec2}};
+use eframe::epaint::Vec2;
 use glow::NativeTexture;
+use std::sync::Arc;
 
 use icy_engine::{Buffer, BufferParser, CallbackAction, EngineResult, Position};
 
-use crate::{ui::ansi_editor::{create_buffer_texture, create_palette_texture, create_font_texture}, model::Editor};
+use crate::{
+    model::Editor,
+    ui::ansi_editor::{create_buffer_texture, create_font_texture, create_palette_texture},
+};
 
 use super::SixelCacheEntry;
 
@@ -62,7 +65,6 @@ pub struct BufferView {
     pub fonts: usize,
     //scaling: Scaling,
     // post_processing: PostProcessing,
-
     pub font_texture: NativeTexture,
     pub buffer_texture: NativeTexture,
     pub palette_texture: NativeTexture,
@@ -333,9 +335,9 @@ void main() {
             );
 
             let filter = glow::NEAREST as i32; /*match options.scaling {
-                Scaling::Nearest => glow::NEAREST as i32,
-                Scaling::Linear => glow::LINEAR as i32,
-            };*/
+                                                   Scaling::Nearest => glow::NEAREST as i32,
+                                                   Scaling::Linear => glow::LINEAR as i32,
+                                               };*/
             gl.bind_texture(glow::TEXTURE_2D, Some(render_texture));
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
@@ -459,7 +461,6 @@ void main() {
                 palette_texture,
                 // scaling: options.scaling,
                 // post_processing: options.post_processing,
-
                 framebuffer,
                 render_texture,
                 render_buffer_size,
@@ -524,7 +525,7 @@ void main() {
             gl.delete_vertex_array(self.vertex_array);
         }
     }
-/*
+    /*
     pub fn set_scaling(&mut self, scaling: Scaling) {
         self.scaling = scaling;
         self.render_buffer_size = Vec2::new(0., 0.);
@@ -533,4 +534,3 @@ void main() {
         self.post_processing = post_processing;
     }*/
 }
-

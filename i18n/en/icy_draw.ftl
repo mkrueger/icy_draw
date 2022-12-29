@@ -19,3 +19,7 @@ new-file-title=New File
 new-file-width=Width
 new-file-height=Height
 new-file-ok=Ok
+
+
+toolbar-size = { $colums } Columns x { $rows } Rows
+toolbar-position = { $column }:{ $line }

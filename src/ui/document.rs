@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
-use eframe::{egui};
-use crate::{TerminalResult, model::Tool};
+use crate::{model::Tool, TerminalResult};
+use eframe::egui;
 
 use super::ansi_editor::BufferView;
 
@@ -14,6 +14,6 @@ pub trait Document {
     fn show_ui(&mut self, ui: &mut egui::Ui, cur_tool: &mut Box<dyn Tool>);
 
     fn destroy(&self, gl: &glow::Context);
-    
+
     fn get_buffer_view(&self) -> Option<Arc<Mutex<BufferView>>>;
 }

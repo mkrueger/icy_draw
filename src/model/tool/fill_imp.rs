@@ -1,35 +1,46 @@
-use std::{collections::{HashSet}, sync::{Arc, Mutex}};
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{TextAttribute, AttributedChar};
+use icy_engine::{AttributedChar, TextAttribute};
 
 use crate::ansi_editor::BufferView;
 
-use super::{ Tool, Editor, Position, Event, brush_imp::draw_glyph};
+use super::{brush_imp::draw_glyph, Editor, Event, Position, Tool};
 
 #[derive(PartialEq, Eq)]
 pub enum FillType {
     Character,
-    Colorize
+    Colorize,
 }
 
 pub struct FillTool {
-    pub use_fore : bool,
-    pub use_back : bool,
+    pub use_fore: bool,
+    pub use_back: bool,
 
     pub attr: TextAttribute,
     pub char_code: char,
     pub font_page: usize,
-    pub fill_type: FillType
+    pub fill_type: FillType,
 }
 
 impl FillTool {
-    fn fill(&self, editor: &mut Editor, visited: &mut HashSet<Position>, attribute: TextAttribute, pos: Position, opt_old_ch: Option<AttributedChar>, new_ch: AttributedChar) {
+    fn fill(
+        &self,
+        editor: &mut Editor,
+        visited: &mut HashSet<Position>,
+        attribute: TextAttribute,
+        pos: Position,
+        opt_old_ch: Option<AttributedChar>,
+        new_ch: AttributedChar,
+    ) {
         if !editor.point_is_valid(pos) || !visited.insert(pos) {
             return;
         }
-        
+
         let cur_char = editor.buf.get_char(pos).unwrap_or_default();
         if let Some(old_ch) = opt_old_ch {
             if matches!(self.fill_type, FillType::Character) && self.use_fore && self.use_back {
@@ -37,96 +48,178 @@ impl FillTool {
                     return;
                 }
             } else if self.use_fore && self.use_back {
-                if cur_char.attribute != old_ch.attribute || cur_char.attribute == new_ch.attribute {
+                if cur_char.attribute != old_ch.attribute || cur_char.attribute == new_ch.attribute
+                {
                     return;
                 }
-            } else if matches!(self.fill_type, FillType::Character) && self.use_fore  {
-                if cur_char.ch != old_ch.ch && cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground() || 
-                cur_char.ch == new_ch.ch && cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground() {
+            } else if matches!(self.fill_type, FillType::Character) && self.use_fore {
+                if cur_char.ch != old_ch.ch
+                    && cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground()
+                    || cur_char.ch == new_ch.ch
+                        && cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground()
+                {
                     return;
                 }
-            } else if matches!(self.fill_type, FillType::Character) && self.use_back  {
-                if cur_char.ch != old_ch.ch && cur_char.attribute.get_background() != old_ch.attribute.get_background() || 
-                cur_char.ch == new_ch.ch && cur_char.attribute.get_background() == new_ch.attribute.get_background() {
+            } else if matches!(self.fill_type, FillType::Character) && self.use_back {
+                if cur_char.ch != old_ch.ch
+                    && cur_char.attribute.get_background() != old_ch.attribute.get_background()
+                    || cur_char.ch == new_ch.ch
+                        && cur_char.attribute.get_background() == new_ch.attribute.get_background()
+                {
                     return;
                 }
             } else if matches!(self.fill_type, FillType::Character) {
                 if cur_char.ch != old_ch.ch || cur_char.ch == new_ch.ch {
                     return;
                 }
-            } else if self.use_fore  {
-                if cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground() || cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground() {
+            } else if self.use_fore {
+                if cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground()
+                    || cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground()
+                {
                     return;
                 }
             } else if self.use_back {
-                if cur_char.attribute.get_background() != old_ch.attribute.get_background()  || cur_char.attribute.get_background() == new_ch.attribute.get_background() {
+                if cur_char.attribute.get_background() != old_ch.attribute.get_background()
+                    || cur_char.attribute.get_background() == new_ch.attribute.get_background()
+                {
                     return;
                 }
             } else {
                 panic!("should never happen!");
             }
-            
         }
         let mut repl_ch = cur_char;
-        if matches!(self.fill_type, FillType::Character) { repl_ch.ch = new_ch.ch; }
-        if self.use_fore { repl_ch.attribute.set_foreground(new_ch.attribute.get_foreground()) }
-        if self.use_back { repl_ch.attribute.set_background(new_ch.attribute.get_background()) }
+        if matches!(self.fill_type, FillType::Character) {
+            repl_ch.ch = new_ch.ch;
+        }
+        if self.use_fore {
+            repl_ch
+                .attribute
+                .set_foreground(new_ch.attribute.get_foreground())
+        }
+        if self.use_back {
+            repl_ch
+                .attribute
+                .set_background(new_ch.attribute.get_background())
+        }
 
         editor.set_char(pos, Some(repl_ch));
-        
-        self.fill(editor, visited, attribute, pos + Position::new(-1, 0), opt_old_ch, new_ch);
-        self.fill(editor, visited, attribute, pos + Position::new(1, 0), opt_old_ch, new_ch);
-        self.fill(editor, visited, attribute, pos + Position::new(    0, -1), opt_old_ch, new_ch);
-        self.fill(editor, visited, attribute, pos + Position::new(0, 1), opt_old_ch, new_ch);
+
+        self.fill(
+            editor,
+            visited,
+            attribute,
+            pos + Position::new(-1, 0),
+            opt_old_ch,
+            new_ch,
+        );
+        self.fill(
+            editor,
+            visited,
+            attribute,
+            pos + Position::new(1, 0),
+            opt_old_ch,
+            new_ch,
+        );
+        self.fill(
+            editor,
+            visited,
+            attribute,
+            pos + Position::new(0, -1),
+            opt_old_ch,
+            new_ch,
+        );
+        self.fill(
+            editor,
+            visited,
+            attribute,
+            pos + Position::new(0, 1),
+            opt_old_ch,
+            new_ch,
+        );
     }
 }
 
-// Fill with 
+// Fill with
 // Attribute, Fore/Back
-// Character 
+// Character
 // Both
 
-impl Tool for FillTool
-{
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage { &super::icons::FILL_SVG }
-    fn use_caret(&self) -> bool { false }
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
-    {
+impl Tool for FillTool {
+    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+        &super::icons::FILL_SVG
+    }
+    fn use_caret(&self) -> bool {
+        false
+    }
+    fn show_ui(
+        &mut self,
+        _ctx: &egui::Context,
+        ui: &mut egui::Ui,
+        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+    ) {
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
-                if ui.selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg")).clicked() {
+                if ui
+                    .selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg"))
+                    .clicked()
+                {
                     self.use_fore = !self.use_fore;
                 }
-                if ui.selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg")).clicked() {
+                if ui
+                    .selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg"))
+                    .clicked()
+                {
                     self.use_back = !self.use_back;
                 }
             });
         });
 
         ui.horizontal(|ui| {
-            ui.radio_value(&mut self.fill_type, FillType::Character, fl!(crate::LANGUAGE_LOADER, "tool-character"));
+            ui.radio_value(
+                &mut self.fill_type,
+                FillType::Character,
+                fl!(crate::LANGUAGE_LOADER, "tool-character"),
+            );
 
             if let Some(b) = &buffer_opt {
                 ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
             }
         });
-        ui.radio_value(&mut self.fill_type, FillType::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
+        ui.radio_value(
+            &mut self.fill_type,
+            FillType::Colorize,
+            fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
+        );
     }
-   
-    fn handle_click(&mut self, buffer_view: Arc<Mutex<BufferView>>, button: i32, pos: Position) -> Event {
+
+    fn handle_click(
+        &mut self,
+        buffer_view: Arc<Mutex<BufferView>>,
+        button: i32,
+        pos: Position,
+    ) -> Event {
         if button == 1 {
             let editor = &mut buffer_view.lock().unwrap().editor;
-            if editor.cur_layer >= editor.buf.layers.len() as i32 { return Event::None; }
+            if editor.cur_layer >= editor.buf.layers.len() as i32 {
+                return Event::None;
+            }
             let attr = editor.caret.get_attribute();
             let ch = editor.buf.get_char(pos);
             if self.use_back || self.use_fore || matches!(self.fill_type, FillType::Character) {
                 editor.begin_atomic_undo();
                 let mut visited = HashSet::new();
-                self.fill(editor, &mut visited, attr, pos, ch,  AttributedChar::new(self.char_code, attr));
+                self.fill(
+                    editor,
+                    &mut visited,
+                    attr,
+                    pos,
+                    ch,
+                    AttributedChar::new(self.char_code, attr),
+                );
                 editor.end_atomic_undo();
             }
         }
         Event::None
     }
 }
-

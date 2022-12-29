@@ -1,8 +1,9 @@
-use eframe::epaint::{Rect, Vec2, PaintCallbackInfo};
-use glow::{NativeTexture};
+use eframe::epaint::{PaintCallbackInfo, Rect, Vec2};
+use glow::NativeTexture;
 use icy_engine::Buffer;
 use std::{
-    time::{SystemTime, UNIX_EPOCH}, sync::Arc,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use super::BufferView;
@@ -15,7 +16,12 @@ impl BufferView {
             let render_texture = gl.create_texture().unwrap();
             gl.bind_texture(glow::TEXTURE_2D, Some(render_texture));
 
-            gl.scissor(0, 0,self.render_buffer_size.x as i32, self.render_buffer_size.y as i32);
+            gl.scissor(
+                0,
+                0,
+                self.render_buffer_size.x as i32,
+                self.render_buffer_size.y as i32,
+            );
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
                 0,
@@ -27,9 +33,17 @@ impl BufferView {
                 glow::UNSIGNED_BYTE,
                 None,
             );
-            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::NEAREST as i32);
-            gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::NEAREST as i32);
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(fb));            
+            gl.tex_parameter_i32(
+                glow::TEXTURE_2D,
+                glow::TEXTURE_MIN_FILTER,
+                glow::NEAREST as i32,
+            );
+            gl.tex_parameter_i32(
+                glow::TEXTURE_2D,
+                glow::TEXTURE_MAG_FILTER,
+                glow::NEAREST as i32,
+            );
+            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(fb));
             gl.framebuffer_texture(
                 glow::FRAMEBUFFER,
                 glow::COLOR_ATTACHMENT0,
@@ -70,7 +84,11 @@ impl BufferView {
                 } else {
                     0.0
                 },
-                if self.editor.caret.insert_mode { 1.0 } else { 0.0 }, // shape
+                if self.editor.caret.insert_mode {
+                    1.0
+                } else {
+                    0.0
+                }, // shape
             );
 
             gl.uniform_1_f32(
@@ -119,10 +137,12 @@ impl BufferView {
                         gl.uniform_4_f32(
                             gl.get_uniform_location(self.program, "u_selection")
                                 .as_ref(),
-                                sel.rectangle.start.x as f32,
-                                sel.rectangle.start.y as f32 - self.scroll_first_line as f32,
-                                sel.rectangle.lower_right().x as f32 - 1.,
-                                sel.rectangle.lower_right().y as f32 - self.scroll_first_line as f32 - 1.,
+                            sel.rectangle.start.x as f32,
+                            sel.rectangle.start.y as f32 - self.scroll_first_line as f32,
+                            sel.rectangle.lower_right().x as f32 - 1.,
+                            sel.rectangle.lower_right().y as f32
+                                - self.scroll_first_line as f32
+                                - 1.,
                         );
                         gl.uniform_1_f32(
                             gl.get_uniform_location(self.program, "u_selection_attr")
@@ -159,11 +179,13 @@ impl BufferView {
             gl.draw_arrays(glow::TRIANGLES, 0, 3);
             gl.draw_arrays(glow::TRIANGLES, 3, 3);
             gl.delete_framebuffer(fb);
-            
-            gl.scissor(info.clip_rect_in_pixels().left_px as i32, 
-            info.clip_rect_in_pixels().from_bottom_px as i32,
-            info.clip_rect_in_pixels().width_px as i32,
-            info.clip_rect_in_pixels().height_px as i32);
+
+            gl.scissor(
+                info.clip_rect_in_pixels().left_px as i32,
+                info.clip_rect_in_pixels().from_bottom_px as i32,
+                info.clip_rect_in_pixels().width_px as i32,
+                info.clip_rect_in_pixels().height_px as i32,
+            );
 
             // draw sixels
             let mut render_texture = render_texture;
@@ -213,7 +235,8 @@ impl BufferView {
                     );
 
                     let x = sixel.pos.x as f32 * self.editor.buf.get_font_dimensions().width as f32;
-                    let y = sixel.pos.y as f32 * self.editor.buf.get_font_dimensions().height as f32;
+                    let y =
+                        sixel.pos.y as f32 * self.editor.buf.get_font_dimensions().height as f32;
 
                     let w = sixel.size.width as f32;
                     let h = sixel.size.height as f32;
@@ -240,7 +263,7 @@ impl BufferView {
             // draw Framebuffer
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-            
+
             let view_port = info.clip_rect_in_pixels();
             gl.viewport(
                 view_port.left_px as i32,
@@ -266,25 +289,28 @@ impl BufferView {
             gl.uniform_1_f32(
                 gl.get_uniform_location(self.draw_program, "u_effect")
                     .as_ref(),
-                    0.0
+                0.0,
             );
 
             gl.uniform_4_f32(
                 gl.get_uniform_location(self.draw_program, "u_draw_rect")
                     .as_ref(),
                 draw_rect.left() * info.pixels_per_point / view_port.width_px,
-                (info.screen_size_px[1] as f32 - info.clip_rect.max.y * info.pixels_per_point) / view_port.height_px,
+                (info.screen_size_px[1] as f32 - info.clip_rect.max.y * info.pixels_per_point)
+                    / view_port.height_px,
                 view_port.width_px,
                 view_port.height_px,
             );
-            
+
             gl.uniform_4_f32(
                 gl.get_uniform_location(self.draw_program, "u_draw_area")
                     .as_ref(),
-                    rect.left() * info.pixels_per_point / view_port.width_px,
-                    (info.clip_rect.height() - rect.bottom()) * info.pixels_per_point / view_port.height_px,
-                    rect.right() * info.pixels_per_point / view_port.width_px,
-                    (info.clip_rect.height() - rect.top()) * info.pixels_per_point / view_port.height_px,
+                rect.left() * info.pixels_per_point / view_port.width_px,
+                (info.clip_rect.height() - rect.bottom()) * info.pixels_per_point
+                    / view_port.height_px,
+                rect.right() * info.pixels_per_point / view_port.width_px,
+                (info.clip_rect.height() - rect.top()) * info.pixels_per_point
+                    / view_port.height_px,
             );
 
             gl.bind_vertex_array(Some(self.vertex_array));
@@ -308,7 +334,12 @@ impl BufferView {
 
         if self.redraw_view {
             self.redraw_view = false;
-            create_buffer_texture(gl, &self.editor.buf, self.scroll_first_line, self.buffer_texture);
+            create_buffer_texture(
+                gl,
+                &self.editor.buf,
+                self.scroll_first_line,
+                self.buffer_texture,
+            );
         }
 
         if self.redraw_palette || self.colors != self.editor.buf.palette.colors.len() {
@@ -336,9 +367,9 @@ impl BufferView {
                 gl.delete_texture(self.sixel_render_texture);
 
                 let scale_filter = glow::NEAREST as i32; /*match self.scaling {
-                    Scaling::Nearest => glow::NEAREST as i32,
-                    Scaling::Linear => glow::LINEAR as i32,
-                };*/
+                                                             Scaling::Nearest => glow::NEAREST as i32,
+                                                             Scaling::Linear => glow::LINEAR as i32,
+                                                         };*/
                 let sixel_render_texture = gl.create_texture().unwrap();
 
                 gl.bind_texture(glow::TEXTURE_2D, Some(sixel_render_texture));
@@ -419,7 +450,6 @@ impl BufferView {
                 self.render_buffer_size = render_buffer_size;
             }
         }
-
     }
 }
 
@@ -428,7 +458,11 @@ fn conv_color(c: u32, colors: u32) -> u8 {
     r
 }
 
-pub fn create_palette_texture(gl: &Arc<glow::Context>, buf: &Buffer, palette_texture: NativeTexture) {
+pub fn create_palette_texture(
+    gl: &Arc<glow::Context>,
+    buf: &Buffer,
+    palette_texture: NativeTexture,
+) {
     let mut palette_data = Vec::new();
     for i in 0..buf.palette.colors.len() {
         let (r, g, b) = buf.palette.colors[i].get_rgb();

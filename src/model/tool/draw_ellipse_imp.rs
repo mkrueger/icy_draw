@@ -2,11 +2,14 @@ use std::sync::{Arc, Mutex};
 
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{TextAttribute, Rectangle};
+use icy_engine::{Rectangle, TextAttribute};
 
 use crate::ansi_editor::BufferView;
 
-use super::{ DrawMode, Event, Plottable, Position, Tool, ScanLines, brush_imp::draw_glyph, line_imp::set_half_block};
+use super::{
+    brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
+    ScanLines, Tool,
+};
 
 pub struct DrawEllipseTool {
     pub draw_mode: DrawMode,
@@ -34,7 +37,9 @@ impl Plottable for DrawEllipseTool {
 }
 
 impl Tool for DrawEllipseTool {
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage { &super::icons::ELLIPSE_OUTLINE_SVG }
+    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+        &super::icons::ELLIPSE_OUTLINE_SVG
+    }
 
     fn use_caret(&self) -> bool {
         false
@@ -43,32 +48,63 @@ impl Tool for DrawEllipseTool {
         false
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>)
-    {
+    fn show_ui(
+        &mut self,
+        _ctx: &egui::Context,
+        ui: &mut egui::Ui,
+        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+    ) {
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
-                if ui.selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg")).clicked() {
+                if ui
+                    .selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg"))
+                    .clicked()
+                {
                     self.use_fore = !self.use_fore;
                 }
-                if ui.selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg")).clicked() {
+                if ui
+                    .selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg"))
+                    .clicked()
+                {
                     self.use_back = !self.use_back;
                 }
             });
         });
 
-        ui.radio_value(&mut self.draw_mode, DrawMode::Line, fl!(crate::LANGUAGE_LOADER, "tool-line"));
+        ui.radio_value(
+            &mut self.draw_mode,
+            DrawMode::Line,
+            fl!(crate::LANGUAGE_LOADER, "tool-line"),
+        );
         ui.horizontal(|ui| {
-            ui.radio_value(&mut self.draw_mode, DrawMode::Char, fl!(crate::LANGUAGE_LOADER, "tool-character"));
+            ui.radio_value(
+                &mut self.draw_mode,
+                DrawMode::Char,
+                fl!(crate::LANGUAGE_LOADER, "tool-character"),
+            );
 
             if let Some(b) = &buffer_opt {
                 ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
             }
         });
-        ui.radio_value(&mut self.draw_mode, DrawMode::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
-        ui.radio_value(&mut self.draw_mode, DrawMode::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
+        ui.radio_value(
+            &mut self.draw_mode,
+            DrawMode::Shade,
+            fl!(crate::LANGUAGE_LOADER, "tool-shade"),
+        );
+        ui.radio_value(
+            &mut self.draw_mode,
+            DrawMode::Colorize,
+            fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
+        );
     }
 
-    fn handle_drag(&mut self, buffer_view: Arc<Mutex<BufferView>>, mut start: Position, mut cur: Position) -> Event {
+    fn handle_drag(
+        &mut self,
+        buffer_view: Arc<Mutex<BufferView>>,
+        mut start: Position,
+        mut cur: Position,
+    ) -> Event {
         if let Some(layer) = buffer_view.lock().unwrap().editor.get_overlay_layer() {
             layer.clear();
         }
@@ -81,18 +117,28 @@ impl Tool for DrawEllipseTool {
         }
 
         if start < cur {
-            lines.add_ellipse(Rectangle::from_pt( start, cur));
+            lines.add_ellipse(Rectangle::from_pt(start, cur));
         } else {
             lines.add_ellipse(Rectangle::from_pt(cur, start));
         }
 
-        let col = buffer_view.lock().unwrap().editor.caret.get_attribute().get_foreground();
+        let col = buffer_view
+            .lock()
+            .unwrap()
+            .editor
+            .caret
+            .get_attribute()
+            .get_foreground();
         let buffer_view = buffer_view.clone();
         let draw = move |rect: Rectangle| {
             let editor = &mut buffer_view.lock().unwrap().editor;
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
-                    set_half_block(editor, Position::new(rect.start.x + x, rect.start.y + y ), col);
+                    set_half_block(
+                        editor,
+                        Position::new(rect.start.x + x, rect.start.y + y),
+                        col,
+                    );
                 }
             }
         };

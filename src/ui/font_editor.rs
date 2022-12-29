@@ -1,17 +1,23 @@
-use std::{fs, sync::{Arc, Mutex}};
+use std::{
+    fs,
+    sync::{Arc, Mutex},
+};
 
-use eframe::{egui::{self, Sense, RichText}, epaint::{Color32, Rounding, Vec2, Rect, Pos2}};
+use eframe::{
+    egui::{self, RichText, Sense},
+    epaint::{Color32, Pos2, Rect, Rounding, Vec2},
+};
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont};
+use icy_engine::BitFont;
 
-use crate::{Document, TerminalResult, model::Tool};
+use crate::{model::Tool, Document, TerminalResult};
 
 use super::ansi_editor::BufferView;
 
 pub struct FontEditor {
     font: BitFont,
     selected_char_opt: Option<char>,
-    is_dirty: bool
+    is_dirty: bool,
 }
 
 impl FontEditor {
@@ -19,45 +25,55 @@ impl FontEditor {
         Self {
             font,
             selected_char_opt: None,
-            is_dirty: false
+            is_dirty: false,
         }
     }
 
-    pub fn draw_glyph(&mut self, ch: char) ->  impl egui::Widget + '_ {
+    pub fn draw_glyph(&mut self, ch: char) -> impl egui::Widget + '_ {
         move |ui: &mut egui::Ui| {
             let scale = 3.;
-            let (id, stroke_rect) = ui.allocate_space(Vec2::new(scale * self.font.size.width as f32, scale * self.font.size.height as f32));
+            let (id, stroke_rect) = ui.allocate_space(Vec2::new(
+                scale * self.font.size.width as f32,
+                scale * self.font.size.height as f32,
+            ));
             let mut response = ui.interact(stroke_rect, id, Sense::click());
-            let is_selected =  if let Some(ch2) = self.selected_char_opt {
+            let is_selected = if let Some(ch2) = self.selected_char_opt {
                 ch == ch2
             } else {
                 false
             };
-            let col = if response.hovered() { 
+            let col = if response.hovered() {
                 if is_selected {
                     Color32::LIGHT_YELLOW
                 } else {
                     Color32::WHITE
                 }
-             } else {
+            } else {
                 if is_selected {
-                    Color32::YELLOW 
+                    Color32::YELLOW
                 } else {
-                    Color32::GRAY 
+                    Color32::GRAY
                 }
             };
-            
+
             let painter = ui.painter_at(stroke_rect);
             painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
             let s = self.font.size;
             if let Some(glyph) = self.font.get_glyph(ch) {
                 for y in 0..s.height {
                     for x in 0..s.width {
-                        if glyph.data[y as usize] & (128 >> x) != 0  {
-                            painter.rect_filled( Rect::from_min_size(
-                                Pos2::new(stroke_rect.left() + x as f32 * scale, stroke_rect.top() + y as f32 * scale),
-                                Vec2::new(scale, scale)
-                            ), Rounding::none(), col);
+                        if glyph.data[y as usize] & (128 >> x) != 0 {
+                            painter.rect_filled(
+                                Rect::from_min_size(
+                                    Pos2::new(
+                                        stroke_rect.left() + x as f32 * scale,
+                                        stroke_rect.top() + y as f32 * scale,
+                                    ),
+                                    Vec2::new(scale, scale),
+                                ),
+                                Rounding::none(),
+                                col,
+                            );
                         }
                     }
                 }
@@ -70,14 +86,17 @@ impl FontEditor {
         }
     }
 
-    pub fn edit_glyph(&mut self) ->  impl egui::Widget + '_ {
+    pub fn edit_glyph(&mut self) -> impl egui::Widget + '_ {
         move |ui: &mut egui::Ui| {
             let scale = 20.;
             let border = 2.;
 
-            let (id, stroke_rect) = ui.allocate_space(Vec2::new(1. + (border + scale) * self.font.size.width as f32, 1. + (border + scale) * self.font.size.height as f32));
+            let (id, stroke_rect) = ui.allocate_space(Vec2::new(
+                1. + (border + scale) * self.font.size.width as f32,
+                1. + (border + scale) * self.font.size.height as f32,
+            ));
             let mut response = ui.interact(stroke_rect, id, Sense::click());
-            
+
             let painter = ui.painter_at(stroke_rect);
             painter.rect_filled(stroke_rect, Rounding::none(), Color32::DARK_GRAY);
 
@@ -89,7 +108,7 @@ impl FontEditor {
                         if let Some(glyph) = self.font.get_glyph_mut(number) {
                             let y = ((pos.y - stroke_rect.top()) / (scale + border)) as usize;
                             let x = ((pos.x - stroke_rect.left()) / (scale + border)) as usize;
-                            if glyph.data[y as usize] & (128 >> x) != 0  {
+                            if glyph.data[y as usize] & (128 >> x) != 0 {
                                 glyph.data[y as usize] &= !(128 >> x);
                             } else {
                                 glyph.data[y as usize] |= 128 >> x;
@@ -106,25 +125,32 @@ impl FontEditor {
                     for y in 0..s.height {
                         for x in 0..s.width {
                             let rect = Rect::from_min_size(
-                                Pos2::new(2. + stroke_rect.left() + x as f32 * (border + scale), 2. + stroke_rect.top() + y as f32 * (border + scale)),
-                                Vec2::new(scale, scale)
+                                Pos2::new(
+                                    2. + stroke_rect.left() + x as f32 * (border + scale),
+                                    2. + stroke_rect.top() + y as f32 * (border + scale),
+                                ),
+                                Vec2::new(scale, scale),
                             );
-                            let col = if glyph.data[y as usize] & (128 >> x) != 0  {
-                            if let Some(pos) = response.hover_pos() {
-                                if rect.contains(pos) {
-                                    Color32::WHITE
-                                } else { 
+                            let col = if glyph.data[y as usize] & (128 >> x) != 0 {
+                                if let Some(pos) = response.hover_pos() {
+                                    if rect.contains(pos) {
+                                        Color32::WHITE
+                                    } else {
+                                        Color32::GRAY
+                                    }
+                                } else {
                                     Color32::GRAY
                                 }
-                                } else { Color32::GRAY }
                             } else {
                                 if let Some(pos) = response.hover_pos() {
                                     if rect.contains(pos) {
                                         Color32::DARK_GRAY
-                                    } else { 
+                                    } else {
                                         Color32::BLACK
                                     }
-                                } else { Color32::BLACK }
+                                } else {
+                                    Color32::BLACK
+                                }
                             };
                             painter.rect_filled(rect, Rounding::none(), col);
                         }
@@ -146,24 +172,37 @@ impl Document for FontEditor {
     }
 
     fn show_ui(&mut self, ui: &mut eframe::egui::Ui, cur_tool: &mut Box<dyn Tool>) {
-        ui.vertical_centered(|ui| {
-            ui.add(self.edit_glyph())
-        });
+        ui.vertical_centered(|ui| ui.add(self.edit_glyph()));
 
-        ui.label(fl!(crate::LANGUAGE_LOADER, "font-editor-table", length=(self.font.length - 1).to_string()));
+        ui.label(fl!(
+            crate::LANGUAGE_LOADER,
+            "font-editor-table",
+            length = (self.font.length - 1).to_string()
+        ));
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 for i in 0..self.font.length {
-                    ui.add(self.draw_glyph( unsafe { char::from_u32_unchecked(i as u32) })).on_hover_ui(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("Char").small());
-                            ui.label(RichText::new(format!("{0}/0x{0:02X}", i)).small().color(Color32::WHITE));
+                    ui.add(self.draw_glyph(unsafe { char::from_u32_unchecked(i as u32) }))
+                        .on_hover_ui(|ui| {
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new("Char").small());
+                                ui.label(
+                                    RichText::new(format!("{0}/0x{0:02X}", i))
+                                        .small()
+                                        .color(Color32::WHITE),
+                                );
+                            });
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new("ASCII").small());
+                                ui.label(
+                                    RichText::new(format!("'{0}'", unsafe {
+                                        char::from_u32_unchecked(i as u32)
+                                    }))
+                                    .small()
+                                    .color(Color32::WHITE),
+                                );
+                            });
                         });
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("ASCII").small());
-                            ui.label(RichText::new(format!("'{0}'", unsafe { char::from_u32_unchecked(i as u32) })).small().color(Color32::WHITE));
-                        });
-                    });
                 }
             })
         });
@@ -178,7 +217,6 @@ impl Document for FontEditor {
     fn get_buffer_view(&self) -> Option<Arc<Mutex<BufferView>>> {
         None
     }
-    
-    fn destroy(&self, _gl: &glow::Context) {
-    }
+
+    fn destroy(&self, _gl: &glow::Context) {}
 }
