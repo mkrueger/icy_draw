@@ -93,7 +93,7 @@ impl Tool for EraseTool
         super::Event::None
     }
 
-    fn handle_drag(&self, buffer_view: Arc<Mutex<BufferView>>, _start: Position, cur: Position) -> super::Event
+    fn handle_drag(&mut self, buffer_view: Arc<Mutex<BufferView>>, _start: Position, cur: Position) -> super::Event
     {
         let editor = &mut buffer_view.lock().unwrap().editor;
         self.paint_brush(editor, cur);

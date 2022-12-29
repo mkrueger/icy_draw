@@ -16,6 +16,8 @@ pub mod pipette_imp;
 pub mod line_imp;
 pub mod flip_imp;
 pub mod move_layer_imp;
+pub mod pencil_imp;
+
 mod icons;
 
 use eframe::{egui};
@@ -299,10 +301,10 @@ pub trait Tool
     fn handle_drag_begin(&mut self, _buffer_view: Arc<Mutex<BufferView>>, _start: Position, _cur: Position) -> Event {
         Event::None
     }
-    fn handle_drag(&self, _buffer_view: Arc<Mutex<BufferView>>, _start: Position, _cur: Position) -> Event {
+    fn handle_drag(&mut self, _buffer_view: Arc<Mutex<BufferView>>, _start: Position, _cur: Position) -> Event {
         Event::None
     }
-    fn handle_drag_end(&self, _buffer_view: Arc<Mutex<BufferView>>, _start: Position, _cur: Position) -> Event {
+    fn handle_drag_end(&mut self, _buffer_view: Arc<Mutex<BufferView>>, _start: Position, _cur: Position) -> Event {
         Event::None
     }
 }

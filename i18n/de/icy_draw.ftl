@@ -12,6 +12,7 @@ tool-character=Zeichen
 tool-shade=Schattiert
 tool-colorize=Einfärben
 tool-size-label=Größe:
+tool-half-block=Halb-Block
 
 toolbar-new=Neu
 

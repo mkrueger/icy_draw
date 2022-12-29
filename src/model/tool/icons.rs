@@ -2,7 +2,8 @@ use egui_extras::RetainedImage;
 
 lazy_static::lazy_static! {
     pub static ref ADD_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("add.svg", include_bytes!("../../../data/icons/add.svg")).unwrap();
-    pub static ref BRUSH_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("brush.svg", include_bytes!("../../../data/icons/brush.svg")).unwrap();
+    pub static ref PENCIL_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("brush.svg", include_bytes!("../../../data/icons/pencil.svg")).unwrap();
+    pub static ref BRUSH_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("brush.svg", include_bytes!("../../../data/icons/paint_brush.svg")).unwrap();
     pub static ref CURSOR_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("cursor.svg", include_bytes!("../../../data/icons/cursor.svg")).unwrap();
     pub static ref DROPPER_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("dropper.svg", include_bytes!("../../../data/icons/dropper.svg")).unwrap();
     pub static ref ELLIPSE_FILLED_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("ellipse_filled.svg", include_bytes!("../../../data/icons/ellipse_filled.svg")).unwrap();

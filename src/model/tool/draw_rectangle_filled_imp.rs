@@ -58,7 +58,7 @@ impl Tool for DrawRectangleFilledTool {
         ui.radio_value(&mut self.draw_mode, DrawMode::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
     }
 
-    fn handle_drag(&self, buffer_view: Arc<Mutex<BufferView>>,  start: Position, cur: Position) -> Event {
+    fn handle_drag(&mut self, buffer_view: Arc<Mutex<BufferView>>,  start: Position, cur: Position) -> Event {
         if let Some(layer) = buffer_view.lock().unwrap().editor.get_overlay_layer() {
             layer.clear();
         }
@@ -81,7 +81,7 @@ impl Tool for DrawRectangleFilledTool {
     }
 
     fn handle_drag_end(
-        &self,
+        &mut self,
         buffer_view: Arc<Mutex<BufferView>>,
         start: Position,
         cur: Position,

@@ -28,7 +28,7 @@ impl Tool for ClickTool
         Event::None
     }
 
-    fn handle_drag(&self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event
+    fn handle_drag(&mut self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event
     {
         let editor = &mut buffer_view.lock().unwrap().editor;
         let mut cur = cur;
@@ -50,7 +50,7 @@ impl Tool for ClickTool
         Event::None
     }
 
-    fn handle_drag_end(&self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event {
+    fn handle_drag_end(&mut self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event {
         let editor = &mut buffer_view.lock().unwrap().editor;
         let mut cur = cur;
         if start < cur {

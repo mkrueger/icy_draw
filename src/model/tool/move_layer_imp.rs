@@ -20,7 +20,7 @@ impl Tool for MoveLayer
         Event::None
     }
 
-    fn handle_drag(&self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event
+    fn handle_drag(&mut self, buffer_view: Arc<Mutex<BufferView>>, start: Position, cur: Position) -> Event
     {
         if let Some(layer) = buffer_view.lock().unwrap().editor.get_cur_layer_mut() {
             layer.set_offset(self.pos + cur - start);

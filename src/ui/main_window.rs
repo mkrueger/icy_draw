@@ -4,7 +4,7 @@ use eframe::{egui::{self, menu, TopBottomPanel, SidePanel}};
 use egui_dock::{DockArea, Style,  Tree, Node};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer};
+use icy_engine::{BitFont, Buffer, Position};
 use crate::{Document, FontEditor, model::Tool};
 
 use super::ansi_editor::AnsiEditor;
@@ -72,6 +72,14 @@ impl MainWindow {
         let mut tools: Vec<Box::<dyn Tool>> = Vec::new();
        
         tools.push(Box::new(crate::model::click_imp::ClickTool { }));
+        tools.push(Box::new(crate::model::pencil_imp::PencilTool {
+            use_back: true,
+            use_fore: true,
+            brush_type: crate::model::pencil_imp::PencilType::Shade,
+            char_code: '\u{00B0}',
+            font_page: 0,
+            last_pos: Position::default()
+        }));
         tools.push(Box::new(crate::model::brush_imp::BrushTool {
             size: 3, 
             use_back: true,

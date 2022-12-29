@@ -12,7 +12,7 @@ tool-character=Character
 tool-shade=Shade
 tool-colorize=Colorize
 tool-size-label=Size:
-
+tool-half-block=Half block
 toolbar-new=New
 
 new-file-title=New File
