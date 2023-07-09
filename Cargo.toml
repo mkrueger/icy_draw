@@ -7,12 +7,12 @@ description = "An ansi drawing tool"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = "0.20.0"
-egui_extras = { version="0.20.0", features = ["svg"] }
-egui_glow = "0.20.0"
-glow = "0.11.2"
-egui_dock = { git="https://github.com/Adanos020/egui_dock.git" }
-egui_file = "0.5.0"
+eframe = "0.22.0"
+egui_extras = { version="0.22.0", features = ["svg"] }
+egui_glow = "0.22.0"
+glow = "0.12.1"
+egui_dock = "0.6"
+egui_file = "0.9.0"
 
 icy_engine = { path = "../icy_engine" }
 walkdir = "2"

@@ -103,72 +103,117 @@ impl Document for AnsiEditor {
         Ok(())
     }
 
-    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, cur_tool: &mut Box<dyn Tool>) {
+    fn show_ui(&mut self, ui: &mut egui_dock::egui::Ui, cur_tool: &mut Box<dyn Tool>) {
         ui.vertical(|ui| {
             let size = ui.max_rect().size();
             let size = Vec2::new(size.x, size.y - 28.0);
-                ScrollArea::both()
-                    .auto_shrink([false; 2])
-                    .max_height(size.y)
-                    .show_viewport(ui, |ui, viewport| {
-                        let (id, draw_area) = ui.allocate_space(size);
-                        let mut response = ui.interact(draw_area, id, egui::Sense::click());
-                        let font_dimensions = self
-                            .buffer_view
-                            .lock()
-                            .unwrap()
-                            .editor
-                            .buf
-                            .get_font_dimensions();
-                        let scale = self.buffer_view.lock().unwrap().scale;
-                        let real_height = self
-                            .buffer_view
-                            .lock()
-                            .unwrap()
-                            .editor
-                            .buf
-                            .get_real_buffer_height();
 
-                        self.buffer_view
-                            .lock()
-                            .unwrap()
-                            .editor
-                            .buf
-                            .terminal_state
-                            .height = min(
-                            real_height,
-                            (draw_area.height() / (font_dimensions.height as f32 * scale)).ceil()
-                                as i32,
-                        );
+            ScrollArea::both()
+                .auto_shrink([false; 2])
+                .max_height(size.y)
+                .show_viewport(ui, |ui, viewport| {
+                    let (id, draw_area) = ui.allocate_space(size);
+                    let mut response = ui.interact(draw_area, id, egui::Sense::click());
+                    let font_dimensions = self
+                        .buffer_view
+                        .lock()
+                        .unwrap()
+                        .editor
+                        .buf
+                        .get_font_dimensions();
+                    let scale = self.buffer_view.lock().unwrap().scale;
+                    let real_height = self
+                        .buffer_view
+                        .lock()
+                        .unwrap()
+                        .editor
+                        .buf
+                        .get_real_buffer_height();
 
-                        let buf_w = self
-                            .buffer_view
-                            .lock()
-                            .unwrap()
-                            .editor
-                            .buf
-                            .get_buffer_width();
-                        let buf_h = self
-                            .buffer_view
-                            .lock()
-                            .unwrap()
-                            .editor
-                            .buf
-                            .get_buffer_height();
+                    self.buffer_view
+                        .lock()
+                        .unwrap()
+                        .editor
+                        .buf
+                        .terminal_state
+                        .height = min(
+                        real_height,
+                        (draw_area.height() / (font_dimensions.height as f32 * scale)).ceil()
+                            as i32,
+                    );
 
-                        let char_size = Vec2::new(
-                            font_dimensions.width as f32 * scale,
-                            font_dimensions.height as f32 * scale,
-                        );
+                    let buf_w = self
+                        .buffer_view
+                        .lock()
+                        .unwrap()
+                        .editor
+                        .buf
+                        .get_buffer_width();
+                    let buf_h = self
+                        .buffer_view
+                        .lock()
+                        .unwrap()
+                        .editor
+                        .buf
+                        .get_buffer_height();
 
-                        let rect_w = buf_w as f32 * char_size.x;
-                        let rect_h = buf_h as f32 * char_size.y;
-                        let top_margin_height = ui.min_rect().top();
+                    let char_size = Vec2::new(
+                        font_dimensions.width as f32 * scale,
+                        font_dimensions.height as f32 * scale,
+                    );
 
-                        let rect_h = min(rect_h as i32, draw_area.height() as i32) as f32;
+                    let rect_w = buf_w as f32 * char_size.x;
+                    let rect_h = buf_h as f32 * char_size.y;
+                    let top_margin_height = ui.min_rect().top();
 
-                        let relative_rect = Rect::from_min_size(
-                            Pos2::new(
+                    let rect_h = min(rect_h as i32, draw_area.height() as i32) as f32;
+
+                    let relative_rect = Rect::from_min_size(
+                        Pos2::new(
+                            if rect_w < draw_area.width() {
+                                (draw_area.width() - rect_w) / 2.
+                            } else {
+                                0.
+                            },
+                            if rect_h < draw_area.height() {
+                                (draw_area.height() - rect_h) / 2.
+                            } else {
+                                0.
+                            },
+                        )
+                        .ceil(),
+                        Vec2::new(rect_w, rect_h),
+                    );
+
+                    let max_lines = max(0, real_height - buf_h);
+                    ui.set_height(scale * max_lines as f32 * font_dimensions.height as f32);
+                    ui.set_width(rect_w);
+                    let first_line = (viewport.top() / char_size.y) as i32;
+
+                    if first_line != self.buffer_view.lock().unwrap().scroll_first_line {
+                        self.buffer_view.lock().unwrap().scroll_first_line = first_line;
+                        self.buffer_view.lock().unwrap().redraw_view();
+                    }
+
+                    let buffer_view = self.buffer_view.clone();
+                    let callback = egui::PaintCallback {
+                        rect: draw_area,
+                        callback: std::sync::Arc::new(egui_glow::CallbackFn::new(
+                            move |info, painter| {
+                                buffer_view.lock().unwrap().update_buffer(painter.gl());
+                                buffer_view.lock().unwrap().paint(
+                                    painter.gl(),
+                                    info,
+                                    draw_area,
+                                    relative_rect,
+                                );
+                            },
+                        )),
+                    };
+
+                    let rect = Rect::from_min_size(
+                        draw_area.left_top()
+                            + Vec2::new(
                                 if rect_w < draw_area.width() {
                                     (draw_area.width() - rect_w) / 2.
                                 } else {
@@ -178,194 +223,153 @@ impl Document for AnsiEditor {
                                     (draw_area.height() - rect_h) / 2.
                                 } else {
                                     0.
-                                },
+                                } - draw_area.left_top().y,
                             )
                             .ceil(),
-                            Vec2::new(rect_w, rect_h),
-                        );
+                        Vec2::new(rect_w, rect_h),
+                    );
 
-                        let max_lines = max(0, real_height - buf_h);
-                        ui.set_height(scale * max_lines as f32 * font_dimensions.height as f32);
-                        ui.set_width(rect_w);
-                        let first_line = (viewport.top() / char_size.y) as i32;
-
-                        if first_line != self.buffer_view.lock().unwrap().scroll_first_line {
-                            self.buffer_view.lock().unwrap().scroll_first_line = first_line;
-                            self.buffer_view.lock().unwrap().redraw_view();
-                        }
-
-                        let buffer_view = self.buffer_view.clone();
-                        let callback = egui::PaintCallback {
-                            rect: draw_area,
-                            callback: std::sync::Arc::new(egui_glow::CallbackFn::new(
-                                move |info, painter| {
-                                    buffer_view.lock().unwrap().update_buffer(painter.gl());
-                                    buffer_view.lock().unwrap().paint(
-                                        painter.gl(),
-                                        info,
-                                        draw_area,
-                                        relative_rect,
-                                    );
-                                },
-                            )),
-                        };
-
-                        let rect = Rect::from_min_size(
-                            draw_area.left_top()
-                                + Vec2::new(
-                                    if rect_w < draw_area.width() {
-                                        (draw_area.width() - rect_w) / 2.
-                                    } else {
-                                        0.
-                                    },
-                                    if rect_h < draw_area.height() {
-                                        (draw_area.height() - rect_h) / 2.
-                                    } else {
-                                        0.
-                                    } - draw_area.left_top().y,
-                                )
-                                .ceil(),
-                            Vec2::new(rect_w, rect_h),
-                        );
-
-                        ui.painter().add(callback);
-                        response = response.context_menu(terminal_context_menu);
-
-                        let events = ui.input().events.clone();
-                        for e in &events {
-                            match e {
-                                egui::Event::Copy => {
-                                    let buffer_view = self.buffer_view.clone();
-                                    let mut l = buffer_view.lock().unwrap();
-                                    if let Some(txt) = l.get_copy_text(&self.buffer_parser) {
-                                        ui.output().copied_text = txt;
-                                    }
+                    ui.painter().add(callback);
+                    response = response.context_menu(terminal_context_menu);
+                    let events = ui.input(|i| i.events.clone());
+                    for e in &events {
+                        match e {
+                            egui::Event::Copy => {
+                                let buffer_view = self.buffer_view.clone();
+                                let mut l = buffer_view.lock().unwrap();
+                                if let Some(txt) = l.get_copy_text(&self.buffer_parser) {
+                                    ui.output_mut(|o| o.copied_text = txt);
                                 }
-                                egui::Event::Cut => {}
-                                egui::Event::Paste(text) => {
-                                    self.output_string(text);
-                                }
-                                egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
-                                    self.output_string(text);
-                                    response.mark_changed();
-                                }
+                            }
+                            egui::Event::Cut => {}
+                            egui::Event::Paste(text) => {
+                                self.output_string(&text);
+                            }
+                            egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
+                                self.output_string(&text);
+                                response.mark_changed();
+                            }
 
-                                egui::Event::PointerButton {
-                                    pos,
-                                    button,
-                                    pressed: true,
-                                    ..
-                                } => {
-                                    if rect.contains(*pos) {
-                                        let buffer_view = self.buffer_view.clone();
-                                        let click_pos = calc_click_pos(
-                                            pos,
-                                            rect,
-                                            top_margin_height,
-                                            char_size,
-                                            first_line,
-                                        );
-                                        let b = match button {
-                                            PointerButton::Primary => 1,
-                                            PointerButton::Secondary => 2,
-                                            PointerButton::Middle => 3,
-                                            PointerButton::Extra1 => 4,
-                                            PointerButton::Extra2 => 5,
-                                        };
-                                        self.pressed_button = b;
-                                        self.drag_start =
-                                            Position::new(click_pos.x as i32, click_pos.y as i32);
-                                        self.drag_pos = self.drag_start;
-                                        cur_tool.handle_click(buffer_view, b, self.drag_start);
-                                    }
-                                }
-
-                                egui::Event::PointerButton {
-                                    pos,
-                                    pressed: false,
-                                    ..
-                                } => {
-                                    self.pressed_button = -1;
+                            egui::Event::PointerButton {
+                                pos,
+                                button,
+                                pressed: true,
+                                ..
+                            } => {
+                                if rect.contains(*pos) {
                                     let buffer_view = self.buffer_view.clone();
                                     let click_pos = calc_click_pos(
-                                        pos,
+                                        &pos,
                                         rect,
                                         top_margin_height,
                                         char_size,
                                         first_line,
                                     );
-                                    cur_tool.handle_drag_end(
-                                        buffer_view,
-                                        self.drag_start,
-                                        Position::new(click_pos.x as i32, click_pos.y as i32),
+                                    let b = match button {
+                                        PointerButton::Primary => 1,
+                                        PointerButton::Secondary => 2,
+                                        PointerButton::Middle => 3,
+                                        PointerButton::Extra1 => 4,
+                                        PointerButton::Extra2 => 5,
+                                    };
+                                    self.pressed_button = b;
+                                    self.drag_start =
+                                        Position::new(click_pos.x as i32, click_pos.y as i32);
+                                    self.drag_pos = self.drag_start;
+                                    cur_tool.handle_click(buffer_view, b, self.drag_start);
+                                }
+                            }
+
+                            egui::Event::PointerButton {
+                                pos,
+                                pressed: false,
+                                ..
+                            } => {
+                                self.pressed_button = -1;
+                                let buffer_view = self.buffer_view.clone();
+                                let click_pos = calc_click_pos(
+                                    pos,
+                                    rect,
+                                    top_margin_height,
+                                    char_size,
+                                    first_line,
+                                );
+                                cur_tool.handle_drag_end(
+                                    buffer_view,
+                                    self.drag_start,
+                                    Position::new(click_pos.x as i32, click_pos.y as i32),
+                                );
+                            }
+
+                            egui::Event::PointerMoved(pos) => {
+                                if self.pressed_button >= 0 {
+                                    let buffer_view = self.buffer_view.clone();
+                                    let click_pos = calc_click_pos(
+                                        &pos,
+                                        rect,
+                                        top_margin_height,
+                                        char_size,
+                                        first_line,
                                     );
-                                }
-
-                                egui::Event::PointerMoved(pos) => {
-                                    if self.pressed_button >= 0 {
-                                        let buffer_view = self.buffer_view.clone();
-                                        let click_pos = calc_click_pos(
-                                            pos,
-                                            rect,
-                                            top_margin_height,
-                                            char_size,
-                                            first_line,
-                                        );
-                                        let cur =
-                                            Position::new(click_pos.x as i32, click_pos.y as i32);
-                                        if self.drag_pos != cur {
-                                            self.drag_pos = cur;
-                                            buffer_view.lock().unwrap().redraw_view();
-                                            cur_tool.handle_drag(buffer_view, self.drag_start, cur);
-                                        }
+                                    let cur =
+                                        Position::new(click_pos.x as i32, click_pos.y as i32);
+                                    if self.drag_pos != cur {
+                                        self.drag_pos = cur;
+                                        buffer_view.lock().unwrap().redraw_view();
+                                        cur_tool.handle_drag(buffer_view, self.drag_start, cur);
                                     }
                                 }
+                            }
 
-                                /*egui::Event::KeyRepeat { key, modifiers }
-                                | */
-                                egui::Event::Key {
-                                    key,
-                                    pressed: true,
-                                    modifiers,
-                                } => {
-                                    let mut key_code = *key as u32;
-                                    if modifiers.ctrl || modifiers.command {
-                                        key_code |= CTRL_MOD;
-                                    }
-                                    if modifiers.shift {
-                                        key_code |= SHIFT_MOD;
-                                    }
-                                    for (k, m) in ANSI_KEY_MAP {
-                                        if *k == key_code {
-                                            //self.handled_char = true;
-                                            for c in *m {
-                                                if let Err(err) = self.print_char(*c) {
-                                                    eprintln!("{}", err);
-                                                }
+                            /*egui::Event::KeyRepeat { key, modifiers }
+                            | */
+                            egui::Event::Key {
+                                key,
+                                pressed: true,
+                                modifiers,
+                                ..
+                            } => {
+                                let mut key_code = *key as u32;
+                                if modifiers.ctrl || modifiers.command {
+                                    key_code |= CTRL_MOD;
+                                }
+                                if modifiers.shift {
+                                    key_code |= SHIFT_MOD;
+                                }
+                                for (k, m) in ANSI_KEY_MAP {
+                                    if *k == key_code {
+                                        //self.handled_char = true;
+                                        for c in *m {
+                                            if let Err(err) = self.print_char(*c) {
+                                                eprintln!("{}", err);
                                             }
-                                            response.mark_changed();
-                                            ui.input_mut().consume_key(*modifiers, *key);
-                                            break;
                                         }
+                                        response.mark_changed();
+                                        ui.input_mut(|i| i.consume_key(*modifiers, *key));
+                                        break;
                                     }
                                 }
-                                _ => {}
+                            }
+                            _ => {}
+                        }
+                    }
+                    
+                    if response.hovered() {
+                        let hover_pos_opt = ui.input(|i| { i.pointer.hover_pos() });
+                        if let Some(hover_pos) = hover_pos_opt {
+                            if rect.contains(hover_pos) {
+                                ui.output_mut(|o| o.cursor_icon = CursorIcon::Text);
                             }
                         }
-                        if response.hovered() {
-                            let hover_pos_opt = ui.input().pointer.hover_pos();
-                            if let Some(hover_pos) = hover_pos_opt {
-                                if rect.contains(hover_pos) {
-                                    ui.output().cursor_icon = CursorIcon::Text;
-                                }
-                            }
-                        }
-                        response.dragged = false;
-                        response.drag_released = true;
-                        response.is_pointer_button_down_on = false;
-                        response.interact_pointer_pos = None;
-                        response
-                    });
+
+                    }
+
+                    response.dragged = false;
+                    response.drag_released = true;
+                    response.is_pointer_button_down_on = false;
+                    response.interact_pointer_pos = None;
+                    response
+                });
 
             ui.horizontal(|ui| {
                 let pos = self.buffer_view.lock().unwrap().editor.caret.get_position();
@@ -422,7 +426,9 @@ impl Document for AnsiEditor {
             });
 
             });
+
         });
+
     }
 
     fn get_buffer_view(&self) -> Option<Arc<Mutex<buffer_view::BufferView>>> {
@@ -446,10 +452,10 @@ fn calc_click_pos(
 }
 
 fn terminal_context_menu(ui: &mut egui::Ui) {
-    ui.input_mut().events.clear();
+    ui.input_mut(|i| i.events.clear());
 
     if ui.button("Copy").clicked() {
-        ui.input_mut().events.push(egui::Event::Copy);
+        ui.input_mut(|i| i.events.push(egui::Event::Copy));
         ui.close_menu();
     }
 

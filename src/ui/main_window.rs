@@ -212,11 +212,11 @@ pub struct TabViewer {
 impl egui_dock::TabViewer for TabViewer {
     type Tab = (Option<String>, Box<dyn Document>);
 
-    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+    fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab) {
         tab.1.show_ui(ui, &mut self.tools[self.selected_tool]);
     }
 
-    fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
+    fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText {
         let mut title = tab.1.get_title();
         if tab.1.is_dirty() {
             title.push('*');
