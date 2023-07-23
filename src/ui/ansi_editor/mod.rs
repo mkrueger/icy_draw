@@ -24,7 +24,7 @@ pub mod key_maps;
 pub use key_maps::*;
 
 use crate::{
-    model::{brush_imp::draw_glyph, Tool, DEFAULT_OUTLINE_TABLE},
+    model::{brush_imp::draw_glyph, Tool, DEFAULT_OUTLINE_TABLE, MModifiers, MKey},
     Document, TerminalResult,
 };
 
@@ -246,8 +246,12 @@ impl Document for AnsiEditor {
                             egui::Event::Paste(text) => {
                                 self.output_string(&text);
                             }
+
                             egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
-                                self.output_string(&text);
+                                for c in text.chars() {
+                                    let buffer_view = self.buffer_view.clone();
+                                    cur_tool.handle_key(buffer_view, MKey::Character(c as u16), MModifiers::None);
+                                }
                                 response.mark_changed();
                             }
 
@@ -322,6 +326,7 @@ impl Document for AnsiEditor {
                                 }
                             }
 
+
                             /*egui::Event::KeyRepeat { key, modifiers }
                             | */
                             egui::Event::Key {
@@ -337,14 +342,19 @@ impl Document for AnsiEditor {
                                 if modifiers.shift {
                                     key_code |= SHIFT_MOD;
                                 }
+
+                                let mut modifier: MModifiers = MModifiers::None;
+                                if modifiers.ctrl || modifiers.command {
+                                    modifier = MModifiers::Control;
+                                }
+
+                                if modifiers.shift {
+                                    modifier = MModifiers::Shift;
+                                }
                                 for (k, m) in ANSI_KEY_MAP {
                                     if *k == key_code {
-                                        //self.handled_char = true;
-                                        for c in *m {
-                                            if let Err(err) = self.print_char(*c) {
-                                                eprintln!("{}", err);
-                                            }
-                                        }
+                                        let buffer_view = self.buffer_view.clone();
+                                        cur_tool.handle_key(buffer_view, *m, modifier);
                                         response.mark_changed();
                                         ui.input_mut(|i| i.consume_key(*modifiers, *key));
                                         break;
@@ -362,7 +372,6 @@ impl Document for AnsiEditor {
                                 ui.output_mut(|o| o.cursor_icon = CursorIcon::Text);
                             }
                         }
-
                     }
 
                     response.dragged = false;

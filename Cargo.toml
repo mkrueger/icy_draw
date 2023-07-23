@@ -18,6 +18,7 @@ icy_engine = { path = "../icy_engine" }
 walkdir = "2"
 serde = { version = "1", features = ["derive"], optional = true }
 lazy_static = "1.4.0"
+directories = "5.0.1"
 
 i18n-embed = { version = "0.13.4", features = ["fluent-system", "desktop-requester"]} 
 i18n-embed-fl = "0.6.4"

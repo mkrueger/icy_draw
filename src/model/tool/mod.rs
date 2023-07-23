@@ -105,197 +105,198 @@ pub trait Tool {
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     );
 
-    /*
-        fn handle_key(&mut self, editor: Rc<RefCell<Editor>>, key: MKey, key_code: MKeyCode, modifier: MModifiers) -> Event
-        {
-            // TODO Keys:
+    fn handle_key(&mut self, buffer_view: Arc<Mutex<BufferView>>, key: MKey, modifier: MModifiers) -> Event
+    {
+        // TODO Keys:
 
-            // Tab - Next tab
-            // Shift+Tab - Prev tab
+        // Tab - Next tab
+        // Shift+Tab - Prev tab
 
-            // ctrl+pgup  - upper left corner
-            // ctrl+pgdn  - lower left corner
-            let pos = editor.borrow().get_caret_position();
-            let mut editor = editor.borrow_mut();
-            match key {
-                MKey::Down => {
-                    if let MModifiers::Control = modifier {
-                        let fg = (editor.caret.get_attribute().get_foreground() + 14) % 16;
-                        editor.caret.get_attribute().set_foreground(fg);
-                    } else {
-                        editor.set_caret(pos.x, pos.y + 1);
-                    }
+        // ctrl+pgup  - upper left corner
+        // ctrl+pgdn  - lower left corner
+        let editor: &mut Editor = &mut buffer_view.lock().unwrap().editor;
+        let pos = editor.caret.get_position();
+        match key {
+            MKey::Down => {
+                if let MModifiers::Control = modifier {
+                    let fg = (editor.caret.get_attribute().get_foreground() + 14) % 16;
+                    editor.caret.get_attribute().set_foreground(fg);
+                } else {
+                    editor.set_caret(pos.x, pos.y + 1);
                 }
-                MKey::Up => {
-                    if let MModifiers::Control = modifier {
-                        let fg = (editor.caret.get_attribute().get_foreground() + 1) % 16;
-                        editor.caret.get_attribute().set_foreground(fg);
-                    } else {
-                        editor.set_caret(pos.x, pos.y - 1);
-                    }
-                }
-                MKey::Left => {
-                    // TODO: ICE Colors
-                    if let MModifiers::Control = modifier {
-                        let bg = (editor.caret.get_attribute().get_background() + 7) % 8;
-                        editor.caret.get_attribute().set_background(bg);
-                    } else {
-                        editor.set_caret(pos.x - 1, pos.y);
-                    }
-                }
-                MKey::Right => {
-                    // TODO: ICE Colors
-                    if let MModifiers::Control = modifier {
-                        let bg = (editor.caret.get_attribute().get_background() + 1) % 8;
-                        editor.caret.get_attribute().set_background(bg);
-                    } else {
-                        editor.set_caret(pos.x + 1, pos.y);
-                    }
-                }
-                MKey::PageDown => {
-                    // TODO
-                    println!("pgdn");
-                }
-                MKey::PageUp => {
-                    // TODO
-                    println!("pgup");
-                }
-
-                MKey::Tab => {
-                    let tab_size = unsafe { crate::WORKSPACE.settings.tab_size } ;
-                    if let MModifiers::Control = modifier {
-                        let tabs = max(0, (pos.x / tab_size) - 1);
-                        let next_tab = tabs * tab_size;
-                        editor.set_caret(next_tab, pos.y);
-                    } else {
-                        let tabs = 1 + pos.x / tab_size;
-                        let next_tab = min(editor.buf.width as i32 - 1, tabs * tab_size);
-                        editor.set_caret(next_tab, pos.y);
-                    }
-                }
-                MKey::Home  => {
-                    if let MModifiers::Control = modifier {
-                        for i in 0..editor.buf.width {
-                            if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
-                                editor.set_caret(i as i32, pos.y);
-                                return Event::None;
-                            }
-                        }
-                    }
-                    editor.set_caret(0, pos.y);
-                }
-                MKey::End => {
-                    if let MModifiers::Control = modifier {
-                        for i in (0..editor.buf.width).rev()  {
-                            if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
-                                editor.set_caret(i as i32, pos.y);
-                                return Event::None;
-                            }
-                        }
-                    }
-                    let w = editor.buf.width as i32;
-                    editor.set_caret(w - 1, pos.y);
-                }
-                MKey::Return => {
-                    editor.set_caret(0,pos.y + 1);
-                }
-                MKey::Delete => {
-                    if editor.cur_selection.is_some() {
-                        editor.delete_selection();
-                    } else {
-                        let pos = editor.get_caret_position();
-                        for i in pos.x..(editor.buf.width as i32 - 1) {
-                            let next = editor.get_char_from_cur_layer( Position::from(i + 1, pos.y));
-                            editor.set_char(Position::from(i, pos.y), next);
-                        }
-                        let last_pos = Position::from(editor.buf.width as i32 - 1, pos.y);
-                        editor.set_char(last_pos, None);
-                    }
-                }
-                MKey::Insert => {
-                    editor.caret.insert_mode = !editor.caret.insert_mode;
-                }
-                MKey::Backspace => {
-                    editor.cur_selection = None;
-                    let pos = editor.get_caret_position();
-                    if pos.x> 0 {
-                       /* if (caret.fontMode() && FontTyped && cpos > 0)  {
-                            caret.getX() -= CursorPos[cpos] - 1;
-                            for (a=0;a<=CursorPos[cpos];a++)
-                            for (b=0;b<=FontLibrary::getInstance().maxY;b++) {
-                                getCurrentBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a);
-                                getCurrentBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a);
-                            }
-                            cpos--;
-                        } else {*/
-                            editor.set_caret_position(pos + Position::from(-1, 0));
-                        if editor.caret.insert_mode {
-                            for i in pos.x..(editor.buf.width as i32 - 1) {
-                                let next = editor.get_char_from_cur_layer( Position::from(i + 1, pos.y));
-                                editor.set_char(Position::from(i, pos.y), next);
-                            }
-                            let last_pos = Position::from(editor.buf.width as i32 - 1, pos.y);
-                            editor.set_char(last_pos, None);
-                        } else  {
-                            let pos = editor.get_caret_position();
-                            editor.set_char(pos, None);
-                        }
-                    }
-                }
-
-                MKey::Character(ch) => {
-                    editor.cur_selection = None;
-                    if let MModifiers::Alt = modifier {
-                        match key_code {
-                            MKeyCode::KeyI => editor.insert_line(pos.y),
-                            MKeyCode::KeyU => editor.pickup_color(pos),
-                            MKeyCode::KeyY => editor.delete_line(pos.y),
-                            MKeyCode::Unknown => {}
-                        }
-                        return Event::None;
-                    }
-
-                    editor.type_key(ch);
-                }
-
-                MKey::F1 => {
-                    handle_outline_insertion(&mut editor, modifier, 0);
-                }
-                MKey::F2 => {
-                    handle_outline_insertion(&mut editor, modifier, 1);
-                }
-                MKey::F3 => {
-                    handle_outline_insertion(&mut editor, modifier, 2);
-                }
-                MKey::F4 => {
-                    handle_outline_insertion(&mut editor, modifier, 3);
-                }
-                MKey::F5 => {
-                    handle_outline_insertion(&mut editor, modifier, 4);
-                }
-                MKey::F6 => {
-                    handle_outline_insertion(&mut editor, modifier, 5);
-                }
-                MKey::F7 => {
-                    handle_outline_insertion(&mut editor, modifier, 6);
-                }
-                MKey::F8 => {
-                    handle_outline_insertion(&mut editor, modifier, 7);
-                }
-                MKey::F9 => {
-                    handle_outline_insertion(&mut editor, modifier, 8);
-                }
-                MKey::F10 => {
-                    handle_outline_insertion(&mut editor, modifier, 9);
-                }
-                MKey::Escape => {
-                    editor.cur_selection = None;
-                }
-                _ => {}
             }
-            Event::None
+            MKey::Up => {
+                if let MModifiers::Control = modifier {
+                    let fg = (editor.caret.get_attribute().get_foreground() + 1) % 16;
+                    editor.caret.get_attribute().set_foreground(fg);
+                } else {
+                    editor.set_caret(pos.x, pos.y - 1);
+                }
+            }
+            MKey::Left => {
+                // TODO: ICE Colors
+                if let MModifiers::Control = modifier {
+                    let bg = (editor.caret.get_attribute().get_background() + 7) % 8;
+                    editor.caret.get_attribute().set_background(bg);
+                } else {
+                    editor.set_caret(pos.x - 1, pos.y);
+                }
+            }
+            MKey::Right => {
+                // TODO: ICE Colors
+                if let MModifiers::Control = modifier {
+                    let bg = (editor.caret.get_attribute().get_background() + 1) % 8;
+                    editor.caret.get_attribute().set_background(bg);
+                } else {
+                    editor.set_caret(pos.x + 1, pos.y);
+                }
+            }
+            MKey::PageDown => {
+                // TODO
+                println!("pgdn");
+            }
+            MKey::PageUp => {
+                // TODO
+                println!("pgup");
+            }
+/* 
+            MKey::Tab => {
+                let tab_size = unsafe { crate::WORKSPACE.settings.tab_size } ;
+                if let MModifiers::Control = modifier {
+                    let tabs = max(0, (pos.x / tab_size) - 1);
+                    let next_tab = tabs * tab_size;
+                    editor.set_caret(next_tab, pos.y);
+                } else {
+                    let tabs = 1 + pos.x / tab_size;
+                    let next_tab = min(editor.buf.width as i32 - 1, tabs * tab_size);
+                    editor.set_caret(next_tab, pos.y);
+                }
+            }
+            MKey::Home  => {
+                if let MModifiers::Control = modifier {
+                    for i in 0..editor.buf.width {
+                        if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
+                            editor.set_caret(i as i32, pos.y);
+                            return Event::None;
+                        }
+                    }
+                }
+                editor.set_caret(0, pos.y);
+            }
+            MKey::End => {
+                if let MModifiers::Control = modifier {
+                    for i in (0..editor.buf.width).rev()  {
+                        if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
+                            editor.set_caret(i as i32, pos.y);
+                            return Event::None;
+                        }
+                    }
+                }
+                let w = editor.buf.width as i32;
+                editor.set_caret(w - 1, pos.y);
+            }*/
+            MKey::Return => {
+                editor.set_caret(0,pos.y + 1);
+            }
+            MKey::Delete => {
+                if editor.cur_selection.is_some() {
+                    editor.delete_selection();
+                } else {
+                    let pos = editor.get_caret_position();
+                    for i in pos.x..(editor.buf.get_buffer_width() as i32 - 1) {
+                        let next = editor.get_char_from_cur_layer( Position::new(i + 1, pos.y));
+                        editor.set_char(Position::new(i, pos.y), next);
+                    }
+                    let last_pos = Position::new(editor.buf.get_buffer_width() as i32 - 1, pos.y);
+                    editor.set_char(last_pos, None);
+                }
+            }
+            MKey::Insert => {
+                editor.caret.insert_mode = !editor.caret.insert_mode;
+            }
+            MKey::Backspace => {
+                editor.cur_selection = None;
+                let pos = editor.get_caret_position();
+                if pos.x> 0 {
+                    /* if (caret.fontMode() && FontTyped && cpos > 0)  {
+                        caret.getX() -= CursorPos[cpos] - 1;
+                        for (a=0;a<=CursorPos[cpos];a++)
+                        for (b=0;b<=FontLibrary::getInstance().maxY;b++) {
+                            getCurrentBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a);
+                            getCurrentBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a);
+                        }
+                        cpos--;
+                    } else {*/
+                        editor.set_caret_position(pos + Position::new(-1, 0));
+                    if editor.caret.insert_mode {
+                        for i in pos.x..(editor.buf.get_buffer_width() as i32 - 1) {
+                            let next = editor.get_char_from_cur_layer( Position::new(i + 1, pos.y));
+                            editor.set_char(Position::new(i, pos.y), next);
+                        }
+                        let last_pos = Position::new(editor.buf.get_buffer_width() as i32 - 1, pos.y);
+                        editor.set_char(last_pos, None);
+                    } else  {
+                        let pos = editor.get_caret_position();
+                        editor.set_char(pos, None);
+                    }
+                }
+            }
+
+            MKey::Character(ch) => {
+                editor.cur_selection = None;
+        /*        if let MModifiers::Alt = modifier {
+                    match key_code {
+                        MKeyCode::KeyI => editor.insert_line(pos.y),
+                        MKeyCode::KeyU => editor.pickup_color(pos),
+                        MKeyCode::KeyY => editor.delete_line(pos.y),
+                        MKeyCode::Unknown => {}
+                    }
+                    return Event::None;
+                }*/
+
+                println!("{} - {}", ch, unsafe { char::from_u32_unchecked(ch as u32) });
+
+                editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
+            }
+ 
+            MKey::F1 => {
+                handle_outline_insertion(editor, modifier, 0);
+            }
+            MKey::F2 => {
+                handle_outline_insertion(editor, modifier, 1);
+            }
+            MKey::F3 => {
+                handle_outline_insertion(editor, modifier, 2);
+            }
+            MKey::F4 => {
+                handle_outline_insertion(editor, modifier, 3);
+            }
+            MKey::F5 => {
+                handle_outline_insertion(editor, modifier, 4);
+            }
+            MKey::F6 => {
+                handle_outline_insertion(editor, modifier, 5);
+            }
+            MKey::F7 => {
+                handle_outline_insertion(editor, modifier, 6);
+            }
+            MKey::F8 => {
+                handle_outline_insertion(editor, modifier, 7);
+            }
+            MKey::F9 => {
+                handle_outline_insertion(editor, modifier, 8);
+            }
+            MKey::F10 => {
+                handle_outline_insertion(editor, modifier, 9);
+            }
+            MKey::Escape => {
+                editor.cur_selection = None;
+            }
+            _ => {}
         }
-    */
+        Event::None
+    }
+
     fn handle_click(
         &mut self,
         _buffer_view: Arc<Mutex<BufferView>>,
@@ -331,8 +332,8 @@ pub trait Tool {
     }
 }
 
-/*
-fn handle_outline_insertion(editor: &mut RefMut<Editor>, modifier: MModifiers, outline: i32) {
+
+fn handle_outline_insertion(editor: &mut Editor, modifier: MModifiers, outline: i32) {
     if let MModifiers::Control = modifier {
         editor.set_cur_outline(outline);
         return;
@@ -347,9 +348,9 @@ fn handle_outline_insertion(editor: &mut RefMut<Editor>, modifier: MModifiers, o
     editor.cur_selection = None;
     let ch = editor.get_outline_char_code(outline);
     if let Ok(ch) = ch {
-        editor.type_key(ch);
+        editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
     }
-} */
+} 
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DrawMode {

@@ -155,6 +155,14 @@ impl MainWindow {
             attr: icy_engine::TextAttribute::default(),
         }));
 
+        let mut fnt = crate::model::font_imp::FontTool {
+            selected_font: 0,
+            fonts: Vec::new(),
+            sizes: Vec::new()
+        };
+        fnt.load_fonts();
+        tools.push(Box::new(fnt));
+
         tools.push(Box::new(crate::model::move_layer_imp::MoveLayer {
             pos: icy_engine::Position { x: 0, y: 0 },
         }));
