@@ -59,12 +59,6 @@ impl Tool for ClickTool {
                 is_preview: true,
                 shape: Shape::Rectangle,
             });
-            println!(
-                "{:?} - {:?} = {:?}",
-                start,
-                cur,
-                Rectangle::from_pt(start, cur)
-            );
         }
         editor.set_caret_position(cur);
         Event::None

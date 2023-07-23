@@ -4,6 +4,20 @@ menu-file=File
 menu-open=Open file…
 menu-save=Save
 
+menu-edit=Edit
+menu-undo=Undo
+menu-redo=Redo
+
+
+menu-copy=Copy
+menu-paste=Paste
+menu-erase=Erase
+menu-flipx=Flip X
+menu-flipy=Flip Y
+menu-justifyleft=Justify Left
+menu-justifyright=Justify Right
+menu-justifycenter=Center
+
 tool-fg=Fg
 tool-bg=Bg
 tool-solid=Solid

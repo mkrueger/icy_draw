@@ -8,7 +8,7 @@ use std::{
     cmp::{max, min},
     fs,
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, borrow::BorrowMut,
 };
 
 pub mod render;
@@ -111,6 +111,7 @@ impl Document for AnsiEditor {
             ScrollArea::both()
                 .auto_shrink([false; 2])
                 .max_height(size.y)
+                .drag_to_scroll(false)
                 .show_viewport(ui, |ui, viewport| {
                     let (id, draw_area) = ui.allocate_space(size);
                     let mut response = ui.interact(draw_area, id, egui::Sense::click());
@@ -230,7 +231,7 @@ impl Document for AnsiEditor {
                     );
 
                     ui.painter().add(callback);
-                    response = response.context_menu(terminal_context_menu);
+                    response = response.context_menu(|ui| terminal_context_menu( &mut self.buffer_view.clone(), ui));
                     let events = ui.input(|i| i.events.clone());
                     for e in &events {
                         match e {
@@ -445,25 +446,53 @@ fn calc_click_pos(
     rect: Rect,
     top_margin_height: f32,
     char_size: Vec2,
-    first_line: i32,
+    _first_line: i32,
 ) -> Vec2 {
     (*pos - rect.min - Vec2::new(0., top_margin_height)) / char_size
-        + Vec2::new(0.0, first_line as f32)
 }
 
-fn terminal_context_menu(ui: &mut egui::Ui) {
+pub fn terminal_context_menu(buffer_view: &mut Arc<Mutex<BufferView>>, ui: &mut egui::Ui) {
     ui.input_mut(|i| i.events.clear());
 
-    if ui.button("Copy").clicked() {
+    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-copy")).clicked() {
         ui.input_mut(|i| i.events.push(egui::Event::Copy));
         ui.close_menu();
     }
 
-    if ui.button("Paste").clicked() {
+    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-paste")).clicked() {
         /* let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         if let Ok(text) = ctx.get_contents() {
             ui.input_mut().events.push(egui::Event::Paste(text));
         }
         ui.close_menu();*/
+    }
+    let mut view  = buffer_view.borrow_mut().lock().unwrap();
+
+    if let Some(sel) = &view.editor.cur_selection  {
+        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-erase")).clicked() {
+            view.editor.delete_selection();
+            ui.close_menu();
+        }
+        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-flipx")).clicked() {
+            view.editor.flip_x();
+            ui.close_menu();
+        }
+        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-flipy")).clicked() {
+            view.editor.flip_y();
+            ui.close_menu();
+        }
+
+        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-justifyleft")).clicked() {
+            view.editor.justify_left();
+            ui.close_menu();
+        }
+        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-justifyright")).clicked() {
+            view.editor.justify_right();
+            ui.close_menu();
+        }
+        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-justifycenter")).clicked() {
+            view.editor.justify_center();
+            ui.close_menu();
+        }
     }
 }

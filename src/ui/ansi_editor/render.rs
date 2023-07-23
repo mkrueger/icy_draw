@@ -78,7 +78,7 @@ impl BufferView {
                 gl.get_uniform_location(self.program, "u_caret_position")
                     .as_ref(),
                 self.editor.caret.get_position().x as f32,
-                self.editor.caret.get_position().y as f32 - sbl,
+                self.editor.caret.get_position().y as f32 + sbl,
                 if self.caret_blink.is_on() && self.editor.caret.is_visible {
                     1.0
                 } else {

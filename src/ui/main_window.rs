@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, sync::Arc, time::Duration};
+use std::{fs, path::PathBuf, sync::Arc, time::Duration, borrow::BorrowMut};
 
 use crate::{model::Tool, Document, FontEditor};
 use eframe::egui::{self, menu, SidePanel, TopBottomPanel};
@@ -262,6 +262,33 @@ impl eframe::App for MainWindow {
                         if let Some(t) = self.tree.find_active_focused() {
                             if let Some(str) = &t.1 .0 {
                                 t.1 .1.save(str);
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                });
+
+                ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
+                    if ui
+                        .button(fl!(crate::LANGUAGE_LOADER, "menu-undo"))
+                        .clicked()
+                    {
+                        if let Some(t) = self.tree.find_active_focused() {
+                            let doc = t.1.1.get_buffer_view();
+                            if let Some(view) = &doc {
+                                view.lock().unwrap().editor.undo();
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                    if ui
+                        .button(fl!(crate::LANGUAGE_LOADER, "menu-redo"))
+                        .clicked()
+                    {
+                        if let Some(t) = self.tree.find_active_focused() {
+                            let doc = t.1.1.get_buffer_view();
+                            if let Some(view) = &doc {
+                                view.lock().unwrap().editor.redo();
                             }
                         }
                         ui.close_menu();
