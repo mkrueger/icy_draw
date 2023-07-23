@@ -70,8 +70,8 @@ impl AnsiEditor {
             .print_char(&mut self.buffer_parser, unsafe {
                 char::from_u32_unchecked(c as u32)
             })?;
-        self.buffer_view.lock().unwrap().redraw_view();
-        Ok(())
+            self.buffer_view.lock().unwrap().redraw_view();
+            Ok(())
     }
 }
 
@@ -245,6 +245,7 @@ impl Document for AnsiEditor {
                             egui::Event::Cut => {}
                             egui::Event::Paste(text) => {
                                 self.output_string(&text);
+                                self.buffer_view.lock().unwrap().redraw_view();
                             }
 
                             egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
@@ -355,6 +356,7 @@ impl Document for AnsiEditor {
                                     if *k == key_code {
                                         let buffer_view = self.buffer_view.clone();
                                         cur_tool.handle_key(buffer_view, *m, modifier);
+                                        self.buffer_view.lock().unwrap().redraw_view();
                                         response.mark_changed();
                                         ui.input_mut(|i| i.consume_key(*modifiers, *key));
                                         break;
