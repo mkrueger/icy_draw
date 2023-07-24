@@ -105,8 +105,12 @@ pub trait Tool {
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     );
 
-    fn handle_key(&mut self, buffer_view: Arc<Mutex<BufferView>>, key: MKey, modifier: MModifiers) -> Event
-    {
+    fn handle_key(
+        &mut self,
+        buffer_view: Arc<Mutex<BufferView>>,
+        key: MKey,
+        modifier: MModifiers,
+    ) -> Event {
         // TODO Keys:
 
         // Tab - Next tab
@@ -159,7 +163,7 @@ pub trait Tool {
                 // TODO
                 println!("pgup");
             }
-/* 
+            /*
             MKey::Tab => {
                 let tab_size = unsafe { crate::WORKSPACE.settings.tab_size } ;
                 if let MModifiers::Control = modifier {
@@ -196,7 +200,7 @@ pub trait Tool {
                 editor.set_caret(w - 1, pos.y);
             }*/
             MKey::Return => {
-                editor.set_caret(0,pos.y + 1);
+                editor.set_caret(0, pos.y + 1);
             }
             MKey::Delete => {
                 if editor.cur_selection.is_some() {
@@ -204,7 +208,7 @@ pub trait Tool {
                 } else {
                     let pos = editor.get_caret_position();
                     for i in pos.x..(editor.buf.get_buffer_width() as i32 - 1) {
-                        let next = editor.get_char_from_cur_layer( Position::new(i + 1, pos.y));
+                        let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                         editor.set_char(Position::new(i, pos.y), next);
                     }
                     let last_pos = Position::new(editor.buf.get_buffer_width() as i32 - 1, pos.y);
@@ -217,7 +221,7 @@ pub trait Tool {
             MKey::Backspace => {
                 editor.cur_selection = None;
                 let pos = editor.get_caret_position();
-                if pos.x> 0 {
+                if pos.x > 0 {
                     /* if (caret.fontMode() && FontTyped && cpos > 0)  {
                         caret.getX() -= CursorPos[cpos] - 1;
                         for (a=0;a<=CursorPos[cpos];a++)
@@ -227,15 +231,16 @@ pub trait Tool {
                         }
                         cpos--;
                     } else {*/
-                        editor.set_caret_position(pos + Position::new(-1, 0));
+                    editor.set_caret_position(pos + Position::new(-1, 0));
                     if editor.caret.insert_mode {
                         for i in pos.x..(editor.buf.get_buffer_width() as i32 - 1) {
-                            let next = editor.get_char_from_cur_layer( Position::new(i + 1, pos.y));
+                            let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
-                        let last_pos = Position::new(editor.buf.get_buffer_width() as i32 - 1, pos.y);
+                        let last_pos =
+                            Position::new(editor.buf.get_buffer_width() as i32 - 1, pos.y);
                         editor.set_char(last_pos, None);
-                    } else  {
+                    } else {
                         let pos = editor.get_caret_position();
                         editor.set_char(pos, None);
                     }
@@ -244,7 +249,7 @@ pub trait Tool {
 
             MKey::Character(ch) => {
                 editor.cur_selection = None;
-        /*        if let MModifiers::Alt = modifier {
+                /*        if let MModifiers::Alt = modifier {
                     match key_code {
                         MKeyCode::KeyI => editor.insert_line(pos.y),
                         MKeyCode::KeyU => editor.pickup_color(pos),
@@ -254,11 +259,13 @@ pub trait Tool {
                     return Event::None;
                 }*/
 
-                println!("{} - {}", ch, unsafe { char::from_u32_unchecked(ch as u32) });
+                println!("{} - {}", ch, unsafe {
+                    char::from_u32_unchecked(ch as u32)
+                });
 
                 editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
             }
- 
+
             MKey::F1 => {
                 handle_outline_insertion(editor, modifier, 0);
             }
@@ -332,7 +339,6 @@ pub trait Tool {
     }
 }
 
-
 fn handle_outline_insertion(editor: &mut Editor, modifier: MModifiers, outline: i32) {
     if let MModifiers::Control = modifier {
         editor.set_cur_outline(outline);
@@ -350,7 +356,7 @@ fn handle_outline_insertion(editor: &mut Editor, modifier: MModifiers, outline: 
     if let Ok(ch) = ch {
         editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
     }
-} 
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DrawMode {

@@ -23,4 +23,10 @@ pub use char_table::*;
 mod icons;
 pub use icons::*;
 
+mod new_file_dialog;
+pub use new_file_dialog::*;
+
+mod edit_sauce_dialog;
+pub use edit_sauce_dialog::*;
+
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;

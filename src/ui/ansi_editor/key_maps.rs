@@ -32,7 +32,6 @@ pub static ANSI_KEY_MAP: &[(u32, MKey)] = &[
     (Key::ArrowDown as u32, MKey::Down),
     (Key::ArrowRight as u32, MKey::Right),
     (Key::ArrowLeft as u32, MKey::Left),
-    
     (Key::A as u32 | CTRL_MOD, MKey::Character(1)),
     (Key::B as u32 | CTRL_MOD, MKey::Character(2)),
     (Key::C as u32 | CTRL_MOD, MKey::Character(3)),
@@ -64,5 +63,5 @@ pub static ANSI_KEY_MAP: &[(u32, MKey)] = &[
     (Key::Num4 as u32 | CTRL_MOD, MKey::Character(0x1C)),
     (Key::Num5 as u32 | CTRL_MOD, MKey::Character(0x1D)),
     (Key::Num6 as u32 | CTRL_MOD, MKey::Character(0x1E)),
-    (Key::Num7 as u32 | CTRL_MOD, MKey::Character(0x1F))
+    (Key::Num7 as u32 | CTRL_MOD, MKey::Character(0x1F)),
 ];

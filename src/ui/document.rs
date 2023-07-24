@@ -16,4 +16,6 @@ pub trait Document {
     fn destroy(&self, gl: &glow::Context);
 
     fn get_buffer_view(&self) -> Option<Arc<Mutex<BufferView>>>;
+
+    fn set_enabled(&mut self, enabled: bool);
 }

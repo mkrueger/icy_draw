@@ -5,10 +5,11 @@ use eframe::{
 use i18n_embed_fl::fl;
 use icy_engine::{AnsiParser, Buffer, BufferParser, Position, SaveOptions};
 use std::{
+    borrow::BorrowMut,
     cmp::{max, min},
     fs,
     path::PathBuf,
-    sync::{Arc, Mutex}, borrow::BorrowMut,
+    sync::{Arc, Mutex},
 };
 
 pub mod render;
@@ -24,13 +25,13 @@ pub mod key_maps;
 pub use key_maps::*;
 
 use crate::{
-    model::{brush_imp::draw_glyph, Tool, DEFAULT_OUTLINE_TABLE, MModifiers, MKey},
+    model::{brush_imp::draw_glyph, MKey, MModifiers, Tool, DEFAULT_OUTLINE_TABLE},
     Document, TerminalResult,
 };
 
 pub struct AnsiEditor {
     is_dirty: bool,
-
+    enabled: bool,
     pressed_button: i32,
     drag_start: Position,
     drag_pos: Position,
@@ -46,6 +47,7 @@ impl AnsiEditor {
 
         Self {
             is_dirty: false,
+            enabled: true,
             pressed_button: -1,
             drag_start: Position::default(),
             drag_pos: Position::default(),
@@ -70,8 +72,8 @@ impl AnsiEditor {
             .print_char(&mut self.buffer_parser, unsafe {
                 char::from_u32_unchecked(c as u32)
             })?;
-            self.buffer_view.lock().unwrap().redraw_view();
-            Ok(())
+        self.buffer_view.lock().unwrap().redraw_view();
+        Ok(())
     }
 }
 
@@ -86,6 +88,11 @@ impl Document for AnsiEditor {
 
     fn is_dirty(&self) -> bool {
         self.is_dirty
+    }
+
+    fn set_enabled(&mut self, enabled: bool)
+    {
+        self.enabled = enabled;
     }
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
@@ -231,144 +238,149 @@ impl Document for AnsiEditor {
                     );
 
                     ui.painter().add(callback);
-                    response = response.context_menu(|ui| terminal_context_menu( &mut self.buffer_view.clone(), ui));
-                    let events = ui.input(|i| i.events.clone());
-                    for e in &events {
-                        match e {
-                            egui::Event::Copy => {
-                                let buffer_view = self.buffer_view.clone();
-                                let mut l = buffer_view.lock().unwrap();
-                                if let Some(txt) = l.get_copy_text(&self.buffer_parser) {
-                                    ui.output_mut(|o| o.copied_text = txt);
-                                }
-                            }
-                            egui::Event::Cut => {}
-                            egui::Event::Paste(text) => {
-                                self.output_string(&text);
-                                self.buffer_view.lock().unwrap().redraw_view();
-                            }
-
-                            egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
-                                for c in text.chars() {
+                    response = response.context_menu(|ui| {
+                        terminal_context_menu(&mut self.buffer_view.clone(), ui)
+                    });
+                    if self.enabled {
+                        let events = ui.input(|i| i.events.clone());
+                        for e in &events {
+                            match e {
+                                egui::Event::Copy => {
                                     let buffer_view = self.buffer_view.clone();
-                                    cur_tool.handle_key(buffer_view, MKey::Character(c as u16), MModifiers::None);
-                                }
-                                response.mark_changed();
-                            }
-
-                            egui::Event::PointerButton {
-                                pos,
-                                button,
-                                pressed: true,
-                                ..
-                            } => {
-                                if rect.contains(*pos) {
-                                    let buffer_view = self.buffer_view.clone();
-                                    let click_pos = calc_click_pos(
-                                        &pos,
-                                        rect,
-                                        top_margin_height,
-                                        char_size,
-                                        first_line,
-                                    );
-                                    let b = match button {
-                                        PointerButton::Primary => 1,
-                                        PointerButton::Secondary => 2,
-                                        PointerButton::Middle => 3,
-                                        PointerButton::Extra1 => 4,
-                                        PointerButton::Extra2 => 5,
-                                    };
-                                    self.pressed_button = b;
-                                    self.drag_start =
-                                        Position::new(click_pos.x as i32, click_pos.y as i32);
-                                    self.drag_pos = self.drag_start;
-                                    cur_tool.handle_click(buffer_view, b, self.drag_start);
-                                }
-                            }
-
-                            egui::Event::PointerButton {
-                                pos,
-                                pressed: false,
-                                ..
-                            } => {
-                                self.pressed_button = -1;
-                                let buffer_view = self.buffer_view.clone();
-                                let click_pos = calc_click_pos(
-                                    pos,
-                                    rect,
-                                    top_margin_height,
-                                    char_size,
-                                    first_line,
-                                );
-                                cur_tool.handle_drag_end(
-                                    buffer_view,
-                                    self.drag_start,
-                                    Position::new(click_pos.x as i32, click_pos.y as i32),
-                                );
-                            }
-
-                            egui::Event::PointerMoved(pos) => {
-                                if self.pressed_button >= 0 {
-                                    let buffer_view = self.buffer_view.clone();
-                                    let click_pos = calc_click_pos(
-                                        &pos,
-                                        rect,
-                                        top_margin_height,
-                                        char_size,
-                                        first_line,
-                                    );
-                                    let cur =
-                                        Position::new(click_pos.x as i32, click_pos.y as i32);
-                                    if self.drag_pos != cur {
-                                        self.drag_pos = cur;
-                                        buffer_view.lock().unwrap().redraw_view();
-                                        cur_tool.handle_drag(buffer_view, self.drag_start, cur);
+                                    let mut l = buffer_view.lock().unwrap();
+                                    if let Some(txt) = l.get_copy_text(&self.buffer_parser) {
+                                        ui.output_mut(|o| o.copied_text = txt);
                                     }
                                 }
-                            }
-
-
-                            /*egui::Event::KeyRepeat { key, modifiers }
-                            | */
-                            egui::Event::Key {
-                                key,
-                                pressed: true,
-                                modifiers,
-                                ..
-                            } => {
-                                let mut key_code = *key as u32;
-                                if modifiers.ctrl || modifiers.command {
-                                    key_code |= CTRL_MOD;
-                                }
-                                if modifiers.shift {
-                                    key_code |= SHIFT_MOD;
+                                egui::Event::Cut => {}
+                                egui::Event::Paste(text) => {
+                                    self.output_string(&text);
+                                    self.buffer_view.lock().unwrap().redraw_view();
                                 }
 
-                                let mut modifier: MModifiers = MModifiers::None;
-                                if modifiers.ctrl || modifiers.command {
-                                    modifier = MModifiers::Control;
-                                }
-
-                                if modifiers.shift {
-                                    modifier = MModifiers::Shift;
-                                }
-                                for (k, m) in ANSI_KEY_MAP {
-                                    if *k == key_code {
+                                egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
+                                    for c in text.chars() {
                                         let buffer_view = self.buffer_view.clone();
-                                        cur_tool.handle_key(buffer_view, *m, modifier);
-                                        self.buffer_view.lock().unwrap().redraw_view();
-                                        response.mark_changed();
-                                        ui.input_mut(|i| i.consume_key(*modifiers, *key));
-                                        break;
+                                        cur_tool.handle_key(
+                                            buffer_view,
+                                            MKey::Character(c as u16),
+                                            MModifiers::None,
+                                        );
+                                    }
+                                    response.mark_changed();
+                                }
+
+                                egui::Event::PointerButton {
+                                    pos,
+                                    button,
+                                    pressed: true,
+                                    ..
+                                } => {
+                                    if rect.contains(*pos) {
+                                        let buffer_view = self.buffer_view.clone();
+                                        let click_pos = calc_click_pos(
+                                            &pos,
+                                            rect,
+                                            top_margin_height,
+                                            char_size,
+                                            first_line,
+                                        );
+                                        let b = match button {
+                                            PointerButton::Primary => 1,
+                                            PointerButton::Secondary => 2,
+                                            PointerButton::Middle => 3,
+                                            PointerButton::Extra1 => 4,
+                                            PointerButton::Extra2 => 5,
+                                        };
+                                        self.pressed_button = b;
+                                        self.drag_start =
+                                            Position::new(click_pos.x as i32, click_pos.y as i32);
+                                        self.drag_pos = self.drag_start;
+                                        cur_tool.handle_click(buffer_view, b, self.drag_start);
                                     }
                                 }
+
+                                egui::Event::PointerButton {
+                                    pos,
+                                    pressed: false,
+                                    ..
+                                } => {
+                                    self.pressed_button = -1;
+                                    let buffer_view = self.buffer_view.clone();
+                                    let click_pos = calc_click_pos(
+                                        pos,
+                                        rect,
+                                        top_margin_height,
+                                        char_size,
+                                        first_line,
+                                    );
+                                    cur_tool.handle_drag_end(
+                                        buffer_view,
+                                        self.drag_start,
+                                        Position::new(click_pos.x as i32, click_pos.y as i32),
+                                    );
+                                }
+
+                                egui::Event::PointerMoved(pos) => {
+                                    if self.pressed_button >= 0 {
+                                        let buffer_view = self.buffer_view.clone();
+                                        let click_pos = calc_click_pos(
+                                            &pos,
+                                            rect,
+                                            top_margin_height,
+                                            char_size,
+                                            first_line,
+                                        );
+                                        let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
+                                        if self.drag_pos != cur {
+                                            self.drag_pos = cur;
+                                            buffer_view.lock().unwrap().redraw_view();
+                                            cur_tool.handle_drag(buffer_view, self.drag_start, cur);
+                                        }
+                                    }
+                                }
+
+                                /*egui::Event::KeyRepeat { key, modifiers }
+                                | */
+                                egui::Event::Key {
+                                    key,
+                                    pressed: true,
+                                    modifiers,
+                                    ..
+                                } => {
+                                    let mut key_code = *key as u32;
+                                    if modifiers.ctrl || modifiers.command {
+                                        key_code |= CTRL_MOD;
+                                    }
+                                    if modifiers.shift {
+                                        key_code |= SHIFT_MOD;
+                                    }
+
+                                    let mut modifier: MModifiers = MModifiers::None;
+                                    if modifiers.ctrl || modifiers.command {
+                                        modifier = MModifiers::Control;
+                                    }
+
+                                    if modifiers.shift {
+                                        modifier = MModifiers::Shift;
+                                    }
+                                    for (k, m) in ANSI_KEY_MAP {
+                                        if *k == key_code {
+                                            let buffer_view = self.buffer_view.clone();
+                                            cur_tool.handle_key(buffer_view, *m, modifier);
+                                            self.buffer_view.lock().unwrap().redraw_view();
+                                            response.mark_changed();
+                                            ui.input_mut(|i| i.consume_key(*modifiers, *key));
+                                            break;
+                                        }
+                                    }
+                                }
+                                _ => {}
                             }
-                            _ => {}
                         }
                     }
-                    
                     if response.hovered() {
-                        let hover_pos_opt = ui.input(|i| { i.pointer.hover_pos() });
+                        let hover_pos_opt = ui.input(|i| i.pointer.hover_pos());
                         if let Some(hover_pos) = hover_pos_opt {
                             if rect.contains(hover_pos) {
                                 ui.output_mut(|o| o.cursor_icon = CursorIcon::Text);
@@ -407,40 +419,35 @@ impl Document for AnsiEditor {
                     column = pos.x
                 ));
 
-
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                ui.horizontal(|ui| {
-                    for i in (0..10).into_iter().rev() {
-                        let ch = self
-                            .buffer_view
-                            .lock()
-                            .unwrap()
-                            .editor
-                            .get_outline_char_code(i as i32)
-                            .unwrap();
-                        let cur_page = self.buffer_view.lock().unwrap().editor.cur_font_page;
-                        ui.add(draw_glyph(
-                            self.buffer_view.clone(),
-                            unsafe { char::from_u32_unchecked(ch as u32) },
-                            cur_page,
+                    ui.horizontal(|ui| {
+                        for i in (0..10).into_iter().rev() {
+                            let ch = self
+                                .buffer_view
+                                .lock()
+                                .unwrap()
+                                .editor
+                                .get_outline_char_code(i as i32)
+                                .unwrap();
+                            let cur_page = self.buffer_view.lock().unwrap().editor.cur_font_page;
+                            ui.add(draw_glyph(
+                                self.buffer_view.clone(),
+                                unsafe { char::from_u32_unchecked(ch as u32) },
+                                cur_page,
+                            ));
+                            ui.label(format!("F{}", i + 1));
+                        }
+
+                        ui.label(fl!(
+                            crate::LANGUAGE_LOADER,
+                            "toolbar-size",
+                            colums = width,
+                            rows = height
                         ));
-                        ui.label(format!("F{}", i + 1));
-                    }
-
-
-                    ui.label(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "toolbar-size",
-                        colums = width,
-                        rows = height
-                    ));
+                    });
                 });
             });
-
-            });
-
         });
-
     }
 
     fn get_buffer_view(&self) -> Option<Arc<Mutex<buffer_view::BufferView>>> {
@@ -465,43 +472,67 @@ fn calc_click_pos(
 pub fn terminal_context_menu(buffer_view: &mut Arc<Mutex<BufferView>>, ui: &mut egui::Ui) {
     ui.input_mut(|i| i.events.clear());
 
-    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-copy")).clicked() {
+    if ui
+        .button(fl!(crate::LANGUAGE_LOADER, "menu-copy"))
+        .clicked()
+    {
         ui.input_mut(|i| i.events.push(egui::Event::Copy));
         ui.close_menu();
     }
 
-    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-paste")).clicked() {
+    if ui
+        .button(fl!(crate::LANGUAGE_LOADER, "menu-paste"))
+        .clicked()
+    {
         /* let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
         if let Ok(text) = ctx.get_contents() {
             ui.input_mut().events.push(egui::Event::Paste(text));
         }
         ui.close_menu();*/
     }
-    let mut view  = buffer_view.borrow_mut().lock().unwrap();
+    let mut view = buffer_view.borrow_mut().lock().unwrap();
 
-    if let Some(sel) = &view.editor.cur_selection  {
-        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-erase")).clicked() {
+    if let Some(sel) = &view.editor.cur_selection {
+        if ui
+            .button(fl!(crate::LANGUAGE_LOADER, "menu-erase"))
+            .clicked()
+        {
             view.editor.delete_selection();
             ui.close_menu();
         }
-        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-flipx")).clicked() {
+        if ui
+            .button(fl!(crate::LANGUAGE_LOADER, "menu-flipx"))
+            .clicked()
+        {
             view.editor.flip_x();
             ui.close_menu();
         }
-        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-flipy")).clicked() {
+        if ui
+            .button(fl!(crate::LANGUAGE_LOADER, "menu-flipy"))
+            .clicked()
+        {
             view.editor.flip_y();
             ui.close_menu();
         }
 
-        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-justifyleft")).clicked() {
+        if ui
+            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"))
+            .clicked()
+        {
             view.editor.justify_left();
             ui.close_menu();
         }
-        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-justifyright")).clicked() {
+        if ui
+            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifyright"))
+            .clicked()
+        {
             view.editor.justify_right();
             ui.close_menu();
         }
-        if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-justifycenter")).clicked() {
+        if ui
+            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"))
+            .clicked()
+        {
             view.editor.justify_center();
             ui.close_menu();
         }

@@ -1,4 +1,4 @@
-use eframe::{epaint::Vec2, egui};
+use eframe::{egui, epaint::Vec2};
 use glow::NativeTexture;
 use std::sync::Arc;
 
@@ -533,6 +533,4 @@ void main() {
     pub fn set_post_processing(&mut self, post_processing: PostProcessing) {
         self.post_processing = post_processing;
     }*/
-
-    
 }

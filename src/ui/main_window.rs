@@ -1,6 +1,6 @@
-use std::{fs, path::PathBuf, sync::Arc, time::Duration, borrow::BorrowMut};
+use std::{borrow::BorrowMut, fs, path::{PathBuf, Path}, sync::Arc, time::Duration};
 
-use crate::{model::Tool, Document, FontEditor};
+use crate::{model::Tool, Document, EditSauceDialog, FontEditor, NewFileDialog};
 use eframe::egui::{self, menu, SidePanel, TopBottomPanel};
 use egui_dock::{DockArea, Node, Style, Tree};
 use glow::Context;
@@ -9,54 +9,6 @@ use icy_engine::{BitFont, Buffer, Position};
 
 use super::ansi_editor::AnsiEditor;
 use egui_file::FileDialog;
-pub struct NewFileDialog {
-    width: i32,
-    height: i32,
-
-    create: bool,
-}
-
-impl NewFileDialog {
-    pub fn new() -> Self {
-        NewFileDialog {
-            width: 80,
-            height: 25,
-            create: false,
-        }
-    }
-
-    pub fn show(&mut self, ctx: &egui::Context) -> bool {
-        let mut open = true;
-        let mut create_file = true;
-        egui::Window::new(fl!(crate::LANGUAGE_LOADER, "new-file-title"))
-            .open(&mut open)
-            .collapsible(false)
-            .resizable(false)
-            .show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-                    let mut my_f32 = self.width as f32;
-                    ui.add(egui::DragValue::new(&mut my_f32).speed(1));
-                    self.width = my_f32 as i32;
-                });
-                ui.horizontal(|ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
-                    let mut my_f32 = self.height as f32;
-                    ui.add(egui::DragValue::new(&mut my_f32).speed(1));
-                    self.height = my_f32 as i32;
-                });
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-ok"))
-                    .clicked()
-                {
-                    self.create = true;
-                    create_file = false;
-                }
-            });
-
-        !(open && create_file)
-    }
-}
 
 pub struct MainWindow {
     pub tab_viewer: TabViewer,
@@ -64,8 +16,11 @@ pub struct MainWindow {
     gl: Arc<Context>,
 
     opened_file: Option<PathBuf>,
+
+    dialog_open: bool,
     open_file_dialog: Option<FileDialog>,
     new_file_dialog: Option<NewFileDialog>,
+    edit_sauce_dialog: Option<EditSauceDialog>,
 }
 
 impl MainWindow {
@@ -158,7 +113,7 @@ impl MainWindow {
         let mut fnt = crate::model::font_imp::FontTool {
             selected_font: 0,
             fonts: Vec::new(),
-            sizes: Vec::new()
+            sizes: Vec::new(),
         };
         fnt.load_fonts();
         tools.push(Box::new(fnt));
@@ -175,13 +130,15 @@ impl MainWindow {
             tree,
             gl: cc.gl.clone().unwrap(),
             opened_file: None,
+            dialog_open: false,
             open_file_dialog: None,
             new_file_dialog: None,
+            edit_sauce_dialog: None,
         };
         view
     }
 
-    pub fn open_file(&mut self, path: PathBuf) {
+    pub fn open_file(&mut self, path: &Path) {
         let full_path = path.to_str().unwrap().to_string();
 
         if let Some(ext) = path.extension() {
@@ -239,6 +196,11 @@ impl eframe::App for MainWindow {
         use egui::FontId;
         use egui::TextStyle::*;
 
+        if let Some(file) = &self.opened_file.clone() {
+            self.opened_file = None;
+            self.open_file(file);
+
+        }
         let mut style: egui::Style = (*ctx.style()).clone();
         style.text_styles = [
             (Heading, FontId::new(30.0, Proportional)),
@@ -253,9 +215,7 @@ impl eframe::App for MainWindow {
         TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
-                    if ui
-                        .button(fl!(crate::LANGUAGE_LOADER, "menu-open"))
-                        .clicked()
+                    if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-open")).wrap(false)).clicked()
                     {
                         let mut dialog = FileDialog::open_file(self.opened_file.clone());
                         dialog.open();
@@ -263,9 +223,7 @@ impl eframe::App for MainWindow {
 
                         ui.close_menu();
                     }
-                    if ui
-                        .button(fl!(crate::LANGUAGE_LOADER, "menu-save"))
-                        .clicked()
+                    if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false)).clicked()
                     {
                         if let Some(t) = self.tree.find_active_focused() {
                             if let Some(str) = &t.1 .0 {
@@ -274,6 +232,20 @@ impl eframe::App for MainWindow {
                         }
                         ui.close_menu();
                     }
+
+                    let mut buffer_opt = None;
+                    if let Some((_, t)) = self.tree.find_active_focused() {
+                        buffer_opt = t.1.get_buffer_view();
+                    }
+
+                    ui.set_enabled(buffer_opt.is_some());
+                    
+                    if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-sauce")).wrap(false)).clicked()
+                    {
+                        self.edit_sauce_dialog = Some(EditSauceDialog::new(&buffer_opt.unwrap().lock().unwrap().editor.buf));
+                        ui.close_menu();
+                    }
+                    ui.set_enabled(true);
                 });
 
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
@@ -282,7 +254,7 @@ impl eframe::App for MainWindow {
                         .clicked()
                     {
                         if let Some(t) = self.tree.find_active_focused() {
-                            let doc = t.1.1.get_buffer_view();
+                            let doc = t.1 .1.get_buffer_view();
                             if let Some(view) = &doc {
                                 view.lock().unwrap().editor.undo();
                             }
@@ -294,7 +266,7 @@ impl eframe::App for MainWindow {
                         .clicked()
                     {
                         if let Some(t) = self.tree.find_active_focused() {
-                            let doc = t.1.1.get_buffer_view();
+                            let doc = t.1 .1.get_buffer_view();
                             if let Some(view) = &doc {
                                 view.lock().unwrap().editor.redo();
                             }
@@ -344,12 +316,16 @@ impl eframe::App for MainWindow {
         if let Some(dialog) = &mut self.open_file_dialog {
             if dialog.show(ctx).selected() {
                 if let Some(file) = dialog.path() {
-                    self.open_file(file);
+                    self.opened_file = Some(file.to_path_buf());
                 }
             }
         }
 
+        self.dialog_open = false;
+        
+
         if let Some(dialog) = &mut self.new_file_dialog {
+            self.dialog_open = true;
             if dialog.show(ctx) {
                 if dialog.create {
                     let buf = Buffer::create(dialog.width, dialog.height);
@@ -357,6 +333,28 @@ impl eframe::App for MainWindow {
                     self.tree.push_to_focused_leaf((None, Box::new(editor)));
                 }
                 self.new_file_dialog = None;
+            }
+        }
+
+        if let Some(dialog) = &mut self.edit_sauce_dialog {
+            self.dialog_open = true;
+            if dialog.show(ctx) {
+                if dialog.ok {
+                    if let Some((_, t)) = self.tree.find_active_focused() {
+                        if let Some(view) = t.1.get_buffer_view() {
+                            let editor = &mut view.lock().unwrap().editor;
+                            dialog.set_sauce_info(editor);
+                        }
+                    }
+                }
+                self.edit_sauce_dialog = None;
+            }
+        }
+        for t in self.tree.iter_mut() {
+            if let Node::Leaf { tabs, .. } = t {
+                for (_, t) in tabs {
+                    t.set_enabled(!self.dialog_open);
+                }
             }
         }
 

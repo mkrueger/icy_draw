@@ -1,11 +1,16 @@
-use std::{cell::RefCell, rc::Rc, fs, sync::{Arc, Mutex}};
+use std::{
+    cell::RefCell,
+    fs,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 use crate::ansi_editor::BufferView;
 
 use super::{Editor, Event, MKey, MKeyCode, MModifiers, Position, Tool};
 use directories::ProjectDirs;
-use eframe::egui::{self, ComboBox};
-use icy_engine::{Size, TheDrawFont, Rectangle, TextAttribute};
+use eframe::{egui::{self, ComboBox}, epaint::{text::{LayoutJob, TextWrapping}, FontId, Color32}};
+use icy_engine::{Rectangle, Size, TextAttribute, TheDrawFont};
 use walkdir::{DirEntry, WalkDir};
 pub struct FontTool {
     pub selected_font: i32,
@@ -25,10 +30,8 @@ impl FontTool {
             .map_or(false, |s| s.starts_with('.'))
     }
 
-    pub fn load_fonts(&mut self)
-    {
+    pub fn load_fonts(&mut self) {
         if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
-
             let tdf_dir = proj_dirs.config_dir().join("tdf");
             if !tdf_dir.exists() {
                 fs::create_dir_all(&tdf_dir).expect(&format!(
@@ -50,9 +53,13 @@ impl FontTool {
                     continue;
                 }
                 let extension = path.extension();
-                if extension.is_none() { continue; }
+                if extension.is_none() {
+                    continue;
+                }
                 let extension = extension.unwrap().to_str();
-                if extension.is_none() { continue; }
+                if extension.is_none() {
+                    continue;
+                }
                 let extension = extension.unwrap().to_lowercase();
 
                 if extension == "tdf" {
@@ -63,7 +70,6 @@ impl FontTool {
             }
         }
     }
-
 }
 
 impl Tool for FontTool {
@@ -80,7 +86,6 @@ impl Tool for FontTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) {
-
         ui.vertical_centered(|ui| {
             let mut selected_text = "<none>".to_string();
 
@@ -89,14 +94,17 @@ impl Tool for FontTool {
                     selected_text = font.name.clone();
                 }
             }
- 
+            
+
             ComboBox::from_label("Font")
-            .selected_text(selected_text)
-            .show_ui(ui, |ui| {
-                for i in 0..self.fonts.len() {
-                    ui.selectable_value(&mut self.selected_font, i as i32,  &self.fonts[i].name);
-                }
-            });
+                .wrap(false)
+                .selected_text(selected_text)
+                .show_ui(ui, |ui| {
+                    for i in 0..self.fonts.len() {
+                        let text = LayoutJob::simple_singleline(self.fonts[i].name.clone(), FontId::default(), Color32::WHITE);
+                        ui.selectable_value(&mut self.selected_font, i as i32, text);
+                    }
+                });
         });
     }
 
@@ -114,13 +122,17 @@ impl Tool for FontTool {
         Event::None
     }
 
-    fn handle_key(&mut self, buffer_view: Arc<Mutex<BufferView>>, key: MKey, modifier: MModifiers) -> Event
-    {
+    fn handle_key(
+        &mut self,
+        buffer_view: Arc<Mutex<BufferView>>,
+        key: MKey,
+        modifier: MModifiers,
+    ) -> Event {
         if self.selected_font < 0 || self.selected_font >= self.fonts.len() as i32 {
             return Event::None;
         }
         let font = &self.fonts[self.selected_font as usize];
-        let editor= &mut buffer_view.lock().unwrap().editor;
+        let editor = &mut buffer_view.lock().unwrap().editor;
         let pos = editor.caret.get_position();
 
         match key {
@@ -137,10 +149,14 @@ impl Tool for FontTool {
                 editor.set_caret(pos.x + 1, pos.y);
             }
 
-            MKey::Home  => {
+            MKey::Home => {
                 if let MModifiers::Control = modifier {
                     for i in 0..editor.buf.get_buffer_width() {
-                        if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
+                        if !editor
+                            .get_char_from_cur_layer(pos.with_x(i as i32))
+                            .unwrap_or_default()
+                            .is_transparent()
+                        {
                             editor.set_caret(i as i32, pos.y);
                             return Event::None;
                         }
@@ -151,8 +167,12 @@ impl Tool for FontTool {
 
             MKey::End => {
                 if let MModifiers::Control = modifier {
-                    for i in (0..editor.buf.get_buffer_width()).rev()  {
-                        if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
+                    for i in (0..editor.buf.get_buffer_width()).rev() {
+                        if !editor
+                            .get_char_from_cur_layer(pos.with_x(i as i32))
+                            .unwrap_or_default()
+                            .is_transparent()
+                        {
                             editor.set_caret(i as i32, pos.y);
                             return Event::None;
                         }
@@ -163,8 +183,8 @@ impl Tool for FontTool {
             }
 
             MKey::Return => {
-                editor.set_caret(0,pos.y + font.get_font_height() as i32);
-/*
+                editor.set_caret(0, pos.y + font.get_font_height() as i32);
+                /*
                 if let Some(size) = self.sizes.last() {
                     editor.set_caret(0,pos.y + size.height as i32);
                 } else {
@@ -174,21 +194,41 @@ impl Tool for FontTool {
             }
 
             MKey::Backspace => {
-                let letter_size= self.sizes.pop().unwrap_or_else(|| Size::new(1,1));
+                let letter_size = self.sizes.pop().unwrap_or_else(|| Size::new(1, 1));
                 editor.cur_selection = None;
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
                     editor.set_caret_position(pos + Position::new(-(letter_size.width as i32), 0));
                     if editor.caret.insert_mode {
-                        for i in pos.x..(editor.buf.get_buffer_width() as i32 - (letter_size.width as i32)) {
-                            let next = editor.get_char_from_cur_layer( Position::new(i + (letter_size.width as i32), pos.y));
+                        for i in pos.x
+                            ..(editor.buf.get_buffer_width() as i32 - (letter_size.width as i32))
+                        {
+                            let next = editor.get_char_from_cur_layer(Position::new(
+                                i + (letter_size.width as i32),
+                                pos.y,
+                            ));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
-                        let last_pos = Position::new(editor.buf.get_buffer_width() as i32 - (letter_size.width as i32), pos.y);
-                        editor.fill(Rectangle { start: last_pos, size: letter_size }, Some(super::AttributedChar::new(' ', TextAttribute::default())));
+                        let last_pos = Position::new(
+                            editor.buf.get_buffer_width() as i32 - (letter_size.width as i32),
+                            pos.y,
+                        );
+                        editor.fill(
+                            Rectangle {
+                                start: last_pos,
+                                size: letter_size,
+                            },
+                            Some(super::AttributedChar::new(' ', TextAttribute::default())),
+                        );
                     } else {
                         let pos = editor.get_caret_position();
-                        editor.fill(Rectangle{ start: pos, size: letter_size }, Some(super::AttributedChar::new(' ', TextAttribute::default())));
+                        editor.fill(
+                            Rectangle {
+                                start: pos,
+                                size: letter_size,
+                            },
+                            Some(super::AttributedChar::new(' ', TextAttribute::default())),
+                        );
                     }
                 }
             }
@@ -198,10 +238,13 @@ impl Tool for FontTool {
                 editor.begin_atomic_undo();
                 let attr = editor.caret.get_attribute();
                 let opt_size = font.render(&mut editor.buf, 0, c_pos, attr, 0, ch as u8);
-                if let Some(size) = opt_size  {
+                if let Some(size) = opt_size {
                     editor.set_caret(c_pos.x + size.width as i32 + font.spaces, c_pos.y);
                     let new_pos = editor.get_caret_position();
-                    self.sizes.push(Size { width: (new_pos.x - c_pos.x), height: size.height });
+                    self.sizes.push(Size {
+                        width: (new_pos.x - c_pos.x),
+                        height: size.height,
+                    });
                 } else {
                     editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
                     self.sizes.push(Size::new(1, 1));
