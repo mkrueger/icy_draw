@@ -215,6 +215,13 @@ impl eframe::App for MainWindow {
         TopBottomPanel::top("top_panel").show(ctx, |ui| {
             menu::bar(ui, |ui| {
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
+
+                    if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-new")).wrap(false)).clicked()
+                    {
+                        self.new_file_dialog = Some(NewFileDialog::new());
+                        ui.close_menu();
+                    }
+
                     if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-open")).wrap(false)).clicked()
                     {
                         let mut dialog = FileDialog::open_file(self.opened_file.clone());
@@ -223,6 +230,7 @@ impl eframe::App for MainWindow {
 
                         ui.close_menu();
                     }
+                    ui.separator();
                     if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false)).clicked()
                     {
                         if let Some(t) = self.tree.find_active_focused() {
@@ -238,14 +246,22 @@ impl eframe::App for MainWindow {
                         buffer_opt = t.1.get_buffer_view();
                     }
 
-                    ui.set_enabled(buffer_opt.is_some());
-                    
-                    if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-sauce")).wrap(false)).clicked()
+                    if buffer_opt.is_some() {
+                        ui.separator();
+                        if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-sauce")).wrap(false)).clicked()
+                        {
+                            self.edit_sauce_dialog = Some(EditSauceDialog::new(&buffer_opt.unwrap().lock().unwrap().editor.buf));
+                            ui.close_menu();
+                        }
+                    }
+                    ui.separator();
+                    ui.set_enabled(true);
+
+                    if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-close")).wrap(false)).clicked()
                     {
-                        self.edit_sauce_dialog = Some(EditSauceDialog::new(&buffer_opt.unwrap().lock().unwrap().editor.buf));
+                        _frame.close();
                         ui.close_menu();
                     }
-                    ui.set_enabled(true);
                 });
 
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
@@ -275,13 +291,6 @@ impl eframe::App for MainWindow {
                     }
                 });
             });
-
-            if ui
-                .button(fl!(crate::LANGUAGE_LOADER, "toolbar-new"))
-                .clicked()
-            {
-                self.new_file_dialog = Some(NewFileDialog::new());
-            }
         });
         SidePanel::left("left_panel").show(ctx, |ui| {
             let mut buffer_opt = None;
@@ -298,16 +307,14 @@ impl eframe::App for MainWindow {
                 tool.show_ui(ctx, ui, buffer_opt.clone());
             }
         });
-
-        TopBottomPanel::bottom("bottom_panel")
-            .resizable(true)
-            .show(ctx, |ui| {
-                let mut buffer_opt = None;
-                if let Some((_, t)) = self.tree.find_active_focused() {
-                    buffer_opt = t.1.get_buffer_view();
-                }
-                ui.add(crate::show_char_table(buffer_opt.clone()));
-            });
+        SidePanel::right("right_panel").show(ctx, |ui| {
+            let mut buffer_opt = None;
+            if let Some((_, t)) = self.tree.find_active_focused() {
+                buffer_opt = t.1.get_buffer_view();
+            }
+            ui.add(crate::show_char_table(buffer_opt.clone()));
+            crate::show_layer_view(ctx, ui, buffer_opt.clone());
+        });
 
         DockArea::new(&mut self.tree)
             .style(Style::from_egui(ctx.style().as_ref()))

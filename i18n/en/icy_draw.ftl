@@ -1,14 +1,15 @@
 font-editor-table = Char table 0-{ $length }:
 
 menu-file=File
-menu-open=Open file…
+menu-new=New…
+menu-open=Open…
 menu-save=Save
 menu-edit-sauce=Edit Sauce Info…
+menu-close=Close
 
 menu-edit=Edit
 menu-undo=Undo
 menu-redo=Redo
-
 
 menu-copy=Copy
 menu-paste=Paste
@@ -47,3 +48,8 @@ edit-sauce-comments-label=Comments
 
 toolbar-size = { $colums } Columns x { $rows } Rows
 toolbar-position = { $column }:{ $line }
+
+add_layer_tooltip = Add new layer
+move_layer_up_tooltip = Move layer up
+move_layer_down_tooltip = Move layer down
+delete_layer_tooltip = Delete layer

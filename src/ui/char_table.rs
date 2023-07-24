@@ -13,6 +13,7 @@ pub fn show_char_table(buffer_opt: Option<Arc<Mutex<BufferView>>>) -> impl egui:
         let font_length = buffer.lock().unwrap().editor.buf.font_table[font_page].length;
 
         egui::ScrollArea::vertical()
+        .id_source("char_table_scroll_area")
             .show(ui, |ui| {
                 ui.horizontal_wrapped(|ui| {
                     for i in 0..font_length {
