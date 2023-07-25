@@ -9,7 +9,13 @@ use crate::ansi_editor::BufferView;
 
 use super::{Editor, Event, MKey, MKeyCode, MModifiers, Position, Tool};
 use directories::ProjectDirs;
-use eframe::{egui::{self, ComboBox}, epaint::{text::{LayoutJob, TextWrapping}, FontId, Color32}};
+use eframe::{
+    egui::{self, ComboBox},
+    epaint::{
+        text::{LayoutJob, TextWrapping},
+        Color32, FontId,
+    },
+};
 use icy_engine::{Rectangle, Size, TextAttribute, TheDrawFont};
 use walkdir::{DirEntry, WalkDir};
 pub struct FontTool {
@@ -94,14 +100,17 @@ impl Tool for FontTool {
                     selected_text = font.name.clone();
                 }
             }
-            
 
             ComboBox::from_label("Font")
                 .wrap(false)
                 .selected_text(selected_text)
                 .show_ui(ui, |ui| {
                     for i in 0..self.fonts.len() {
-                        let text = LayoutJob::simple_singleline(self.fonts[i].name.clone(), FontId::default(), Color32::WHITE);
+                        let text = LayoutJob::simple_singleline(
+                            self.fonts[i].name.clone(),
+                            FontId::default(),
+                            Color32::WHITE,
+                        );
                         ui.selectable_value(&mut self.selected_font, i as i32, text);
                     }
                 });

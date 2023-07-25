@@ -90,8 +90,7 @@ impl Document for AnsiEditor {
         self.is_dirty
     }
 
-    fn set_enabled(&mut self, enabled: bool)
-    {
+    fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }
 
@@ -209,6 +208,9 @@ impl Document for AnsiEditor {
                         callback: std::sync::Arc::new(egui_glow::CallbackFn::new(
                             move |info, painter| {
                                 buffer_view.lock().unwrap().update_buffer(painter.gl());
+
+                                println!("{:?} {:?}", info.clip_rect, draw_area);
+
                                 buffer_view.lock().unwrap().paint(
                                     painter.gl(),
                                     info,
@@ -331,7 +333,8 @@ impl Document for AnsiEditor {
                                             char_size,
                                             first_line,
                                         );
-                                        let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
+                                        let cur =
+                                            Position::new(click_pos.x as i32, click_pos.y as i32);
                                         if self.drag_pos != cur {
                                             self.drag_pos = cur;
                                             buffer_view.lock().unwrap().redraw_view();

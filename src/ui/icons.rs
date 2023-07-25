@@ -27,7 +27,6 @@ lazy_static::lazy_static! {
     .unwrap();
 }
 
-
 lazy_static::lazy_static! {
     pub static ref DELETE_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes(
         "delete.svg",

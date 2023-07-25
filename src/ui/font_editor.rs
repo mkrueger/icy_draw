@@ -27,7 +27,7 @@ impl FontEditor {
             font,
             selected_char_opt: None,
             is_dirty: false,
-            enabled: true
+            enabled: true,
         }
     }
 
@@ -172,9 +172,8 @@ impl Document for FontEditor {
     fn is_dirty(&self) -> bool {
         self.is_dirty
     }
-    
-    fn set_enabled(&mut self, enabled: bool)
-    {
+
+    fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }
 
