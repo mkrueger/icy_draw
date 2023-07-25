@@ -14,7 +14,7 @@ use eframe::{
 use egui_dock::{DockArea, Node, Style, Tree};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, Position};
+use icy_engine::{BitFont, Buffer, Position, SaveOptions};
 
 use super::ansi_editor::AnsiEditor;
 use egui_file::FileDialog;
@@ -28,6 +28,7 @@ pub struct MainWindow {
 
     dialog_open: bool,
     open_file_dialog: Option<FileDialog>,
+    save_file_dialog: Option<FileDialog>,
     new_file_dialog: Option<NewFileDialog>,
     edit_sauce_dialog: Option<EditSauceDialog>,
 }
@@ -141,6 +142,7 @@ impl MainWindow {
             opened_file: None,
             dialog_open: false,
             open_file_dialog: None,
+            save_file_dialog: None,
             new_file_dialog: None,
             edit_sauce_dialog: None,
         };
@@ -207,7 +209,9 @@ impl MainWindow {
                 }
                 ui.separator();
                 if ui
-                    .add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false))
+                    .add_enabled(
+                        buffer_opt.is_some(),
+                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false))
                     .clicked()
                 {
                     if let Some(t) = self.tree.find_active_focused() {
@@ -216,6 +220,21 @@ impl MainWindow {
                         }
                     }
                     ui.close_menu();
+                }
+                if ui
+                    .add_enabled(
+                        buffer_opt.is_some(),
+                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save-as")).wrap(false))
+                    .clicked()
+                {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        if let Some(str) = &t.1 .0 {
+                            let mut dialog = FileDialog::save_file(Some(PathBuf::from(str)));
+                            dialog.open();
+                            self.save_file_dialog = Some(dialog);
+                            ui.close_menu();
+                        }
+                    }
                 }
 
                 ui.separator();
@@ -272,7 +291,6 @@ impl MainWindow {
             self.redo_command();
         }
     }
-
 
     fn redo_command(&mut self) {
         if let Some(t) = self.tree.find_active_focused() {
@@ -403,15 +421,31 @@ impl eframe::App for MainWindow {
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut self.tab_viewer);
 
+        self.dialog_open = false;
         if let Some(dialog) = &mut self.open_file_dialog {
+            self.dialog_open = true;
             if dialog.show(ctx).selected() {
                 if let Some(file) = dialog.path() {
                     self.opened_file = Some(file.to_path_buf());
                 }
+                self.open_file_dialog = None;
             }
         }
-
-        self.dialog_open = false;
+        if let Some(dialog) = &mut self.save_file_dialog {
+            self.dialog_open = true;
+            if dialog.show(ctx).selected() {
+                if let Some(file) = dialog.path() {
+                    if let Some((_, t)) = self.tree.find_active_focused() {
+                        if let Some(view) = t.1.get_buffer_view() {
+                            let editor = &mut view.lock().unwrap().editor;
+                            let options = SaveOptions::new();
+                            editor.save_content(file.to_path_buf().as_path(), &options).unwrap();
+                        }
+                    }
+                }
+                self.save_file_dialog = None;
+            }
+        }
 
         if let Some(dialog) = &mut self.new_file_dialog {
             self.dialog_open = true;
@@ -439,6 +473,7 @@ impl eframe::App for MainWindow {
                 self.edit_sauce_dialog = None;
             }
         }
+
         for t in self.tree.iter_mut() {
             if let Node::Leaf { tabs, .. } = t {
                 for (_, t) in tabs {

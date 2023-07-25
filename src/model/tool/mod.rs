@@ -259,10 +259,6 @@ pub trait Tool {
                     return Event::None;
                 }*/
 
-                println!("{} - {}", ch, unsafe {
-                    char::from_u32_unchecked(ch as u32)
-                });
-
                 editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
             }
 

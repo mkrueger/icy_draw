@@ -208,9 +208,6 @@ impl Document for AnsiEditor {
                         callback: std::sync::Arc::new(egui_glow::CallbackFn::new(
                             move |info, painter| {
                                 buffer_view.lock().unwrap().update_buffer(painter.gl());
-
-                                println!("{:?} {:?}", info.clip_rect, draw_area);
-
                                 buffer_view.lock().unwrap().paint(
                                     painter.gl(),
                                     info,
