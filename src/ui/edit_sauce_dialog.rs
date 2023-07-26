@@ -3,8 +3,10 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::SauceString;
 
+use crate::{TerminalResult, ModalDialog};
+
 pub struct EditSauceDialog {
-    pub ok: bool,
+    pub should_commit: bool,
     pub title: SauceString<35, b' '>,
     pub author: SauceString<20, b' '>,
     pub group: SauceString<20, b' '>,
@@ -14,15 +16,18 @@ pub struct EditSauceDialog {
 impl EditSauceDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
         EditSauceDialog {
-            ok: false,
+            should_commit: false,
             title: buf.title.clone(),
             author: buf.author.clone(),
             group: buf.group.clone(),
             comments: buf.comments.clone(),
         }
     }
+}
 
-    pub fn show(&mut self, ctx: &egui::Context) -> bool {
+
+impl ModalDialog for EditSauceDialog {
+    fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
         let modal = Modal::new(ctx, "my_modal");
 
@@ -106,7 +111,7 @@ impl EditSauceDialog {
                     .button(fl!(crate::LANGUAGE_LOADER, "new-file-ok"))
                     .clicked()
                 {
-                    self.ok = true;
+                    self.should_commit = true;
                     result = true;
                 }
                 if ui
@@ -121,10 +126,13 @@ impl EditSauceDialog {
         result
     }
 
-    pub fn set_result(&self, editor: &mut crate::model::Editor) {
+    fn should_commit(&self) -> bool { self.should_commit }
+
+    fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool>  {
         editor.buf.title = self.title.clone();
         editor.buf.author = self.author.clone();
         editor.buf.group = self.group.clone();
         editor.buf.comments = self.comments.clone();
+        Ok(true)
     }
 }

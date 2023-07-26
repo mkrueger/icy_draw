@@ -3,8 +3,10 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::Size;
 
+use crate::{TerminalResult, ModalDialog};
+
 pub struct SetCanvasSizeDialog {
-    pub ok: bool,
+    pub should_commit: bool,
     pub width: i32,
     pub height: i32
 }
@@ -12,13 +14,16 @@ pub struct SetCanvasSizeDialog {
 impl SetCanvasSizeDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
         SetCanvasSizeDialog {
-            ok: false,
+            should_commit: false,
             width: buf.get_buffer_width(),
             height: buf.get_real_buffer_height()
         }
     }
+}
 
-    pub fn show(&mut self, ctx: &egui::Context) -> bool {
+impl ModalDialog for SetCanvasSizeDialog {
+
+    fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
         let modal = Modal::new(ctx, "my_modal");
 
@@ -51,7 +56,7 @@ impl SetCanvasSizeDialog {
                     .button(fl!(crate::LANGUAGE_LOADER, "edit-canvas-size-resize"))
                     .clicked()
                 {
-                    self.ok = true;
+                    self.should_commit = true;
                     result = true;
                 }
                 if ui
@@ -66,7 +71,10 @@ impl SetCanvasSizeDialog {
         result
     }
 
-    pub fn set_result(&self, editor: &mut crate::model::Editor) {
+    fn should_commit(&self) -> bool { self.should_commit }
+
+    fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool> {
         editor.buf.set_buffer_size(Size::new(self.width, self.height));
+        Ok(true)
     }
 }

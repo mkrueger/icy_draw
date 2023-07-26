@@ -18,7 +18,6 @@ impl NewFileDialog {
         }
     }
 
-
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
         let modal = Modal::new(ctx, "my_modal");

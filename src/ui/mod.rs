@@ -3,6 +3,7 @@ pub mod ansi_editor;
 mod main_window;
 use std::error::Error;
 
+use eframe::egui;
 pub use main_window::*;
 
 mod document;
@@ -30,8 +31,17 @@ mod edit_sauce_dialog;
 pub use edit_sauce_dialog::*;
 
 mod set_canvas_size_dialog;
+mod export_file_dialog;
 
 mod layer_view;
 pub use layer_view::*;
 
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
+
+pub trait ModalDialog {
+    fn show(&mut self, ctx: &egui::Context) -> bool;
+
+    fn should_commit(&self) -> bool;
+
+    fn commit(&self, editor: &mut crate::model::Editor)-> TerminalResult<bool>;
+}

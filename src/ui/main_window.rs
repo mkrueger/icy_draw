@@ -5,7 +5,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{model::Tool, Document, EditSauceDialog, FontEditor, NewFileDialog};
+use crate::{model::Tool, Document, EditSauceDialog, FontEditor, NewFileDialog, ModalDialog};
 use eframe::{
     egui::{self, menu, Response, SidePanel, TextStyle, TopBottomPanel, Ui, Modifiers},
     epaint::pos2,
@@ -29,8 +29,8 @@ pub struct MainWindow {
     open_file_dialog: Option<FileDialog>,
     save_file_dialog: Option<FileDialog>,
     new_file_dialog: Option<NewFileDialog>,
-    edit_sauce_dialog: Option<EditSauceDialog>,
-    set_canvas_size_dialog: Option<SetCanvasSizeDialog>,
+
+    modal_dialog: Option<Box<dyn ModalDialog>>,
 }
 
 impl MainWindow {
@@ -144,8 +144,7 @@ impl MainWindow {
             open_file_dialog: None,
             save_file_dialog: None,
             new_file_dialog: None,
-            edit_sauce_dialog: None,
-            set_canvas_size_dialog: None
+            modal_dialog: None
         };
         view
     }
@@ -238,6 +237,24 @@ impl MainWindow {
                     }
                 }
 
+                if ui
+                .add_enabled(
+                    has_buffer,
+                    egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-export")).wrap(false))
+                .clicked()
+                {
+                    let mut buffer_opt = None;
+                    if let Some((_, t)) = self.tree.find_active_focused() {
+                        buffer_opt = t.1.get_buffer_view();
+                    }
+        
+                    self.modal_dialog = Some(Box::new(super::export_file_dialog::ExportFileDialog::new(
+                        &buffer_opt.unwrap().lock().unwrap().editor.buf,
+                    )));
+                    ui.close_menu();
+                }
+
+
                 ui.separator();
                 if ui
                     .add_enabled(
@@ -252,9 +269,9 @@ impl MainWindow {
                         buffer_opt = t.1.get_buffer_view();
                     }
         
-                    self.edit_sauce_dialog = Some(EditSauceDialog::new(
+                    self.modal_dialog = Some(Box::new(EditSauceDialog::new(
                         &buffer_opt.unwrap().lock().unwrap().editor.buf,
-                    ));
+                    )));
                     ui.close_menu();
                 }
 
@@ -270,9 +287,9 @@ impl MainWindow {
                     if let Some((_, t)) = self.tree.find_active_focused() {
                         buffer_opt = t.1.get_buffer_view();
                     }
-                    self.set_canvas_size_dialog = Some(SetCanvasSizeDialog::new(
+                    self.modal_dialog = Some(Box::new(SetCanvasSizeDialog::new(
                         &buffer_opt.unwrap().lock().unwrap().editor.buf,
-                    ));
+                    )));
                     ui.close_menu();
                 }
                 ui.separator();
@@ -625,33 +642,19 @@ impl eframe::App for MainWindow {
             }
         }
 
-        if let Some(dialog) = &mut self.edit_sauce_dialog {
+        if let Some(dialog) = &mut self.modal_dialog {
             self.dialog_open = true;
             if dialog.show(ctx) {
-                if dialog.ok {
+                if dialog.should_commit() {
                     if let Some((_, t)) = self.tree.find_active_focused() {
                         if let Some(view) = t.1.get_buffer_view() {
                             let editor = &mut view.lock().unwrap().editor;
-                            dialog.set_result(editor);
+                            // todo error handling:
+                            dialog.commit(editor).unwrap();
                         }
                     }
                 }
-                self.edit_sauce_dialog = None;
-            }
-        }
-
-        if let Some(dialog) = &mut self.set_canvas_size_dialog {
-            self.dialog_open = true;
-            if dialog.show(ctx) {
-                if dialog.ok {
-                    if let Some((_, t)) = self.tree.find_active_focused() {
-                        if let Some(view) = t.1.get_buffer_view() {
-                            let editor = &mut view.lock().unwrap().editor;
-                            dialog.set_result(editor);
-                        }
-                    }
-                }
-                self.set_canvas_size_dialog = None;
+                self.modal_dialog = None;
             }
         }
 

@@ -8,6 +8,7 @@ menu-edit-sauce=Edit Sauce Info…
 menu-set-canvas-size=Set Canvas Size…
 menu-close=Close
 menu-save-as=Save As…
+menu-export=Export…
 
 menu-edit=Edit
 menu-undo=Undo
@@ -66,3 +67,17 @@ add_layer_tooltip = Add new layer
 move_layer_up_tooltip = Move layer up
 move_layer_down_tooltip = Move layer down
 delete_layer_tooltip = Delete layer
+
+export-title=Export
+export-button-title=Export
+export-file-label=File name:
+export-video-preparation-label=Video Preparation:
+export-video-preparation-None=None
+export-video-preparation-Clear=Clear Screen
+export-video-preparation-Home=Home Cursor
+export-utf8-output-label=Modern terminal format (utf8)
+export-save-sauce-label=Save sauce info
+export-compression-level-label=Compression level
+export-compression-level-off=Off
+export-compression-level-medium=Medium
+export-compression-level-high=High
