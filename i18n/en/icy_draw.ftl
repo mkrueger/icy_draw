@@ -21,6 +21,11 @@ menu-flipy=Flip Y
 menu-justifyleft=Justify Left
 menu-justifyright=Justify Right
 menu-justifycenter=Center
+menu-crop=Crop
+
+menu-selection=Selection
+menu-select-all=Select All
+menu-deselect=Deselect
 
 tool-fg=Fg
 tool-bg=Bg
@@ -38,6 +43,7 @@ new-file-width=Width
 new-file-height=Height
 new-file-ok=Ok
 new-file-cancel=Cancel
+new-file-create=Create
 
 edit-sauce-title=Edit Sauce Info
 edit-sauce-title-label=Title:

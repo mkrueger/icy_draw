@@ -13,7 +13,7 @@ use eframe::{
 use egui_dock::{DockArea, Node, Style, Tree};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, Position, SaveOptions};
+use icy_engine::{BitFont, Buffer, Position, SaveOptions, Rectangle};
 
 use super::{ansi_editor::AnsiEditor, set_canvas_size_dialog::SetCanvasSizeDialog};
 use egui_file::FileDialog;
@@ -299,10 +299,134 @@ impl MainWindow {
                     ui.close_menu();
                 }
             });
+
+            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-selection"), |ui| {
+                let button: Response =
+                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-select-all"), "Ctrl+A");
+                if button.clicked() {
+                    self.select_all_command();
+                    ui.close_menu();
+                }
+    
+                let button: Response =
+                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-deselect"), "Esc");
+                if button.clicked() {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        let doc = t.1 .1.get_buffer_view();
+                        if let Some(view) = &doc {
+                            if let Ok(view) = &mut view.lock() {
+                                view.editor.cur_selection = None;
+                                view.redraw_view();
+                            }
+                        }
+                    }
+                    ui.close_menu();
+                }
+                ui.separator();
+
+                let button: Response =
+                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-erase"), "Del");
+                if button.clicked() {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        let doc = t.1 .1.get_buffer_view();
+                        if let Some(view) = &doc {
+                            if let Ok(view) = &mut view.lock() {
+                                view.editor.delete_selection();
+                                view.redraw_view();
+                            }
+                        }
+                    }
+                    ui.close_menu();
+                }
+
+
+                let button: Response =
+                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-flipx"), "X");
+                if button.clicked() {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        let doc = t.1 .1.get_buffer_view();
+                        if let Some(view) = &doc {
+                            view.lock().unwrap().editor.flip_x();
+                            view.lock().unwrap().redraw_view();
+                        }
+                    }
+                    ui.close_menu();
+                }
+
+                let button: Response =
+                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-flipy"), "Y");
+                if button.clicked() {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        let doc = t.1 .1.get_buffer_view();
+                        if let Some(view) = &doc {
+                            view.lock().unwrap().editor.flip_y();
+                            view.lock().unwrap().redraw_view();
+                        }
+                    }
+                    ui.close_menu();
+                }
+
+                let button: Response =
+                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"), "Y");
+                if button.clicked() {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        let doc = t.1 .1.get_buffer_view();
+                        if let Some(view) = &doc {
+                            view.lock().unwrap().editor.justify_center();
+                            view.lock().unwrap().redraw_view();
+                        }
+                    }
+                    ui.close_menu();
+                }
+
+                let button: Response =
+                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"), "L");
+                if button.clicked() {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        let doc = t.1 .1.get_buffer_view();
+                        if let Some(view) = &doc {
+                            view.lock().unwrap().editor.justify_left();
+                            view.lock().unwrap().redraw_view();
+                        }
+                    }
+                    ui.close_menu();
+                }
+
+                let button: Response =
+                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-justifyright"), "R");
+                if button.clicked() {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        let doc = t.1 .1.get_buffer_view();
+                        if let Some(view) = &doc {
+                            view.lock().unwrap().editor.justify_right();
+                            view.lock().unwrap().redraw_view();
+                        }
+                    }
+                    ui.close_menu();
+                }
+                ui.separator();
+
+                let button: Response =
+                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-crop"), "");
+                if button.clicked() {
+                    if let Some(t) = self.tree.find_active_focused() {
+                        let doc = t.1 .1.get_buffer_view();
+                        if let Some(view) = &doc {
+                            view.lock().unwrap().editor.crop();
+                            view.lock().unwrap().redraw_view();
+                        }
+                    }
+                    ui.close_menu();
+                }
+            });
+
         });
 
         if ui.input(|i| i.key_pressed(egui::Key::Q) && i.modifiers.ctrl) {
             _frame.close();
+        }
+        if ui.input(|i| i.key_pressed(egui::Key::A) && i.modifiers.ctrl) {
+            self.select_all_command();
         }
 
         if ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.ctrl && !i.modifiers.shift) {
@@ -331,6 +455,24 @@ impl MainWindow {
             let doc = t.1 .1.get_buffer_view();
             if let Some(view) = &doc {
                 view.lock().unwrap().editor.undo();
+                view.lock().unwrap().redraw_view();
+            }
+        }
+    }
+
+    fn select_all_command(&mut self) {
+        if let Some(t) = self.tree.find_active_focused() {
+            let doc = t.1 .1.get_buffer_view();
+            if let Some(view) = &doc {
+                let mut editor = &mut view.lock().unwrap().editor;
+                let w = editor.buf.get_buffer_width();
+                let h = editor.buf.get_real_buffer_height();
+
+                editor.cur_selection = Some(crate::model::Selection { 
+                    rectangle: Rectangle::from_pt(Position::new(0, 0), Position::new(w as i32, h as i32)),
+                    is_preview: false,
+                    shape: crate::model::Shape::Rectangle
+                });
                 view.lock().unwrap().redraw_view();
             }
         }

@@ -1,5 +1,6 @@
-use eframe::egui::{self};
+use eframe::egui::{self, Layout};
 use i18n_embed_fl::fl;
+use egui_modal::Modal;
 
 pub struct NewFileDialog {
     pub width: i32,
@@ -17,35 +18,52 @@ impl NewFileDialog {
         }
     }
 
+
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
-        let mut open = true;
-        let mut create_file = true;
-        egui::Window::new(fl!(crate::LANGUAGE_LOADER, "new-file-title"))
-            .open(&mut open)
-            .collapsible(false)
-            .resizable(false)
-            .show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-                    let mut my_f32 = self.width as f32;
-                    ui.add(egui::DragValue::new(&mut my_f32).speed(1));
-                    self.width = my_f32 as i32;
-                });
-                ui.horizontal(|ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
-                    let mut my_f32 = self.height as f32;
-                    ui.add(egui::DragValue::new(&mut my_f32).speed(1));
-                    self.height = my_f32 as i32;
-                });
+        let mut result = false;
+        let modal = Modal::new(ctx, "my_modal");
+
+        modal.show(|ui| {
+            modal.title(ui, fl!(crate::LANGUAGE_LOADER, "new-file-title"));
+
+            modal.frame(ui, |ui| {
+                egui::Grid::new("some_unique_id")
+                    .num_columns(2)
+                    .spacing([4.0, 8.0])
+                    .show(ui, |ui| {
+                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
+                        });
+                        ui.add(egui::DragValue::new(&mut self.width));
+                        ui.end_row();
+
+                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+                        });
+                        ui.add(egui::DragValue::new(&mut self.height));
+                        ui.end_row();
+
+                    });
+                ui.add_space(4.0);
+            });
+
+            modal.buttons(ui, |ui| {
                 if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-ok"))
+                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-create"))
                     .clicked()
                 {
                     self.create = true;
-                    create_file = false;
+                    result = true;
+                }
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
+                    .clicked()
+                {
+                    result = true;
                 }
             });
-
-        !(open && create_file)
+        });
+        modal.open();
+        result
     }
 }
