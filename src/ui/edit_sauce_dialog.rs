@@ -121,7 +121,7 @@ impl EditSauceDialog {
         result
     }
 
-    pub fn set_sauce_info(&self, editor: &mut crate::model::Editor) {
+    pub fn set_result(&self, editor: &mut crate::model::Editor) {
         editor.buf.title = self.title.clone();
         editor.buf.author = self.author.clone();
         editor.buf.group = self.group.clone();

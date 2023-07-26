@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::{ansi_editor::BufferView, model::ScanLines};
 
-use super::{line_imp::set_half_block, Editor, Position, Tool};
+use super::{line_imp::set_half_block, Position, Tool};
 
 #[derive(PartialEq, Eq)]
 pub enum PencilType {

@@ -42,5 +42,5 @@ fn main() {
         &DEFAULT_TITLE,
         options,
         Box::new(|cc| Box::new(MainWindow::new(cc))),
-    );
+    ).unwrap();
 }

@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{model::Tool, TerminalResult};
-use eframe::egui;
 
 use super::ansi_editor::BufferView;
 

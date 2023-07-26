@@ -177,7 +177,7 @@ impl Document for FontEditor {
         self.enabled = enabled;
     }
 
-    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, cur_tool: &mut Box<dyn Tool>) {
+    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>) {
         ui.vertical_centered(|ui| ui.add(self.edit_glyph()));
 
         ui.label(fl!(

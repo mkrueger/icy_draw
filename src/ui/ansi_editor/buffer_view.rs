@@ -1,4 +1,4 @@
-use eframe::{egui, epaint::Vec2};
+use eframe::epaint::Vec2;
 use glow::NativeTexture;
 use std::sync::Arc;
 

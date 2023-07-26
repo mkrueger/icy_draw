@@ -1,12 +1,10 @@
 use crate::ansi_editor::BufferView;
-use crate::model::brush_imp::draw_glyph;
 use eframe::{
     egui::{self, RichText},
     epaint::Vec2,
 };
 use egui_extras::{Column, TableBuilder};
 use i18n_embed_fl::fl;
-use icy_engine::{AsciiParser, BufferParser};
 use std::sync::{Arc, Mutex};
 
 pub fn show_layer_view(
@@ -18,7 +16,7 @@ pub fn show_layer_view(
         return;
     }
 
-    let mut table = TableBuilder::new(ui)
+    let table = TableBuilder::new(ui)
         .striped(false)
         .resizable(false)
         .cell_layout(egui::Layout::left_to_right(egui::Align::Center))

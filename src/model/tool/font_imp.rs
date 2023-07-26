@@ -1,18 +1,16 @@
 use std::{
-    cell::RefCell,
     fs,
-    rc::Rc,
     sync::{Arc, Mutex},
 };
 
 use crate::ansi_editor::BufferView;
 
-use super::{Editor, Event, MKey, MKeyCode, MModifiers, Position, Tool};
+use super::{Event, MKey,  MModifiers, Position, Tool};
 use directories::ProjectDirs;
 use eframe::{
     egui::{self, ComboBox},
     epaint::{
-        text::{LayoutJob, TextWrapping},
+        text::LayoutJob,
         Color32, FontId,
     },
 };

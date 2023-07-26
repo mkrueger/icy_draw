@@ -5,6 +5,7 @@ menu-new=New…
 menu-open=Open…
 menu-save=Save
 menu-edit-sauce=Edit Sauce Info…
+menu-set-canvas-size=Set Canvas Size…
 menu-close=Close
 menu-save-as=Save As…
 
@@ -46,6 +47,11 @@ edit-sauce-author-label-length=(20 chars)
 edit-sauce-group-label=Group:
 edit-sauce-group-label-length=(20 chars)
 edit-sauce-comments-label=Comments
+
+edit-canvas-size-title=Set Canvas Size
+edit-canvas-size-width-label=Width:
+edit-canvas-size-height-label=Height:
+edit-canvas-size-resize=Resize
 
 toolbar-size = { $colums } Columns x { $rows } Rows
 toolbar-position = { $column }:{ $line }

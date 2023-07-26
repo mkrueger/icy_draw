@@ -79,14 +79,6 @@ impl MModifiers {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
-pub enum MKeyCode {
-    Unknown,
-    KeyI,
-    KeyU,
-    KeyY,
-}
-
 pub trait Tool {
     fn get_icon_name(&self) -> &'static RetainedImage;
 

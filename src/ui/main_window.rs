@@ -1,5 +1,4 @@
 use std::{
-    borrow::BorrowMut,
     fs,
     path::{Path, PathBuf},
     sync::Arc,
@@ -8,7 +7,7 @@ use std::{
 
 use crate::{model::Tool, Document, EditSauceDialog, FontEditor, NewFileDialog};
 use eframe::{
-    egui::{self, menu, Response, SidePanel, TextStyle, TopBottomPanel, Ui, WidgetText, Modifiers},
+    egui::{self, menu, Response, SidePanel, TextStyle, TopBottomPanel, Ui, Modifiers},
     epaint::pos2,
 };
 use egui_dock::{DockArea, Node, Style, Tree};
@@ -16,7 +15,7 @@ use glow::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, Position, SaveOptions};
 
-use super::ansi_editor::AnsiEditor;
+use super::{ansi_editor::AnsiEditor, set_canvas_size_dialog::SetCanvasSizeDialog};
 use egui_file::FileDialog;
 
 pub struct MainWindow {
@@ -31,6 +30,7 @@ pub struct MainWindow {
     save_file_dialog: Option<FileDialog>,
     new_file_dialog: Option<NewFileDialog>,
     edit_sauce_dialog: Option<EditSauceDialog>,
+    set_canvas_size_dialog: Option<SetCanvasSizeDialog>,
 }
 
 impl MainWindow {
@@ -145,6 +145,7 @@ impl MainWindow {
             save_file_dialog: None,
             new_file_dialog: None,
             edit_sauce_dialog: None,
+            set_canvas_size_dialog: None
         };
         view
     }
@@ -210,20 +211,20 @@ impl MainWindow {
                 ui.separator();
                 if ui
                     .add_enabled(
-                        buffer_opt.is_some(),
+                        has_buffer,
                         egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false))
                     .clicked()
                 {
                     if let Some(t) = self.tree.find_active_focused() {
                         if let Some(str) = &t.1 .0 {
-                            t.1 .1.save(str);
+                            t.1 .1.save(str).unwrap();
                         }
                     }
                     ui.close_menu();
                 }
                 if ui
                     .add_enabled(
-                        buffer_opt.is_some(),
+                        has_buffer,
                         egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save-as")).wrap(false))
                     .clicked()
                 {
@@ -240,13 +241,36 @@ impl MainWindow {
                 ui.separator();
                 if ui
                     .add_enabled(
-                        buffer_opt.is_some(),
+                        has_buffer,
                         egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-sauce"))
                             .wrap(false),
                     )
                     .clicked()
                 {
+                    let mut buffer_opt = None;
+                    if let Some((_, t)) = self.tree.find_active_focused() {
+                        buffer_opt = t.1.get_buffer_view();
+                    }
+        
                     self.edit_sauce_dialog = Some(EditSauceDialog::new(
+                        &buffer_opt.unwrap().lock().unwrap().editor.buf,
+                    ));
+                    ui.close_menu();
+                }
+
+                if ui
+                    .add_enabled(
+                        has_buffer,
+                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-set-canvas-size"))
+                            .wrap(false),
+                    )
+                    .clicked()
+                {
+                    let mut buffer_opt = None;
+                    if let Some((_, t)) = self.tree.find_active_focused() {
+                        buffer_opt = t.1.get_buffer_view();
+                    }
+                    self.set_canvas_size_dialog = Some(SetCanvasSizeDialog::new(
                         &buffer_opt.unwrap().lock().unwrap().editor.buf,
                     ));
                     ui.close_menu();
@@ -466,11 +490,26 @@ impl eframe::App for MainWindow {
                     if let Some((_, t)) = self.tree.find_active_focused() {
                         if let Some(view) = t.1.get_buffer_view() {
                             let editor = &mut view.lock().unwrap().editor;
-                            dialog.set_sauce_info(editor);
+                            dialog.set_result(editor);
                         }
                     }
                 }
                 self.edit_sauce_dialog = None;
+            }
+        }
+
+        if let Some(dialog) = &mut self.set_canvas_size_dialog {
+            self.dialog_open = true;
+            if dialog.show(ctx) {
+                if dialog.ok {
+                    if let Some((_, t)) = self.tree.find_active_focused() {
+                        if let Some(view) = t.1.get_buffer_view() {
+                            let editor = &mut view.lock().unwrap().editor;
+                            dialog.set_result(editor);
+                        }
+                    }
+                }
+                self.set_canvas_size_dialog = None;
             }
         }
 

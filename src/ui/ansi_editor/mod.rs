@@ -25,7 +25,7 @@ pub mod key_maps;
 pub use key_maps::*;
 
 use crate::{
-    model::{brush_imp::draw_glyph, MKey, MModifiers, Tool, DEFAULT_OUTLINE_TABLE},
+    model::{brush_imp::draw_glyph, MKey, MModifiers, Tool},
     Document, TerminalResult,
 };
 
@@ -492,7 +492,7 @@ pub fn terminal_context_menu(buffer_view: &mut Arc<Mutex<BufferView>>, ui: &mut 
     }
     let mut view = buffer_view.borrow_mut().lock().unwrap();
 
-    if let Some(sel) = &view.editor.cur_selection {
+    if let Some(_sel) = &view.editor.cur_selection {
         if ui
             .button(fl!(crate::LANGUAGE_LOADER, "menu-erase"))
             .clicked()

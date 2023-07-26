@@ -29,6 +29,8 @@ pub use new_file_dialog::*;
 mod edit_sauce_dialog;
 pub use edit_sauce_dialog::*;
 
+mod set_canvas_size_dialog;
+
 mod layer_view;
 pub use layer_view::*;
 
