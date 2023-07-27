@@ -1,5 +1,5 @@
 use eframe::{
-    egui::{self, CursorIcon, PointerButton, ScrollArea},
+    egui::{self, CursorIcon, PointerButton, ScrollArea, Button},
     epaint::{Pos2, Rect, Vec2},
 };
 use i18n_embed_fl::fl;
@@ -25,7 +25,7 @@ pub mod key_maps;
 pub use key_maps::*;
 
 use crate::{
-    model::{brush_imp::draw_glyph, MKey, MModifiers, Tool},
+    model::{brush_imp::draw_glyph, MKey, MModifiers, Tool, DEFAULT_OUTLINE_TABLE},
     Document, TerminalResult,
 };
 
@@ -420,30 +420,43 @@ impl Document for AnsiEditor {
                 ));
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                    let cur_outline = self.buffer_view.lock().unwrap().editor.cur_outline;
+                    let cur_font_page = self.buffer_view.lock().unwrap().editor.cur_font_page;
+
                     ui.horizontal(|ui| {
+                        if ui.add(Button::new("▶").frame(false)).clicked() {
+                            self.buffer_view.lock().unwrap().editor.cur_outline = (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
+                        }
+                        ui.label(cur_outline.to_string());
+                        if ui.add(Button::new("◀").frame(false)).clicked() {
+                            self.buffer_view.lock().unwrap().editor.cur_outline = (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1) % DEFAULT_OUTLINE_TABLE.len();
+                        }
+
                         for i in (0..10).into_iter().rev() {
                             let ch = self
                                 .buffer_view
                                 .lock()
                                 .unwrap()
                                 .editor
-                                .get_outline_char_code(i as i32)
+                                .get_outline_char_code(i)
                                 .unwrap();
-                            let cur_page = self.buffer_view.lock().unwrap().editor.cur_font_page;
                             ui.add(crate::model::pencil_imp::draw_glyph_plain(
                                 self.buffer_view.clone(),
                                 unsafe { char::from_u32_unchecked(ch as u32) },
-                                cur_page,
+                                cur_font_page,
                             ));
                             ui.label(format!("F{}", i + 1));
                         }
-
+                        
                         ui.label(fl!(
                             crate::LANGUAGE_LOADER,
                             "toolbar-size",
                             colums = width,
                             rows = height
                         ));
+
+                        
+                        
                     });
                 });
             });

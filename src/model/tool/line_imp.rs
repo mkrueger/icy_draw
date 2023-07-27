@@ -38,22 +38,22 @@ impl Plottable for LineTool {
     }
 }
 
-const CORNER_UPPER_LEFT: i32 = 0;
-const CORNER_UPPER_RIGHT: i32 = 1;
-const CORNER_LOWER_LEFT: i32 = 2;
-const CORNER_LOWER_RIGHT: i32 = 3;
+const CORNER_UPPER_LEFT: usize = 0;
+const CORNER_UPPER_RIGHT: usize = 1;
+const CORNER_LOWER_LEFT: usize = 2;
+const CORNER_LOWER_RIGHT: usize = 3;
 
-const HORIZONTAL_CHAR: i32 = 4;
-const VERTICAL_CHAR: i32 = 5;
+const HORIZONTAL_CHAR: usize = 4;
+const VERTICAL_CHAR: usize = 5;
 
-const VERT_RIGHT_CHAR: i32 = 6;
-const VERT_LEFT_CHAR: i32 = 7;
+const VERT_RIGHT_CHAR: usize = 6;
+const VERT_LEFT_CHAR: usize = 7;
 
-const HORIZ_UP_CHAR: i32 = 8;
-const HORIZ_DOWN_CHAR: i32 = 9;
+const HORIZ_UP_CHAR: usize = 8;
+const HORIZ_DOWN_CHAR: usize = 9;
 
 impl LineTool {
-    pub fn get_new_horiz_char(editor: &mut Editor, new_char: u16, to_left: bool) -> i32 {
+    pub fn get_new_horiz_char(editor: &mut Editor, new_char: u16, to_left: bool) -> usize {
         if new_char == editor.get_outline_char_code(VERTICAL_CHAR).unwrap() {
             if to_left {
                 VERT_RIGHT_CHAR
@@ -117,7 +117,7 @@ impl LineTool {
         }
     }
 
-    pub fn get_new_vert_char(editor: &mut Editor, new_char: u16, to_left: bool) -> i32 {
+    pub fn get_new_vert_char(editor: &mut Editor, new_char: u16, to_left: bool) -> usize {
         if new_char == editor.get_outline_char_code(HORIZONTAL_CHAR).unwrap() {
             if to_left {
                 HORIZ_DOWN_CHAR

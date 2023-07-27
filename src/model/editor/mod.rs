@@ -55,7 +55,7 @@ pub struct Editor {
     pub caret: Caret,
     pub cur_selection: Option<Selection>,
 
-    cur_outline: i32,
+    pub cur_outline: usize,
     pub is_inactive: bool,
     pub cur_font_page: usize,
 
@@ -200,11 +200,11 @@ impl Editor {
         Event::CursorPositionChange(old, self.caret.get_position())
     }
 
-    pub fn get_cur_outline(&self) -> i32 {
+    pub fn get_cur_outline(&self) -> usize {
         self.cur_outline
     }
 
-    pub fn set_cur_outline(&mut self, outline: i32) {
+    pub fn set_cur_outline(&mut self, outline: usize) {
         self.cur_outline = outline;
         //(self.outline_changed)(self);
     }
@@ -222,8 +222,8 @@ impl Editor {
         Ok(true)
     }
 
-    pub fn get_outline_char_code(&self, i: i32) -> Result<u16, &str> {
-        if self.cur_outline < 0 || self.cur_outline >= DEFAULT_OUTLINE_TABLE.len() as i32 {
+    pub fn get_outline_char_code(&self, i: usize) -> Result<u16, &str> {
+        if self.cur_outline >= DEFAULT_OUTLINE_TABLE.len() {
             return Err("current outline out of range.");
         }
         if !(0..=10).contains(&i) {
@@ -233,8 +233,8 @@ impl Editor {
         Ok(DEFAULT_OUTLINE_TABLE[self.cur_outline as usize][i as usize] as u16)
     }
 
-    pub fn get_outline_char_code_from(outline: i32, i: i32) -> Result<u16, &'static str> {
-        if outline < 0 || outline >= DEFAULT_OUTLINE_TABLE.len() as i32 {
+    pub fn get_outline_char_code_from(outline: usize, i: usize) -> Result<u16, &'static str> {
+        if  outline >= DEFAULT_OUTLINE_TABLE.len() {
             return Err("current outline out of range.");
         }
         if !(0..=10).contains(&i) {

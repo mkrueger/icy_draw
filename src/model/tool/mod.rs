@@ -338,7 +338,7 @@ pub trait Tool {
     }
 }
 
-fn handle_outline_insertion(editor: &mut Editor, modifier: MModifiers, outline: i32) {
+fn handle_outline_insertion(editor: &mut Editor, modifier: MModifiers, outline: usize) {
     if let MModifiers::Control = modifier {
         editor.set_cur_outline(outline);
         return;
