@@ -61,12 +61,15 @@ edit-canvas-size-height-label=Height:
 edit-canvas-size-resize=Resize
 
 toolbar-size = { $colums } Columns x { $rows } Rows
-toolbar-position = { $column }:{ $line }
+toolbar-position = ({ $column }:{ $line })
 
 add_layer_tooltip = Add new layer
 move_layer_up_tooltip = Move layer up
 move_layer_down_tooltip = Move layer down
 delete_layer_tooltip = Delete layer
+
+glyph-char-label=Char
+glyph-font-label=Font
 
 export-title=Export
 export-button-title=Export

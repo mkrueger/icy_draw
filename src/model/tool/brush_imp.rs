@@ -197,7 +197,7 @@ pub fn draw_glyph(ui: &mut egui::Ui, buf: Arc<Mutex<BufferView>>, ui_result: &mu
     };
 
     if response.clicked() {
-        ui_result.modal_dialog = Some(Box::new(SelectCharacterDialog::new(ch.clone())));
+        ui_result.modal_dialog = Some(Box::new(SelectCharacterDialog::new(buf.clone(), ch.clone())));
     }
 
     let painter = ui.painter_at(stroke_rect);
@@ -222,9 +222,9 @@ pub fn draw_glyph(ui: &mut egui::Ui, buf: Arc<Mutex<BufferView>>, ui_result: &mu
                 }
             }
         }
-        response = response.on_hover_ui(|ui| {
+        response.on_hover_ui(|ui| {
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Char").small());
+                ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-char-label")).small());
                 ui.label(
                     RichText::new(format!("{0}/0x{0:02X}", ch as u32))
                         .small()
@@ -232,7 +232,7 @@ pub fn draw_glyph(ui: &mut egui::Ui, buf: Arc<Mutex<BufferView>>, ui_result: &mu
                 );
             });
             ui.horizontal(|ui| {
-                ui.label(RichText::new("Font").small());
+                ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-font-label")).small());
                 ui.label(
                     RichText::new(font.name.to_string())
                         .small()
