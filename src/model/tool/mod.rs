@@ -78,6 +78,17 @@ impl MModifiers {
         matches!(self, MModifiers::Control)
     }
 }
+pub struct ToolUiResult {
+    pub modal_dialog: Option<Box<dyn crate::ModalDialog>>
+}
+
+impl ToolUiResult {
+    pub fn new() -> Self {
+        Self {
+            modal_dialog: None
+        }
+    }
+}
 
 pub trait Tool {
     fn get_icon_name(&self) -> &'static RetainedImage;
@@ -95,7 +106,7 @@ pub trait Tool {
         ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    );
+    ) -> ToolUiResult;
 
     fn handle_key(
         &mut self,

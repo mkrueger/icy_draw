@@ -430,7 +430,7 @@ impl Document for AnsiEditor {
                                 .get_outline_char_code(i as i32)
                                 .unwrap();
                             let cur_page = self.buffer_view.lock().unwrap().editor.cur_font_page;
-                            ui.add(draw_glyph(
+                            ui.add(crate::model::pencil_imp::draw_glyph_plain(
                                 self.buffer_view.clone(),
                                 unsafe { char::from_u32_unchecked(ch as u32) },
                                 cur_page,

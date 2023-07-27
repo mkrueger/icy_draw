@@ -81,3 +81,5 @@ export-compression-level-label=Compression level
 export-compression-level-off=Off
 export-compression-level-medium=Medium
 export-compression-level-high=High
+
+select-character-title=Select Character

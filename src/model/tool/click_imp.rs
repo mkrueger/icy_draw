@@ -9,7 +9,7 @@ use crate::{
     model::{Selection, Shape},
 };
 
-use super::{Event, Position, Tool};
+use super::{Event, Position, Tool, ToolUiResult};
 
 pub struct ClickTool {}
 
@@ -23,7 +23,8 @@ impl Tool for ClickTool {
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
         _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+    ) -> ToolUiResult {
+        ToolUiResult::new()
     }
 
     fn handle_click(

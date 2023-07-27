@@ -18,7 +18,7 @@ pub fn show_char_table(buffer_opt: Option<Arc<Mutex<BufferView>>>) -> impl egui:
                 ui.horizontal_wrapped(|ui| {
                     for i in 0..font_length {
                         let ch = unsafe { char::from_u32_unchecked(i as u32) };
-                        if ui.add(draw_glyph(buffer.clone(), ch, font_page)).clicked() {
+                        if ui.add(crate::model::pencil_imp::draw_glyph_plain(buffer.clone(), ch, font_page)).clicked() {
                             if let Ok(b) = &mut buffer.lock() {
                                 let mut p = AsciiParser::new();
                                 let editor = &mut b.editor;

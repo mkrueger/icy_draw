@@ -7,7 +7,7 @@ use icy_engine::{AttributedChar, Rectangle, TextAttribute};
 use crate::{ansi_editor::BufferView, model::ScanLines};
 
 use super::{
-    brush_imp::draw_glyph, plot_point, DrawMode, Editor, Event, Plottable, Position, Tool,
+    brush_imp::draw_glyph, plot_point, DrawMode, Editor, Event, Plottable, Position, Tool, ToolUiResult,
 };
 
 pub struct LineTool {
@@ -16,7 +16,7 @@ pub struct LineTool {
     pub use_fore: bool,
     pub use_back: bool,
     pub attr: TextAttribute,
-    pub char_code: char,
+    pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
     pub font_page: usize,
 
     pub old_pos: Position,
@@ -34,7 +34,7 @@ impl Plottable for LineTool {
         self.use_back
     }
     fn get_char_code(&self) -> char {
-        self.char_code
+        *self.char_code.borrow()
     }
 }
 
@@ -196,7 +196,8 @@ impl Tool for LineTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+    ) -> ToolUiResult {
+        let mut result = ToolUiResult::new();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -227,7 +228,7 @@ impl Tool for LineTool {
             );
 
             if let Some(b) = &buffer_opt {
-                ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
+                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
             }
         });
         ui.radio_value(
@@ -240,6 +241,7 @@ impl Tool for LineTool {
             DrawMode::Colorize,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+        result
     }
     /*
     fn handle_key(

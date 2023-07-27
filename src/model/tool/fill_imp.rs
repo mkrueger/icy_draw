@@ -9,7 +9,7 @@ use icy_engine::{AttributedChar, TextAttribute};
 
 use crate::ansi_editor::BufferView;
 
-use super::{brush_imp::draw_glyph, Editor, Event, Position, Tool};
+use super::{brush_imp::draw_glyph, Editor, Event, Position, Tool, ToolUiResult};
 
 #[derive(PartialEq, Eq)]
 pub enum FillType {
@@ -22,7 +22,7 @@ pub struct FillTool {
     pub use_back: bool,
 
     pub attr: TextAttribute,
-    pub char_code: char,
+    pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
     pub font_page: usize,
     pub fill_type: FillType,
 }
@@ -157,7 +157,8 @@ impl Tool for FillTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+    ) -> ToolUiResult {
+        let mut result = ToolUiResult::new();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -183,7 +184,7 @@ impl Tool for FillTool {
             );
 
             if let Some(b) = &buffer_opt {
-                ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
+                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
             }
         });
         ui.radio_value(
@@ -191,6 +192,7 @@ impl Tool for FillTool {
             FillType::Colorize,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+        result
     }
 
     fn handle_click(
@@ -215,7 +217,7 @@ impl Tool for FillTool {
                     attr,
                     pos,
                     ch,
-                    AttributedChar::new(self.char_code, attr),
+                    AttributedChar::new(*self.char_code.borrow(), attr),
                 );
                 editor.end_atomic_undo();
             }

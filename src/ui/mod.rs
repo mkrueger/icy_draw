@@ -36,6 +36,9 @@ mod export_file_dialog;
 mod layer_view;
 pub use layer_view::*;
 
+mod select_character_dialog;
+pub use select_character_dialog::*;
+
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
 
 pub trait ModalDialog {

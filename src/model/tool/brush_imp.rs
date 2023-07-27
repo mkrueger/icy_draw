@@ -5,11 +5,11 @@ use eframe::{
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::AttributedChar;
-use std::sync::{Arc, Mutex};
+use std::{sync::{Arc, Mutex}, rc::Rc, cell::RefCell};
 
-use crate::ansi_editor::BufferView;
+use crate::{ansi_editor::BufferView, SelectCharacterDialog};
 
-use super::{Editor, Position, Tool};
+use super::{Editor, Position, Tool, ToolUiResult};
 
 #[derive(PartialEq, Eq)]
 pub enum BrushType {
@@ -22,7 +22,7 @@ pub struct BrushTool {
     pub use_fore: bool,
     pub use_back: bool,
     pub size: i32,
-    pub char_code: char,
+    pub char_code: Rc<RefCell<char>>,
     pub font_page: usize,
 
     pub brush_type: BrushType,
@@ -66,7 +66,7 @@ impl BrushTool {
                         let attribute = editor.caret.get_attribute();
                         editor.set_char(
                             center + Position::new(x, y),
-                            Some(AttributedChar::new(self.char_code, attribute)),
+                            Some(AttributedChar::new(*self.char_code.borrow(), attribute)),
                         );
                     }
                     BrushType::Color => {
@@ -106,7 +106,8 @@ impl Tool for BrushTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+    ) -> ToolUiResult {
+        let mut result = ToolUiResult::new();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -144,7 +145,7 @@ impl Tool for BrushTool {
             );
 
             if let Some(b) = &buffer_opt {
-                ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
+                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
             }
         });
         ui.radio_value(
@@ -152,6 +153,7 @@ impl Tool for BrushTool {
             BrushType::Color,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+        result
     }
 
     fn handle_click(
@@ -179,62 +181,64 @@ impl Tool for BrushTool {
     }
 }
 
-pub fn draw_glyph(buf: Arc<Mutex<BufferView>>, ch: char, font_page: usize) -> impl egui::Widget {
-    move |ui: &mut egui::Ui| {
-        let font = &buf.lock().unwrap().editor.buf.font_table[font_page];
-        let scale = 1.5;
-        let (id, stroke_rect) = ui.allocate_space(Vec2::new(
-            scale * font.size.width as f32,
-            scale * font.size.height as f32,
-        ));
-        let mut response = ui.interact(stroke_rect, id, Sense::click());
+pub fn draw_glyph(ui: &mut egui::Ui, buf: Arc<Mutex<BufferView>>, ui_result: &mut ToolUiResult, ch: Rc<RefCell<char>>, font_page: usize) {
+    let font = &buf.lock().unwrap().editor.buf.font_table[font_page];
+    let scale = 1.5;
+    let (id, stroke_rect) = ui.allocate_space(Vec2::new(
+        scale * font.size.width as f32,
+        scale * font.size.height as f32,
+    ));
+    let mut response = ui.interact(stroke_rect, id, Sense::click());
 
-        let col = if response.hovered() {
-            Color32::WHITE
-        } else {
-            Color32::GRAY
-        };
+    let col = if response.hovered() {
+        Color32::WHITE
+    } else {
+        Color32::GRAY
+    };
 
-        let painter = ui.painter_at(stroke_rect);
-        painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
-        let s = font.size;
-        if let Some(glyph) = font.get_glyph(ch) {
-            for y in 0..s.height {
-                for x in 0..s.width {
-                    if glyph.data[y as usize] & (128 >> x) != 0 {
-                        painter.rect_filled(
-                            Rect::from_min_size(
-                                Pos2::new(
-                                    stroke_rect.left() + x as f32 * scale,
-                                    stroke_rect.top() + y as f32 * scale,
-                                ),
-                                Vec2::new(scale, scale),
+    if response.clicked() {
+        ui_result.modal_dialog = Some(Box::new(SelectCharacterDialog::new(ch.clone())));
+    }
+
+    let painter = ui.painter_at(stroke_rect);
+    painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+    let s = font.size;
+    let ch  = *ch.borrow();
+    if let Some(glyph) = font.get_glyph(ch) {
+        for y in 0..s.height {
+            for x in 0..s.width {
+                if glyph.data[y as usize] & (128 >> x) != 0 {
+                    painter.rect_filled(
+                        Rect::from_min_size(
+                            Pos2::new(
+                                stroke_rect.left() + x as f32 * scale,
+                                stroke_rect.top() + y as f32 * scale,
                             ),
-                            Rounding::none(),
-                            col,
-                        );
-                    }
+                            Vec2::new(scale, scale),
+                        ),
+                        Rounding::none(),
+                        col,
+                    );
                 }
             }
-            response = response.on_hover_ui(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Char").small());
-                    ui.label(
-                        RichText::new(format!("{0}/0x{0:02X}", ch as u32))
-                            .small()
-                            .color(Color32::WHITE),
-                    );
-                });
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Font").small());
-                    ui.label(
-                        RichText::new(font.name.to_string())
-                            .small()
-                            .color(Color32::WHITE),
-                    );
-                });
-            });
         }
-        response
+        response = response.on_hover_ui(|ui| {
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Char").small());
+                ui.label(
+                    RichText::new(format!("{0}/0x{0:02X}", ch as u32))
+                        .small()
+                        .color(Color32::WHITE),
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Font").small());
+                ui.label(
+                    RichText::new(font.name.to_string())
+                        .small()
+                        .color(Color32::WHITE),
+                );
+            });
+        });
     }
 }

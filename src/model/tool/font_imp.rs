@@ -5,7 +5,7 @@ use std::{
 
 use crate::ansi_editor::BufferView;
 
-use super::{Event, MKey,  MModifiers, Position, Tool};
+use super::{Event, MKey,  MModifiers, Position, Tool, ToolUiResult};
 use directories::ProjectDirs;
 use eframe::{
     egui::{self, ComboBox},
@@ -23,9 +23,9 @@ pub struct FontTool {
 }
 
 impl FontTool {
-    pub fn get_selected_font(&self) -> Option<&TheDrawFont> {
+    /*pub fn get_selected_font(&self) -> Option<&TheDrawFont> {
         self.fonts.get(self.selected_font as usize)
-    }
+    }*/
 
     fn is_hidden(entry: &DirEntry) -> bool {
         entry
@@ -86,10 +86,10 @@ impl Tool for FontTool {
 
     fn show_ui(
         &mut self,
-        ctx: &egui::Context,
+        _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+    ) -> ToolUiResult {
         ui.vertical_centered(|ui| {
             let mut selected_text = "<none>".to_string();
 
@@ -113,6 +113,7 @@ impl Tool for FontTool {
                     }
                 });
         });
+        ToolUiResult::new()
     }
 
     fn handle_click(

@@ -8,7 +8,7 @@ use crate::ansi_editor::BufferView;
 
 use super::{
     brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
-    ScanLines, Tool,
+    ScanLines, Tool, ToolUiResult,
 };
 
 pub struct DrawEllipseTool {
@@ -17,7 +17,7 @@ pub struct DrawEllipseTool {
     pub use_fore: bool,
     pub use_back: bool,
     pub attr: TextAttribute,
-    pub char_code: char,
+    pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
     pub font_page: usize,
 }
 
@@ -32,7 +32,7 @@ impl Plottable for DrawEllipseTool {
         self.use_back
     }
     fn get_char_code(&self) -> char {
-        self.char_code
+        *self.char_code.borrow()
     }
 }
 
@@ -53,7 +53,8 @@ impl Tool for DrawEllipseTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+    ) -> ToolUiResult {
+        let mut result = ToolUiResult::new();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -84,7 +85,7 @@ impl Tool for DrawEllipseTool {
             );
 
             if let Some(b) = &buffer_opt {
-                ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
+                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
             }
         });
         ui.radio_value(
@@ -97,6 +98,7 @@ impl Tool for DrawEllipseTool {
             DrawMode::Colorize,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+        result
     }
 
     fn handle_drag(

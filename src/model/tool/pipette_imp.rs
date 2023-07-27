@@ -4,7 +4,7 @@ use eframe::egui;
 
 use crate::ansi_editor::BufferView;
 
-use super::{Event, Position, Tool};
+use super::{Event, Position, Tool, ToolUiResult};
 pub struct PipetteTool {}
 
 impl Tool for PipetteTool {
@@ -22,7 +22,8 @@ impl Tool for PipetteTool {
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
         _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+    ) -> ToolUiResult {
+        ToolUiResult::new()
     }
 
     fn handle_click(

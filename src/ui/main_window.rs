@@ -2,7 +2,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
     sync::Arc,
-    time::Duration,
+    time::Duration, cell::RefCell, rc::Rc,
 };
 
 use crate::{model::Tool, Document, EditSauceDialog, FontEditor, NewFileDialog, ModalDialog};
@@ -44,7 +44,7 @@ impl MainWindow {
             use_back: true,
             use_fore: true,
             brush_type: crate::model::pencil_imp::PencilType::Shade,
-            char_code: '\u{00B0}',
+            char_code: Rc::new(RefCell::new('\u{00B0}')),
             font_page: 0,
             last_pos: Position::default(),
         }));
@@ -53,7 +53,7 @@ impl MainWindow {
             use_back: true,
             use_fore: true,
             brush_type: crate::model::brush_imp::BrushType::Shade,
-            char_code: '\u{00B0}',
+            char_code: Rc::new(RefCell::new('\u{00B0}')),
             font_page: 0,
         }));
         tools.push(Box::new(crate::model::erase_imp::EraseTool {
@@ -66,7 +66,7 @@ impl MainWindow {
             use_fore: true,
             use_back: true,
             attr: icy_engine::TextAttribute::default(),
-            char_code: '\u{00B0}',
+            char_code: Rc::new(RefCell::new('\u{00B0}')),
             font_page: 0,
             old_pos: icy_engine::Position { x: 0, y: 0 },
         }));
@@ -76,7 +76,7 @@ impl MainWindow {
                 use_fore: true,
                 use_back: true,
                 attr: icy_engine::TextAttribute::default(),
-                char_code: '\u{00B0}',
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
                 font_page: 0,
             },
         ));
@@ -87,7 +87,7 @@ impl MainWindow {
                 use_fore: true,
                 use_back: true,
                 attr: icy_engine::TextAttribute::default(),
-                char_code: '\u{00B0}',
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
                 font_page: 0,
             },
         ));
@@ -96,7 +96,7 @@ impl MainWindow {
             use_fore: true,
             use_back: true,
             attr: icy_engine::TextAttribute::default(),
-            char_code: '\u{00B0}',
+            char_code: Rc::new(RefCell::new('\u{00B0}')),
             font_page: 0,
         }));
 
@@ -106,7 +106,7 @@ impl MainWindow {
                 use_fore: true,
                 use_back: true,
                 attr: icy_engine::TextAttribute::default(),
-                char_code: '\u{00B0}',
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
                 font_page: 0,
             },
         ));
@@ -114,7 +114,7 @@ impl MainWindow {
         tools.push(Box::new(crate::model::fill_imp::FillTool {
             use_fore: true,
             use_back: true,
-            char_code: '\u{00B0}',
+            char_code: Rc::new(RefCell::new('\u{00B0}')),
             font_page: 0,
             fill_type: crate::model::fill_imp::FillType::Character,
             attr: icy_engine::TextAttribute::default(),
@@ -588,7 +588,10 @@ impl eframe::App for MainWindow {
             crate::add_tool_switcher(ctx, ui, self);
 
             if let Some(tool) = self.tab_viewer.tools.get_mut(self.tab_viewer.selected_tool) {
-                tool.show_ui(ctx, ui, buffer_opt.clone());
+                let tool_result = tool.show_ui(ctx, ui, buffer_opt.clone());
+                if tool_result.modal_dialog.is_some() {
+                    self.modal_dialog = tool_result.modal_dialog;
+                }
             }
         });
         SidePanel::right("right_panel").show(ctx, |ui| {

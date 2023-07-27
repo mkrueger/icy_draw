@@ -6,7 +6,7 @@ use icy_engine::{AttributedChar, TextAttribute};
 
 use crate::ansi_editor::BufferView;
 
-use super::{Editor, Position, Tool};
+use super::{Editor, Position, Tool, ToolUiResult};
 
 #[derive(PartialEq, Eq)]
 pub enum EraseType {
@@ -87,7 +87,7 @@ impl Tool for EraseTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+    ) -> ToolUiResult {
         ui.horizontal(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
             ui.add(
@@ -106,6 +106,7 @@ impl Tool for EraseTool {
             EraseType::Shade,
             fl!(crate::LANGUAGE_LOADER, "tool-shade"),
         );
+        ToolUiResult::new()
     }
 
     fn handle_click(

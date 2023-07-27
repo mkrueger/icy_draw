@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::{ansi_editor::BufferView, model::ScanLines};
 
-use super::{line_imp::set_half_block, Position, Tool};
+use super::{line_imp::set_half_block, Position, Tool, ToolUiResult, brush_imp::draw_glyph};
 
 #[derive(PartialEq, Eq)]
 pub enum PencilType {
@@ -22,7 +22,7 @@ pub enum PencilType {
 pub struct PencilTool {
     pub use_fore: bool,
     pub use_back: bool,
-    pub char_code: char,
+    pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
     pub font_page: usize,
 
     pub last_pos: Position,
@@ -77,7 +77,7 @@ impl PencilTool {
             PencilType::Solid => {
                 let editor = &mut buffer_view.lock().unwrap().editor;
                 let attribute = editor.caret.get_attribute();
-                editor.set_char(center, Some(AttributedChar::new(self.char_code, attribute)));
+                editor.set_char(center, Some(AttributedChar::new(*self.char_code.borrow(), attribute)));
             }
             PencilType::Color => {
                 let editor = &mut buffer_view.lock().unwrap().editor;
@@ -109,7 +109,8 @@ impl Tool for PencilTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
-    ) {
+    ) -> ToolUiResult {
+        let mut result = ToolUiResult::new();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -144,7 +145,7 @@ impl Tool for PencilTool {
             );
 
             if let Some(b) = &buffer_opt {
-                ui.add(draw_glyph(b.clone(), self.char_code, self.font_page));
+                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
             }
         });
         ui.radio_value(
@@ -152,6 +153,7 @@ impl Tool for PencilTool {
             PencilType::Color,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+        result
     }
 
     fn handle_click(
@@ -180,7 +182,7 @@ impl Tool for PencilTool {
     }
 }
 
-pub fn draw_glyph(buf: Arc<Mutex<BufferView>>, ch: char, font_page: usize) -> impl egui::Widget {
+pub fn draw_glyph_plain(buf: Arc<Mutex<BufferView>>, ch: char, font_page: usize) -> impl egui::Widget {
     move |ui: &mut egui::Ui| {
         let font = &buf.lock().unwrap().editor.buf.font_table[font_page];
         let scale = 1.5;
