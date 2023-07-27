@@ -9,6 +9,7 @@ menu-set-canvas-size=Set Canvas Size…
 menu-close=Close
 menu-save-as=Save As…
 menu-export=Export…
+menu-edit-font-outline=Font Outline…
 
 menu-edit=Edit
 menu-undo=Undo
@@ -86,3 +87,5 @@ export-compression-level-medium=Medium
 export-compression-level-high=High
 
 select-character-title=Select Character
+
+select-outline-style-title=Outline Font Style Type

@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::ansi_editor::BufferView;
+use crate::{ansi_editor::BufferView, SETTINGS};
 
 use super::{Event, MKey,  MModifiers, Position, Tool, ToolUiResult};
 use directories::ProjectDirs;
@@ -245,7 +245,7 @@ impl Tool for FontTool {
                 let c_pos = editor.get_caret_position();
                 editor.begin_atomic_undo();
                 let attr = editor.caret.get_attribute();
-                let opt_size = font.render(&mut editor.buf, 0, c_pos, attr, 0, ch as u8);
+                let opt_size = font.render(&mut editor.buf, 0, c_pos, attr, unsafe { SETTINGS.font_outline_style }, ch as u8);
                 if let Some(size) = opt_size {
                     editor.set_caret(c_pos.x + size.width as i32 + font.spaces, c_pos.y);
                     let new_pos = editor.get_caret_position();

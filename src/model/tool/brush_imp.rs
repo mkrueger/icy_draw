@@ -188,7 +188,7 @@ pub fn draw_glyph(ui: &mut egui::Ui, buf: Arc<Mutex<BufferView>>, ui_result: &mu
         scale * font.size.width as f32,
         scale * font.size.height as f32,
     ));
-    let mut response = ui.interact(stroke_rect, id, Sense::click());
+    let response = ui.interact(stroke_rect, id, Sense::click());
 
     let col = if response.hovered() {
         Color32::WHITE

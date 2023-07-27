@@ -39,6 +39,12 @@ pub use layer_view::*;
 mod select_character_dialog;
 pub use select_character_dialog::*;
 
+mod select_outline_dialog;
+pub use select_outline_dialog::*;
+
+mod settings;
+pub use settings::*;
+
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
 
 pub trait ModalDialog {

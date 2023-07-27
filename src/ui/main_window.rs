@@ -5,7 +5,7 @@ use std::{
     time::Duration, cell::RefCell, rc::Rc,
 };
 
-use crate::{model::Tool, Document, EditSauceDialog, FontEditor, NewFileDialog, ModalDialog};
+use crate::{model::Tool, Document, EditSauceDialog, FontEditor, NewFileDialog, ModalDialog, SelectOutlineDialog};
 use eframe::{
     egui::{self, menu, Response, SidePanel, TextStyle, TopBottomPanel, Ui, Modifiers},
     epaint::pos2,
@@ -253,8 +253,42 @@ impl MainWindow {
                     )));
                     ui.close_menu();
                 }
+                ui.separator();
+                if ui
+                    .add(
+                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-font-outline"))
+                            .wrap(false),
+                    )
+                    .clicked()
+                {
+                    self.modal_dialog = Some(Box::new(SelectOutlineDialog::new()));
+                    ui.close_menu();
+                }
 
 
+                ui.separator();
+                let button: Response =
+                    button_with_shortcut(ui, true, fl!(crate::LANGUAGE_LOADER, "menu-close"), "Ctrl+Q");
+                if button.clicked() {
+                    _frame.close();
+                    ui.close_menu();
+                }
+            });
+
+            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
+                let button: Response =
+                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-undo"), "Ctrl+Z");
+                if button.clicked() {
+                    self.undo_command();
+                    ui.close_menu();
+                }
+    
+                let button: Response =
+                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-redo"), "Ctrl+Shift+Z");
+                if button.clicked() {
+                    self.redo_command();
+                    ui.close_menu();
+                }
                 ui.separator();
                 if ui
                     .add_enabled(
@@ -290,29 +324,6 @@ impl MainWindow {
                     self.modal_dialog = Some(Box::new(SetCanvasSizeDialog::new(
                         &buffer_opt.unwrap().lock().unwrap().editor.buf,
                     )));
-                    ui.close_menu();
-                }
-                ui.separator();
-                let button: Response =
-                    button_with_shortcut(ui, true, fl!(crate::LANGUAGE_LOADER, "menu-close"), "Ctrl+Q");
-                if button.clicked() {
-                    _frame.close();
-                    ui.close_menu();
-                }
-            });
-
-            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
-                let button: Response =
-                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-undo"), "Ctrl+Z");
-                if button.clicked() {
-                    self.undo_command();
-                    ui.close_menu();
-                }
-    
-                let button: Response =
-                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-redo"), "Ctrl+Shift+Z");
-                if button.clicked() {
-                    self.redo_command();
                     ui.close_menu();
                 }
             });
