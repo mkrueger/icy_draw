@@ -37,7 +37,7 @@ impl Plottable for LineTool {
         *self.char_code.borrow()
     }
 }
-
+/* 
 const CORNER_UPPER_LEFT: usize = 0;
 const CORNER_UPPER_RIGHT: usize = 1;
 const CORNER_LOWER_LEFT: usize = 2;
@@ -179,7 +179,7 @@ impl LineTool {
         }
     }
 }
-
+*/
 // block tools:
 // copy/moxe
 // fill, delete
@@ -243,143 +243,6 @@ impl Tool for LineTool {
         );
         result
     }
-    /*
-    fn handle_key(
-        &mut self,
-        editor: Rc<RefCell<Editor>>,
-        key: MKey,
-        _key_code: MKeyCode,
-        modifier: MModifiers,
-    ) -> Event {
-        let mut e = editor;
-        let old_pos = e.get_caret_position();
-        match key {
-            MKey::Down => {
-                e.set_caret(old_pos.x, old_pos.y + 1);
-            }
-            MKey::Up => {
-                e.set_caret(old_pos.x, old_pos.y - 1);
-            }
-            MKey::Left => {
-                e.set_caret(old_pos.x - 1, old_pos.y);
-            }
-            MKey::Right => {
-                e.set_caret(old_pos.x + 1, old_pos.y);
-            }
-
-            _ => {
-                if modifier.is_shift() || modifier.is_control() {
-                    match key {
-                        MKey::F1 => {
-                            handle_outline_insertion(&mut e, modifier, 0);
-                        }
-                        MKey::F2 => {
-                            handle_outline_insertion(&mut e, modifier, 1);
-                        }
-                        MKey::F3 => {
-                            handle_outline_insertion(&mut e, modifier, 2);
-                        }
-                        MKey::F4 => {
-                            handle_outline_insertion(&mut e, modifier, 3);
-                        }
-                        MKey::F5 => {
-                            handle_outline_insertion(&mut e, modifier, 4);
-                        }
-                        MKey::F6 => {
-                            handle_outline_insertion(&mut e, modifier, 5);
-                        }
-                        MKey::F7 => {
-                            handle_outline_insertion(&mut e, modifier, 6);
-                        }
-                        MKey::F8 => {
-                            handle_outline_insertion(&mut e, modifier, 7);
-                        }
-                        MKey::F9 => {
-                            handle_outline_insertion(&mut e, modifier, 8);
-                        }
-                        MKey::F10 => {
-                            handle_outline_insertion(&mut e, modifier, 9);
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
-
-        let new_pos = e.get_caret_position();
-        let new_char = e.get_char_from_cur_layer(new_pos).unwrap_or_default();
-        let old_char = e.get_char_from_cur_layer(old_pos).unwrap_or_default();
-
-        let b = (new_pos.x - old_pos.x).signum();
-        let a = (new_pos.y - old_pos.y).signum();
-        if a == 1 || a == -1 {
-            let c = LineTool::get_new_vert_char(&e, new_char.char_code, a == -1 );
-            let char_code = e.get_outline_char_code(c).unwrap();
-            let attribute = e.caret.get_attribute();
-            e.set_char(
-                new_pos,
-                Some(crate::model::DosChar {
-                    char_code,
-                    attribute,
-                }),
-            );
-
-            if old_char.is_transparent() {
-                let char_code = e.get_outline_char_code(HORIZONTAL_CHAR).unwrap();
-                e.set_char(
-                    old_pos,
-                    Some(crate::model::DosChar {
-                        char_code,
-                        attribute,
-                    }),
-                );
-            } else if let Some(char_code) = self.get_old_vert_char(&e, old_char.char_code, a == -1) {
-                e.set_char(
-                    old_pos,
-                    Some(crate::model::DosChar {
-                        char_code,
-                        attribute,
-                    }),
-                );
-            }
-        }
-
-
-        if b == 1 || b == -1 { // horizontal movement
-            let c = LineTool::get_new_horiz_char(&e, new_char.char_code, b == -1 );
-            let char_code = e.get_outline_char_code(c).unwrap();
-            let attribute = e.caret.get_attribute();
-            e.set_char(
-                new_pos,
-                Some(crate::model::DosChar {
-                    char_code,
-                    attribute,
-                }),
-            );
-
-            if old_char.is_transparent() {
-                let char_code = e.get_outline_char_code(VERTICAL_CHAR).unwrap();
-                e.set_char(
-                    old_pos,
-                    Some(crate::model::DosChar {
-                        char_code,
-                        attribute,
-                    }),
-                );
-            } else if let Some(char_code) = self.get_old_horiz_char(&e, old_char.char_code, b == -1) {
-                e.set_char(
-                    old_pos,
-                    Some(crate::model::DosChar {
-                        char_code,
-                        attribute,
-                    }),
-                );
-            }
-        }
-
-        self.old_pos = old_pos;
-        Event::None
-    }*/
 
     fn handle_click(
         &mut self,

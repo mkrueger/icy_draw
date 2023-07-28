@@ -1,6 +1,6 @@
 use std::{rc::Rc, cell::RefCell, sync::{Arc, Mutex}};
 
-use eframe::{egui::{self, RichText, Layout}, epaint::{Vec2, Rect, Color32, Rounding, Stroke}};
+use eframe::{egui::{self, RichText}, epaint::{Vec2, Rect, Color32, Rounding}};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 

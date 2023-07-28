@@ -25,7 +25,7 @@ pub mod key_maps;
 pub use key_maps::*;
 
 use crate::{
-    model::{brush_imp::draw_glyph, MKey, MModifiers, Tool, DEFAULT_OUTLINE_TABLE},
+    model::{MKey, MModifiers, Tool, DEFAULT_OUTLINE_TABLE},
     Document, TerminalResult,
 };
 

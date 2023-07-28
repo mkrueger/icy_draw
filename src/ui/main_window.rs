@@ -15,7 +15,7 @@ use glow::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, Position, SaveOptions, Rectangle};
 
-use super::{ansi_editor::AnsiEditor, set_canvas_size_dialog::SetCanvasSizeDialog};
+use super::{ansi_editor::AnsiEditor, SetCanvasSizeDialog};
 use egui_file::FileDialog;
 
 pub struct MainWindow {
@@ -248,7 +248,7 @@ impl MainWindow {
                         buffer_opt = t.1.get_buffer_view();
                     }
         
-                    self.modal_dialog = Some(Box::new(super::export_file_dialog::ExportFileDialog::new(
+                    self.modal_dialog = Some(Box::new(crate::ExportFileDialog::new(
                         &buffer_opt.unwrap().lock().unwrap().editor.buf,
                     )));
                     ui.close_menu();

@@ -1,5 +1,4 @@
 use crate::ansi_editor::BufferView;
-use crate::model::brush_imp::draw_glyph;
 use eframe::egui::{self};
 use icy_engine::{AsciiParser, BufferParser};
 use std::sync::{Arc, Mutex};

@@ -3,7 +3,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, TheDrawFont};
 
-use crate::{TerminalResult, ModalDialog};
+use crate::{TerminalResult, ModalDialog, SETTINGS};
 
 pub struct SelectOutlineDialog {
     should_commit: bool,
@@ -15,7 +15,7 @@ impl SelectOutlineDialog {
     pub fn new() -> Self {
         SelectOutlineDialog {
             should_commit: false,
-            selected_outline: unsafe { super::SETTINGS.font_outline_style },
+            selected_outline: unsafe { SETTINGS.font_outline_style },
             font: BitFont::default()
         }
     }
@@ -140,7 +140,7 @@ impl ModalDialog for SelectOutlineDialog {
 
     fn commit(&self, _editor: &mut crate::model::Editor) -> TerminalResult<bool>  {
         unsafe {
-            super::SETTINGS.font_outline_style = self.selected_outline;
+            SETTINGS.font_outline_style = self.selected_outline;
         }
         Ok(true)
     }
