@@ -1,3 +1,4 @@
+#![allow(clippy::collapsible_match)]
 use std::sync::Arc;
 
 use glow::{HasContext, NativeTexture};
@@ -83,14 +84,10 @@ impl BufferView {
                     }
                     entry.data_opt.take().unwrap()
                 } else {
-                    let mut data = Vec::with_capacity(data_len);
-                    data.resize(data_len, 0);
-                    data
+                    vec![0; data_len]
                 }
             } else {
-                let mut data = Vec::with_capacity(data_len);
-                data.resize(data_len, 0);
-                data
+                vec![0; data_len]
             };
 
             let mut i = old_line as usize * sixel.width() as usize * 4;

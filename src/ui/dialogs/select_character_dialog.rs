@@ -1,16 +1,23 @@
-use std::{rc::Rc, cell::RefCell, sync::{Arc, Mutex}};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
-use eframe::{egui::{self, RichText}, epaint::{Vec2, Rect, Color32, Rounding}};
+use eframe::{
+    egui::{self, RichText},
+    epaint::{Color32, Rect, Rounding, Vec2},
+};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 
-use crate::{TerminalResult, ModalDialog, ansi_editor::BufferView};
+use crate::{ansi_editor::BufferView, ModalDialog, TerminalResult};
 
 pub struct SelectCharacterDialog {
     should_commit: bool,
     buf: Arc<Mutex<BufferView>>,
     ch: Rc<RefCell<char>>,
-    selected_ch: char
+    selected_ch: char,
 }
 
 impl SelectCharacterDialog {
@@ -20,7 +27,7 @@ impl SelectCharacterDialog {
             should_commit: false,
             buf,
             ch,
-            selected_ch
+            selected_ch,
         }
     }
 }
@@ -36,39 +43,39 @@ impl ModalDialog for SelectCharacterDialog {
             let font = &self.buf.lock().unwrap().editor.buf.font_table[font_page];
             let scale = 4.;
 
-         //   ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                modal.frame(ui, |ui| {
-                    let (_id, stroke_rect) = ui.allocate_space(Vec2::new(
-                        scale * font.size.width as f32,
-                        scale * font.size.height as f32,
-                    ));
-                    let painter = ui.painter_at(stroke_rect);
-                    painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
-                    let s = font.size;
+            //   ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+            modal.frame(ui, |ui| {
+                let (_id, stroke_rect) = ui.allocate_space(Vec2::new(
+                    scale * font.size.width as f32,
+                    scale * font.size.height as f32,
+                ));
+                let painter = ui.painter_at(stroke_rect);
+                painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+                let s = font.size;
 
-                    let col = Color32::GRAY;
-                    let ch = unsafe { char::from_u32_unchecked(self.selected_ch as u32) };
-                    if let Some(glyph) = font.get_glyph(ch) {
-                        for y in 0..s.height {
-                            for x in 0..s.width {
-                                if glyph.data[y as usize] & (128 >> x) != 0 {
-                                    painter.rect_filled(
-                                        Rect::from_min_size(
-                                            egui::Pos2::new(
-                                                stroke_rect.left() + x as f32 * scale,
-                                                stroke_rect.top() + y as f32 * scale,
-                                            ),
-                                            Vec2::new(scale, scale),
+                let col = Color32::GRAY;
+                let ch = unsafe { char::from_u32_unchecked(self.selected_ch as u32) };
+                if let Some(glyph) = font.get_glyph(ch) {
+                    for y in 0..s.height {
+                        for x in 0..s.width {
+                            if glyph.data[y as usize] & (128 >> x) != 0 {
+                                painter.rect_filled(
+                                    Rect::from_min_size(
+                                        egui::Pos2::new(
+                                            stroke_rect.left() + x as f32 * scale,
+                                            stroke_rect.top() + y as f32 * scale,
                                         ),
-                                        Rounding::none(),
-                                        col,
-                                    );
-                                }
+                                        Vec2::new(scale, scale),
+                                    ),
+                                    Rounding::none(),
+                                    col,
+                                );
                             }
                         }
                     }
-                });
-         //   });
+                }
+            });
+            //   });
 
             ui.horizontal(|ui| {
                 ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-char-label")).small());
@@ -89,32 +96,36 @@ impl ModalDialog for SelectCharacterDialog {
                 let painter = ui.painter_at(stroke_rect);
                 painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
                 let s = font.size;
-                
+
                 let mut hovered_char = -1;
 
                 if let Some(hover_pos) = ui.input(|i| i.pointer.hover_pos()) {
                     if stroke_rect.contains(hover_pos) {
-                        let char_x = ((hover_pos.x - stroke_rect.left()) / scale / font.size.width as f32) as i32;
-                        let char_y = ((hover_pos.y -stroke_rect.top()) / scale / font.size.height as f32) as i32;
+                        let char_x = ((hover_pos.x - stroke_rect.left())
+                            / scale
+                            / font.size.width as f32) as i32;
+                        let char_y = ((hover_pos.y - stroke_rect.top())
+                            / scale
+                            / font.size.height as f32) as i32;
                         hovered_char = char_x + 32 * char_y;
                     }
                 }
-                if hovered_char > 0 && ui.input(|i| i.pointer.button_pressed(egui::PointerButton::Primary)) {
+                if hovered_char > 0
+                    && ui.input(|i| i.pointer.button_pressed(egui::PointerButton::Primary))
+                {
                     self.selected_ch = unsafe { char::from_u32_unchecked(hovered_char as u32) };
                 }
 
                 for i in 0..font.length {
                     let is_selected = i == self.selected_ch as usize;
                     let col = if hovered_char >= 0 && i == hovered_char as usize {
-                        Color32::WHITE 
-                        } else { 
-                            if is_selected { 
-                                Color32::GRAY
-                            } else { 
-                                Color32::DARK_GRAY
-                            }
-                        };
-                    
+                        Color32::WHITE
+                    } else if is_selected {
+                        Color32::GRAY
+                    } else {
+                        Color32::DARK_GRAY
+                    };
+
                     let ch = unsafe { char::from_u32_unchecked(i as u32) };
                     let xs = ((i % 32) as f32) * scale * font.size.width as f32;
                     let ys = ((i / 32) as f32) * scale * font.size.height as f32;
@@ -143,24 +154,25 @@ impl ModalDialog for SelectCharacterDialog {
                 let ys = ((self.selected_ch as i32 / 32) as f32) * scale * font.size.height as f32;
 
                 let selected_rect = Rect::from_min_size(
-                    egui::Pos2::new(
-                        stroke_rect.left() + xs,
-                        stroke_rect.top() + ys
+                    egui::Pos2::new(stroke_rect.left() + xs, stroke_rect.top() + ys),
+                    Vec2::new(
+                        scale * font.size.width as f32,
+                        scale * font.size.height as f32,
                     ),
-                    Vec2::new(scale * font.size.width as f32, scale * font.size.height as f32),
                 );
-
 
                 painter.rect(
                     selected_rect,
                     Rounding::none(),
                     Color32::TRANSPARENT,
-                    (2.0, Color32::LIGHT_BLUE)
+                    (2.0, Color32::LIGHT_BLUE),
                 );
 
                 ui.horizontal(|ui| {
                     if hovered_char >= 0 {
-                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-char-label")).small());
+                        ui.label(
+                            RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-char-label")).small(),
+                        );
                         ui.label(
                             RichText::new(format!("{0}/0x{0:02X}", hovered_char))
                                 .small()
@@ -192,9 +204,11 @@ impl ModalDialog for SelectCharacterDialog {
         result
     }
 
-    fn should_commit(&self) -> bool { self.should_commit }
+    fn should_commit(&self) -> bool {
+        self.should_commit
+    }
 
-    fn commit(&self, _editor: &mut crate::model::Editor) -> TerminalResult<bool>  {
+    fn commit(&self, _editor: &mut crate::model::Editor) -> TerminalResult<bool> {
         self.ch.swap(&RefCell::new(self.selected_ch));
         Ok(true)
     }

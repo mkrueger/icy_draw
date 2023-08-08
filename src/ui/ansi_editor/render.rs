@@ -254,9 +254,7 @@ impl BufferView {
                     gl.draw_arrays(glow::TRIANGLES, 0, 3);
                     gl.draw_arrays(glow::TRIANGLES, 3, 3);
 
-                    let tmp = render_texture;
-                    render_texture = sixel_render_texture;
-                    sixel_render_texture = tmp;
+                    std::mem::swap(&mut render_texture, &mut sixel_render_texture);
                 }
             }
 
@@ -454,8 +452,7 @@ impl BufferView {
 }
 
 fn conv_color(c: u32, colors: u32) -> u8 {
-    let r = ((255 * c) / colors) as u8;
-    r
+    ((255 * c) / colors) as u8
 }
 
 pub fn create_palette_texture(
@@ -575,7 +572,7 @@ pub fn create_buffer_texture(
                 is_double_height = true;
             }
             if ch.attribute.is_concealed() {
-                buffer_data.push(' ' as u8);
+                buffer_data.push(b' ');
             } else {
                 buffer_data.push(ch.ch as u8);
             }
@@ -585,7 +582,7 @@ pub fn create_buffer_texture(
                 buffer_data.push(conv_color(ch.attribute.get_foreground(), colors));
             }
             buffer_data.push(conv_color(ch.attribute.get_background(), colors));
-            if buf.font_table.len() > 0 {
+            if !buf.font_table.is_empty() {
                 buffer_data.push(
                     (255.0 * ch.get_font_page() as f32 / (buf.font_table.len() - 1) as f32) as u8,
                 );
@@ -601,7 +598,7 @@ pub fn create_buffer_texture(
                     .unwrap_or_default();
 
                 if !ch.attribute.is_double_height() {
-                    buffer_data.push(' ' as u8);
+                    buffer_data.push(b' ');
                 } else {
                     buffer_data.push(ch.ch as u8);
                 }
@@ -614,7 +611,7 @@ pub fn create_buffer_texture(
 
                 buffer_data.push(conv_color(ch.attribute.get_background(), colors));
 
-                if buf.font_table.len() > 0 {
+                if !buf.font_table.is_empty() {
                     buffer_data.push(
                         (255.0 * ch.get_font_page() as f32 / (buf.font_table.len() - 1) as f32)
                             as u8,

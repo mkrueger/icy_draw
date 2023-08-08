@@ -1,27 +1,31 @@
-use eframe::{egui::{self}, epaint::{Vec2, Rect, Color32, Rounding}};
+use eframe::{
+    egui::{self},
+    epaint::{Color32, Rect, Rounding, Vec2},
+};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, TheDrawFont};
 
-use crate::{TerminalResult, ModalDialog, SETTINGS};
+use crate::{ModalDialog, TerminalResult, SETTINGS};
 
 pub struct SelectOutlineDialog {
     should_commit: bool,
     selected_outline: usize,
-    font: BitFont
+    font: BitFont,
+}
+
+impl Default for SelectOutlineDialog {
+    fn default() -> Self {
+        Self {
+            should_commit: false,
+            selected_outline: unsafe { SETTINGS.font_outline_style },
+            font: BitFont::default(),
+        }
+    }
 }
 
 impl SelectOutlineDialog {
-    pub fn new() -> Self {
-        SelectOutlineDialog {
-            should_commit: false,
-            selected_outline: unsafe { SETTINGS.font_outline_style },
-            font: BitFont::default()
-        }
-    }
-
-    fn draw_outline_glyph(&mut self, ui: &mut egui::Ui, outline_style: usize)
-    {
+    fn draw_outline_glyph(&mut self, ui: &mut egui::Ui, outline_style: usize) {
         let scale = 1.;
         let border = 4.0;
 
@@ -32,12 +36,19 @@ impl SelectOutlineDialog {
 
         let painter = ui.painter_at(stroke_rect);
         let s = self.font.size;
-        let mut col = if self.selected_outline == outline_style { Color32::GRAY } else { Color32::DARK_GRAY };
-        let bg_color =  if self.selected_outline == outline_style { Color32::DARK_BLUE } else { Color32::BLACK };
+        let mut col = if self.selected_outline == outline_style {
+            Color32::GRAY
+        } else {
+            Color32::DARK_GRAY
+        };
+        let bg_color = if self.selected_outline == outline_style {
+            Color32::DARK_BLUE
+        } else {
+            Color32::BLACK
+        };
 
         if let Some(pos) = ui.input(|i| i.pointer.hover_pos()) {
             if stroke_rect.contains(pos) {
-
                 if ui.input(|i| i.pointer.primary_clicked()) {
                     self.selected_outline = outline_style;
                 }
@@ -46,10 +57,12 @@ impl SelectOutlineDialog {
         }
         painter.rect_filled(stroke_rect, Rounding::none(), bg_color);
 
-
         for h in 0..OUTLINE_HEIGHT {
             for w in 0..OUTLINE_WIDTH {
-                let ch = TheDrawFont::transform_outline(outline_style, OUTLINE_FONT_CHAR[w + h * OUTLINE_WIDTH]);
+                let ch = TheDrawFont::transform_outline(
+                    outline_style,
+                    OUTLINE_FONT_CHAR[w + h * OUTLINE_WIDTH],
+                );
                 let ch = unsafe { char::from_u32_unchecked(ch as u32) };
 
                 let xs = w as f32 * scale * self.font.size.width as f32;
@@ -80,24 +93,21 @@ impl SelectOutlineDialog {
 
 const OUTLINE_WIDTH: usize = 8;
 const OUTLINE_HEIGHT: usize = 6;
-const OUTLINE_FONT_CHAR: [u8; 48]= [
-    69,65,65,65,65,65,65,70,
-    67,79,71,66,66,72,79,68,
-    67,79,73,65,65,74,79,68,
-    67,79,71,66,66,72,79,68,
-    67,79,68,64,64,67,79,68,
-    75,66,76,64,64,75,66,76
+const OUTLINE_FONT_CHAR: [u8; 48] = [
+    69, 65, 65, 65, 65, 65, 65, 70, 67, 79, 71, 66, 66, 72, 79, 68, 67, 79, 73, 65, 65, 74, 79, 68,
+    67, 79, 71, 66, 66, 72, 79, 68, 67, 79, 68, 64, 64, 67, 79, 68, 75, 66, 76, 64, 64, 75, 66, 76,
 ];
-
 
 impl ModalDialog for SelectOutlineDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
-
         let mut result = false;
         let modal = Modal::new(ctx, "my_modal");
 
         modal.show(|ui| {
-            modal.title(ui, fl!(crate::LANGUAGE_LOADER, "select-outline-style-title"));
+            modal.title(
+                ui,
+                fl!(crate::LANGUAGE_LOADER, "select-outline-style-title"),
+            );
 
             modal.frame(ui, |ui| {
                 ui.add_space(8.0);
@@ -106,14 +116,14 @@ impl ModalDialog for SelectOutlineDialog {
                         ui.add_space(4.0);
                         for i in 0..4 {
                             self.draw_outline_glyph(ui, style * 4 + i);
-                            if i < 3  {
+                            if i < 3 {
                                 ui.add_space(8.0);
                             }
                         }
                     });
                     ui.end_row();
                     ui.add_space(8.0);
-                };
+                }
             });
 
             modal.buttons(ui, |ui| {
@@ -136,9 +146,11 @@ impl ModalDialog for SelectOutlineDialog {
         result
     }
 
-    fn should_commit(&self) -> bool { self.should_commit }
+    fn should_commit(&self) -> bool {
+        self.should_commit
+    }
 
-    fn commit(&self, _editor: &mut crate::model::Editor) -> TerminalResult<bool>  {
+    fn commit(&self, _editor: &mut crate::model::Editor) -> TerminalResult<bool> {
         unsafe {
             SETTINGS.font_outline_style = self.selected_outline;
         }

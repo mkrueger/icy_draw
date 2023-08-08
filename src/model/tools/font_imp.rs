@@ -5,14 +5,11 @@ use std::{
 
 use crate::{ansi_editor::BufferView, SETTINGS};
 
-use super::{Event, MKey,  MModifiers, Position, Tool, ToolUiResult};
+use super::{Event, MKey, MModifiers, Position, Tool, ToolUiResult};
 use directories::ProjectDirs;
 use eframe::{
     egui::{self, ComboBox},
-    epaint::{
-        text::LayoutJob,
-        Color32, FontId,
-    },
+    epaint::{text::LayoutJob, Color32, FontId},
 };
 use icy_engine::{Rectangle, Size, TextAttribute, TheDrawFont};
 use walkdir::{DirEntry, WalkDir};
@@ -38,16 +35,18 @@ impl FontTool {
         if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
             let tdf_dir = proj_dirs.config_dir().join("tdf");
             if !tdf_dir.exists() {
-                fs::create_dir_all(&tdf_dir).expect(&format!(
-                    "Can't create tdf font directory {:?}",
-                    proj_dirs.config_dir()
-                ));
+                fs::create_dir_all(&tdf_dir).unwrap_or_else(|_| {
+                    panic!(
+                        "Can't create tdf font directory {:?}",
+                        proj_dirs.config_dir()
+                    )
+                });
             }
             self.fonts.clear();
             let walker = WalkDir::new(tdf_dir).into_iter();
             for entry in walker.filter_entry(|e| !FontTool::is_hidden(e)) {
                 if let Err(e) = entry {
-                    eprintln!("Can't load tdf font library: {}", e);
+                    eprintln!("Can't load tdf font library: {e}");
                     break;
                 }
                 let entry = entry.unwrap();
@@ -113,7 +112,7 @@ impl Tool for FontTool {
                     }
                 });
         });
-        ToolUiResult::new()
+        ToolUiResult::default()
     }
 
     fn handle_click(
@@ -161,11 +160,11 @@ impl Tool for FontTool {
                 if let MModifiers::Control = modifier {
                     for i in 0..editor.buf.get_buffer_width() {
                         if !editor
-                            .get_char_from_cur_layer(pos.with_x(i as i32))
+                            .get_char_from_cur_layer(pos.with_x(i))
                             .unwrap_or_default()
                             .is_transparent()
                         {
-                            editor.set_caret(i as i32, pos.y);
+                            editor.set_caret(i, pos.y);
                             return Event::None;
                         }
                     }
@@ -177,16 +176,16 @@ impl Tool for FontTool {
                 if let MModifiers::Control = modifier {
                     for i in (0..editor.buf.get_buffer_width()).rev() {
                         if !editor
-                            .get_char_from_cur_layer(pos.with_x(i as i32))
+                            .get_char_from_cur_layer(pos.with_x(i))
                             .unwrap_or_default()
                             .is_transparent()
                         {
-                            editor.set_caret(i as i32, pos.y);
+                            editor.set_caret(i, pos.y);
                             return Event::None;
                         }
                     }
                 }
-                let w = editor.buf.get_buffer_width() as i32;
+                let w = editor.buf.get_buffer_width();
                 editor.set_caret(w - 1, pos.y);
             }
 
@@ -206,19 +205,17 @@ impl Tool for FontTool {
                 editor.cur_selection = None;
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
-                    editor.set_caret_position(pos + Position::new(-(letter_size.width as i32), 0));
+                    editor.set_caret_position(pos + Position::new(-(letter_size.width), 0));
                     if editor.caret.insert_mode {
-                        for i in pos.x
-                            ..(editor.buf.get_buffer_width() as i32 - (letter_size.width as i32))
-                        {
+                        for i in pos.x..(editor.buf.get_buffer_width() - (letter_size.width)) {
                             let next = editor.get_char_from_cur_layer(Position::new(
-                                i + (letter_size.width as i32),
+                                i + letter_size.width,
                                 pos.y,
                             ));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(
-                            editor.buf.get_buffer_width() as i32 - (letter_size.width as i32),
+                            editor.buf.get_buffer_width() - (letter_size.width),
                             pos.y,
                         );
                         editor.fill(
@@ -245,9 +242,16 @@ impl Tool for FontTool {
                 let c_pos = editor.get_caret_position();
                 editor.begin_atomic_undo();
                 let attr = editor.caret.get_attribute();
-                let opt_size = font.render(&mut editor.buf, 0, c_pos, attr, unsafe { SETTINGS.font_outline_style }, ch as u8);
+                let opt_size = font.render(
+                    &mut editor.buf,
+                    0,
+                    c_pos,
+                    attr,
+                    unsafe { SETTINGS.font_outline_style },
+                    ch as u8,
+                );
                 if let Some(size) = opt_size {
-                    editor.set_caret(c_pos.x + size.width as i32 + font.spaces, c_pos.y);
+                    editor.set_caret(c_pos.x + size.width + font.spaces, c_pos.y);
                     let new_pos = editor.get_caret_position();
                     self.sizes.push(Size {
                         width: (new_pos.x - c_pos.x),

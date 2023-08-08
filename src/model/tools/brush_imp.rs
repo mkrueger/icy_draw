@@ -5,7 +5,11 @@ use eframe::{
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::AttributedChar;
-use std::{sync::{Arc, Mutex}, rc::Rc, cell::RefCell};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 use crate::{ansi_editor::BufferView, SelectCharacterDialog};
 
@@ -107,7 +111,7 @@ impl Tool for BrushTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        let mut result = ToolUiResult::new();
+        let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -145,7 +149,13 @@ impl Tool for BrushTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
+                draw_glyph(
+                    ui,
+                    b,
+                    &mut result,
+                    &self.char_code,
+                    self.font_page,
+                );
             }
         });
         ui.radio_value(
@@ -181,7 +191,13 @@ impl Tool for BrushTool {
     }
 }
 
-pub fn draw_glyph(ui: &mut egui::Ui, buf: Arc<Mutex<BufferView>>, ui_result: &mut ToolUiResult, ch: Rc<RefCell<char>>, font_page: usize) {
+pub fn draw_glyph(
+    ui: &mut egui::Ui,
+    buf: &Arc<Mutex<BufferView>>,
+    ui_result: &mut ToolUiResult,
+    ch: &Rc<RefCell<char>>,
+    font_page: usize,
+) {
     let font = &buf.lock().unwrap().editor.buf.font_table[font_page];
     let scale = 1.5;
     let (id, stroke_rect) = ui.allocate_space(Vec2::new(
@@ -197,13 +213,16 @@ pub fn draw_glyph(ui: &mut egui::Ui, buf: Arc<Mutex<BufferView>>, ui_result: &mu
     };
 
     if response.clicked() {
-        ui_result.modal_dialog = Some(Box::new(SelectCharacterDialog::new(buf.clone(), ch.clone())));
+        ui_result.modal_dialog = Some(Box::new(SelectCharacterDialog::new(
+            buf.clone(),
+            ch.clone(),
+        )));
     }
 
     let painter = ui.painter_at(stroke_rect);
     painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
     let s = font.size;
-    let ch  = *ch.borrow();
+    let ch = *ch.borrow();
     if let Some(glyph) = font.get_glyph(ch) {
         for y in 0..s.height {
             for x in 0..s.width {

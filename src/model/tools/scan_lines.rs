@@ -319,7 +319,7 @@ impl ScanLines {
         }
 
         // fill top/bottom
-        if rows.len() == 0 {
+        if rows.is_empty() {
             return;
         }
         let row = rows[0];

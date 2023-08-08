@@ -1,3 +1,5 @@
+#![allow(clippy::needless_range_loop)]
+
 use std::path::PathBuf;
 
 use eframe::egui::{self, Layout, TextEdit, Ui};
@@ -6,7 +8,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::SaveOptions;
 
-use crate::{TerminalResult, ModalDialog};
+use crate::{ModalDialog, TerminalResult};
 
 mod ansi;
 mod artworx;
@@ -22,7 +24,7 @@ pub struct ExportFileDialog {
     pub should_commit: bool,
     pub file_name: PathBuf,
     save_file_dialog: Option<FileDialog>,
-    save_options: SaveOptions
+    save_options: SaveOptions,
 }
 
 impl ExportFileDialog {
@@ -30,11 +32,11 @@ impl ExportFileDialog {
         ExportFileDialog {
             should_commit: false,
             save_file_dialog: None,
-            file_name: match &buf.file_name { 
+            file_name: match &buf.file_name {
                 Some(path) => path.clone(),
-                _ => PathBuf::from("Untitled.ans")
+                _ => PathBuf::from("Untitled.ans"),
             },
-            save_options: SaveOptions::new()
+            save_options: SaveOptions::new(),
         }
     }
 }
@@ -69,7 +71,7 @@ impl ModalDialog for ExportFileDialog {
 
                         let mut path_edit = self.file_name.to_str().unwrap().to_string();
                         let response = ui.add(
-                        //    ui.available_size(),
+                            //    ui.available_size(),
                             TextEdit::singleline(&mut path_edit),
                         );
                         if response.changed() {
@@ -95,24 +97,23 @@ impl ModalDialog for ExportFileDialog {
                             }
                         }
                         let old_format = format_type;
-                        
+
                         egui::ComboBox::from_id_source("format_combo")
                             .selected_text(TYPE_DESCRIPTIONS[format_type].0)
                             .show_ui(ui, |ui| {
-                                for i in 0..TYPE_DESCRIPTIONS.len() {
+                                (0..TYPE_DESCRIPTIONS.len()).for_each(|i| {
                                     let td = TYPE_DESCRIPTIONS[i];
-                                    ui.selectable_value(&mut format_type, i,  td.0);
-                                }
-                            }
-                        );
+                                    ui.selectable_value(&mut format_type, i, td.0);
+                                });
+                            });
                         if old_format != format_type {
                             println!("change extension to {}", format_type);
-                            self.file_name.set_extension(TYPE_DESCRIPTIONS[format_type].2);
+                            self.file_name
+                                .set_extension(TYPE_DESCRIPTIONS[format_type].2);
                         }
                         ui.end_row();
 
                         TYPE_DESCRIPTIONS[format_type].1(ui, &mut self.save_options);
-
                     });
                 ui.add_space(4.0);
             });
@@ -137,7 +138,9 @@ impl ModalDialog for ExportFileDialog {
         result
     }
 
-    fn should_commit(&self) -> bool { self.should_commit }
+    fn should_commit(&self) -> bool {
+        self.should_commit
+    }
 
     fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool> {
         editor.save_content(self.file_name.as_path(), &self.save_options)?;
@@ -152,11 +155,13 @@ const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 9] = [
     ("Avatar (.avt)", avatar::create_settings_page, "avt"),
     ("PCBoard (.pcb)", pcboard::create_settings_page, "pcb"),
     ("Ascii (.asc)", ascii::create_settings_page, "asc"),
-
     ("Artworx (.adf)", artworx::create_settings_page, "adf"),
     ("Ice Draw (.idf)", ice_draw::create_settings_page, "idf"),
-    ("Tundra Draw (.tnd)", tundra_draw::create_settings_page, "tnd"),
-
-    ("Bin (.bin)", bin::create_settings_page, "bin"),  
+    (
+        "Tundra Draw (.tnd)",
+        tundra_draw::create_settings_page,
+        "tnd",
+    ),
+    ("Bin (.bin)", bin::create_settings_page, "bin"),
     ("XBin (.xb)", xbin::create_settings_page, "xb"),
 ];

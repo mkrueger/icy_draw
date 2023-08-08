@@ -71,19 +71,6 @@ pub struct Editor {
     //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
 }
 
-impl std::fmt::Debug for Editor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Editor")
-            .field("id", &self.id)
-            .field("buf", &self.buf)
-            .field("caret", &self.caret)
-            .field("cur_selection", &self.cur_selection)
-            .field("cur_outline", &self.cur_outline)
-            .field("is_inactive", &self.is_inactive)
-            .finish()
-    }
-}
-
 impl Default for Editor {
     fn default() -> Self {
         Editor::new(0, Buffer::new())
@@ -118,8 +105,8 @@ impl Editor {
 
     pub fn set_caret_position(&mut self, pos: Position) {
         let pos = Position::new(
-            min(self.buf.get_buffer_width() as i32 - 1, max(0, pos.x)),
-            min(self.buf.get_real_buffer_height() as i32 - 1, max(0, pos.y)),
+            min(self.buf.get_buffer_width() - 1, max(0, pos.x)),
+            min(self.buf.get_real_buffer_height() - 1, max(0, pos.y)),
         );
         self.caret.set_position(pos);
         //(self.pos_changed)(self, pos);
@@ -194,8 +181,8 @@ impl Editor {
     pub fn set_caret(&mut self, x: i32, y: i32) -> Event {
         let old = self.caret.get_position();
         self.set_caret_position(Position::new(
-            min(max(0, x), self.buf.get_buffer_width() as i32 - 1),
-            min(max(0, y), self.buf.get_real_buffer_height() as i32 - 1),
+            min(max(0, x), self.buf.get_buffer_width() - 1),
+            min(max(0, y), self.buf.get_real_buffer_height() - 1),
         ));
         Event::CursorPositionChange(old, self.caret.get_position())
     }
@@ -230,17 +217,17 @@ impl Editor {
             return Err("outline char# out of range.");
         }
 
-        Ok(DEFAULT_OUTLINE_TABLE[self.cur_outline as usize][i as usize] as u16)
+        Ok(DEFAULT_OUTLINE_TABLE[self.cur_outline][i] as u16)
     }
 
     pub fn get_outline_char_code_from(outline: usize, i: usize) -> Result<u16, &'static str> {
-        if  outline >= DEFAULT_OUTLINE_TABLE.len() {
+        if outline >= DEFAULT_OUTLINE_TABLE.len() {
             return Err("current outline out of range.");
         }
         if !(0..=10).contains(&i) {
             return Err("outline char# out of range.");
         }
-        Ok(DEFAULT_OUTLINE_TABLE[outline as usize][i as usize] as u16)
+        Ok(DEFAULT_OUTLINE_TABLE[outline][i] as u16)
     }
 
     pub fn get_char(&self, pos: Position) -> Option<AttributedChar> {
@@ -321,14 +308,14 @@ impl Editor {
 
         pos.x >= 0
             && pos.y >= 0
-            && pos.x < self.buf.get_buffer_width() as i32
-            && pos.y < self.buf.get_real_buffer_height() as i32
+            && pos.x < self.buf.get_buffer_width()
+            && pos.y < self.buf.get_real_buffer_height()
     }
 
     pub fn type_key(&mut self, char_code: char) {
         let pos = self.caret.get_position();
         if self.caret.insert_mode {
-            for i in (self.buf.get_buffer_width() as i32 - 1)..=pos.x {
+            for i in (self.buf.get_buffer_width() - 1)..=pos.x {
                 let next = self.get_char_from_cur_layer(Position::new(i - 1, pos.y));
                 self.set_char(Position::new(i, pos.y), next);
             }
@@ -373,14 +360,14 @@ impl Editor {
             (
                 r.start.x,
                 r.start.y,
-                r.start.x + r.size.width as i32 - 1,
-                r.start.y + r.size.height as i32 - 1,
+                r.start.x + r.size.width - 1,
+                r.start.y + r.size.height - 1,
             )
         } else {
             (
                 0,
                 self.caret.get_position().y,
-                self.buf.get_buffer_width() as i32 - 1,
+                self.buf.get_buffer_width() - 1,
                 self.caret.get_position().y,
             )
         }

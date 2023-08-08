@@ -50,12 +50,10 @@ impl FontEditor {
                 } else {
                     Color32::WHITE
                 }
+            } else if is_selected {
+                Color32::YELLOW
             } else {
-                if is_selected {
-                    Color32::YELLOW
-                } else {
-                    Color32::GRAY
-                }
+                Color32::GRAY
             };
 
             let painter = ui.painter_at(stroke_rect);
@@ -110,10 +108,10 @@ impl FontEditor {
                         if let Some(glyph) = self.font.get_glyph_mut(number) {
                             let y = ((pos.y - stroke_rect.top()) / (scale + border)) as usize;
                             let x = ((pos.x - stroke_rect.left()) / (scale + border)) as usize;
-                            if glyph.data[y as usize] & (128 >> x) != 0 {
-                                glyph.data[y as usize] &= !(128 >> x);
+                            if glyph.data[y] & (128 >> x) != 0 {
+                                glyph.data[y] &= !(128 >> x);
                             } else {
-                                glyph.data[y as usize] |= 128 >> x;
+                                glyph.data[y] |= 128 >> x;
                             }
                             self.is_dirty = true;
                             response.mark_changed();
@@ -143,16 +141,14 @@ impl FontEditor {
                                 } else {
                                     Color32::GRAY
                                 }
-                            } else {
-                                if let Some(pos) = response.hover_pos() {
-                                    if rect.contains(pos) {
-                                        Color32::DARK_GRAY
-                                    } else {
-                                        Color32::BLACK
-                                    }
+                            } else if let Some(pos) = response.hover_pos() {
+                                if rect.contains(pos) {
+                                    Color32::DARK_GRAY
                                 } else {
                                     Color32::BLACK
                                 }
+                            } else {
+                                Color32::BLACK
                             };
                             painter.rect_filled(rect, Rounding::none(), col);
                         }

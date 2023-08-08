@@ -3,7 +3,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::SauceString;
 
-use crate::{TerminalResult, ModalDialog};
+use crate::{ModalDialog, TerminalResult};
 
 pub struct EditSauceDialog {
     pub should_commit: bool,
@@ -25,11 +25,10 @@ impl EditSauceDialog {
     }
 }
 
-
 impl ModalDialog for EditSauceDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
-        let modal = Modal::new(ctx, "my_modal");
+        let modal: Modal = Modal::new(ctx, "my_modal");
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "edit-sauce-title"));
@@ -82,7 +81,7 @@ impl ModalDialog for EditSauceDialog {
                 let mut tmp_str = String::new();
                 for s in &self.comments {
                     tmp_str.push_str(&s.to_string());
-                    tmp_str.push_str("\n");
+                    tmp_str.push('\n');
                 }
                 self.comments.clear();
                 egui::ScrollArea::vertical()
@@ -126,9 +125,11 @@ impl ModalDialog for EditSauceDialog {
         result
     }
 
-    fn should_commit(&self) -> bool { self.should_commit }
+    fn should_commit(&self) -> bool {
+        self.should_commit
+    }
 
-    fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool>  {
+    fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool> {
         editor.buf.title = self.title.clone();
         editor.buf.author = self.author.clone();
         editor.buf.group = self.group.clone();

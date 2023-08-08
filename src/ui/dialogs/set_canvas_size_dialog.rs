@@ -3,12 +3,12 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::Size;
 
-use crate::{TerminalResult, ModalDialog};
+use crate::{ModalDialog, TerminalResult};
 
 pub struct SetCanvasSizeDialog {
     pub should_commit: bool,
     pub width: i32,
-    pub height: i32
+    pub height: i32,
 }
 
 impl SetCanvasSizeDialog {
@@ -16,13 +16,12 @@ impl SetCanvasSizeDialog {
         SetCanvasSizeDialog {
             should_commit: false,
             width: buf.get_buffer_width(),
-            height: buf.get_real_buffer_height()
+            height: buf.get_real_buffer_height(),
         }
     }
 }
 
 impl ModalDialog for SetCanvasSizeDialog {
-
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
         let modal = Modal::new(ctx, "my_modal");
@@ -46,7 +45,6 @@ impl ModalDialog for SetCanvasSizeDialog {
                         });
                         ui.add(egui::DragValue::new(&mut self.height));
                         ui.end_row();
-
                     });
                 ui.add_space(4.0);
             });
@@ -71,10 +69,14 @@ impl ModalDialog for SetCanvasSizeDialog {
         result
     }
 
-    fn should_commit(&self) -> bool { self.should_commit }
+    fn should_commit(&self) -> bool {
+        self.should_commit
+    }
 
     fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool> {
-        editor.buf.set_buffer_size(Size::new(self.width, self.height));
+        editor
+            .buf
+            .set_buffer_size(Size::new(self.width, self.height));
         Ok(true)
     }
 }

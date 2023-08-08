@@ -37,7 +37,7 @@ pub fn show_layer_view(
             for layer in &mut buffer_opt.unwrap().lock().unwrap().editor.buf.layers {
                 body.row(20.0, |mut row| {
                     row.col(|ui| {
-                        if ui
+                        let r = ui
                             .add(egui::ImageButton::new(
                                 if layer.is_visible {
                                     super::VISIBLE_SVG.texture_id(ctx)
@@ -54,9 +54,9 @@ pub fn show_layer_view(
                                     ))
                                     .small(),
                                 );
-                            })
-                            .clicked()
-                        {
+                            });
+
+                        if r.clicked() {
                             layer.is_visible = !layer.is_visible;
                         }
                     });
@@ -69,18 +69,16 @@ pub fn show_layer_view(
 
     let img_size = Vec2::new(24., 24.);
     ui.horizontal(|ui| {
-        if ui
+        let _r = ui
             .add(egui::ImageButton::new(
                 super::ADD_LAYER_SVG.texture_id(ctx),
                 img_size,
             ))
             .on_hover_ui(|ui| {
                 ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
-            })
-            .clicked()
-        {}
+            });
 
-        if ui
+        let _r = ui
             .add(egui::ImageButton::new(
                 super::MOVE_UP_SVG.texture_id(ctx),
                 img_size,
@@ -89,11 +87,9 @@ pub fn show_layer_view(
                 ui.label(
                     RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_up_tooltip")).small(),
                 );
-            })
-            .clicked()
-        {}
+            });
 
-        if ui
+        let _r = ui
             .add(egui::ImageButton::new(
                 super::MOVE_DOWN_SVG.texture_id(ctx),
                 img_size,
@@ -102,11 +98,9 @@ pub fn show_layer_view(
                 ui.label(
                     RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_down_tooltip")).small(),
                 );
-            })
-            .clicked()
-        {}
+            });
 
-        if ui
+        let _r = ui
             .add(egui::ImageButton::new(
                 super::DELETE_SVG.texture_id(ctx),
                 img_size,
@@ -115,8 +109,6 @@ pub fn show_layer_view(
                 ui.label(
                     RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small(),
                 );
-            })
-            .clicked()
-        {}
+            });
     });
 }

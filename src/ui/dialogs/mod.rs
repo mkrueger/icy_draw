@@ -1,4 +1,3 @@
-
 mod new_file_dialog;
 pub use new_file_dialog::*;
 

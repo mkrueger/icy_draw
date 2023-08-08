@@ -106,7 +106,7 @@ impl Tool for EraseTool {
             EraseType::Shade,
             fl!(crate::LANGUAGE_LOADER, "tool-shade"),
         );
-        ToolUiResult::new()
+        ToolUiResult::default()
     }
 
     fn handle_click(

@@ -32,7 +32,6 @@ impl FillTool {
         &self,
         editor: &mut Editor,
         visited: &mut HashSet<Position>,
-        attribute: TextAttribute,
         pos: Position,
         opt_old_ch: Option<AttributedChar>,
         new_ch: AttributedChar,
@@ -95,12 +94,12 @@ impl FillTool {
         if self.use_fore {
             repl_ch
                 .attribute
-                .set_foreground(new_ch.attribute.get_foreground())
+                .set_foreground(new_ch.attribute.get_foreground());
         }
         if self.use_back {
             repl_ch
                 .attribute
-                .set_background(new_ch.attribute.get_background())
+                .set_background(new_ch.attribute.get_background());
         }
 
         editor.set_char(pos, Some(repl_ch));
@@ -108,7 +107,6 @@ impl FillTool {
         self.fill(
             editor,
             visited,
-            attribute,
             pos + Position::new(-1, 0),
             opt_old_ch,
             new_ch,
@@ -116,7 +114,6 @@ impl FillTool {
         self.fill(
             editor,
             visited,
-            attribute,
             pos + Position::new(1, 0),
             opt_old_ch,
             new_ch,
@@ -124,7 +121,6 @@ impl FillTool {
         self.fill(
             editor,
             visited,
-            attribute,
             pos + Position::new(0, -1),
             opt_old_ch,
             new_ch,
@@ -132,7 +128,6 @@ impl FillTool {
         self.fill(
             editor,
             visited,
-            attribute,
             pos + Position::new(0, 1),
             opt_old_ch,
             new_ch,
@@ -158,7 +153,7 @@ impl Tool for FillTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        let mut result = ToolUiResult::new();
+        let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -184,7 +179,13 @@ impl Tool for FillTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
+                draw_glyph(
+                    ui,
+                    b,
+                    &mut result,
+                    &self.char_code,
+                    self.font_page,
+                );
             }
         });
         ui.radio_value(
@@ -214,7 +215,6 @@ impl Tool for FillTool {
                 self.fill(
                     editor,
                     &mut visited,
-                    attr,
                     pos,
                     ch,
                     AttributedChar::new(*self.char_code.borrow(), attr),

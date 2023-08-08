@@ -7,7 +7,8 @@ use icy_engine::{AttributedChar, Rectangle, TextAttribute};
 use crate::{ansi_editor::BufferView, model::ScanLines};
 
 use super::{
-    brush_imp::draw_glyph, plot_point, DrawMode, Editor, Event, Plottable, Position, Tool, ToolUiResult,
+    brush_imp::draw_glyph, plot_point, DrawMode, Editor, Event, Plottable, Position, Tool,
+    ToolUiResult,
 };
 
 pub struct LineTool {
@@ -37,7 +38,7 @@ impl Plottable for LineTool {
         *self.char_code.borrow()
     }
 }
-/* 
+/*
 const CORNER_UPPER_LEFT: usize = 0;
 const CORNER_UPPER_RIGHT: usize = 1;
 const CORNER_LOWER_LEFT: usize = 2;
@@ -197,7 +198,7 @@ impl Tool for LineTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        let mut result = ToolUiResult::new();
+        let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -228,7 +229,13 @@ impl Tool for LineTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
+                draw_glyph(
+                    ui,
+                    b,
+                    &mut result,
+                    &self.char_code,
+                    self.font_page,
+                );
             }
         });
         ui.radio_value(
@@ -332,7 +339,7 @@ impl Tool for LineTool {
 }
 
 fn get_half_block(
-    editor: &mut Editor,
+    editor: &Editor,
     pos: Position,
 ) -> (
     Position,
@@ -416,8 +423,8 @@ fn get_half_block(
 }
 
 pub fn set_half_block(editor: &mut Editor, pos: Position, col: u32) {
-    let w = editor.buf.get_buffer_width() as i32;
-    let h = editor.buf.get_real_buffer_height() as i32;
+    let w = editor.buf.get_buffer_width();
+    let h = editor.buf.get_real_buffer_height();
 
     if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 {
         return;

@@ -475,7 +475,7 @@ void main() {
         self.editor.caret.ff(&mut self.editor.buf);
     }
 
-    pub fn get_copy_text(&mut self, buffer_parser: &Box<dyn BufferParser>) -> Option<String> {
+    pub fn get_copy_text(&mut self, buffer_parser: &dyn BufferParser) -> Option<String> {
         let Some(selection) = &self.editor.cur_selection else {
             return None;
         };
@@ -488,7 +488,7 @@ void main() {
         for y in start.y..=end.y {
             for x in start.x..end.x {
                 let ch = self.editor.get_char(Position::new(x, y)).unwrap();
-                res.push(buffer_parser.to_unicode(ch.ch));
+                res.push(buffer_parser.convert_to_unicode(ch.ch));
             }
             res.push('\n');
         }

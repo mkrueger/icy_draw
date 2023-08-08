@@ -1,16 +1,15 @@
-use std::sync::{Arc, Mutex};
-
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{Rectangle, TextAttribute};
+use icy_engine::{Position, Rectangle, TextAttribute};
 
 use crate::ansi_editor::BufferView;
 
 use super::{
-    brush_imp::draw_glyph, plot_point, DrawMode, Event, Plottable, Position, ScanLines, Tool, ToolUiResult,
+    brush_imp::draw_glyph, plot_point, DrawMode, Event, Plottable, ScanLines, Tool, ToolUiResult,
 };
+use std::sync::{Arc, Mutex};
 
-pub struct DrawEllipseFilledTool {
+pub struct DrawRectangleFilledTool {
     pub draw_mode: DrawMode,
 
     pub use_fore: bool,
@@ -20,10 +19,11 @@ pub struct DrawEllipseFilledTool {
     pub font_page: usize,
 }
 
-impl Plottable for DrawEllipseFilledTool {
+impl Plottable for DrawRectangleFilledTool {
     fn get_draw_mode(&self) -> DrawMode {
         self.draw_mode
     }
+
     fn get_use_fore(&self) -> bool {
         self.use_fore
     }
@@ -35,9 +35,9 @@ impl Plottable for DrawEllipseFilledTool {
     }
 }
 
-impl Tool for DrawEllipseFilledTool {
+impl Tool for DrawRectangleFilledTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
-        &super::icons::ELLIPSE_FILLED_SVG
+        &super::icons::RECTANGLE_FILLED_SVG
     }
 
     fn use_caret(&self) -> bool {
@@ -53,7 +53,7 @@ impl Tool for DrawEllipseFilledTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        let mut result = ToolUiResult::new();
+        let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -84,7 +84,13 @@ impl Tool for DrawEllipseFilledTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
+                draw_glyph(
+                    ui,
+                    b,
+                    &mut result,
+                    &self.char_code,
+                    self.font_page,
+                );
             }
         });
         ui.radio_value(
@@ -111,12 +117,8 @@ impl Tool for DrawEllipseFilledTool {
         }
 
         let mut lines = ScanLines::new(1);
-
-        if start < cur {
-            lines.add_ellipse(Rectangle::from_pt(start, cur));
-        } else {
-            lines.add_ellipse(Rectangle::from_pt(cur, start));
-        }
+        lines.add_rectangle(Rectangle::from_pt(start, cur));
+        let buffer_view = buffer_view.clone();
 
         let draw = move |rect: Rectangle| {
             let editor = &mut buffer_view.lock().unwrap().editor;
@@ -131,6 +133,7 @@ impl Tool for DrawEllipseFilledTool {
             }
         };
         lines.fill(draw);
+
         Event::None
     }
 

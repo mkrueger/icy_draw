@@ -1,19 +1,24 @@
 use std::{
+    cell::RefCell,
     fs,
     path::{Path, PathBuf},
+    rc::Rc,
     sync::Arc,
-    time::Duration, cell::RefCell, rc::Rc,
+    time::Duration,
 };
 
-use crate::{model::Tool, Document, EditSauceDialog, FontEditor, NewFileDialog, ModalDialog, SelectOutlineDialog};
+use crate::{
+    model::Tool, Document, EditSauceDialog, FontEditor, ModalDialog, NewFileDialog,
+    SelectOutlineDialog,
+};
 use eframe::{
-    egui::{self, menu, Response, SidePanel, TextStyle, TopBottomPanel, Ui, Modifiers},
+    egui::{self, menu, Modifiers, Response, SidePanel, TextStyle, TopBottomPanel, Ui},
     epaint::pos2,
 };
 use egui_dock::{DockArea, Node, Style, Tree};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, Position, SaveOptions, Rectangle};
+use icy_engine::{BitFont, Buffer, Position, Rectangle, SaveOptions};
 
 use super::{ansi_editor::AnsiEditor, SetCanvasSizeDialog};
 use egui_file::FileDialog;
@@ -37,102 +42,96 @@ impl MainWindow {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let tree = Tree::new(Vec::new());
 
-        let mut tools: Vec<Box<dyn Tool>> = Vec::new();
-
-        tools.push(Box::new(crate::model::click_imp::ClickTool {}));
-        tools.push(Box::new(crate::model::pencil_imp::PencilTool {
-            use_back: true,
-            use_fore: true,
-            brush_type: crate::model::pencil_imp::PencilType::Shade,
-            char_code: Rc::new(RefCell::new('\u{00B0}')),
-            font_page: 0,
-            last_pos: Position::default(),
-        }));
-        tools.push(Box::new(crate::model::brush_imp::BrushTool {
-            size: 3,
-            use_back: true,
-            use_fore: true,
-            brush_type: crate::model::brush_imp::BrushType::Shade,
-            char_code: Rc::new(RefCell::new('\u{00B0}')),
-            font_page: 0,
-        }));
-        tools.push(Box::new(crate::model::erase_imp::EraseTool {
-            size: 3,
-            brush_type: crate::model::erase_imp::EraseType::Shade,
-        }));
-        tools.push(Box::new(crate::model::pipette_imp::PipetteTool {}));
-        tools.push(Box::new(crate::model::line_imp::LineTool {
-            draw_mode: crate::model::DrawMode::Line,
-            use_fore: true,
-            use_back: true,
-            attr: icy_engine::TextAttribute::default(),
-            char_code: Rc::new(RefCell::new('\u{00B0}')),
-            font_page: 0,
-            old_pos: icy_engine::Position { x: 0, y: 0 },
-        }));
-        tools.push(Box::new(
-            crate::model::draw_rectangle_imp::DrawRectangleTool {
-                draw_mode: crate::model::DrawMode::Line,
-                use_fore: true,
-                use_back: true,
-                attr: icy_engine::TextAttribute::default(),
-                char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
-            },
-        ));
-
-        tools.push(Box::new(
-            crate::model::draw_rectangle_filled_imp::DrawRectangleFilledTool {
-                draw_mode: crate::model::DrawMode::Line,
-                use_fore: true,
-                use_back: true,
-                attr: icy_engine::TextAttribute::default(),
-                char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
-            },
-        ));
-        tools.push(Box::new(crate::model::draw_ellipse_imp::DrawEllipseTool {
-            draw_mode: crate::model::DrawMode::Line,
-            use_fore: true,
-            use_back: true,
-            attr: icy_engine::TextAttribute::default(),
-            char_code: Rc::new(RefCell::new('\u{00B0}')),
-            font_page: 0,
-        }));
-
-        tools.push(Box::new(
-            crate::model::draw_ellipse_filled_imp::DrawEllipseFilledTool {
-                draw_mode: crate::model::DrawMode::Line,
-                use_fore: true,
-                use_back: true,
-                attr: icy_engine::TextAttribute::default(),
-                char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
-            },
-        ));
-
-        tools.push(Box::new(crate::model::fill_imp::FillTool {
-            use_fore: true,
-            use_back: true,
-            char_code: Rc::new(RefCell::new('\u{00B0}')),
-            font_page: 0,
-            fill_type: crate::model::fill_imp::FillType::Character,
-            attr: icy_engine::TextAttribute::default(),
-        }));
-
         let mut fnt = crate::model::font_imp::FontTool {
             selected_font: 0,
             fonts: Vec::new(),
             sizes: Vec::new(),
         };
         fnt.load_fonts();
-        tools.push(Box::new(fnt));
 
-        tools.push(Box::new(crate::model::move_layer_imp::MoveLayer {
-            pos: icy_engine::Position { x: 0, y: 0 },
-        }));
+        let tools: Vec<Box<dyn Tool>> = vec![
+            Box::new(crate::model::click_imp::ClickTool {}),
+            Box::new(crate::model::pencil_imp::PencilTool {
+                use_back: true,
+                use_fore: true,
+                brush_type: crate::model::pencil_imp::PencilType::Shade,
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
+                font_page: 0,
+                last_pos: Position::default(),
+            }),
+            Box::new(crate::model::brush_imp::BrushTool {
+                size: 3,
+                use_back: true,
+                use_fore: true,
+                brush_type: crate::model::brush_imp::BrushType::Shade,
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
+                font_page: 0,
+            }),
+            Box::new(crate::model::erase_imp::EraseTool {
+                size: 3,
+                brush_type: crate::model::erase_imp::EraseType::Shade,
+            }),
+            Box::new(crate::model::pipette_imp::PipetteTool {}),
+            Box::new(crate::model::line_imp::LineTool {
+                draw_mode: crate::model::DrawMode::Line,
+                use_fore: true,
+                use_back: true,
+                attr: icy_engine::TextAttribute::default(),
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
+                font_page: 0,
+                old_pos: icy_engine::Position { x: 0, y: 0 },
+            }),
+            Box::new(crate::model::draw_rectangle_imp::DrawRectangleTool {
+                draw_mode: crate::model::DrawMode::Line,
+                use_fore: true,
+                use_back: true,
+                attr: icy_engine::TextAttribute::default(),
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
+                font_page: 0,
+            }),
+            Box::new(
+                crate::model::draw_rectangle_filled_imp::DrawRectangleFilledTool {
+                    draw_mode: crate::model::DrawMode::Line,
+                    use_fore: true,
+                    use_back: true,
+                    attr: icy_engine::TextAttribute::default(),
+                    char_code: Rc::new(RefCell::new('\u{00B0}')),
+                    font_page: 0,
+                },
+            ),
+            Box::new(crate::model::draw_ellipse_imp::DrawEllipseTool {
+                draw_mode: crate::model::DrawMode::Line,
+                use_fore: true,
+                use_back: true,
+                attr: icy_engine::TextAttribute::default(),
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
+                font_page: 0,
+            }),
+            Box::new(
+                crate::model::draw_ellipse_filled_imp::DrawEllipseFilledTool {
+                    draw_mode: crate::model::DrawMode::Line,
+                    use_fore: true,
+                    use_back: true,
+                    attr: icy_engine::TextAttribute::default(),
+                    char_code: Rc::new(RefCell::new('\u{00B0}')),
+                    font_page: 0,
+                },
+            ),
+            Box::new(crate::model::fill_imp::FillTool {
+                use_fore: true,
+                use_back: true,
+                char_code: Rc::new(RefCell::new('\u{00B0}')),
+                font_page: 0,
+                fill_type: crate::model::fill_imp::FillType::Character,
+                attr: icy_engine::TextAttribute::default(),
+            }),
+            Box::new(fnt),
+            Box::new(crate::model::move_layer_imp::MoveLayer {
+                pos: icy_engine::Position { x: 0, y: 0 },
+            }),
+        ];
 
-        let view = MainWindow {
+        MainWindow {
             tab_viewer: TabViewer {
                 tools,
                 selected_tool: 0,
@@ -144,36 +143,32 @@ impl MainWindow {
             open_file_dialog: None,
             save_file_dialog: None,
             new_file_dialog: None,
-            modal_dialog: None
-        };
-        view
+            modal_dialog: None,
+        }
     }
 
     pub fn open_file(&mut self, path: &Path) {
         let full_path = path.to_str().unwrap().to_string();
 
         if let Some(ext) = path.extension() {
-            match ext.to_str().unwrap() {
-                "psf" => {
-                    if let Ok(data) = fs::read(&path) {
-                        let file_name = path.file_name();
-                        if file_name.is_none() {
-                            return;
-                        }
-                        let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
-                        if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
-                            self.tree.push_to_focused_leaf((
-                                Some(full_path),
-                                Box::new(FontEditor::new(font)),
-                            ));
-                            return;
-                        }
+            if let "psf" = ext.to_str().unwrap() {
+                if let Ok(data) = fs::read(path) {
+                    let file_name = path.file_name();
+                    if file_name.is_none() {
+                        return;
+                    }
+                    let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
+                    if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
+                        self.tree.push_to_focused_leaf((
+                            Some(full_path),
+                            Box::new(FontEditor::new(font)),
+                        ));
+                        return;
                     }
                 }
-                _ => {}
             }
         }
-        let buf = Buffer::load_buffer(&path).unwrap();
+        let buf = Buffer::load_buffer(path, true).unwrap();
         let editor = AnsiEditor::new(&self.gl, buf);
         self.tree
             .push_to_focused_leaf((Some(full_path), Box::new(editor)));
@@ -193,7 +188,7 @@ impl MainWindow {
                     .add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-new")).wrap(false))
                     .clicked()
                 {
-                    self.new_file_dialog = Some(NewFileDialog::new());
+                    self.new_file_dialog = Some(NewFileDialog::default());
                     ui.close_menu();
                 }
 
@@ -211,7 +206,8 @@ impl MainWindow {
                 if ui
                     .add_enabled(
                         has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false))
+                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false),
+                    )
                     .clicked()
                 {
                     if let Some(t) = self.tree.find_active_focused() {
@@ -224,7 +220,8 @@ impl MainWindow {
                 if ui
                     .add_enabled(
                         has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save-as")).wrap(false))
+                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save-as")).wrap(false),
+                    )
                     .clicked()
                 {
                     if let Some(t) = self.tree.find_active_focused() {
@@ -238,16 +235,17 @@ impl MainWindow {
                 }
 
                 if ui
-                .add_enabled(
-                    has_buffer,
-                    egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-export")).wrap(false))
-                .clicked()
+                    .add_enabled(
+                        has_buffer,
+                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-export")).wrap(false),
+                    )
+                    .clicked()
                 {
                     let mut buffer_opt = None;
                     if let Some((_, t)) = self.tree.find_active_focused() {
                         buffer_opt = t.1.get_buffer_view();
                     }
-        
+
                     self.modal_dialog = Some(Box::new(crate::ExportFileDialog::new(
                         &buffer_opt.unwrap().lock().unwrap().editor.buf,
                     )));
@@ -261,14 +259,17 @@ impl MainWindow {
                     )
                     .clicked()
                 {
-                    self.modal_dialog = Some(Box::new(SelectOutlineDialog::new()));
+                    self.modal_dialog = Some(Box::<SelectOutlineDialog>::default());
                     ui.close_menu();
                 }
 
-
                 ui.separator();
-                let button: Response =
-                    button_with_shortcut(ui, true, fl!(crate::LANGUAGE_LOADER, "menu-close"), "Ctrl+Q");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    true,
+                    fl!(crate::LANGUAGE_LOADER, "menu-close"),
+                    "Ctrl+Q",
+                );
                 if button.clicked() {
                     _frame.close();
                     ui.close_menu();
@@ -276,15 +277,23 @@ impl MainWindow {
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
-                let button: Response =
-                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-undo"), "Ctrl+Z");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-undo"),
+                    "Ctrl+Z",
+                );
                 if button.clicked() {
                     self.undo_command();
                     ui.close_menu();
                 }
-    
-                let button: Response =
-                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-redo"), "Ctrl+Shift+Z");
+
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-redo"),
+                    "Ctrl+Shift+Z",
+                );
                 if button.clicked() {
                     self.redo_command();
                     ui.close_menu();
@@ -302,7 +311,7 @@ impl MainWindow {
                     if let Some((_, t)) = self.tree.find_active_focused() {
                         buffer_opt = t.1.get_buffer_view();
                     }
-        
+
                     self.modal_dialog = Some(Box::new(EditSauceDialog::new(
                         &buffer_opt.unwrap().lock().unwrap().editor.buf,
                     )));
@@ -329,15 +338,23 @@ impl MainWindow {
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-selection"), |ui| {
-                let button: Response =
-                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-select-all"), "Ctrl+A");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-select-all"),
+                    "Ctrl+A",
+                );
                 if button.clicked() {
                     self.select_all_command();
                     ui.close_menu();
                 }
-    
-                let button: Response =
-                    button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-deselect"), "Esc");
+
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-deselect"),
+                    "Esc",
+                );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
@@ -352,8 +369,12 @@ impl MainWindow {
                 }
                 ui.separator();
 
-                let button: Response =
-                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-erase"), "Del");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-erase"),
+                    "Del",
+                );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
@@ -367,9 +388,12 @@ impl MainWindow {
                     ui.close_menu();
                 }
 
-
-                let button: Response =
-                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-flipx"), "X");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-flipx"),
+                    "X",
+                );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
@@ -381,8 +405,12 @@ impl MainWindow {
                     ui.close_menu();
                 }
 
-                let button: Response =
-                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-flipy"), "Y");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-flipy"),
+                    "Y",
+                );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
@@ -394,8 +422,12 @@ impl MainWindow {
                     ui.close_menu();
                 }
 
-                let button: Response =
-                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"), "Y");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"),
+                    "Y",
+                );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
@@ -407,8 +439,12 @@ impl MainWindow {
                     ui.close_menu();
                 }
 
-                let button: Response =
-                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"), "L");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"),
+                    "L",
+                );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
@@ -420,8 +456,12 @@ impl MainWindow {
                     ui.close_menu();
                 }
 
-                let button: Response =
-                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-justifyright"), "R");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-justifyright"),
+                    "R",
+                );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
@@ -434,8 +474,12 @@ impl MainWindow {
                 }
                 ui.separator();
 
-                let button: Response =
-                button_with_shortcut(ui, has_buffer, fl!(crate::LANGUAGE_LOADER, "menu-crop"), "");
+                let button: Response = button_with_shortcut(
+                    ui,
+                    has_buffer,
+                    fl!(crate::LANGUAGE_LOADER, "menu-crop"),
+                    "",
+                );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
@@ -447,13 +491,14 @@ impl MainWindow {
                     ui.close_menu();
                 }
             });
-
         });
 
         if ui.input(|i| i.key_pressed(egui::Key::Q) && i.modifiers.ctrl) {
             _frame.close();
         }
+
         if ui.input(|i| i.key_pressed(egui::Key::A) && i.modifiers.ctrl) {
+            ui.input_mut(|i| i.consume_key(Modifiers::CTRL, egui::Key::A));
             self.select_all_command();
         }
 
@@ -492,16 +537,15 @@ impl MainWindow {
         if let Some(t) = self.tree.find_active_focused() {
             let doc = t.1 .1.get_buffer_view();
             if let Some(view) = &doc {
-                let mut editor = &mut view.lock().unwrap().editor;
+                let editor = &mut view.lock().unwrap().editor;
                 let w = editor.buf.get_buffer_width();
                 let h = editor.buf.get_real_buffer_height();
 
-                editor.cur_selection = Some(crate::model::Selection { 
-                    rectangle: Rectangle::from_pt(Position::new(0, 0), Position::new(w as i32, h as i32)),
+                editor.cur_selection = Some(crate::model::Selection {
+                    rectangle: Rectangle::from_pt(Position::new(0, 0), Position::new(w, h)),
                     is_preview: false,
-                    shape: crate::model::Shape::Rectangle
+                    shape: crate::model::Shape::Rectangle,
                 });
-                view.lock().unwrap().redraw_view();
             }
         }
     }
@@ -610,7 +654,7 @@ impl eframe::App for MainWindow {
             if let Some((_, t)) = self.tree.find_active_focused() {
                 buffer_opt = t.1.get_buffer_view();
             }
-            ui.add(crate::show_char_table(buffer_opt.clone()));
+            // ui.add(crate::show_char_table(buffer_opt.clone()));
             crate::show_layer_view(ctx, ui, buffer_opt.clone());
         });
 
@@ -636,7 +680,9 @@ impl eframe::App for MainWindow {
                         if let Some(view) = t.1.get_buffer_view() {
                             let editor = &mut view.lock().unwrap().editor;
                             let options = SaveOptions::new();
-                            editor.save_content(file.to_path_buf().as_path(), &options).unwrap();
+                            editor
+                                .save_content(file.to_path_buf().as_path(), &options)
+                                .unwrap();
                         }
                     }
                 }

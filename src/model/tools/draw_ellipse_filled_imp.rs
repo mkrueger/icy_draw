@@ -7,11 +7,11 @@ use icy_engine::{Rectangle, TextAttribute};
 use crate::ansi_editor::BufferView;
 
 use super::{
-    brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
-    ScanLines, Tool, ToolUiResult,
+    brush_imp::draw_glyph, plot_point, DrawMode, Event, Plottable, Position, ScanLines, Tool,
+    ToolUiResult,
 };
 
-pub struct DrawEllipseTool {
+pub struct DrawEllipseFilledTool {
     pub draw_mode: DrawMode,
 
     pub use_fore: bool,
@@ -21,7 +21,7 @@ pub struct DrawEllipseTool {
     pub font_page: usize,
 }
 
-impl Plottable for DrawEllipseTool {
+impl Plottable for DrawEllipseFilledTool {
     fn get_draw_mode(&self) -> DrawMode {
         self.draw_mode
     }
@@ -36,9 +36,9 @@ impl Plottable for DrawEllipseTool {
     }
 }
 
-impl Tool for DrawEllipseTool {
+impl Tool for DrawEllipseFilledTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
-        &super::icons::ELLIPSE_OUTLINE_SVG
+        &super::icons::ELLIPSE_FILLED_SVG
     }
 
     fn use_caret(&self) -> bool {
@@ -54,7 +54,7 @@ impl Tool for DrawEllipseTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        let mut result = ToolUiResult::new();
+        let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -75,7 +75,7 @@ impl Tool for DrawEllipseTool {
         ui.radio_value(
             &mut self.draw_mode,
             DrawMode::Line,
-            fl!(crate::LANGUAGE_LOADER, "tool-line"),
+            fl!(crate::LANGUAGE_LOADER, "tool-solid"),
         );
         ui.horizontal(|ui| {
             ui.radio_value(
@@ -85,7 +85,13 @@ impl Tool for DrawEllipseTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
+                draw_glyph(
+                    ui,
+                    b,
+                    &mut result,
+                    &self.char_code,
+                    self.font_page,
+                );
             }
         });
         ui.radio_value(
@@ -104,8 +110,8 @@ impl Tool for DrawEllipseTool {
     fn handle_drag(
         &mut self,
         buffer_view: Arc<Mutex<BufferView>>,
-        mut start: Position,
-        mut cur: Position,
+        start: Position,
+        cur: Position,
     ) -> Event {
         if let Some(layer) = buffer_view.lock().unwrap().editor.get_overlay_layer() {
             layer.clear();
@@ -113,38 +119,25 @@ impl Tool for DrawEllipseTool {
 
         let mut lines = ScanLines::new(1);
 
-        if self.draw_mode == DrawMode::Line {
-            start.y *= 2;
-            cur.y *= 2;
-        }
-
         if start < cur {
             lines.add_ellipse(Rectangle::from_pt(start, cur));
         } else {
             lines.add_ellipse(Rectangle::from_pt(cur, start));
         }
 
-        let col = buffer_view
-            .lock()
-            .unwrap()
-            .editor
-            .caret
-            .get_attribute()
-            .get_foreground();
-        let buffer_view = buffer_view.clone();
         let draw = move |rect: Rectangle| {
             let editor = &mut buffer_view.lock().unwrap().editor;
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
-                    set_half_block(
+                    plot_point(
                         editor,
+                        self,
                         Position::new(rect.start.x + x, rect.start.y + y),
-                        col,
                     );
                 }
             }
         };
-        lines.outline(draw);
+        lines.fill(draw);
         Event::None
     }
 

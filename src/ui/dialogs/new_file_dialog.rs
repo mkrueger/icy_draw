@@ -1,6 +1,6 @@
 use eframe::egui::{self, Layout};
-use i18n_embed_fl::fl;
 use egui_modal::Modal;
+use i18n_embed_fl::fl;
 
 pub struct NewFileDialog {
     pub width: i32,
@@ -9,15 +9,17 @@ pub struct NewFileDialog {
     pub create: bool,
 }
 
-impl NewFileDialog {
-    pub fn new() -> Self {
-        NewFileDialog {
+impl Default for NewFileDialog {
+    fn default() -> Self {
+        Self {
             width: 80,
             height: 25,
             create: false,
         }
     }
+}
 
+impl NewFileDialog {
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
         let modal = Modal::new(ctx, "my_modal");
@@ -41,7 +43,6 @@ impl NewFileDialog {
                         });
                         ui.add(egui::DragValue::new(&mut self.height));
                         ui.end_row();
-
                     });
                 ui.add_space(4.0);
             });

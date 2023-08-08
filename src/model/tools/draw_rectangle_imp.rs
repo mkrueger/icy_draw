@@ -1,13 +1,16 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{Position, Rectangle, TextAttribute};
+use icy_engine::{Rectangle, TextAttribute};
 
 use crate::ansi_editor::BufferView;
 
-use super::{brush_imp::draw_glyph, plot_point, DrawMode, Event, Plottable, ScanLines, Tool, ToolUiResult};
+use super::{
+    brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
+    ScanLines, Tool, ToolUiResult,
+};
 use std::sync::{Arc, Mutex};
 
-pub struct DrawRectangleFilledTool {
+pub struct DrawRectangleTool {
     pub draw_mode: DrawMode,
 
     pub use_fore: bool,
@@ -17,7 +20,7 @@ pub struct DrawRectangleFilledTool {
     pub font_page: usize,
 }
 
-impl Plottable for DrawRectangleFilledTool {
+impl Plottable for DrawRectangleTool {
     fn get_draw_mode(&self) -> DrawMode {
         self.draw_mode
     }
@@ -33,11 +36,10 @@ impl Plottable for DrawRectangleFilledTool {
     }
 }
 
-impl Tool for DrawRectangleFilledTool {
+impl Tool for DrawRectangleTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
-        &super::icons::RECTANGLE_FILLED_SVG
+        &super::icons::RECTANGLE_OUTLINE_SVG
     }
-
     fn use_caret(&self) -> bool {
         false
     }
@@ -51,7 +53,7 @@ impl Tool for DrawRectangleFilledTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        let mut result = ToolUiResult::new();
+        let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -72,7 +74,7 @@ impl Tool for DrawRectangleFilledTool {
         ui.radio_value(
             &mut self.draw_mode,
             DrawMode::Line,
-            fl!(crate::LANGUAGE_LOADER, "tool-solid"),
+            fl!(crate::LANGUAGE_LOADER, "tool-line"),
         );
         ui.horizontal(|ui| {
             ui.radio_value(
@@ -82,7 +84,13 @@ impl Tool for DrawRectangleFilledTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
+                draw_glyph(
+                    ui,
+                    b,
+                    &mut result,
+                    &self.char_code,
+                    self.font_page,
+                );
             }
         });
         ui.radio_value(
@@ -101,30 +109,42 @@ impl Tool for DrawRectangleFilledTool {
     fn handle_drag(
         &mut self,
         buffer_view: Arc<Mutex<BufferView>>,
-        start: Position,
-        cur: Position,
+        mut start: Position,
+        mut cur: Position,
     ) -> Event {
         if let Some(layer) = buffer_view.lock().unwrap().editor.get_overlay_layer() {
             layer.clear();
         }
 
+        if self.draw_mode == DrawMode::Line {
+            start.y *= 2;
+            cur.y *= 2;
+        }
+
         let mut lines = ScanLines::new(1);
         lines.add_rectangle(Rectangle::from_pt(start, cur));
-        let buffer_view = buffer_view.clone();
 
+        let col = buffer_view
+            .lock()
+            .unwrap()
+            .editor
+            .caret
+            .get_attribute()
+            .get_foreground();
+        let buffer_view = buffer_view.clone();
         let draw = move |rect: Rectangle| {
             let editor = &mut buffer_view.lock().unwrap().editor;
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
-                    plot_point(
+                    set_half_block(
                         editor,
-                        self,
                         Position::new(rect.start.x + x, rect.start.y + y),
+                        col,
                     );
                 }
             }
         };
-        lines.fill(draw);
+        lines.outline(draw);
 
         Event::None
     }

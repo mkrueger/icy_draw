@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::{ansi_editor::BufferView, model::ScanLines};
 
-use super::{line_imp::set_half_block, Position, Tool, ToolUiResult, brush_imp::draw_glyph};
+use super::{brush_imp::draw_glyph, line_imp::set_half_block, Position, Tool, ToolUiResult};
 
 #[derive(PartialEq, Eq)]
 pub enum PencilType {
@@ -30,7 +30,7 @@ pub struct PencilTool {
 }
 
 impl PencilTool {
-    fn paint_brush(&self, buffer_view: Arc<Mutex<BufferView>>, pos: Position) {
+    fn paint_brush(&self, buffer_view: &Arc<Mutex<BufferView>>, pos: Position) {
         let center = pos;
         let gradient = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
         match self.brush_type {
@@ -77,7 +77,10 @@ impl PencilTool {
             PencilType::Solid => {
                 let editor = &mut buffer_view.lock().unwrap().editor;
                 let attribute = editor.caret.get_attribute();
-                editor.set_char(center, Some(AttributedChar::new(*self.char_code.borrow(), attribute)));
+                editor.set_char(
+                    center,
+                    Some(AttributedChar::new(*self.char_code.borrow(), attribute)),
+                );
             }
             PencilType::Color => {
                 let editor = &mut buffer_view.lock().unwrap().editor;
@@ -110,7 +113,7 @@ impl Tool for PencilTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        let mut result = ToolUiResult::new();
+        let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -145,7 +148,13 @@ impl Tool for PencilTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
+                draw_glyph(
+                    ui,
+                    b,
+                    &mut result,
+                    &self.char_code,
+                    self.font_page,
+                );
             }
         });
         ui.radio_value(
@@ -164,7 +173,7 @@ impl Tool for PencilTool {
     ) -> super::Event {
         if button == 1 {
             self.last_pos = pos;
-            self.paint_brush(buffer_view, pos);
+            self.paint_brush(&buffer_view, pos);
         }
         super::Event::None
     }
@@ -175,14 +184,18 @@ impl Tool for PencilTool {
         _start: Position,
         cur: Position,
     ) -> super::Event {
-        self.paint_brush(buffer_view, cur);
+        self.paint_brush(&buffer_view, cur);
         self.last_pos = cur;
 
         super::Event::None
     }
 }
 
-pub fn draw_glyph_plain(buf: Arc<Mutex<BufferView>>, ch: char, font_page: usize) -> impl egui::Widget {
+pub fn draw_glyph_plain(
+    buf: Arc<Mutex<BufferView>>,
+    ch: char,
+    font_page: usize,
+) -> impl egui::Widget {
     move |ui: &mut egui::Ui| {
         let font = &buf.lock().unwrap().editor.buf.font_table[font_page];
         let scale = 1.5;

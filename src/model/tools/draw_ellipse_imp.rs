@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{Rectangle, TextAttribute};
@@ -8,9 +10,8 @@ use super::{
     brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
     ScanLines, Tool, ToolUiResult,
 };
-use std::sync::{Arc, Mutex};
 
-pub struct DrawRectangleTool {
+pub struct DrawEllipseTool {
     pub draw_mode: DrawMode,
 
     pub use_fore: bool,
@@ -20,11 +21,10 @@ pub struct DrawRectangleTool {
     pub font_page: usize,
 }
 
-impl Plottable for DrawRectangleTool {
+impl Plottable for DrawEllipseTool {
     fn get_draw_mode(&self) -> DrawMode {
         self.draw_mode
     }
-
     fn get_use_fore(&self) -> bool {
         self.use_fore
     }
@@ -36,10 +36,11 @@ impl Plottable for DrawRectangleTool {
     }
 }
 
-impl Tool for DrawRectangleTool {
+impl Tool for DrawEllipseTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
-        &super::icons::RECTANGLE_OUTLINE_SVG
+        &super::icons::ELLIPSE_OUTLINE_SVG
     }
+
     fn use_caret(&self) -> bool {
         false
     }
@@ -53,7 +54,7 @@ impl Tool for DrawRectangleTool {
         ui: &mut egui::Ui,
         buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        let mut result = ToolUiResult::new();
+        let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -84,7 +85,13 @@ impl Tool for DrawRectangleTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b.clone(), &mut result,self.char_code.clone(), self.font_page);
+                draw_glyph(
+                    ui,
+                    b,
+                    &mut result,
+                    &self.char_code,
+                    self.font_page,
+                );
             }
         });
         ui.radio_value(
@@ -110,13 +117,18 @@ impl Tool for DrawRectangleTool {
             layer.clear();
         }
 
+        let mut lines = ScanLines::new(1);
+
         if self.draw_mode == DrawMode::Line {
             start.y *= 2;
             cur.y *= 2;
         }
 
-        let mut lines = ScanLines::new(1);
-        lines.add_rectangle(Rectangle::from_pt(start, cur));
+        if start < cur {
+            lines.add_ellipse(Rectangle::from_pt(start, cur));
+        } else {
+            lines.add_ellipse(Rectangle::from_pt(cur, start));
+        }
 
         let col = buffer_view
             .lock()
@@ -139,7 +151,6 @@ impl Tool for DrawRectangleTool {
             }
         };
         lines.outline(draw);
-
         Event::None
     }
 

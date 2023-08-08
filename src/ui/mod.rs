@@ -27,8 +27,6 @@ pub use icons::*;
 mod layer_view;
 pub use layer_view::*;
 
-
-
 mod settings;
 pub use settings::*;
 
@@ -42,5 +40,5 @@ pub trait ModalDialog {
 
     fn should_commit(&self) -> bool;
 
-    fn commit(&self, editor: &mut crate::model::Editor)-> TerminalResult<bool>;
+    fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool>;
 }

@@ -1,5 +1,5 @@
 use eframe::{
-    egui::{self, CursorIcon, PointerButton, ScrollArea, Button},
+    egui::{self, Button, CursorIcon, PointerButton, ScrollArea},
     epaint::{Pos2, Rect, Vec2},
 };
 use i18n_embed_fl::fl;
@@ -58,7 +58,7 @@ impl AnsiEditor {
 
     pub fn output_string(&mut self, str: &str) {
         for ch in str.chars() {
-            let translated_char = self.buffer_parser.from_unicode(ch);
+            let translated_char = self.buffer_parser.convert_from_unicode(ch);
             if let Err(err) = self.print_char(translated_char as u8) {
                 eprintln!("{}", err);
             }
@@ -247,13 +247,13 @@ impl Document for AnsiEditor {
                                 egui::Event::Copy => {
                                     let buffer_view = self.buffer_view.clone();
                                     let mut l = buffer_view.lock().unwrap();
-                                    if let Some(txt) = l.get_copy_text(&self.buffer_parser) {
+                                    if let Some(txt) = l.get_copy_text(&*self.buffer_parser) {
                                         ui.output_mut(|o| o.copied_text = txt);
                                     }
                                 }
                                 egui::Event::Cut => {}
                                 egui::Event::Paste(text) => {
-                                    self.output_string(&text);
+                                    self.output_string(text);
                                     self.buffer_view.lock().unwrap().redraw_view();
                                 }
 
@@ -278,7 +278,7 @@ impl Document for AnsiEditor {
                                     if rect.contains(*pos) {
                                         let buffer_view = self.buffer_view.clone();
                                         let click_pos = calc_click_pos(
-                                            &pos,
+                                            pos,
                                             rect,
                                             top_margin_height,
                                             char_size,
@@ -304,27 +304,29 @@ impl Document for AnsiEditor {
                                     pressed: false,
                                     ..
                                 } => {
-                                    self.pressed_button = -1;
-                                    let buffer_view = self.buffer_view.clone();
-                                    let click_pos = calc_click_pos(
-                                        pos,
-                                        rect,
-                                        top_margin_height,
-                                        char_size,
-                                        first_line,
-                                    );
-                                    cur_tool.handle_drag_end(
-                                        buffer_view,
-                                        self.drag_start,
-                                        Position::new(click_pos.x as i32, click_pos.y as i32),
-                                    );
+                                    if rect.contains(*pos) {
+                                        self.pressed_button = -1;
+                                        let buffer_view = self.buffer_view.clone();
+                                        let click_pos = calc_click_pos(
+                                            pos,
+                                            rect,
+                                            top_margin_height,
+                                            char_size,
+                                            first_line,
+                                        );
+                                        cur_tool.handle_drag_end(
+                                            buffer_view,
+                                            self.drag_start,
+                                            Position::new(click_pos.x as i32, click_pos.y as i32),
+                                        );
+                                    }
                                 }
 
                                 egui::Event::PointerMoved(pos) => {
-                                    if self.pressed_button >= 0 {
+                                    if rect.contains(*pos) && self.pressed_button >= 0 {
                                         let buffer_view = self.buffer_view.clone();
                                         let click_pos = calc_click_pos(
-                                            &pos,
+                                            pos,
                                             rect,
                                             top_margin_height,
                                             char_size,
@@ -425,14 +427,17 @@ impl Document for AnsiEditor {
 
                     ui.horizontal(|ui| {
                         if ui.add(Button::new("▶").frame(false)).clicked() {
-                            self.buffer_view.lock().unwrap().editor.cur_outline = (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
+                            self.buffer_view.lock().unwrap().editor.cur_outline =
+                                (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
                         }
                         ui.label(cur_outline.to_string());
                         if ui.add(Button::new("◀").frame(false)).clicked() {
-                            self.buffer_view.lock().unwrap().editor.cur_outline = (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1) % DEFAULT_OUTLINE_TABLE.len();
+                            self.buffer_view.lock().unwrap().editor.cur_outline =
+                                (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
+                                    % DEFAULT_OUTLINE_TABLE.len();
                         }
 
-                        for i in (0..10).into_iter().rev() {
+                        for i in (0..10).rev() {
                             let ch = self
                                 .buffer_view
                                 .lock()
@@ -447,16 +452,13 @@ impl Document for AnsiEditor {
                             ));
                             ui.label(format!("F{}", i + 1));
                         }
-                        
+
                         ui.label(fl!(
                             crate::LANGUAGE_LOADER,
                             "toolbar-size",
                             colums = width,
                             rows = height
                         ));
-
-                        
-                        
                     });
                 });
             });

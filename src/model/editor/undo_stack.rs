@@ -49,11 +49,11 @@ pub struct UndoSwapChar {
 }
 impl UndoOperation for UndoSwapChar {
     fn undo(&self, buffer: &mut Buffer) {
-        buffer.layers[self.layer as usize].swap_char(self.pos1, self.pos2);
+        buffer.layers[self.layer].swap_char(self.pos1, self.pos2);
     }
 
     fn redo(&self, buffer: &mut Buffer) {
-        buffer.layers[self.layer as usize].swap_char(self.pos1, self.pos2);
+        buffer.layers[self.layer].swap_char(self.pos1, self.pos2);
     }
 }
 

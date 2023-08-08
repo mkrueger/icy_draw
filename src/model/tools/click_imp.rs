@@ -24,7 +24,7 @@ impl Tool for ClickTool {
         _ui: &mut egui::Ui,
         _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
     ) -> ToolUiResult {
-        ToolUiResult::new()
+        ToolUiResult::default()
     }
 
     fn handle_click(

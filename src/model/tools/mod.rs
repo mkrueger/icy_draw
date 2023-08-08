@@ -78,16 +78,10 @@ impl MModifiers {
         matches!(self, MModifiers::Control)
     }
 }
-pub struct ToolUiResult {
-    pub modal_dialog: Option<Box<dyn crate::ModalDialog>>
-}
 
-impl ToolUiResult {
-    pub fn new() -> Self {
-        Self {
-            modal_dialog: None
-        }
-    }
+#[derive(Default)]
+pub struct ToolUiResult {
+    pub modal_dialog: Option<Box<dyn crate::ModalDialog>>,
 }
 
 pub trait Tool {
@@ -210,11 +204,11 @@ pub trait Tool {
                     editor.delete_selection();
                 } else {
                     let pos = editor.get_caret_position();
-                    for i in pos.x..(editor.buf.get_buffer_width() as i32 - 1) {
+                    for i in pos.x..(editor.buf.get_buffer_width() - 1) {
                         let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                         editor.set_char(Position::new(i, pos.y), next);
                     }
-                    let last_pos = Position::new(editor.buf.get_buffer_width() as i32 - 1, pos.y);
+                    let last_pos = Position::new(editor.buf.get_buffer_width() - 1, pos.y);
                     editor.set_char(last_pos, None);
                 }
             }
@@ -236,12 +230,11 @@ pub trait Tool {
                     } else {*/
                     editor.set_caret_position(pos + Position::new(-1, 0));
                     if editor.caret.insert_mode {
-                        for i in pos.x..(editor.buf.get_buffer_width() as i32 - 1) {
+                        for i in pos.x..(editor.buf.get_buffer_width() - 1) {
                             let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
-                        let last_pos =
-                            Position::new(editor.buf.get_buffer_width() as i32 - 1, pos.y);
+                        let last_pos = Position::new(editor.buf.get_buffer_width() - 1, pos.y);
                         editor.set_char(last_pos, None);
                     } else {
                         let pos = editor.get_caret_position();
