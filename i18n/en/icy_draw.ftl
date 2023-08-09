@@ -29,6 +29,11 @@ menu-selection=Selection
 menu-select-all=Select All
 menu-deselect=Deselect
 
+menu-help=Help
+menu-discuss=Discuss
+menu-report-bug=Report Bug
+menu-about=About…
+
 tool-fg=Fg
 tool-bg=Bg
 tool-solid=Solid
@@ -89,3 +94,13 @@ export-compression-level-high=High
 select-character-title=Select Character
 
 select-outline-style-title=Outline Font Style Type
+
+about-dialog-title=About Icy Draw
+about-dialog-heading = Icy Draw
+about-dialog-description = 
+    Icy Draw is a tool for creating ANSI and ASCII art.
+    It is written in Rust and uses the EGUI library.
+
+    Icy Draw is free software, licensed under the Apache 2 license.
+    Source code is available at www.github.com/mkrueger/icy_draw
+about-dialog-created_by = Created by { $authors }

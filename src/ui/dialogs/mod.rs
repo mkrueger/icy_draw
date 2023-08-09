@@ -15,3 +15,6 @@ pub use select_character_dialog::*;
 
 mod select_outline_dialog;
 pub use select_outline_dialog::*;
+
+mod about_dialog;
+pub use about_dialog::*;

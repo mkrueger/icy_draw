@@ -491,6 +491,31 @@ impl MainWindow {
                     ui.close_menu();
                 }
             });
+
+            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-help"), |ui| {
+                let r = ui.hyperlink_to(
+                    fl!(crate::LANGUAGE_LOADER, "menu-discuss"),
+                    "https://github.com/mkrueger/icy_draw/discussions",
+                );
+                if r.clicked() {
+                    ui.close_menu();
+                }
+                let r = ui.hyperlink_to(
+                    fl!(crate::LANGUAGE_LOADER, "menu-report-bug"),
+                    "https://github.com/mkrueger/icy_draw/issues/new",
+                );
+                if r.clicked() {
+                    ui.close_menu();
+                }
+                ui.separator();
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "menu-about"))
+                    .clicked()
+                {
+                    self.modal_dialog = Some(Box::<crate::AboutDialog>::default());
+                    ui.close_menu();
+                }
+            });
         });
 
         if ui.input(|i| i.key_pressed(egui::Key::Q) && i.modifiers.ctrl) {

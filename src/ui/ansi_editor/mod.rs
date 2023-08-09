@@ -1,5 +1,5 @@
 use eframe::{
-    egui::{self, Button, CursorIcon, PointerButton, RichText, ScrollArea},
+    egui::{self, CursorIcon, PointerButton, RichText, ScrollArea},
     epaint::{FontId, Pos2, Rect, Vec2},
 };
 use i18n_embed_fl::fl;
@@ -395,20 +395,7 @@ impl Document for AnsiEditor {
 
         ui.horizontal(|ui| {
             let pos = self.buffer_view.lock().unwrap().editor.caret.get_position();
-            let width = self
-                .buffer_view
-                .lock()
-                .unwrap()
-                .editor
-                .buf
-                .get_buffer_width();
-            let height = self
-                .buffer_view
-                .lock()
-                .unwrap()
-                .editor
-                .buf
-                .get_buffer_height();
+            
             let label_font_size = 20.0;
 
             ui.vertical(|ui| {
