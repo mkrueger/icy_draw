@@ -148,13 +148,7 @@ impl Tool for PencilTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(
-                    ui,
-                    b,
-                    &mut result,
-                    &self.char_code,
-                    self.font_page,
-                );
+                draw_glyph(ui, b, &mut result, &self.char_code, self.font_page);
             }
         });
         ui.radio_value(
@@ -198,10 +192,11 @@ pub fn draw_glyph_plain(
 ) -> impl egui::Widget {
     move |ui: &mut egui::Ui| {
         let font = &buf.lock().unwrap().editor.buf.font_table[font_page];
-        let scale = 1.5;
+        let scale = 1.8;
+        let padding = 2.;
         let (id, stroke_rect) = ui.allocate_space(Vec2::new(
-            scale * font.size.width as f32,
-            scale * font.size.height as f32,
+            2. * padding + scale * font.size.width as f32,
+            2. * padding + scale * font.size.height as f32,
         ));
         let mut response = ui.interact(stroke_rect, id, Sense::click());
 
@@ -221,10 +216,10 @@ pub fn draw_glyph_plain(
                         painter.rect_filled(
                             Rect::from_min_size(
                                 Pos2::new(
-                                    stroke_rect.left() + x as f32 * scale,
-                                    stroke_rect.top() + y as f32 * scale,
+                                    padding + stroke_rect.left() + x as f32 * scale,
+                                    padding + stroke_rect.top() + y as f32 * scale,
                                 ),
-                                Vec2::new(scale, scale),
+                                Vec2::new(scale.ceil(), scale.ceil()),
                             ),
                             Rounding::none(),
                             col,

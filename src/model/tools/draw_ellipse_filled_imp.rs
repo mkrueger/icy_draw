@@ -85,13 +85,7 @@ impl Tool for DrawEllipseFilledTool {
             );
 
             if let Some(b) = &buffer_opt {
-                draw_glyph(
-                    ui,
-                    b,
-                    &mut result,
-                    &self.char_code,
-                    self.font_page,
-                );
+                draw_glyph(ui, b, &mut result, &self.char_code, self.font_page);
             }
         });
         ui.radio_value(
