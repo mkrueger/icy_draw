@@ -395,7 +395,7 @@ impl Document for AnsiEditor {
 
         ui.horizontal(|ui| {
             let pos = self.buffer_view.lock().unwrap().editor.caret.get_position();
-            
+
             let label_font_size = 20.0;
 
             ui.vertical(|ui| {
@@ -426,7 +426,10 @@ impl Document for AnsiEditor {
                     self.buffer_view.lock().unwrap().editor.cur_outline =
                         (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
                 }
-                ui.label(RichText::new((cur_outline + 1).to_string()).font(FontId::proportional(label_font_size)));
+                ui.label(
+                    RichText::new((cur_outline + 1).to_string())
+                        .font(FontId::proportional(label_font_size)),
+                );
 
                 if ui
                     .selectable_label(
@@ -454,9 +457,12 @@ impl Document for AnsiEditor {
                         cur_font_page,
                     ));
 
-                    ui.label(RichText::new(format!("F{}", i + 1)).font(FontId::proportional(label_font_size)));
+                    ui.label(
+                        RichText::new(format!("F{}", i + 1))
+                            .font(FontId::proportional(label_font_size)),
+                    );
                 }
-/* 
+                /*
                 ui.label(fl!(
                     crate::LANGUAGE_LOADER,
                     "toolbar-size",
