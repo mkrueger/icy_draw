@@ -257,8 +257,7 @@ pub fn draw_glyph_plain(editor: &mut AnsiEditor, ch: char, font_page: usize) -> 
             response
         } else {
             let (id, stroke_rect) = ui.allocate_space(Vec2::new(1., 1.));
-            let response = ui.interact(stroke_rect, id, Sense::click());
-            response
+            ui.interact(stroke_rect, id, Sense::click())
         }
     }
 }

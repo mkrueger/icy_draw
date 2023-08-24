@@ -49,25 +49,6 @@ impl AnsiEditor {
         }
     }
 
-    pub fn output_string(&mut self, str: &str) {
-        for ch in str.chars() {
-            let translated_char = self.buffer_parser.convert_from_unicode(ch);
-            if let Err(err) = self.print_char(translated_char as u8) {
-                eprintln!("{}", err);
-            }
-        }
-    }
-
-    pub fn print_char(&mut self, c: u8) -> Result<(), Box<dyn std::error::Error>> {
-        self.buffer_view
-            .lock()
-            .unwrap()
-            .print_char(&mut self.buffer_parser, unsafe {
-                char::from_u32_unchecked(c as u32)
-            })?;
-        self.buffer_view.lock().redraw_view();
-        Ok(())
-    }
 }
 
 impl Document for AnsiEditor {
@@ -480,74 +461,4 @@ fn calc_click_pos(
     _first_line: i32,
 ) -> Vec2 {
     (*pos - rect.min - Vec2::new(0., top_margin_height)) / char_size
-}
-
-pub fn terminal_context_menu(buffer_view: &mut Arc<Mutex<BufferView>>, ui: &mut egui::Ui) {
-    ui.input_mut(|i| i.events.clear());
-
-    if ui
-        .button(fl!(crate::LANGUAGE_LOADER, "menu-copy"))
-        .clicked()
-    {
-        ui.input_mut(|i| i.events.push(egui::Event::Copy));
-        ui.close_menu();
-    }
-
-    if ui
-        .button(fl!(crate::LANGUAGE_LOADER, "menu-paste"))
-        .clicked()
-    {
-        /* let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-        if let Ok(text) = ctx.get_contents() {
-            ui.input_mut().events.push(egui::Event::Paste(text));
-        }
-        ui.close_menu();*/
-    }
-    let mut view = buffer_view.borrow_mut().lock().unwrap();
-
-    if let Some(_sel) = &view.editor.cur_selection {
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-erase"))
-            .clicked()
-        {
-            view.editor.delete_selection();
-            ui.close_menu();
-        }
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-flipx"))
-            .clicked()
-        {
-            view.editor.flip_x();
-            ui.close_menu();
-        }
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-flipy"))
-            .clicked()
-        {
-            view.editor.flip_y();
-            ui.close_menu();
-        }
-
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"))
-            .clicked()
-        {
-            view.editor.justify_left();
-            ui.close_menu();
-        }
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifyright"))
-            .clicked()
-        {
-            view.editor.justify_right();
-            ui.close_menu();
-        }
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"))
-            .clicked()
-        {
-            view.editor.justify_center();
-            ui.close_menu();
-        }
-    }
 }

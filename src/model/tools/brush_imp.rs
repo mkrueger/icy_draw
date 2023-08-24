@@ -189,7 +189,7 @@ impl Tool for BrushTool {
 
 pub fn draw_glyph(
     ui: &mut egui::Ui,
-    editor: &mut AnsiEditor,
+    editor: &AnsiEditor,
     ui_result: &mut ToolUiResult,
     ch: &Rc<RefCell<char>>,
     font_page: usize,
