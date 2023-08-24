@@ -5,9 +5,8 @@ use eframe::{
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Rectangle};
-use std::sync::{Arc, Mutex};
 
-use crate::{ansi_editor::BufferView, model::ScanLines};
+use crate::{model::ScanLines, AnsiEditor};
 
 use super::{brush_imp::draw_glyph, line_imp::set_half_block, Position, Tool, ToolUiResult};
 
@@ -30,7 +29,7 @@ pub struct PencilTool {
 }
 
 impl PencilTool {
-    fn paint_brush(&self, buffer_view: &Arc<Mutex<BufferView>>, pos: Position) {
+    fn paint_brush(&self, editor: &mut AnsiEditor, pos: Position) {
         let center = pos;
         let gradient = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
         match self.brush_type {
@@ -40,10 +39,13 @@ impl PencilTool {
                     Position::new(self.last_pos.x, self.last_pos.y * 2),
                     Position::new(pos.x, pos.y * 2),
                 );
-                let buffer_view = buffer_view.clone();
                 let draw = move |rect: Rectangle| {
-                    let editor = &mut buffer_view.lock().editor;
-                    let col = editor.caret.get_attribute().get_foreground();
+                    let col = editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .get_foreground();
                     for y in 0..rect.size.height {
                         for x in 0..rect.size.width {
                             set_half_block(
@@ -57,9 +59,8 @@ impl PencilTool {
                 lines.fill(draw);
             }
             PencilType::Shade => {
-                let editor = &mut buffer_view.lock().editor;
                 let ch = editor.get_char_from_cur_layer(center);
-                let attribute = editor.caret.get_attribute();
+                let attribute = editor.buffer_view.lock().caret.get_attribute();
 
                 let mut char_code = gradient[0];
                 if ch.ch == gradient[gradient.len() - 1] {
@@ -75,22 +76,34 @@ impl PencilTool {
                 editor.set_char(center, AttributedChar::new(char_code, attribute));
             }
             PencilType::Solid => {
-                let editor = &mut buffer_view.lock().editor;
-                let attribute = editor.caret.get_attribute();
+                let attribute = editor.buffer_view.lock().caret.get_attribute();
                 editor.set_char(
                     center,
                     AttributedChar::new(*self.char_code.borrow(), attribute),
                 );
             }
             PencilType::Color => {
-                let editor = &mut buffer_view.lock().editor;
                 let ch = editor.get_char_from_cur_layer(center);
                 let mut attribute = ch.attribute;
                 if self.use_fore {
-                    attribute.set_foreground(editor.caret.get_attribute().get_foreground());
+                    attribute.set_foreground(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .caret
+                            .get_attribute()
+                            .get_foreground(),
+                    );
                 }
                 if self.use_back {
-                    attribute.set_background(editor.caret.get_attribute().get_background());
+                    attribute.set_background(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .caret
+                            .get_attribute()
+                            .get_background(),
+                    );
                 }
                 editor.set_char(center, AttributedChar::new(ch.ch, attribute));
             }
@@ -111,7 +124,7 @@ impl Tool for PencilTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        buffer_opt: &mut AnsiEditor,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -147,9 +160,7 @@ impl Tool for PencilTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b, &mut result, &self.char_code, self.font_page);
-            }
+            draw_glyph(ui, buffer_opt, &mut result, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.brush_type,
@@ -161,92 +172,93 @@ impl Tool for PencilTool {
 
     fn handle_click(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        buffer_view: &mut AnsiEditor,
         button: i32,
         pos: Position,
     ) -> super::Event {
         if button == 1 {
             self.last_pos = pos;
-            self.paint_brush(&buffer_view, pos);
+            self.paint_brush(buffer_view, pos);
         }
         super::Event::None
     }
 
     fn handle_drag(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        buffer_view: &mut AnsiEditor,
         _start: Position,
         cur: Position,
     ) -> super::Event {
-        self.paint_brush(&buffer_view, cur);
+        self.paint_brush(buffer_view, cur);
         self.last_pos = cur;
 
         super::Event::None
     }
 }
 
-pub fn draw_glyph_plain(
-    buf: Arc<Mutex<BufferView>>,
-    ch: char,
-    font_page: usize,
-) -> impl egui::Widget {
+pub fn draw_glyph_plain(editor: &mut AnsiEditor, ch: char, font_page: usize) -> impl egui::Widget {
+    let bv = editor.buffer_view.clone();
     move |ui: &mut egui::Ui| {
-        let buf = buf.lock().unwrap();
-        let font = buf.editor.buf.get_font(font_page).unwrap();
-        let scale = 1.8;
-        let padding = 2.;
-        let (id, stroke_rect) = ui.allocate_space(Vec2::new(
-            2. * padding + scale * font.size.width as f32,
-            2. * padding + scale * font.size.height as f32,
-        ));
-        let mut response = ui.interact(stroke_rect, id, Sense::click());
+        if let Some(font) = bv.lock().buf.get_font(font_page) {
+            let scale = 1.8;
+            let padding = 2.;
+            let (id, stroke_rect) = ui.allocate_space(Vec2::new(
+                2. * padding + scale * font.size.width as f32,
+                2. * padding + scale * font.size.height as f32,
+            ));
+            let mut response = ui.interact(stroke_rect, id, Sense::click());
 
-        let col = if response.hovered() {
-            Color32::WHITE
-        } else {
-            Color32::GRAY
-        };
+            let col = if response.hovered() {
+                Color32::WHITE
+            } else {
+                Color32::GRAY
+            };
 
-        let painter = ui.painter_at(stroke_rect);
-        painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
-        let s = font.size;
-        if let Some(glyph) = font.get_glyph(ch) {
-            for y in 0..s.height {
-                for x in 0..s.width {
-                    if glyph.data[y as usize] & (128 >> x) != 0 {
-                        painter.rect_filled(
-                            Rect::from_min_size(
-                                Pos2::new(
-                                    padding + stroke_rect.left() + x as f32 * scale,
-                                    padding + stroke_rect.top() + y as f32 * scale,
+            let painter = ui.painter_at(stroke_rect);
+            painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+            let s = font.size;
+            if let Some(glyph) = font.get_glyph(ch) {
+                for y in 0..s.height {
+                    for x in 0..s.width {
+                        if glyph.data[y as usize] & (128 >> x) != 0 {
+                            painter.rect_filled(
+                                Rect::from_min_size(
+                                    Pos2::new(
+                                        padding + stroke_rect.left() + x as f32 * scale,
+                                        padding + stroke_rect.top() + y as f32 * scale,
+                                    ),
+                                    Vec2::new(scale.ceil(), scale.ceil()),
                                 ),
-                                Vec2::new(scale.ceil(), scale.ceil()),
-                            ),
-                            Rounding::none(),
-                            col,
-                        );
+                                Rounding::none(),
+                                col,
+                            );
+                        }
                     }
                 }
+                response = response.on_hover_ui(|ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(RichText::new("Char").small());
+                        ui.label(
+                            RichText::new(format!("{0}/0x{0:02X}", ch as u32))
+                                .small()
+                                .color(Color32::WHITE),
+                        );
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label(RichText::new("Font").small());
+                        ui.label(
+                            RichText::new(font.name.to_string())
+                                .small()
+                                .color(Color32::WHITE),
+                        );
+                    });
+                });
             }
-            response = response.on_hover_ui(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Char").small());
-                    ui.label(
-                        RichText::new(format!("{0}/0x{0:02X}", ch as u32))
-                            .small()
-                            .color(Color32::WHITE),
-                    );
-                });
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new("Font").small());
-                    ui.label(
-                        RichText::new(font.name.to_string())
-                            .small()
-                            .color(Color32::WHITE),
-                    );
-                });
-            });
+            response
+        } else {
+            let (id, stroke_rect) = ui.allocate_space(Vec2::new(1., 1.));
+            let response = ui.interact(stroke_rect, id, Sense::click());
+            response
         }
-        response
     }
 }

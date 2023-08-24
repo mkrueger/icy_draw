@@ -1,9 +1,6 @@
-use std::{
-    fs,
-    sync::{Arc, Mutex},
-};
+use std::fs;
 
-use crate::{ansi_editor::BufferView, SETTINGS};
+use crate::{AnsiEditor, SETTINGS};
 
 use super::{Event, MKey, MModifiers, Position, Tool, ToolUiResult};
 use directories::ProjectDirs;
@@ -87,7 +84,7 @@ impl Tool for FontTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        _buffer_opt: &mut AnsiEditor,
     ) -> ToolUiResult {
         ui.vertical_centered(|ui| {
             let mut selected_text = "<none>".to_string();
@@ -115,32 +112,20 @@ impl Tool for FontTool {
         ToolUiResult::default()
     }
 
-    fn handle_click(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        button: i32,
-        pos: Position,
-    ) -> Event {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().editor;
             editor.set_caret_position(pos);
             editor.cur_selection = None;
         }
         Event::None
     }
 
-    fn handle_key(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        key: MKey,
-        modifier: MModifiers,
-    ) -> Event {
+    fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
         if self.selected_font < 0 || self.selected_font >= self.fonts.len() as i32 {
             return Event::None;
         }
         let font = &self.fonts[self.selected_font as usize];
-        let editor = &mut buffer_view.lock().editor;
-        let pos = editor.caret.get_position();
+        let pos = editor.buffer_view.lock().caret.get_position();
 
         match key {
             MKey::Down => {
@@ -158,7 +143,8 @@ impl Tool for FontTool {
 
             MKey::Home => {
                 if let MModifiers::Control = modifier {
-                    for i in 0..editor.buf.get_buffer_width() {
+                    let end = editor.buffer_view.lock().buf.get_buffer_width();
+                    for i in 0..end {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
                             .is_transparent()
@@ -173,7 +159,8 @@ impl Tool for FontTool {
 
             MKey::End => {
                 if let MModifiers::Control = modifier {
-                    for i in (0..editor.buf.get_buffer_width()).rev() {
+                    let end = editor.buffer_view.lock().buf.get_buffer_width();
+                    for i in (0..end).rev() {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
                             .is_transparent()
@@ -183,7 +170,7 @@ impl Tool for FontTool {
                         }
                     }
                 }
-                let w = editor.buf.get_buffer_width();
+                let w = editor.buffer_view.lock().buf.get_buffer_width();
                 editor.set_caret(w - 1, pos.y);
             }
 
@@ -204,8 +191,10 @@ impl Tool for FontTool {
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
                     editor.set_caret_position(pos + Position::new(-(letter_size.width), 0));
-                    if editor.caret.insert_mode {
-                        for i in pos.x..(editor.buf.get_buffer_width() - (letter_size.width)) {
+                    if editor.buffer_view.lock().caret.insert_mode {
+                        let end =
+                            editor.buffer_view.lock().buf.get_buffer_width() - (letter_size.width);
+                        for i in pos.x..end {
                             let next = editor.get_char_from_cur_layer(Position::new(
                                 i + letter_size.width,
                                 pos.y,
@@ -213,7 +202,7 @@ impl Tool for FontTool {
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(
-                            editor.buf.get_buffer_width() - (letter_size.width),
+                            editor.buffer_view.lock().buf.get_buffer_width() - (letter_size.width),
                             pos.y,
                         );
                         editor.fill(
@@ -239,9 +228,9 @@ impl Tool for FontTool {
             MKey::Character(ch) => {
                 let c_pos = editor.get_caret_position();
                 editor.begin_atomic_undo();
-                let attr = editor.caret.get_attribute();
+                let attr = editor.buffer_view.lock().caret.get_attribute();
                 let opt_size = font.render(
-                    &mut editor.buf,
+                    &mut editor.buffer_view.lock().buf,
                     0,
                     c_pos,
                     attr,

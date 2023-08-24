@@ -5,16 +5,11 @@ use eframe::{
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::AttributedChar;
-use icy_engine_egui::BufferView;
-use std::{
-    cell::RefCell,
-    rc::Rc,
-    sync::{Arc, Mutex},
-};
+use std::{cell::RefCell, rc::Rc};
 
-use crate::SelectCharacterDialog;
+use crate::{AnsiEditor, SelectCharacterDialog};
 
-use super::{Editor, Position, Tool, ToolUiResult};
+use super::{Position, Tool, ToolUiResult};
 
 #[derive(PartialEq, Eq)]
 pub enum BrushType {
@@ -34,7 +29,7 @@ pub struct BrushTool {
 }
 
 impl BrushTool {
-    fn paint_brush(&self, editor: &mut Editor, pos: Position) {
+    fn paint_brush(&self, editor: &mut AnsiEditor, pos: Position) {
         let mid = Position::new(-(self.size / 2), -(self.size / 2));
 
         let center = pos + mid;
@@ -47,7 +42,7 @@ impl BrushTool {
                     BrushType::Shade => {
                         let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
 
-                        let attribute = editor.caret.get_attribute();
+                        let attribute = editor.buffer_view.lock().caret.get_attribute();
 
                         let mut char_code = gradient[0];
                         if ch.ch == gradient[gradient.len() - 1] {
@@ -66,7 +61,7 @@ impl BrushTool {
                         );
                     }
                     BrushType::Solid => {
-                        let attribute = editor.caret.get_attribute();
+                        let attribute = editor.buffer_view.lock().caret.get_attribute();
                         editor.set_char(
                             center + Position::new(x, y),
                             AttributedChar::new(*self.char_code.borrow(), attribute),
@@ -76,10 +71,24 @@ impl BrushTool {
                         let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
                         let mut attribute = ch.attribute;
                         if self.use_fore {
-                            attribute.set_foreground(editor.caret.get_attribute().get_foreground());
+                            attribute.set_foreground(
+                                editor
+                                    .buffer_view
+                                    .lock()
+                                    .caret
+                                    .get_attribute()
+                                    .get_foreground(),
+                            );
                         }
                         if self.use_back {
-                            attribute.set_background(editor.caret.get_attribute().get_background());
+                            attribute.set_background(
+                                editor
+                                    .buffer_view
+                                    .lock()
+                                    .caret
+                                    .get_attribute()
+                                    .get_background(),
+                            );
                         }
                         editor.set_char(
                             center + Position::new(x, y),
@@ -106,7 +115,7 @@ impl Tool for BrushTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        buffer_opt: &mut AnsiEditor,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -145,9 +154,7 @@ impl Tool for BrushTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b, &mut result, &self.char_code, self.font_page);
-            }
+            draw_glyph(ui, buffer_opt, &mut result, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.brush_type,
@@ -159,12 +166,11 @@ impl Tool for BrushTool {
 
     fn handle_click(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         button: i32,
         pos: Position,
     ) -> super::Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().editor;
             self.paint_brush(editor, pos);
         }
         super::Event::None
@@ -172,11 +178,10 @@ impl Tool for BrushTool {
 
     fn handle_drag(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         _start: Position,
         cur: Position,
     ) -> super::Event {
-        let editor = &mut buffer_view.lock().editor;
         self.paint_brush(editor, cur);
         super::Event::None
     }
@@ -184,72 +189,76 @@ impl Tool for BrushTool {
 
 pub fn draw_glyph(
     ui: &mut egui::Ui,
-    buf: &Arc<Mutex<BufferView>>,
+    editor: &mut AnsiEditor,
     ui_result: &mut ToolUiResult,
     ch: &Rc<RefCell<char>>,
     font_page: usize,
 ) {
-    let buf2 = buf.lock().unwrap();
-    let font = &buf2.editor.buf.get_font(font_page).unwrap();
-    let scale = 1.5;
-    let (id, stroke_rect) = ui.allocate_space(Vec2::new(
-        scale * font.size.width as f32,
-        scale * font.size.height as f32,
-    ));
-    let response = ui.interact(stroke_rect, id, Sense::click());
+    if let Some(font) = editor.buffer_view.lock().buf.get_font(font_page) {
+        let scale = 1.5;
+        let (id, stroke_rect) = ui.allocate_space(Vec2::new(
+            scale * font.size.width as f32,
+            scale * font.size.height as f32,
+        ));
+        let response = ui.interact(stroke_rect, id, Sense::click());
 
-    let col = if response.hovered() {
-        Color32::WHITE
-    } else {
-        Color32::GRAY
-    };
+        let col = if response.hovered() {
+            Color32::WHITE
+        } else {
+            Color32::GRAY
+        };
 
-    if response.clicked() {
-        ui_result.modal_dialog = Some(Box::new(SelectCharacterDialog::new(
-            buf.clone(),
-            ch.clone(),
-        )));
-    }
+        if response.clicked() {
+            ui_result.modal_dialog = Some(Box::new(SelectCharacterDialog::new(
+                editor.buffer_view.clone(),
+                ch.clone(),
+            )));
+        }
 
-    let painter = ui.painter_at(stroke_rect);
-    painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
-    let s = font.size;
-    let ch = *ch.borrow();
-    if let Some(glyph) = font.get_glyph(ch) {
-        for y in 0..s.height {
-            for x in 0..s.width {
-                if glyph.data[y as usize] & (128 >> x) != 0 {
-                    painter.rect_filled(
-                        Rect::from_min_size(
-                            Pos2::new(
-                                stroke_rect.left() + x as f32 * scale,
-                                stroke_rect.top() + y as f32 * scale,
+        let painter = ui.painter_at(stroke_rect);
+        painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+        let s = font.size;
+        let ch = *ch.borrow();
+        if let Some(glyph) = font.get_glyph(ch) {
+            for y in 0..s.height {
+                for x in 0..s.width {
+                    if glyph.data[y as usize] & (128 >> x) != 0 {
+                        painter.rect_filled(
+                            Rect::from_min_size(
+                                Pos2::new(
+                                    stroke_rect.left() + x as f32 * scale,
+                                    stroke_rect.top() + y as f32 * scale,
+                                ),
+                                Vec2::new(scale, scale),
                             ),
-                            Vec2::new(scale, scale),
-                        ),
-                        Rounding::none(),
-                        col,
-                    );
+                            Rounding::none(),
+                            col,
+                        );
+                    }
                 }
             }
+            response.on_hover_ui(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label(
+                        RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-char-label")).small(),
+                    );
+                    ui.label(
+                        RichText::new(format!("{0}/0x{0:02X}", ch as u32))
+                            .small()
+                            .color(Color32::WHITE),
+                    );
+                });
+                ui.horizontal(|ui| {
+                    ui.label(
+                        RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-font-label")).small(),
+                    );
+                    ui.label(
+                        RichText::new(font.name.to_string())
+                            .small()
+                            .color(Color32::WHITE),
+                    );
+                });
+            });
         }
-        response.on_hover_ui(|ui| {
-            ui.horizontal(|ui| {
-                ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-char-label")).small());
-                ui.label(
-                    RichText::new(format!("{0}/0x{0:02X}", ch as u32))
-                        .small()
-                        .color(Color32::WHITE),
-                );
-            });
-            ui.horizontal(|ui| {
-                ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-font-label")).small());
-                ui.label(
-                    RichText::new(font.name.to_string())
-                        .small()
-                        .color(Color32::WHITE),
-                );
-            });
-        });
     }
 }

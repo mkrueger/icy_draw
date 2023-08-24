@@ -1,12 +1,10 @@
-use std::sync::{Arc, Mutex};
-
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, TextAttribute};
 
-use crate::ansi_editor::BufferView;
+use crate::AnsiEditor;
 
-use super::{Editor, Position, Tool, ToolUiResult};
+use super::{Position, Tool, ToolUiResult};
 
 #[derive(PartialEq, Eq)]
 pub enum EraseType {
@@ -20,7 +18,7 @@ pub struct EraseTool {
 }
 
 impl EraseTool {
-    fn paint_brush(&self, editor: &mut Editor, pos: Position) {
+    fn paint_brush(&self, editor: &mut AnsiEditor, pos: Position) {
         let mid = Position::new(-(self.size / 2), -(self.size / 2));
 
         let center = pos + mid;
@@ -84,7 +82,7 @@ impl Tool for EraseTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        _buffer_opt: &mut AnsiEditor,
     ) -> ToolUiResult {
         ui.horizontal(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
@@ -109,12 +107,11 @@ impl Tool for EraseTool {
 
     fn handle_click(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         button: i32,
         pos: Position,
     ) -> super::Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().editor;
             self.paint_brush(editor, pos);
         }
         super::Event::None
@@ -122,11 +119,10 @@ impl Tool for EraseTool {
 
     fn handle_drag(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         _start: Position,
         cur: Position,
     ) -> super::Event {
-        let editor = &mut buffer_view.lock().editor;
         self.paint_brush(editor, cur);
         super::Event::None
     }

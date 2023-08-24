@@ -1,18 +1,14 @@
-use std::{
-    cell::RefCell,
-    rc::Rc,
-    sync::{Arc, Mutex},
-};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use eframe::{
     egui::{self, RichText},
-    epaint::{Color32, Rect, Rounding, Vec2},
+    epaint::{mutex::Mutex, Color32, Rect, Rounding, Vec2},
 };
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine_egui::BufferView;
 
-use crate::{ModalDialog, TerminalResult};
+use crate::{AnsiEditor, ModalDialog, TerminalResult};
 
 pub struct SelectCharacterDialog {
     should_commit: bool,
@@ -41,7 +37,7 @@ impl ModalDialog for SelectCharacterDialog {
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "select-character-title"));
-            let buffer_view = self.buf.lock().unwrap();
+            let buffer_view = self.buf.lock();
             let font = buffer_view.buf.get_font(font_page).unwrap();
             let scale = 4.;
 
@@ -210,7 +206,7 @@ impl ModalDialog for SelectCharacterDialog {
         self.should_commit
     }
 
-    fn commit(&self, _editor: &mut crate::model::Editor) -> TerminalResult<bool> {
+    fn commit(&self, _editor: &mut AnsiEditor) -> TerminalResult<bool> {
         self.ch.swap(&RefCell::new(self.selected_ch));
         Ok(true)
     }

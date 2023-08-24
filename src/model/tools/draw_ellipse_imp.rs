@@ -1,10 +1,8 @@
-use std::sync::{Arc, Mutex};
-
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{Rectangle, TextAttribute};
 
-use crate::ansi_editor::BufferView;
+use crate::AnsiEditor;
 
 use super::{
     brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
@@ -52,7 +50,7 @@ impl Tool for DrawEllipseTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        editor: &mut AnsiEditor,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -84,9 +82,7 @@ impl Tool for DrawEllipseTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b, &mut result, &self.char_code, self.font_page);
-            }
+            draw_glyph(ui, editor, &mut result, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.draw_mode,
@@ -103,11 +99,11 @@ impl Tool for DrawEllipseTool {
 
     fn handle_drag(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         mut start: Position,
         mut cur: Position,
     ) -> Event {
-        if let Some(layer) = buffer_view.lock().editor.get_overlay_layer() {
+        if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
             layer.clear();
         }
 
@@ -124,16 +120,13 @@ impl Tool for DrawEllipseTool {
             lines.add_ellipse(Rectangle::from_pt(cur, start));
         }
 
-        let col = buffer_view
+        let col = editor
+            .buffer_view
             .lock()
-            .unwrap()
-            .editor
             .caret
             .get_attribute()
             .get_foreground();
-        let buffer_view = buffer_view.clone();
-        let draw = move |rect: Rectangle| {
-            let editor = &mut buffer_view.lock().editor;
+        for rect in lines.outline() {
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
                     set_half_block(
@@ -143,20 +136,18 @@ impl Tool for DrawEllipseTool {
                     );
                 }
             }
-        };
-        lines.outline(draw);
+        }
         Event::None
     }
 
     fn handle_drag_end(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         start: Position,
         cur: Position,
     ) -> Event {
-        let editor = &mut buffer_view.lock().editor;
         if start == cur {
-            editor.buf.remove_overlay();
+            editor.buffer_view.lock().buf.remove_overlay();
         } else {
             editor.join_overlay();
         }

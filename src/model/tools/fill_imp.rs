@@ -1,15 +1,12 @@
-use std::{
-    collections::HashSet,
-    sync::{Arc, Mutex},
-};
+use std::collections::HashSet;
 
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, TextAttribute};
 
-use crate::ansi_editor::BufferView;
+use crate::AnsiEditor;
 
-use super::{brush_imp::draw_glyph, Editor, Event, Position, Tool, ToolUiResult};
+use super::{brush_imp::draw_glyph, Event, Position, Tool, ToolUiResult};
 
 #[derive(PartialEq, Eq)]
 pub enum FillType {
@@ -30,7 +27,7 @@ pub struct FillTool {
 impl FillTool {
     fn fill(
         &self,
-        editor: &mut Editor,
+        editor: &mut AnsiEditor,
         visited: &mut HashSet<Position>,
         pos: Position,
         old_ch: AttributedChar,
@@ -40,7 +37,7 @@ impl FillTool {
             return;
         }
 
-        let cur_char = editor.buf.get_char(pos);
+        let cur_char = editor.buffer_view.lock().buf.get_char(pos);
         if matches!(self.fill_type, FillType::Character) && self.use_fore && self.use_back {
             if cur_char != old_ch || cur_char == new_ch {
                 return;
@@ -124,7 +121,7 @@ impl Tool for FillTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        editor: &mut AnsiEditor,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -151,9 +148,7 @@ impl Tool for FillTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b, &mut result, &self.char_code, self.font_page);
-            }
+            draw_glyph(ui, editor, &mut result, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.fill_type,
@@ -163,19 +158,13 @@ impl Tool for FillTool {
         result
     }
 
-    fn handle_click(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        button: i32,
-        pos: Position,
-    ) -> Event {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().editor;
-            if editor.cur_layer >= editor.buf.layers.len() as i32 {
+            if editor.cur_layer >= editor.buffer_view.lock().buf.layers.len() as i32 {
                 return Event::None;
             }
-            let attr = editor.caret.get_attribute();
-            let ch = editor.buf.get_char(pos);
+            let attr = editor.buffer_view.lock().caret.get_attribute();
+            let ch = editor.buffer_view.lock().buf.get_char(pos);
             if self.use_back || self.use_fore || matches!(self.fill_type, FillType::Character) {
                 editor.begin_atomic_undo();
                 let mut visited = HashSet::new();

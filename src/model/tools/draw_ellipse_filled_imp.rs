@@ -1,10 +1,8 @@
-use std::sync::{Arc, Mutex};
-
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{Rectangle, TextAttribute};
 
-use crate::ansi_editor::BufferView;
+use crate::AnsiEditor;
 
 use super::{
     brush_imp::draw_glyph, plot_point, DrawMode, Event, Plottable, Position, ScanLines, Tool,
@@ -52,7 +50,7 @@ impl Tool for DrawEllipseFilledTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        editor: &mut AnsiEditor,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -84,9 +82,7 @@ impl Tool for DrawEllipseFilledTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b, &mut result, &self.char_code, self.font_page);
-            }
+            draw_glyph(ui, editor, &mut result, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.draw_mode,
@@ -101,13 +97,8 @@ impl Tool for DrawEllipseFilledTool {
         result
     }
 
-    fn handle_drag(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        start: Position,
-        cur: Position,
-    ) -> Event {
-        if let Some(layer) = buffer_view.lock().editor.get_overlay_layer() {
+    fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
+        if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
             layer.clear();
         }
 
@@ -120,7 +111,6 @@ impl Tool for DrawEllipseFilledTool {
         }
 
         let draw = move |rect: Rectangle| {
-            let editor = &mut buffer_view.lock().editor;
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
                     plot_point(
@@ -137,13 +127,12 @@ impl Tool for DrawEllipseFilledTool {
 
     fn handle_drag_end(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         start: Position,
         cur: Position,
     ) -> Event {
-        let editor = &mut buffer_view.lock().editor;
         if start == cur {
-            editor.buf.remove_overlay();
+            editor.buffer_view.lock().buf.remove_overlay();
         } else {
             editor.join_overlay();
         }

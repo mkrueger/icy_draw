@@ -41,5 +41,5 @@ pub trait ModalDialog {
 
     fn should_commit(&self) -> bool;
 
-    fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool>;
+    fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool>;
 }

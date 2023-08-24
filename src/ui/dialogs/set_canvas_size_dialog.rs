@@ -3,7 +3,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::Size;
 
-use crate::{ModalDialog, TerminalResult};
+use crate::{AnsiEditor, ModalDialog, TerminalResult};
 
 pub struct SetCanvasSizeDialog {
     pub should_commit: bool,
@@ -73,8 +73,10 @@ impl ModalDialog for SetCanvasSizeDialog {
         self.should_commit
     }
 
-    fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool> {
+    fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool> {
         editor
+            .buffer_view
+            .lock()
             .buf
             .set_buffer_size(Size::new(self.width, self.height));
         Ok(true)

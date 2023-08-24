@@ -1,14 +1,11 @@
-use std::sync::{Arc, Mutex};
-
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Rectangle, TextAttribute};
 
-use crate::{ansi_editor::BufferView, model::ScanLines};
+use crate::{model::ScanLines, AnsiEditor};
 
 use super::{
-    brush_imp::draw_glyph, plot_point, DrawMode, Editor, Event, Plottable, Position, Tool,
-    ToolUiResult,
+    brush_imp::draw_glyph, plot_point, DrawMode, Event, Plottable, Position, Tool, ToolUiResult,
 };
 
 pub struct LineTool {
@@ -196,7 +193,7 @@ impl Tool for LineTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        editor: &mut AnsiEditor,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -228,9 +225,7 @@ impl Tool for LineTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            if let Some(b) = &buffer_opt {
-                draw_glyph(ui, b, &mut result, &self.char_code, self.font_page);
-            }
+            draw_glyph(ui, editor, &mut result, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.draw_mode,
@@ -245,26 +240,15 @@ impl Tool for LineTool {
         result
     }
 
-    fn handle_click(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        button: i32,
-        pos: Position,
-    ) -> Event {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().editor;
             editor.set_caret_position(pos);
         }
         Event::None
     }
 
-    fn handle_drag(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        start: Position,
-        cur: Position,
-    ) -> Event {
-        if let Some(layer) = buffer_view.lock().editor.get_overlay_layer() {
+    fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
+        if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
             layer.clear();
         }
 
@@ -274,16 +258,13 @@ impl Tool for LineTool {
                 Position::new(start.x, start.y * 2),
                 Position::new(cur.x, cur.y * 2),
             );
-            let col = buffer_view
+            let col = editor
+                .buffer_view
                 .lock()
-                .unwrap()
-                .editor
                 .caret
                 .get_attribute()
                 .get_foreground();
-            let buffer_view = buffer_view.clone();
             let draw = move |rect: Rectangle| {
-                let editor = &mut buffer_view.lock().editor;
                 for y in 0..rect.size.height {
                     for x in 0..rect.size.width {
                         set_half_block(
@@ -297,9 +278,7 @@ impl Tool for LineTool {
             lines.fill(draw);
         } else {
             lines.add_line(start, cur);
-            let buffer_view = buffer_view.clone();
             let draw = move |rect: Rectangle| {
-                let editor = &mut buffer_view.lock().editor;
                 for y in 0..rect.size.height {
                     for x in 0..rect.size.width {
                         plot_point(
@@ -318,13 +297,12 @@ impl Tool for LineTool {
 
     fn handle_drag_end(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         start: Position,
         cur: Position,
     ) -> Event {
-        let editor = &mut buffer_view.lock().editor;
         if start == cur {
-            editor.buf.remove_overlay();
+            editor.buffer_view.lock().buf.remove_overlay();
         } else {
             editor.join_overlay();
         }
@@ -333,7 +311,7 @@ impl Tool for LineTool {
 }
 
 fn get_half_block(
-    editor: &Editor,
+    editor: &AnsiEditor,
     pos: Position,
 ) -> (
     Position,
@@ -414,9 +392,9 @@ fn get_half_block(
     )
 }
 
-pub fn set_half_block(editor: &mut Editor, pos: Position, col: u32) {
-    let w = editor.buf.get_buffer_width();
-    let h = editor.buf.get_real_buffer_height();
+pub fn set_half_block(editor: &mut AnsiEditor, pos: Position, col: u32) {
+    let w = editor.buffer_view.lock().buf.get_buffer_width();
+    let h = editor.buffer_view.lock().buf.get_real_buffer_height();
 
     if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 {
         return;
@@ -439,33 +417,33 @@ pub fn set_half_block(editor: &mut Editor, pos: Position, col: u32) {
     let pos = Position::new(pos.x, text_y);
     if is_blocky {
         if (is_top && lower_block_color == col) || (!is_top && upper_block_color == col) {
-            if let Some(layer) = editor.get_overlay_layer() {
+            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                 layer.set_char(
                     pos,
                     AttributedChar::new('\u{00DB}', TextAttribute::new(col, 0)),
                 );
             }
         } else if is_top {
-            if let Some(layer) = editor.get_overlay_layer() {
+            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                 layer.set_char(
                     pos,
                     AttributedChar::new('\u{00DF}', TextAttribute::new(col, lower_block_color)),
                 );
             }
-        } else if let Some(layer) = editor.get_overlay_layer() {
+        } else if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
             layer.set_char(
                 pos,
                 AttributedChar::new('\u{00DC}', TextAttribute::new(col, upper_block_color)),
             );
         }
     } else if is_top {
-        if let Some(layer) = editor.get_overlay_layer() {
+        if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
             layer.set_char(
                 pos,
                 AttributedChar::new('\u{00DF}', TextAttribute::new(col, block_back)),
             );
         }
-    } else if let Some(layer) = editor.get_overlay_layer() {
+    } else if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
         layer.set_char(
             pos,
             AttributedChar::new('\u{00DC}', TextAttribute::new(col, block_back)),
@@ -474,8 +452,8 @@ pub fn set_half_block(editor: &mut Editor, pos: Position, col: u32) {
     optimize_block(editor, Position::new(pos.x, text_y));
 }
 
-fn optimize_block(editor: &mut Editor, pos: Position) {
-    let block = if let Some(layer) = editor.get_overlay_layer() {
+fn optimize_block(editor: &mut AnsiEditor, pos: Position) {
+    let block = if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
         layer.get_char(pos)
     } else {
         AttributedChar::default()
@@ -483,13 +461,13 @@ fn optimize_block(editor: &mut Editor, pos: Position) {
 
     if block.attribute.get_foreground() == 0 {
         if block.attribute.get_background() == 0 || block.ch == '\u{00DB}' {
-            if let Some(layer) = editor.get_overlay_layer() {
+            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                 layer.set_char(pos, AttributedChar::default());
             }
         } else {
             match block.ch as u8 {
                 220 => {
-                    if let Some(layer) = editor.get_overlay_layer() {
+                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -503,7 +481,7 @@ fn optimize_block(editor: &mut Editor, pos: Position) {
                     }
                 }
                 223 => {
-                    if let Some(layer) = editor.get_overlay_layer() {
+                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -526,7 +504,7 @@ fn optimize_block(editor: &mut Editor, pos: Position) {
         if is_blocky {
             match block.ch as u8 {
                 220 => {
-                    if let Some(layer) = editor.get_overlay_layer() {
+                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -540,7 +518,7 @@ fn optimize_block(editor: &mut Editor, pos: Position) {
                     }
                 }
                 223 => {
-                    if let Some(layer) = editor.get_overlay_layer() {
+                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -558,7 +536,7 @@ fn optimize_block(editor: &mut Editor, pos: Position) {
         } else if is_vertically_blocky {
             match block.ch as u8 {
                 221 => {
-                    if let Some(layer) = editor.get_overlay_layer() {
+                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -572,7 +550,7 @@ fn optimize_block(editor: &mut Editor, pos: Position) {
                     }
                 }
                 222 => {
-                    if let Some(layer) = editor.get_overlay_layer() {
+                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                         layer.set_char(
                             pos,
                             AttributedChar::new(

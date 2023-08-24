@@ -244,10 +244,8 @@ impl ScanLines {
         }
     }
 
-    pub fn outline<T>(&self, draw: T)
-    where
-        T: Fn(Rectangle),
-    {
+    pub fn outline(&self) -> Vec<Rectangle> {
+        let mut result = Vec::new();
         let mut lastx = 0;
 
         let mut rows = Vec::new();
@@ -269,20 +267,20 @@ impl ScanLines {
             if !first && !last {
                 let nextx = rows[i + 1].1;
                 if cur_x < lastx {
-                    draw(Rectangle::from_coords(cur_x, cur_y, lastx - 1, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, lastx - 1, cur_y));
                 } else if cur_x > lastx + 1 {
-                    draw(Rectangle::from_coords(
+                    result.push(Rectangle::from_coords(
                         lastx + 1,
                         cur_y - 1,
                         cur_x - 1,
                         cur_y - 1,
                     ));
-                    draw(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
                 } else {
-                    draw(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
                 }
                 if nextx > cur_x {
-                    draw(Rectangle::from_coords(cur_x, cur_y, nextx - 1, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, nextx - 1, cur_y));
                 }
             }
             lastx = cur_x;
@@ -299,20 +297,20 @@ impl ScanLines {
             if !first && !last {
                 let nextx = rows[i + 1].2;
                 if cur_x > lastx {
-                    draw(Rectangle::from_coords(lastx + 1, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(lastx + 1, cur_y, cur_x, cur_y));
                 } else if cur_x < lastx - 1 {
-                    draw(Rectangle::from_coords(
+                    result.push(Rectangle::from_coords(
                         cur_x + 1,
                         cur_y - 1,
                         lastx - 1,
                         cur_y - 1,
                     ));
-                    draw(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
                 } else {
-                    draw(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
                 }
                 if nextx < cur_x {
-                    draw(Rectangle::from_coords(nextx + 1, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(nextx + 1, cur_y, cur_x, cur_y));
                 }
             }
             lastx = cur_x;
@@ -320,12 +318,14 @@ impl ScanLines {
 
         // fill top/bottom
         if rows.is_empty() {
-            return;
+            return result;
         }
         let row = rows[0];
-        draw(Rectangle::from_coords(row.1, row.0, row.2, row.0));
+        result.push(Rectangle::from_coords(row.1, row.0, row.2, row.0));
         let row = rows[rows.len() - 1];
-        draw(Rectangle::from_coords(row.1, row.0, row.2, row.0));
+        result.push(Rectangle::from_coords(row.1, row.0, row.2, row.0));
+
+        result
     }
 
     fn symmetry_scan(

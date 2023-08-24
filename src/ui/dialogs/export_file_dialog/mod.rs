@@ -8,7 +8,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::SaveOptions;
 
-use crate::{ModalDialog, TerminalResult};
+use crate::{AnsiEditor, ModalDialog, TerminalResult};
 
 mod ansi;
 mod artworx;
@@ -142,7 +142,7 @@ impl ModalDialog for ExportFileDialog {
         self.should_commit
     }
 
-    fn commit(&self, editor: &mut crate::model::Editor) -> TerminalResult<bool> {
+    fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool> {
         editor.save_content(self.file_name.as_path(), &self.save_options)?;
         Ok(true)
     }

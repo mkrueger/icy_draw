@@ -1,8 +1,3 @@
-use crate::ansi_editor::BufferView;
-use std::sync::{Arc, Mutex};
-
-pub use super::{Editor, Event};
-
 pub mod brush_imp;
 pub mod click_imp;
 pub mod draw_ellipse_filled_imp;
@@ -24,6 +19,8 @@ use eframe::egui;
 use egui_extras::RetainedImage;
 use icy_engine::{AttributedChar, Position};
 pub use scan_lines::*;
+
+use crate::{AnsiEditor, Event};
 pub mod scan_lines;
 
 #[derive(Copy, Clone, Debug)]
@@ -99,15 +96,10 @@ pub trait Tool {
         &mut self,
         ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        buffer_opt: &mut AnsiEditor,
     ) -> ToolUiResult;
 
-    fn handle_key(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        key: MKey,
-        modifier: MModifiers,
-    ) -> Event {
+    fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
         // TODO Keys:
 
         // Tab - Next tab
@@ -115,21 +107,44 @@ pub trait Tool {
 
         // ctrl+pgup  - upper left corner
         // ctrl+pgdn  - lower left corner
-        let editor: &mut Editor = &mut buffer_view.lock().editor;
-        let pos = editor.caret.get_position();
+        let pos = editor.buffer_view.lock().caret.get_position();
         match key {
             MKey::Down => {
                 if let MModifiers::Control = modifier {
-                    let fg = (editor.caret.get_attribute().get_foreground() + 14) % 16;
-                    editor.caret.get_attribute().set_foreground(fg);
+                    let fg = (editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .get_foreground()
+                        + 14)
+                        % 16;
+                    editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .set_foreground(fg);
                 } else {
                     editor.set_caret(pos.x, pos.y + 1);
                 }
             }
             MKey::Up => {
                 if let MModifiers::Control = modifier {
-                    let fg = (editor.caret.get_attribute().get_foreground() + 1) % 16;
-                    editor.caret.get_attribute().set_foreground(fg);
+                    let fg = (editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .get_foreground()
+                        + 1)
+                        % 16;
+                    editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .set_foreground(fg);
                 } else {
                     editor.set_caret(pos.x, pos.y - 1);
                 }
@@ -137,8 +152,20 @@ pub trait Tool {
             MKey::Left => {
                 // TODO: ICE Colors
                 if let MModifiers::Control = modifier {
-                    let bg = (editor.caret.get_attribute().get_background() + 7) % 8;
-                    editor.caret.get_attribute().set_background(bg);
+                    let bg = (editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .get_background()
+                        + 7)
+                        % 8;
+                    editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .set_background(bg);
                 } else {
                     editor.set_caret(pos.x - 1, pos.y);
                 }
@@ -146,8 +173,20 @@ pub trait Tool {
             MKey::Right => {
                 // TODO: ICE Colors
                 if let MModifiers::Control = modifier {
-                    let bg = (editor.caret.get_attribute().get_background() + 1) % 8;
-                    editor.caret.get_attribute().set_background(bg);
+                    let bg = (editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .get_background()
+                        + 1)
+                        % 8;
+                    editor
+                        .buffer_view
+                        .lock()
+                        .caret
+                        .get_attribute()
+                        .set_background(bg);
                 } else {
                     editor.set_caret(pos.x + 1, pos.y);
                 }
@@ -200,23 +239,26 @@ pub trait Tool {
                 editor.set_caret(0, pos.y + 1);
             }
             MKey::Delete => {
-                if editor.cur_selection.is_some() {
+                if editor.buffer_view.lock().get_selection().is_some() {
                     editor.delete_selection();
                 } else {
                     let pos = editor.get_caret_position();
-                    for i in pos.x..(editor.buf.get_buffer_width() - 1) {
+                    let end = editor.buffer_view.lock().buf.get_buffer_width() - 1;
+                    for i in pos.x..end {
                         let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                         editor.set_char(Position::new(i, pos.y), next);
                     }
-                    let last_pos = Position::new(editor.buf.get_buffer_width() - 1, pos.y);
+                    let last_pos =
+                        Position::new(editor.buffer_view.lock().buf.get_buffer_width() - 1, pos.y);
                     editor.set_char(last_pos, AttributedChar::invisible());
                 }
             }
             MKey::Insert => {
-                editor.caret.insert_mode = !editor.caret.insert_mode;
+                editor.buffer_view.lock().caret.insert_mode =
+                    !editor.buffer_view.lock().caret.insert_mode;
             }
             MKey::Backspace => {
-                editor.cur_selection = None;
+                editor.buffer_view.lock().clear_selection();
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
                     /* if (caret.fontMode() && FontTyped && cpos > 0)  {
@@ -229,12 +271,16 @@ pub trait Tool {
                         cpos--;
                     } else {*/
                     editor.set_caret_position(pos + Position::new(-1, 0));
-                    if editor.caret.insert_mode {
-                        for i in pos.x..(editor.buf.get_buffer_width() - 1) {
+                    if editor.buffer_view.lock().caret.insert_mode {
+                        let end = editor.buffer_view.lock().buf.get_buffer_width() - 1;
+                        for i in pos.x..end {
                             let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
-                        let last_pos = Position::new(editor.buf.get_buffer_width() - 1, pos.y);
+                        let last_pos = Position::new(
+                            editor.buffer_view.lock().buf.get_buffer_width() - 1,
+                            pos.y,
+                        );
                         editor.set_char(last_pos, AttributedChar::invisible());
                     } else {
                         let pos = editor.get_caret_position();
@@ -244,7 +290,7 @@ pub trait Tool {
             }
 
             MKey::Character(ch) => {
-                editor.cur_selection = None;
+                editor.buffer_view.lock().clear_selection();
                 /*        if let MModifiers::Alt = modifier {
                     match key_code {
                         MKeyCode::KeyI => editor.insert_line(pos.y),
@@ -289,7 +335,7 @@ pub trait Tool {
                 handle_outline_insertion(editor, modifier, 9);
             }
             MKey::Escape => {
-                editor.cur_selection = None;
+                editor.buffer_view.lock().clear_selection();
             }
             _ => {}
         }
@@ -298,7 +344,7 @@ pub trait Tool {
 
     fn handle_click(
         &mut self,
-        _buffer_view: Arc<Mutex<BufferView>>,
+        _buffer_view: &mut AnsiEditor,
         _button: i32,
         _pos: Position,
     ) -> Event {
@@ -307,7 +353,7 @@ pub trait Tool {
 
     fn handle_drag_begin(
         &mut self,
-        _buffer_view: Arc<Mutex<BufferView>>,
+        _buffer_view: &mut AnsiEditor,
         _start: Position,
         _cur: Position,
     ) -> Event {
@@ -315,7 +361,7 @@ pub trait Tool {
     }
     fn handle_drag(
         &mut self,
-        _buffer_view: Arc<Mutex<BufferView>>,
+        _buffer_view: &mut AnsiEditor,
         _start: Position,
         _cur: Position,
     ) -> Event {
@@ -323,7 +369,7 @@ pub trait Tool {
     }
     fn handle_drag_end(
         &mut self,
-        _buffer_view: Arc<Mutex<BufferView>>,
+        _buffer_view: &mut AnsiEditor,
         _start: Position,
         _cur: Position,
     ) -> Event {
@@ -331,7 +377,7 @@ pub trait Tool {
     }
 }
 
-fn handle_outline_insertion(editor: &mut Editor, modifier: MModifiers, outline: usize) {
+fn handle_outline_insertion(editor: &mut AnsiEditor, modifier: MModifiers, outline: usize) {
     if let MModifiers::Control = modifier {
         editor.set_cur_outline(outline);
         return;
@@ -366,9 +412,9 @@ trait Plottable {
     fn get_char_code(&self) -> char;
 }
 
-fn plot_point(editor: &mut Editor, tool: &dyn Plottable, pos: Position) {
+fn plot_point(editor: &mut AnsiEditor, tool: &dyn Plottable, pos: Position) {
     let ch = editor.get_char_from_cur_layer(pos);
-    let editor_attr = editor.caret.get_attribute();
+    let editor_attr = editor.buffer_view.lock().caret.get_attribute();
     let mut attribute = ch.attribute;
     if tool.get_use_back() {
         attribute.set_background(editor_attr.get_background());
@@ -379,7 +425,7 @@ fn plot_point(editor: &mut Editor, tool: &dyn Plottable, pos: Position) {
 
     match tool.get_draw_mode() {
         DrawMode::Line => {
-            if let Some(layer) = editor.get_overlay_layer() {
+            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                 layer.set_char(
                     pos,
                     AttributedChar::new(unsafe { char::from_u32_unchecked(219) }, attribute),
@@ -387,7 +433,7 @@ fn plot_point(editor: &mut Editor, tool: &dyn Plottable, pos: Position) {
             }
         }
         DrawMode::Char => {
-            if let Some(layer) = editor.get_overlay_layer() {
+            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                 layer.set_char(pos, AttributedChar::new(tool.get_char_code(), attribute));
             }
         }
@@ -403,12 +449,12 @@ fn plot_point(editor: &mut Editor, tool: &dyn Plottable, pos: Position) {
                     }
                 }
             }
-            if let Some(layer) = editor.get_overlay_layer() {
+            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                 layer.set_char(pos, AttributedChar::new(char_code, attribute));
             }
         }
         DrawMode::Colorize => {
-            if let Some(layer) = editor.get_overlay_layer() {
+            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
                 layer.set_char(pos, AttributedChar::new(ch.ch, attribute));
             }
         }

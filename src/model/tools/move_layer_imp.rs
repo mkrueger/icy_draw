@@ -1,7 +1,7 @@
 use super::{Event, Position, Tool, ToolUiResult};
-use crate::ansi_editor::BufferView;
+use crate::AnsiEditor;
 use eframe::egui;
-use std::sync::{Arc, Mutex};
+
 pub struct MoveLayer {
     pub pos: Position,
 }
@@ -20,30 +20,27 @@ impl Tool for MoveLayer {
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        _buffer_opt: &mut AnsiEditor,
     ) -> ToolUiResult {
         ToolUiResult::default()
     }
 
     fn handle_drag_begin(
         &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
+        editor: &mut AnsiEditor,
         _start: Position,
         _cur: Position,
     ) -> Event {
-        if let Some(layer) = buffer_view.lock().editor.get_cur_layer() {
+        let cur_layer = editor.cur_layer as usize;
+        if let Some(layer) = editor.buffer_view.lock().buf.layers.get(cur_layer) {
             self.pos = layer.get_offset();
         }
         Event::None
     }
 
-    fn handle_drag(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        start: Position,
-        cur: Position,
-    ) -> Event {
-        if let Some(layer) = buffer_view.lock().editor.get_cur_layer_mut() {
+    fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
+        let cur_layer = editor.cur_layer as usize;
+        if let Some(layer) = editor.buffer_view.lock().buf.layers.get_mut(cur_layer) {
             layer.set_offset(self.pos + cur - start);
         }
         Event::None

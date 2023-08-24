@@ -1,8 +1,6 @@
-use std::sync::{Arc, Mutex};
-
 use eframe::egui;
 
-use crate::ansi_editor::BufferView;
+use crate::AnsiEditor;
 
 use super::{Event, Position, Tool, ToolUiResult};
 pub struct FlipTool {}
@@ -21,19 +19,13 @@ impl Tool for FlipTool {
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
+        _buffer_opt: &mut AnsiEditor,
     ) -> ToolUiResult {
         ToolUiResult::default()
     }
 
-    fn handle_click(
-        &mut self,
-        buffer_view: Arc<Mutex<BufferView>>,
-        button: i32,
-        pos: Position,
-    ) -> Event {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().editor;
             let mut ch = editor.get_char(pos);
 
             if ch.ch as u8 == 222 {

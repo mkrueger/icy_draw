@@ -2,6 +2,8 @@ use eframe::egui;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 
+use crate::AnsiEditor;
+
 #[derive(Default)]
 pub struct AboutDialog {
     pub create: bool,
@@ -48,7 +50,7 @@ impl crate::ModalDialog for AboutDialog {
         self.create
     }
 
-    fn commit(&self, _editor: &mut crate::model::Editor) -> crate::TerminalResult<bool> {
+    fn commit(&self, _editor: &mut AnsiEditor) -> crate::TerminalResult<bool> {
         // nothing
         Ok(true)
     }

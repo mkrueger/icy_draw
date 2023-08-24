@@ -358,11 +358,9 @@ impl MainWindow {
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
-                        if let Some(view) = &doc {
-                            if let Ok(view) = &mut view.lock() {
-                                view.editor.cur_selection = None;
-                                view.redraw_view();
-                            }
+                        if let Some(editor) = doc {
+                            editor.cur_selection = None;
+                            editor.redraw_view();
                         }
                     }
                     ui.close_menu();
@@ -378,11 +376,9 @@ impl MainWindow {
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
-                        if let Some(view) = &doc {
-                            if let Ok(view) = &mut view.lock() {
-                                view.editor.delete_selection();
-                                view.redraw_view();
-                            }
+                        if let Some(editor) = doc {
+                            editor.delete_selection();
+                            editor.redraw_view();
                         }
                     }
                     ui.close_menu();
@@ -396,10 +392,10 @@ impl MainWindow {
                 );
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
-                        let doc = t.1 .1.get_buffer_view();
-                        if let Some(view) = &doc {
-                            view.lock().unwrap().editor.flip_x();
-                            view.lock().unwrap().redraw_view();
+                        let doc: Option<&mut AnsiEditor> = t.1 .1.get_buffer_view();
+                        if let Some(editor) = doc {
+                            editor.flip_x();
+                            editor.redraw_view();
                         }
                     }
                     ui.close_menu();
@@ -414,9 +410,9 @@ impl MainWindow {
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
-                        if let Some(view) = &doc {
-                            view.lock().unwrap().editor.flip_y();
-                            view.lock().unwrap().redraw_view();
+                        if let Some(editor) = doc {
+                            editor.flip_y();
+                            editor.redraw_view();
                         }
                     }
                     ui.close_menu();
@@ -431,9 +427,9 @@ impl MainWindow {
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
-                        if let Some(view) = &doc {
-                            view.lock().unwrap().editor.justify_center();
-                            view.lock().unwrap().redraw_view();
+                        if let Some(editor) = doc {
+                            editor.justify_center();
+                            editor.redraw_view();
                         }
                     }
                     ui.close_menu();
@@ -448,9 +444,9 @@ impl MainWindow {
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
-                        if let Some(view) = &doc {
-                            view.lock().unwrap().editor.justify_left();
-                            view.lock().unwrap().redraw_view();
+                        if let Some(editor) = doc {
+                            editor.justify_left();
+                            editor.redraw_view();
                         }
                     }
                     ui.close_menu();
@@ -465,9 +461,9 @@ impl MainWindow {
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
-                        if let Some(view) = &doc {
-                            view.lock().unwrap().editor.justify_right();
-                            view.lock().unwrap().redraw_view();
+                        if let Some(editor) = doc {
+                            editor.justify_right();
+                            editor.redraw_view();
                         }
                     }
                     ui.close_menu();
@@ -483,9 +479,9 @@ impl MainWindow {
                 if button.clicked() {
                     if let Some(t) = self.tree.find_active_focused() {
                         let doc = t.1 .1.get_buffer_view();
-                        if let Some(view) = &doc {
-                            view.lock().unwrap().editor.crop();
-                            view.lock().unwrap().redraw_view();
+                        if let Some(editor) = doc {
+                            editor.crop();
+                            editor.redraw_view();
                         }
                     }
                     ui.close_menu();
@@ -541,7 +537,7 @@ impl MainWindow {
     fn redo_command(&mut self) {
         if let Some(t) = self.tree.find_active_focused() {
             let doc = t.1 .1.get_buffer_view();
-            if let Some(editor) = &doc {
+            if let Some(editor) = doc {
                 editor.redo();
                 editor.buffer_view.lock().redraw_view();
             }
@@ -551,7 +547,7 @@ impl MainWindow {
     fn undo_command(&mut self) {
         if let Some(t) = self.tree.find_active_focused() {
             let doc = t.1 .1.get_buffer_view();
-            if let Some(editor) = &doc {
+            if let Some(editor) = doc {
                 editor.undo();
                 editor.buffer_view.lock().redraw_view();
             }
@@ -566,9 +562,7 @@ impl MainWindow {
                 let w = buf.buf.get_buffer_width();
                 let h = buf.buf.get_real_buffer_height();
 
-                buf.set_selection(Some(Selection::from_rectangle(
-                    0.0, 0.0, w as f32, h as f32,
-                )));
+                buf.set_selection(Selection::from_rectangle(0.0, 0.0, w as f32, h as f32));
             }
         }
     }
@@ -655,7 +649,6 @@ impl eframe::App for MainWindow {
             self.main_menu(ui, _frame);
         });
         SidePanel::left("left_panel").show(ctx, |ui| {
-            let mut buffer_opt = None;
             if let Some((_, t)) = self.tree.find_active_focused() {
                 if let Some(editor) = t.1.get_buffer_view() {
                     ui.vertical_centered(|ui| {
@@ -667,9 +660,13 @@ impl eframe::App for MainWindow {
             crate::add_tool_switcher(ctx, ui, self);
 
             if let Some(tool) = self.tab_viewer.tools.get_mut(self.tab_viewer.selected_tool) {
-                let tool_result = tool.show_ui(ctx, ui, buffer_opt.clone());
-                if tool_result.modal_dialog.is_some() {
-                    self.modal_dialog = tool_result.modal_dialog;
+                if let Some((_, t)) = self.tree.find_active_focused() {
+                    if let Some(editor) = t.1.get_buffer_view() {
+                        let tool_result = tool.show_ui(ctx, ui, editor);
+                        if tool_result.modal_dialog.is_some() {
+                            self.modal_dialog = tool_result.modal_dialog;
+                        }
+                    }
                 }
             }
         });
