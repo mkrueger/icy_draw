@@ -117,8 +117,70 @@ impl Document for AnsiEditor {
     }
 
     fn show_ui(&mut self, ui: &mut egui_dock::egui::Ui, cur_tool: &mut Box<dyn Tool>) {
-        let size = ui.max_rect().size();
-        let size = Vec2::new(size.x, size.y - 36.0);
+        ui.horizontal(|ui| {
+            let pos = self.buffer_view.lock().caret.get_position();
+
+            let label_font_size = 20.0;
+
+            ui.vertical(|ui| {
+                ui.add_space(4.);
+                ui.label(
+                    RichText::new(fl!(
+                        crate::LANGUAGE_LOADER,
+                        "toolbar-position",
+                        line = pos.y,
+                        column = pos.x
+                    ))
+                    .font(FontId::proportional(label_font_size)),
+                );
+            });
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let cur_outline = self.cur_outline;
+                let cur_font_page = self.buffer_view.lock().caret.get_font_page();
+
+                let button_font_size = 16.0;
+                if ui
+                    .selectable_label(
+                        false,
+                        RichText::new("▶").font(FontId::proportional(button_font_size)),
+                    )
+                    .clicked()
+                {
+                    self.cur_outline = (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
+                }
+                ui.label(
+                    RichText::new((cur_outline + 1).to_string())
+                        .font(FontId::proportional(label_font_size)),
+                );
+
+                if ui
+                    .selectable_label(
+                        false,
+                        RichText::new("◀").font(FontId::proportional(button_font_size)),
+                    )
+                    .clicked()
+                {
+                    self.cur_outline = (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
+                        % DEFAULT_OUTLINE_TABLE.len();
+                }
+
+                for i in (0..10).rev() {
+                    let ch = self.get_outline_char_code(i).unwrap();
+                    ui.add(crate::model::pencil_imp::draw_glyph_plain(
+                        self,
+                        unsafe { char::from_u32_unchecked(ch as u32) },
+                        cur_font_page,
+                    ));
+
+                    ui.label(
+                        RichText::new(format!("F{}", i + 1))
+                            .font(FontId::proportional(label_font_size)),
+                    );
+                }
+            });
+        });
+
         show_terminal_area(
             ui,
             self.buffer_view.clone(),
@@ -409,69 +471,6 @@ impl Document for AnsiEditor {
                         response
                     });
         */
-        ui.horizontal(|ui| {
-            let pos = self.buffer_view.lock().caret.get_position();
-
-            let label_font_size = 20.0;
-
-            ui.vertical(|ui| {
-                ui.add_space(4.);
-                ui.label(
-                    RichText::new(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "toolbar-position",
-                        line = pos.y,
-                        column = pos.x
-                    ))
-                    .font(FontId::proportional(label_font_size)),
-                );
-            });
-
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let cur_outline = self.cur_outline;
-                let cur_font_page = self.buffer_view.lock().caret.get_font_page();
-
-                let button_font_size = 16.0;
-                if ui
-                    .selectable_label(
-                        false,
-                        RichText::new("▶").font(FontId::proportional(button_font_size)),
-                    )
-                    .clicked()
-                {
-                    self.cur_outline = (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
-                }
-                ui.label(
-                    RichText::new((cur_outline + 1).to_string())
-                        .font(FontId::proportional(label_font_size)),
-                );
-
-                if ui
-                    .selectable_label(
-                        false,
-                        RichText::new("◀").font(FontId::proportional(button_font_size)),
-                    )
-                    .clicked()
-                {
-                    self.cur_outline = (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
-                        % DEFAULT_OUTLINE_TABLE.len();
-                }
-
-                for i in (0..10).rev() {
-                    let ch = self.get_outline_char_code(i).unwrap();
-                    ui.add(crate::model::pencil_imp::draw_glyph_plain(
-                        self,
-                        unsafe { char::from_u32_unchecked(ch as u32) },
-                        cur_font_page,
-                    ));
-
-                    ui.label(
-                        RichText::new(format!("F{}", i + 1))
-                            .font(FontId::proportional(label_font_size)),
-                    );
-                }
-            });
-        });
     }
 
     fn get_buffer_view(&mut self) -> Option<&mut AnsiEditor> {
