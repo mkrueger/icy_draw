@@ -18,12 +18,12 @@ use icy_engine::{
 };
 
 mod undo_stack;
-use icy_engine_egui::{show_terminal_area, BufferView, MonitorSettings};
+use icy_engine_egui::{show_terminal_area, BackgroundEffect, BufferView, MonitorSettings};
 pub use undo_stack::*;
 
 use crate::{
     model::{MKey, MModifiers, Tool},
-    Document, TerminalResult,
+    Document, DocumentOptions, TerminalResult,
 };
 
 pub enum Event {
@@ -119,7 +119,12 @@ impl Document for AnsiEditor {
         Ok(())
     }
 
-    fn show_ui(&mut self, ui: &mut egui_dock::egui::Ui, cur_tool: &mut Box<dyn Tool>) {
+    fn show_ui(
+        &mut self,
+        ui: &mut egui_dock::egui::Ui,
+        cur_tool: &mut Box<dyn Tool>,
+        options: &DocumentOptions,
+    ) {
         ui.horizontal(|ui| {
             let pos = self.buffer_view.lock().caret.get_position();
 
@@ -189,8 +194,12 @@ impl Document for AnsiEditor {
             self.buffer_view.clone(),
             false,
             glow::NEAREST as i32,
-            MonitorSettings::default(),
+            MonitorSettings {
+                background_effect: BackgroundEffect::Checkers,
+                ..Default::default()
+            },
             false,
+            Some(options.scale),
         );
 
         // TODO: Context menu

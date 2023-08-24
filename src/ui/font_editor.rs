@@ -7,7 +7,7 @@ use eframe::{
 use i18n_embed_fl::fl;
 use icy_engine::BitFont;
 
-use crate::{model::Tool, AnsiEditor, Document, TerminalResult};
+use crate::{model::Tool, AnsiEditor, Document, DocumentOptions, TerminalResult};
 
 pub struct FontEditor {
     font: BitFont,
@@ -168,7 +168,12 @@ impl Document for FontEditor {
         self.enabled = enabled;
     }
 
-    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>) {
+    fn show_ui(
+        &mut self,
+        ui: &mut eframe::egui::Ui,
+        _cur_tool: &mut Box<dyn Tool>,
+        options: &DocumentOptions,
+    ) {
         ui.vertical_centered(|ui| ui.add(self.edit_glyph()));
 
         ui.label(fl!(

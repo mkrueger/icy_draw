@@ -8,12 +8,12 @@ use std::{
 };
 
 use crate::{
-    model::Tool, AnsiEditor, Document, EditSauceDialog, FontEditor, ModalDialog, NewFileDialog,
-    SelectOutlineDialog,
+    model::Tool, AnsiEditor, Document, DocumentOptions, EditSauceDialog, FontEditor, ModalDialog,
+    NewFileDialog, SelectOutlineDialog,
 };
 use eframe::{
     egui::{self, menu, Modifiers, Response, SidePanel, TextStyle, TopBottomPanel, Ui},
-    epaint::pos2,
+    epaint::{pos2, Vec2},
 };
 use egui_dock::{DockArea, Node, Style, Tree};
 use glow::Context;
@@ -135,6 +135,9 @@ impl MainWindow {
             tab_viewer: TabViewer {
                 tools,
                 selected_tool: 0,
+                document_options: DocumentOptions {
+                    scale: eframe::egui::Vec2::new(1.0, 1.0),
+                },
             },
             tree,
             gl: cc.gl.clone().unwrap(),
@@ -488,6 +491,21 @@ impl MainWindow {
                 }
             });
 
+            ui.menu_button("View", |ui| {
+                if ui.button("100%").clicked() {
+                    self.tab_viewer.document_options.scale = Vec2::new(1.0, 1.0);
+                    ui.close_menu();
+                }
+                if ui.button("200%").clicked() {
+                    self.tab_viewer.document_options.scale = Vec2::new(2.0, 2.0);
+                    ui.close_menu();
+                }
+                if ui.button("300%").clicked() {
+                    self.tab_viewer.document_options.scale = Vec2::new(3.0, 3.0);
+                    ui.close_menu();
+                }
+            });
+
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-help"), |ui| {
                 let r = ui.hyperlink_to(
                     fl!(crate::LANGUAGE_LOADER, "menu-discuss"),
@@ -579,13 +597,18 @@ const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
 pub struct TabViewer {
     pub tools: Vec<Box<dyn Tool>>,
     pub selected_tool: usize,
+    pub document_options: DocumentOptions,
 }
 
 impl egui_dock::TabViewer for TabViewer {
     type Tab = (Option<String>, Box<dyn Document>);
 
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab) {
-        tab.1.show_ui(ui, &mut self.tools[self.selected_tool]);
+        tab.1.show_ui(
+            ui,
+            &mut self.tools[self.selected_tool],
+            &self.document_options,
+        );
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText {
