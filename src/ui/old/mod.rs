@@ -3,7 +3,7 @@ use eframe::{
     epaint::{FontId, Pos2, Rect, Vec2},
 };
 use i18n_embed_fl::fl;
-use icy_engine::{AnsiParser, Buffer, BufferParser, Position, SaveOptions};
+use icy_engine::{ansi, Buffer, BufferParser, Position, SaveOptions};
 use std::{
     borrow::BorrowMut,
     cmp::{max, min},
@@ -30,20 +30,13 @@ use crate::{
 };
 
 pub struct AnsiEditor {
-    is_dirty: bool,
-    enabled: bool,
-    pressed_button: i32,
-    drag_start: Position,
-    drag_pos: Position,
-
     buffer_view: Arc<Mutex<BufferView>>,
-    buffer_parser: Box<dyn BufferParser>,
 }
 
 impl AnsiEditor {
     pub fn new(gl: &Arc<glow::Context>, buf: Buffer) -> Self {
         let buffer_view = Arc::new(Mutex::new(BufferView::new(gl, buf)));
-        let buffer_parser = AnsiParser::new();
+        let buffer_parser = ansi::Parser::default();
 
         Self {
             is_dirty: false,
@@ -72,14 +65,14 @@ impl AnsiEditor {
             .print_char(&mut self.buffer_parser, unsafe {
                 char::from_u32_unchecked(c as u32)
             })?;
-        self.buffer_view.lock().unwrap().redraw_view();
+        self.buffer_view.lock().redraw_view();
         Ok(())
     }
 }
 
 impl Document for AnsiEditor {
     fn get_title(&self) -> String {
-        if let Some(file_name) = &self.buffer_view.lock().unwrap().editor.buf.file_name {
+        if let Some(file_name) = &self.buffer_view.lock().editor.buf.file_name {
             file_name.file_name().unwrap().to_str().unwrap().to_string()
         } else {
             "Untitled".to_string()
@@ -127,7 +120,7 @@ impl Document for AnsiEditor {
                     .editor
                     .buf
                     .get_font_dimensions();
-                let scale = self.buffer_view.lock().unwrap().scale;
+                let scale = self.buffer_view.lock().scale;
                 let real_height = self
                     .buffer_view
                     .lock()
@@ -195,9 +188,9 @@ impl Document for AnsiEditor {
                 ui.set_width(rect_w);
                 let first_line = (viewport.top() / char_size.y) as i32;
 
-                if first_line != self.buffer_view.lock().unwrap().scroll_first_line {
-                    self.buffer_view.lock().unwrap().scroll_first_line = first_line;
-                    self.buffer_view.lock().unwrap().redraw_view();
+                if first_line != self.buffer_view.lock().scroll_first_line {
+                    self.buffer_view.lock().scroll_first_line = first_line;
+                    self.buffer_view.lock().redraw_view();
                 }
 
                 let buffer_view = self.buffer_view.clone();
@@ -205,13 +198,10 @@ impl Document for AnsiEditor {
                     rect: draw_area,
                     callback: std::sync::Arc::new(egui_glow::CallbackFn::new(
                         move |info, painter| {
-                            buffer_view.lock().unwrap().update_buffer(painter.gl());
-                            buffer_view.lock().unwrap().paint(
-                                painter.gl(),
-                                info,
-                                draw_area,
-                                relative_rect,
-                            );
+                            buffer_view.lock().update_buffer(painter.gl());
+                            buffer_view
+                                .lock()
+                                .paint(painter.gl(), info, draw_area, relative_rect);
                         },
                     )),
                 };
@@ -251,7 +241,7 @@ impl Document for AnsiEditor {
                             egui::Event::Cut => {}
                             egui::Event::Paste(text) => {
                                 self.output_string(text);
-                                self.buffer_view.lock().unwrap().redraw_view();
+                                self.buffer_view.lock().redraw_view();
                             }
 
                             egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
@@ -332,7 +322,7 @@ impl Document for AnsiEditor {
                                     let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
                                     if self.drag_pos != cur {
                                         self.drag_pos = cur;
-                                        buffer_view.lock().unwrap().redraw_view();
+                                        buffer_view.lock().redraw_view();
                                         cur_tool.handle_drag(buffer_view, self.drag_start, cur);
                                     }
                                 }
@@ -366,7 +356,7 @@ impl Document for AnsiEditor {
                                     if *k == key_code {
                                         let buffer_view = self.buffer_view.clone();
                                         cur_tool.handle_key(buffer_view, *m, modifier);
-                                        self.buffer_view.lock().unwrap().redraw_view();
+                                        self.buffer_view.lock().redraw_view();
                                         response.mark_changed();
                                         ui.input_mut(|i| i.consume_key(*modifiers, *key));
                                         break;
@@ -394,7 +384,7 @@ impl Document for AnsiEditor {
             });
 
         ui.horizontal(|ui| {
-            let pos = self.buffer_view.lock().unwrap().editor.caret.get_position();
+            let pos = self.buffer_view.lock().editor.caret.get_position();
 
             let label_font_size = 20.0;
 
@@ -412,8 +402,8 @@ impl Document for AnsiEditor {
             });
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let cur_outline = self.buffer_view.lock().unwrap().editor.cur_outline;
-                let cur_font_page = self.buffer_view.lock().unwrap().editor.cur_font_page;
+                let cur_outline = self.buffer_view.lock().editor.cur_outline;
+                let cur_font_page = self.buffer_view.lock().editor.cur_font_page;
 
                 let button_font_size = 16.0;
                 if ui
@@ -423,7 +413,7 @@ impl Document for AnsiEditor {
                     )
                     .clicked()
                 {
-                    self.buffer_view.lock().unwrap().editor.cur_outline =
+                    self.buffer_view.lock().editor.cur_outline =
                         (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
                 }
                 ui.label(
@@ -438,7 +428,7 @@ impl Document for AnsiEditor {
                     )
                     .clicked()
                 {
-                    self.buffer_view.lock().unwrap().editor.cur_outline =
+                    self.buffer_view.lock().editor.cur_outline =
                         (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
                             % DEFAULT_OUTLINE_TABLE.len();
                 }
@@ -478,7 +468,7 @@ impl Document for AnsiEditor {
     }
 
     fn destroy(&self, gl: &glow::Context) {
-        self.buffer_view.lock().unwrap().destroy(gl);
+        self.buffer_view.lock().destroy(gl);
     }
 }
 

@@ -87,7 +87,7 @@ impl Tool for FontTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         ui.vertical_centered(|ui| {
             let mut selected_text = "<none>".to_string();
@@ -122,7 +122,7 @@ impl Tool for FontTool {
         pos: Position,
     ) -> Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().unwrap().editor;
+            let editor = &mut buffer_view.lock().editor;
             editor.set_caret_position(pos);
             editor.cur_selection = None;
         }
@@ -139,7 +139,7 @@ impl Tool for FontTool {
             return Event::None;
         }
         let font = &self.fonts[self.selected_font as usize];
-        let editor = &mut buffer_view.lock().unwrap().editor;
+        let editor = &mut buffer_view.lock().editor;
         let pos = editor.caret.get_position();
 
         match key {
@@ -161,7 +161,6 @@ impl Tool for FontTool {
                     for i in 0..editor.buf.get_buffer_width() {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
-                            .unwrap_or_default()
                             .is_transparent()
                         {
                             editor.set_caret(i, pos.y);
@@ -177,7 +176,6 @@ impl Tool for FontTool {
                     for i in (0..editor.buf.get_buffer_width()).rev() {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
-                            .unwrap_or_default()
                             .is_transparent()
                         {
                             editor.set_caret(i, pos.y);
@@ -223,7 +221,7 @@ impl Tool for FontTool {
                                 start: last_pos,
                                 size: letter_size,
                             },
-                            Some(super::AttributedChar::new(' ', TextAttribute::default())),
+                            super::AttributedChar::new(' ', TextAttribute::default()),
                         );
                     } else {
                         let pos = editor.get_caret_position();
@@ -232,7 +230,7 @@ impl Tool for FontTool {
                                 start: pos,
                                 size: letter_size,
                             },
-                            Some(super::AttributedChar::new(' ', TextAttribute::default())),
+                            super::AttributedChar::new(' ', TextAttribute::default()),
                         );
                     }
                 }

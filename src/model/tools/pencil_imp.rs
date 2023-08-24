@@ -42,7 +42,7 @@ impl PencilTool {
                 );
                 let buffer_view = buffer_view.clone();
                 let draw = move |rect: Rectangle| {
-                    let editor = &mut buffer_view.lock().unwrap().editor;
+                    let editor = &mut buffer_view.lock().editor;
                     let col = editor.caret.get_attribute().get_foreground();
                     for y in 0..rect.size.height {
                         for x in 0..rect.size.width {
@@ -57,8 +57,8 @@ impl PencilTool {
                 lines.fill(draw);
             }
             PencilType::Shade => {
-                let editor = &mut buffer_view.lock().unwrap().editor;
-                let ch = editor.get_char_from_cur_layer(center).unwrap_or_default();
+                let editor = &mut buffer_view.lock().editor;
+                let ch = editor.get_char_from_cur_layer(center);
                 let attribute = editor.caret.get_attribute();
 
                 let mut char_code = gradient[0];
@@ -72,19 +72,19 @@ impl PencilTool {
                         }
                     }
                 }
-                editor.set_char(center, Some(AttributedChar::new(char_code, attribute)));
+                editor.set_char(center, AttributedChar::new(char_code, attribute));
             }
             PencilType::Solid => {
-                let editor = &mut buffer_view.lock().unwrap().editor;
+                let editor = &mut buffer_view.lock().editor;
                 let attribute = editor.caret.get_attribute();
                 editor.set_char(
                     center,
-                    Some(AttributedChar::new(*self.char_code.borrow(), attribute)),
+                    AttributedChar::new(*self.char_code.borrow(), attribute),
                 );
             }
             PencilType::Color => {
-                let editor = &mut buffer_view.lock().unwrap().editor;
-                let ch = editor.get_char_from_cur_layer(center).unwrap_or_default();
+                let editor = &mut buffer_view.lock().editor;
+                let ch = editor.get_char_from_cur_layer(center);
                 let mut attribute = ch.attribute;
                 if self.use_fore {
                     attribute.set_foreground(editor.caret.get_attribute().get_foreground());
@@ -92,7 +92,7 @@ impl PencilTool {
                 if self.use_back {
                     attribute.set_background(editor.caret.get_attribute().get_background());
                 }
-                editor.set_char(center, Some(AttributedChar::new(ch.ch, attribute)));
+                editor.set_char(center, AttributedChar::new(ch.ch, attribute));
             }
         }
     }
@@ -111,7 +111,7 @@ impl Tool for PencilTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -191,7 +191,8 @@ pub fn draw_glyph_plain(
     font_page: usize,
 ) -> impl egui::Widget {
     move |ui: &mut egui::Ui| {
-        let font = &buf.lock().unwrap().editor.buf.font_table[font_page];
+        let buf = buf.lock().unwrap();
+        let font = buf.editor.buf.get_font(font_page).unwrap();
         let scale = 1.8;
         let padding = 2.;
         let (id, stroke_rect) = ui.allocate_space(Vec2::new(

@@ -2,6 +2,7 @@ use eframe::epaint::{PaintCallbackInfo, Rect, Vec2};
 use glow::NativeTexture;
 use icy_engine::Buffer;
 use std::{
+    collections::HashMap,
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -186,78 +187,75 @@ impl BufferView {
                 info.clip_rect_in_pixels().width_px as i32,
                 info.clip_rect_in_pixels().height_px as i32,
             );
+            /*
+                        // draw sixels
+                        let mut render_texture = self.render_texture;
+                        let mut sixel_render_texture = self.sixel_render_texture;
 
-            // draw sixels
-            let mut render_texture = render_texture;
-            let mut sixel_render_texture = self.sixel_render_texture;
+                        for sixel in &self.sixel_cache {
+                            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.framebuffer));
+                            gl.framebuffer_texture(
+                                glow::FRAMEBUFFER,
+                                glow::COLOR_ATTACHMENT0,
+                                Some(sixel_render_texture),
+                                0,
+                            );
+                            gl.bind_texture(glow::TEXTURE_2D, Some(sixel_render_texture));
 
-            for sixel in &self.sixel_cache {
-                if let Some(sixel_tex) = sixel.texture_opt {
-                    gl.bind_framebuffer(glow::FRAMEBUFFER, Some(self.framebuffer));
-                    gl.framebuffer_texture(
-                        glow::FRAMEBUFFER,
-                        glow::COLOR_ATTACHMENT0,
-                        Some(sixel_render_texture),
-                        0,
-                    );
-                    gl.bind_texture(glow::TEXTURE_2D, Some(sixel_render_texture));
+                            gl.viewport(
+                                0,
+                                0,
+                                self.render_buffer_size.x as i32,
+                                self.render_buffer_size.y as i32,
+                            );
 
-                    gl.viewport(
-                        0,
-                        0,
-                        self.render_buffer_size.x as i32,
-                        self.render_buffer_size.y as i32,
-                    );
+                            gl.use_program(Some(self.sixel_shader));
+                            gl.uniform_1_i32(
+                                gl.get_uniform_location(self.sixel_shader, "u_render_texture")
+                                    .as_ref(),
+                                4,
+                            );
+                            gl.uniform_1_i32(
+                                gl.get_uniform_location(self.sixel_shader, "u_sixel")
+                                    .as_ref(),
+                                2,
+                            );
 
-                    gl.use_program(Some(self.sixel_shader));
-                    gl.uniform_1_i32(
-                        gl.get_uniform_location(self.sixel_shader, "u_render_texture")
-                            .as_ref(),
-                        4,
-                    );
-                    gl.uniform_1_i32(
-                        gl.get_uniform_location(self.sixel_shader, "u_sixel")
-                            .as_ref(),
-                        2,
-                    );
+                            gl.active_texture(glow::TEXTURE0 + 4);
+                            gl.bind_texture(glow::TEXTURE_2D, Some(render_texture));
 
-                    gl.active_texture(glow::TEXTURE0 + 4);
-                    gl.bind_texture(glow::TEXTURE_2D, Some(render_texture));
+                            gl.active_texture(glow::TEXTURE0 + 2);
+                            gl.bind_texture(glow::TEXTURE_2D, Some(sixel.texture));
 
-                    gl.active_texture(glow::TEXTURE0 + 2);
-                    gl.bind_texture(glow::TEXTURE_2D, Some(sixel_tex));
+                            gl.uniform_2_f32(
+                                gl.get_uniform_location(self.sixel_shader, "u_resolution")
+                                    .as_ref(),
+                                self.render_buffer_size.x,
+                                self.render_buffer_size.y,
+                            );
 
-                    gl.uniform_2_f32(
-                        gl.get_uniform_location(self.sixel_shader, "u_resolution")
-                            .as_ref(),
-                        self.render_buffer_size.x,
-                        self.render_buffer_size.y,
-                    );
+                            let x = sixel.pos.x as f32 * self.editor.buf.get_font_dimensions().width as f32;
+                            let y = sixel.pos.y as f32 * self.editor.buf.get_font_dimensions().height as f32;
 
-                    let x = sixel.pos.x as f32 * self.editor.buf.get_font_dimensions().width as f32;
-                    let y =
-                        sixel.pos.y as f32 * self.editor.buf.get_font_dimensions().height as f32;
+                            let w = sixel.size.width as f32 * sixel.x_scale as f32;
+                            let h = sixel.size.height as f32 * sixel.y_scale as f32;
 
-                    let w = sixel.size.width as f32;
-                    let h = sixel.size.height as f32;
+                            gl.uniform_4_f32(
+                                gl.get_uniform_location(self.sixel_shader, "u_sixel_rectangle")
+                                    .as_ref(),
+                                x,
+                                y,
+                                x + w,
+                                y + h,
+                            );
 
-                    gl.uniform_4_f32(
-                        gl.get_uniform_location(self.sixel_shader, "u_sixel_rectangle")
-                            .as_ref(),
-                        x,
-                        y,
-                        x + w,
-                        y + h,
-                    );
+                            gl.bind_vertex_array(Some(self.vertex_array));
+                            gl.draw_arrays(glow::TRIANGLES, 0, 3);
+                            gl.draw_arrays(glow::TRIANGLES, 3, 3);
 
-                    gl.bind_vertex_array(Some(self.vertex_array));
-                    gl.draw_arrays(glow::TRIANGLES, 0, 3);
-                    gl.draw_arrays(glow::TRIANGLES, 3, 3);
-
-                    std::mem::swap(&mut render_texture, &mut sixel_render_texture);
-                }
-            }
-
+                            std::mem::swap(&mut render_texture, &mut sixel_render_texture);
+                        }
+            */
             // draw Framebuffer
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
@@ -330,6 +328,12 @@ impl BufferView {
             self.redraw_view = true;
         }
 
+        if self.redraw_font || self.editor.buf.is_font_table_updated() {
+            self.redraw_font = false;
+            self.font_lookup_table =
+                create_font_texture(gl, &mut self.editor.buf, &self.font_texture);
+        }
+
         if self.redraw_view {
             self.redraw_view = false;
             create_buffer_texture(
@@ -337,6 +341,7 @@ impl BufferView {
                 &self.editor.buf,
                 self.scroll_first_line,
                 self.buffer_texture,
+                &self.font_lookup_table,
             );
         }
 
@@ -346,11 +351,6 @@ impl BufferView {
             self.colors = self.editor.buf.palette.colors.len();
         }
 
-        if self.redraw_font || self.fonts != self.editor.buf.font_table.len() {
-            self.redraw_font = false;
-            create_font_texture(gl, &self.editor.buf, self.palette_texture);
-            self.fonts = self.editor.buf.font_table.len();
-        }
         let editor = &self.editor;
         let render_buffer_size = Vec2::new(
             editor.buf.get_font_dimensions().width as f32 * editor.buf.get_buffer_width() as f32,
@@ -485,45 +485,58 @@ pub fn create_palette_texture(
     }
 }
 
-pub fn create_font_texture(gl: &Arc<glow::Context>, buf: &Buffer, font_texture: NativeTexture) {
-    let w = buf.font_table[0].size.width as usize;
-    let h = buf.font_table[0].size.height as usize;
+pub fn create_font_texture(
+    gl: &Arc<glow::Context>,
+    buf: &mut Buffer,
+    font_texture: &NativeTexture,
+) -> HashMap<usize, usize> {
+    let size = buf.get_font(0).unwrap().size;
+    let w = size.width as usize;
+    let h = size.height as usize;
 
     let mut font_data = Vec::new();
     let chars_in_line = 16;
     let line_width = w * chars_in_line * 4;
     let height = h * 256 / chars_in_line;
-
-    font_data.resize(line_width * height * buf.font_table.len(), 0);
-
-    for i in 0..buf.font_table.len() {
+    let mut font_table: HashMap<usize, usize> = HashMap::default();
+    font_data.resize(line_width * height * buf.font_count(), 0);
+    buf.set_font_table_is_updated();
+    for (cur_font_num, font) in buf.font_iter().enumerate() {
+        font_table.insert(*font.0, cur_font_num);
+        let fontpage_start = cur_font_num * line_width * height;
         for ch in 0..256usize {
-            let glyph = buf.font_table[i]
+            let cur_font = font.1;
+            let glyph = cur_font
                 .get_glyph(unsafe { char::from_u32_unchecked(ch as u32) })
                 .unwrap();
 
             let x = ch % chars_in_line;
             let y = ch / chars_in_line;
 
-            let offset = x * w * 4 + y * h * line_width + i * line_width * height;
-            for y in 0..h {
-                let scan_line = glyph.data[y];
-                let mut po = offset + y * line_width;
+            let offset = x * w * 4 + y * h * line_width + fontpage_start;
+            let last_scan_line = h.min(cur_font.size.height as usize);
+            for y in 0..last_scan_line {
+                if let Some(scan_line) = glyph.data.get(y) {
+                    let mut po = offset + y * line_width;
 
-                for x in 0..w {
-                    if scan_line & (128 >> x) != 0 {
-                        // unroll
-                        font_data[po] = 0xFF;
-                        po += 1;
-                        font_data[po] = 0xFF;
-                        po += 1;
-                        font_data[po] = 0xFF;
-                        po += 1;
-                        font_data[po] = 0xFF;
-                        po += 1;
-                    } else {
-                        po += 4;
+                    for x in 0..w {
+                        if scan_line & (128 >> x) == 0 {
+                            po += 4;
+                        } else {
+                            // unroll
+                            font_data[po] = 0xFF;
+                            po += 1;
+                            font_data[po] = 0xFF;
+                            po += 1;
+                            font_data[po] = 0xFF;
+                            po += 1;
+                            font_data[po] = 0xFF;
+                            po += 1;
+                        }
                     }
+                } else {
+                    eprintln!("error in font {} can't get line {y}", font.0);
+                    font_data.extend(vec![0xFF; w * 4]);
                 }
             }
         }
@@ -532,42 +545,42 @@ pub fn create_font_texture(gl: &Arc<glow::Context>, buf: &Buffer, font_texture: 
     unsafe {
         use glow::HasContext as _;
         gl.active_texture(glow::TEXTURE0);
-        gl.bind_texture(glow::TEXTURE_2D_ARRAY, Some(font_texture));
+        gl.bind_texture(glow::TEXTURE_2D_ARRAY, Some(*font_texture));
         gl.tex_image_3d(
             glow::TEXTURE_2D_ARRAY,
             0,
             glow::RGB as i32,
             line_width as i32 / 4,
             height as i32,
-            buf.font_table.len() as i32,
+            buf.font_count() as i32,
             0,
             glow::RGBA,
             glow::UNSIGNED_BYTE,
             Some(&font_data),
         );
     }
+    font_table
 }
 
 pub fn create_buffer_texture(
     gl: &Arc<glow::Context>,
     buf: &Buffer,
-    scroll_first_line: i32,
+    scroll_back_line: i32,
     buffer_texture: NativeTexture,
+    font_lookup_table: &HashMap<usize, usize>,
 ) {
-    let first_line = 0;
+    let first_line = 0.max(buf.layers[0].lines.len() as i32 - buf.get_buffer_height());
     let mut buffer_data = Vec::with_capacity(
-        2 * buf.get_buffer_width() as usize * 4 * buf.get_buffer_height() as usize,
+        2 * buf.get_buffer_width() as usize * 4 * buf.get_real_buffer_height() as usize,
     );
     let colors = buf.palette.colors.len() as u32 - 1;
     let mut y = 0;
+
     while y < buf.get_buffer_height() {
         let mut is_double_height = false;
 
         for x in 0..buf.get_buffer_width() {
-            let ch = buf
-                .get_char_xy(x, first_line + scroll_first_line + y)
-                .unwrap_or_default();
-
+            let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
             if ch.attribute.is_double_height() {
                 is_double_height = true;
             }
@@ -582,10 +595,9 @@ pub fn create_buffer_texture(
                 buffer_data.push(conv_color(ch.attribute.get_foreground(), colors));
             }
             buffer_data.push(conv_color(ch.attribute.get_background(), colors));
-            if !buf.font_table.is_empty() {
-                buffer_data.push(
-                    (255.0 * ch.get_font_page() as f32 / (buf.font_table.len() - 1) as f32) as u8,
-                );
+            if buf.has_fonts() {
+                let font_number: usize = *font_lookup_table.get(&ch.get_font_page()).unwrap();
+                buffer_data.push(font_number as u8);
             } else {
                 buffer_data.push(0);
             }
@@ -593,14 +605,12 @@ pub fn create_buffer_texture(
 
         if is_double_height {
             for x in 0..buf.get_buffer_width() {
-                let ch = buf
-                    .get_char_xy(x, first_line - scroll_first_line + y)
-                    .unwrap_or_default();
+                let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
 
-                if !ch.attribute.is_double_height() {
-                    buffer_data.push(b' ');
-                } else {
+                if ch.attribute.is_double_height() {
                     buffer_data.push(ch.ch as u8);
+                } else {
+                    buffer_data.push(b' ');
                 }
 
                 if ch.attribute.is_bold() {
@@ -611,11 +621,9 @@ pub fn create_buffer_texture(
 
                 buffer_data.push(conv_color(ch.attribute.get_background(), colors));
 
-                if !buf.font_table.is_empty() {
-                    buffer_data.push(
-                        (255.0 * ch.get_font_page() as f32 / (buf.font_table.len() - 1) as f32)
-                            as u8,
-                    );
+                if buf.has_fonts() {
+                    let font_number: usize = *font_lookup_table.get(&ch.get_font_page()).unwrap();
+                    buffer_data.push(font_number as u8);
                 } else {
                     buffer_data.push(0);
                 }
@@ -633,24 +641,20 @@ pub fn create_buffer_texture(
         let mut is_double_height = false;
 
         for x in 0..buf.get_buffer_width() {
-            let ch = buf
-                .get_char_xy(x, first_line - scroll_first_line + y)
-                .unwrap_or_default();
+            let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
 
             let mut attr = if ch.attribute.is_double_underlined() {
                 3
-            } else if ch.attribute.is_underlined() {
-                1
             } else {
-                0
+                u8::from(ch.attribute.is_underlined())
             };
             if ch.attribute.is_crossed_out() {
-                attr |= 4
+                attr |= 4;
             }
 
             if ch.attribute.is_double_height() {
                 is_double_height = true;
-                attr |= 8
+                attr |= 8;
             }
 
             buffer_data.push(attr);
@@ -661,18 +665,14 @@ pub fn create_buffer_texture(
 
         if is_double_height {
             for x in 0..buf.get_buffer_width() {
-                let ch = buf
-                    .get_char_xy(x, first_line - scroll_first_line + y)
-                    .unwrap_or_default();
+                let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
                 let mut attr = if ch.attribute.is_double_underlined() {
                     3
-                } else if ch.attribute.is_underlined() {
-                    1
                 } else {
-                    0
+                    u8::from(ch.attribute.is_underlined())
                 };
                 if ch.attribute.is_crossed_out() {
-                    attr |= 4
+                    attr |= 4;
                 }
 
                 if ch.attribute.is_double_height() {
@@ -697,7 +697,6 @@ pub fn create_buffer_texture(
     unsafe {
         use glow::HasContext as _;
         gl.active_texture(glow::TEXTURE0 + 4);
-
         gl.bind_texture(glow::TEXTURE_2D_ARRAY, Some(buffer_texture));
         gl.tex_image_3d(
             glow::TEXTURE_2D_ARRAY,

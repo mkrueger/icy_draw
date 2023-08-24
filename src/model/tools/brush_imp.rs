@@ -5,13 +5,14 @@ use eframe::{
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::AttributedChar;
+use icy_engine_egui::BufferView;
 use std::{
     cell::RefCell,
     rc::Rc,
     sync::{Arc, Mutex},
 };
 
-use crate::{ansi_editor::BufferView, SelectCharacterDialog};
+use crate::SelectCharacterDialog;
 
 use super::{Editor, Position, Tool, ToolUiResult};
 
@@ -44,9 +45,7 @@ impl BrushTool {
             for x in 0..self.size {
                 match self.brush_type {
                     BrushType::Shade => {
-                        let ch = editor
-                            .get_char_from_cur_layer(center + Position::new(x, y))
-                            .unwrap_or_default();
+                        let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
 
                         let attribute = editor.caret.get_attribute();
 
@@ -63,20 +62,18 @@ impl BrushTool {
                         }
                         editor.set_char(
                             center + Position::new(x, y),
-                            Some(AttributedChar::new(char_code, attribute)),
+                            AttributedChar::new(char_code, attribute),
                         );
                     }
                     BrushType::Solid => {
                         let attribute = editor.caret.get_attribute();
                         editor.set_char(
                             center + Position::new(x, y),
-                            Some(AttributedChar::new(*self.char_code.borrow(), attribute)),
+                            AttributedChar::new(*self.char_code.borrow(), attribute),
                         );
                     }
                     BrushType::Color => {
-                        let ch = editor
-                            .get_char_from_cur_layer(center + Position::new(x, y))
-                            .unwrap_or_default();
+                        let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
                         let mut attribute = ch.attribute;
                         if self.use_fore {
                             attribute.set_foreground(editor.caret.get_attribute().get_foreground());
@@ -86,7 +83,7 @@ impl BrushTool {
                         }
                         editor.set_char(
                             center + Position::new(x, y),
-                            Some(AttributedChar::new(ch.ch, attribute)),
+                            AttributedChar::new(ch.ch, attribute),
                         );
                     }
                 }
@@ -109,7 +106,7 @@ impl Tool for BrushTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -167,7 +164,7 @@ impl Tool for BrushTool {
         pos: Position,
     ) -> super::Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().unwrap().editor;
+            let editor = &mut buffer_view.lock().editor;
             self.paint_brush(editor, pos);
         }
         super::Event::None
@@ -179,7 +176,7 @@ impl Tool for BrushTool {
         _start: Position,
         cur: Position,
     ) -> super::Event {
-        let editor = &mut buffer_view.lock().unwrap().editor;
+        let editor = &mut buffer_view.lock().editor;
         self.paint_brush(editor, cur);
         super::Event::None
     }
@@ -192,7 +189,8 @@ pub fn draw_glyph(
     ch: &Rc<RefCell<char>>,
     font_page: usize,
 ) {
-    let font = &buf.lock().unwrap().editor.buf.font_table[font_page];
+    let buf2 = buf.lock().unwrap();
+    let font = &buf2.editor.buf.get_font(font_page).unwrap();
     let scale = 1.5;
     let (id, stroke_rect) = ui.allocate_space(Vec2::new(
         scale * font.size.width as f32,

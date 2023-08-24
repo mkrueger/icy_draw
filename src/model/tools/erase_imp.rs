@@ -31,9 +31,7 @@ impl EraseTool {
             for x in 0..self.size {
                 match self.brush_type {
                     EraseType::Shade => {
-                        let ch = editor
-                            .get_char_from_cur_layer(center + Position::new(x, y))
-                            .unwrap_or_default();
+                        let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
 
                         let mut attribute = ch.attribute;
 
@@ -56,14 +54,14 @@ impl EraseTool {
                         if found {
                             editor.set_char(
                                 center + Position::new(x, y),
-                                Some(AttributedChar::new(char_code, attribute)),
+                                AttributedChar::new(char_code, attribute),
                             );
                         }
                     }
                     EraseType::Solid => {
                         editor.set_char(
                             center + Position::new(x, y),
-                            Some(AttributedChar::new(' ', TextAttribute::default())),
+                            AttributedChar::new(' ', TextAttribute::default()),
                         );
                     }
                 }
@@ -86,7 +84,7 @@ impl Tool for EraseTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         ui.horizontal(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
@@ -116,7 +114,7 @@ impl Tool for EraseTool {
         pos: Position,
     ) -> super::Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().unwrap().editor;
+            let editor = &mut buffer_view.lock().editor;
             self.paint_brush(editor, pos);
         }
         super::Event::None
@@ -128,7 +126,7 @@ impl Tool for EraseTool {
         _start: Position,
         cur: Position,
     ) -> super::Event {
-        let editor = &mut buffer_view.lock().unwrap().editor;
+        let editor = &mut buffer_view.lock().editor;
         self.paint_brush(editor, cur);
         super::Event::None
     }

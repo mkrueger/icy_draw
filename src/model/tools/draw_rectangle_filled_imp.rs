@@ -51,7 +51,7 @@ impl Tool for DrawRectangleFilledTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -106,7 +106,7 @@ impl Tool for DrawRectangleFilledTool {
         start: Position,
         cur: Position,
     ) -> Event {
-        if let Some(layer) = buffer_view.lock().unwrap().editor.get_overlay_layer() {
+        if let Some(layer) = buffer_view.lock().editor.get_overlay_layer() {
             layer.clear();
         }
 
@@ -115,7 +115,7 @@ impl Tool for DrawRectangleFilledTool {
         let buffer_view = buffer_view.clone();
 
         let draw = move |rect: Rectangle| {
-            let editor = &mut buffer_view.lock().unwrap().editor;
+            let editor = &mut buffer_view.lock().editor;
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
                     plot_point(
@@ -137,7 +137,7 @@ impl Tool for DrawRectangleFilledTool {
         start: Position,
         cur: Position,
     ) -> Event {
-        let editor = &mut buffer_view.lock().unwrap().editor;
+        let editor = &mut buffer_view.lock().editor;
         if start == cur {
             editor.buf.remove_overlay();
         } else {

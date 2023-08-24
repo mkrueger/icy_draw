@@ -1,7 +1,4 @@
-use std::{
-    fs,
-    sync::{Arc, Mutex},
-};
+use std::fs;
 
 use eframe::{
     egui::{self, RichText, Sense},
@@ -10,9 +7,7 @@ use eframe::{
 use i18n_embed_fl::fl;
 use icy_engine::BitFont;
 
-use crate::{model::Tool, Document, TerminalResult};
-
-use super::ansi_editor::BufferView;
+use crate::{model::Tool, AnsiEditor, Document, TerminalResult};
 
 pub struct FontEditor {
     font: BitFont,
@@ -216,7 +211,7 @@ impl Document for FontEditor {
         Ok(())
     }
 
-    fn get_buffer_view(&self) -> Option<Arc<Mutex<BufferView>>> {
+    fn get_buffer_view(&mut self) -> Option<&mut AnsiEditor> {
         None
     }
 

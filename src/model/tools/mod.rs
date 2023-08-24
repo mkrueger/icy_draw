@@ -99,7 +99,7 @@ pub trait Tool {
         &mut self,
         ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult;
 
     fn handle_key(
@@ -115,7 +115,7 @@ pub trait Tool {
 
         // ctrl+pgup  - upper left corner
         // ctrl+pgdn  - lower left corner
-        let editor: &mut Editor = &mut buffer_view.lock().unwrap().editor;
+        let editor: &mut Editor = &mut buffer_view.lock().editor;
         let pos = editor.caret.get_position();
         match key {
             MKey::Down => {
@@ -209,7 +209,7 @@ pub trait Tool {
                         editor.set_char(Position::new(i, pos.y), next);
                     }
                     let last_pos = Position::new(editor.buf.get_buffer_width() - 1, pos.y);
-                    editor.set_char(last_pos, None);
+                    editor.set_char(last_pos, AttributedChar::invisible());
                 }
             }
             MKey::Insert => {
@@ -235,10 +235,10 @@ pub trait Tool {
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(editor.buf.get_buffer_width() - 1, pos.y);
-                        editor.set_char(last_pos, None);
+                        editor.set_char(last_pos, AttributedChar::invisible());
                     } else {
                         let pos = editor.get_caret_position();
-                        editor.set_char(pos, None);
+                        editor.set_char(pos, AttributedChar::invisible());
                     }
                 }
             }
@@ -367,7 +367,7 @@ trait Plottable {
 }
 
 fn plot_point(editor: &mut Editor, tool: &dyn Plottable, pos: Position) {
-    let ch = editor.get_char_from_cur_layer(pos).unwrap_or_default();
+    let ch = editor.get_char_from_cur_layer(pos);
     let editor_attr = editor.caret.get_attribute();
     let mut attribute = ch.attribute;
     if tool.get_use_back() {
@@ -382,19 +382,13 @@ fn plot_point(editor: &mut Editor, tool: &dyn Plottable, pos: Position) {
             if let Some(layer) = editor.get_overlay_layer() {
                 layer.set_char(
                     pos,
-                    Some(AttributedChar::new(
-                        unsafe { char::from_u32_unchecked(219) },
-                        attribute,
-                    )),
+                    AttributedChar::new(unsafe { char::from_u32_unchecked(219) }, attribute),
                 );
             }
         }
         DrawMode::Char => {
             if let Some(layer) = editor.get_overlay_layer() {
-                layer.set_char(
-                    pos,
-                    Some(AttributedChar::new(tool.get_char_code(), attribute)),
-                );
+                layer.set_char(pos, AttributedChar::new(tool.get_char_code(), attribute));
             }
         }
         DrawMode::Shade => {
@@ -410,12 +404,12 @@ fn plot_point(editor: &mut Editor, tool: &dyn Plottable, pos: Position) {
                 }
             }
             if let Some(layer) = editor.get_overlay_layer() {
-                layer.set_char(pos, Some(AttributedChar::new(char_code, attribute)));
+                layer.set_char(pos, AttributedChar::new(char_code, attribute));
             }
         }
         DrawMode::Colorize => {
             if let Some(layer) = editor.get_overlay_layer() {
-                layer.set_char(pos, Some(AttributedChar::new(ch.ch, attribute)));
+                layer.set_char(pos, AttributedChar::new(ch.ch, attribute));
             }
         }
     }

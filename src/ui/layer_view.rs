@@ -1,23 +1,15 @@
-use crate::ansi_editor::BufferView;
 use eframe::{
     egui::{self, RichText},
     epaint::Vec2,
 };
 use egui_extras::{Column, TableBuilder};
 use i18n_embed_fl::fl;
-use std::sync::{Arc, Mutex};
 
-pub fn show_layer_view(
-    ctx: &egui::Context,
-    ui: &mut egui::Ui,
-    buffer_opt: Option<Arc<Mutex<BufferView>>>,
-) {
-    if buffer_opt.is_none() {
-        return;
-    }
-    let buffer_opt = buffer_opt.unwrap();
-    let max = buffer_opt.lock().unwrap().editor.buf.layers.len();
-    let cur_layer = buffer_opt.lock().unwrap().editor.cur_layer;
+use crate::AnsiEditor;
+
+pub fn show_layer_view(ctx: &egui::Context, ui: &mut egui::Ui, editor: &mut AnsiEditor) {
+    let max = editor.buffer_view.lock().buf.layers.len();
+    let cur_layer = editor.cur_layer;
 
     let table = TableBuilder::new(ui)
         .striped(false)
@@ -39,21 +31,24 @@ pub fn show_layer_view(
         .body(|mut body| {
             for i in 0..max {
                 let (is_visible, title) = {
-                    let layer = &buffer_opt.lock().unwrap().editor.buf.layers[i];
+                    let layer = &editor.buffer_view.lock().buf.layers[i];
                     (layer.is_visible, layer.title.clone())
                 };
 
                 body.row(20.0, |mut row| {
                     row.col(|ui| {
                         let r = ui
-                            .add(egui::ImageButton::new(
-                                if is_visible {
-                                    super::VISIBLE_SVG.texture_id(ctx)
-                                } else {
-                                    super::INVISIBLE_SVG.texture_id(ctx)
-                                },
-                                Vec2::new(16., 16.),
-                            ))
+                            .add(
+                                egui::ImageButton::new(
+                                    if is_visible {
+                                        super::VISIBLE_SVG.texture_id(ctx)
+                                    } else {
+                                        super::INVISIBLE_SVG.texture_id(ctx)
+                                    },
+                                    Vec2::new(16., 16.),
+                                )
+                                .frame(false),
+                            )
                             .on_hover_ui(|ui| {
                                 ui.label(
                                     RichText::new(fl!(
@@ -65,14 +60,13 @@ pub fn show_layer_view(
                             });
 
                         if r.clicked() {
-                            buffer_opt.lock().unwrap().editor.buf.layers[i].is_visible =
-                                !is_visible;
+                            editor.buffer_view.lock().buf.layers[i].is_visible = !is_visible;
                         }
                     });
                     row.col(|ui| {
                         let r = ui.selectable_label((i as i32) == cur_layer, &title);
                         if r.clicked() {
-                            buffer_opt.lock().unwrap().editor.cur_layer = i as i32;
+                            editor.cur_layer = i as i32;
                         }
                     });
                 });
@@ -93,13 +87,7 @@ pub fn show_layer_view(
         if r.clicked() {
             let mut new_layer = icy_engine::Layer::new();
             new_layer.title = "New layer".to_string();
-            buffer_opt
-                .lock()
-                .unwrap()
-                .editor
-                .buf
-                .layers
-                .insert(0, new_layer);
+            editor.buffer_view.lock().buf.layers.insert(0, new_layer);
         }
 
         let r = ui
@@ -114,14 +102,13 @@ pub fn show_layer_view(
             });
 
         if r.clicked() && cur_layer > 0 {
-            buffer_opt
+            editor
+                .buffer_view
                 .lock()
-                .unwrap()
-                .editor
                 .buf
                 .layers
                 .swap(cur_layer as usize, cur_layer as usize - 1);
-            buffer_opt.lock().unwrap().editor.cur_layer -= 1;
+            editor.cur_layer -= 1;
         }
 
         let r = ui
@@ -136,14 +123,13 @@ pub fn show_layer_view(
             });
 
         if r.clicked() && (1 + cur_layer as usize) < max {
-            buffer_opt
+            editor
+                .buffer_view
                 .lock()
-                .unwrap()
-                .editor
                 .buf
                 .layers
                 .swap(cur_layer as usize, cur_layer as usize + 1);
-            buffer_opt.lock().unwrap().editor.cur_layer += 1;
+            editor.cur_layer += 1;
         }
 
         let r = ui
@@ -158,15 +144,13 @@ pub fn show_layer_view(
             });
 
         if r.clicked() && cur_layer >= 0 && cur_layer < max as i32 {
-            buffer_opt
+            editor
+                .buffer_view
                 .lock()
-                .unwrap()
-                .editor
                 .buf
                 .layers
                 .remove(cur_layer as usize);
-            buffer_opt.lock().unwrap().editor.cur_layer =
-                std::cmp::min(cur_layer, (max as i32) - 1);
+            editor.cur_layer = std::cmp::min(cur_layer, (max as i32) - 1);
         }
     });
 }

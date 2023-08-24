@@ -1,5 +1,3 @@
-pub mod ansi_editor;
-
 mod main_window;
 use std::error::Error;
 
@@ -32,6 +30,9 @@ pub use settings::*;
 
 mod dialogs;
 pub use dialogs::*;
+
+mod editor;
+pub use editor::*;
 
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
 

@@ -4,11 +4,6 @@ use eframe::egui;
 use egui_extras::RetainedImage;
 use icy_engine::Rectangle;
 
-use crate::{
-    ansi_editor::BufferView,
-    model::{Selection, Shape},
-};
-
 use super::{Event, Position, Tool, ToolUiResult};
 
 pub struct ClickTool {}
@@ -22,7 +17,7 @@ impl Tool for ClickTool {
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         ToolUiResult::default()
     }
@@ -34,7 +29,7 @@ impl Tool for ClickTool {
         pos: Position,
     ) -> Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().unwrap().editor;
+            let editor = &mut buffer_view.lock().editor;
             editor.set_caret_position(pos);
             editor.cur_selection = None;
         }
@@ -47,7 +42,7 @@ impl Tool for ClickTool {
         start: Position,
         cur: Position,
     ) -> Event {
-        let editor = &mut buffer_view.lock().unwrap().editor;
+        let editor = &mut buffer_view.lock().editor;
         let mut cur = cur;
         if start < cur {
             cur = cur + Position::new(1, 1);
@@ -71,7 +66,7 @@ impl Tool for ClickTool {
         start: Position,
         cur: Position,
     ) -> Event {
-        let editor = &mut buffer_view.lock().unwrap().editor;
+        let editor = &mut buffer_view.lock().editor;
         let mut cur = cur;
         if start < cur {
             cur = cur + Position::new(1, 1);

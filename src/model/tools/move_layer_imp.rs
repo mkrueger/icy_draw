@@ -20,7 +20,7 @@ impl Tool for MoveLayer {
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         ToolUiResult::default()
     }
@@ -31,7 +31,7 @@ impl Tool for MoveLayer {
         _start: Position,
         _cur: Position,
     ) -> Event {
-        if let Some(layer) = buffer_view.lock().unwrap().editor.get_cur_layer() {
+        if let Some(layer) = buffer_view.lock().editor.get_cur_layer() {
             self.pos = layer.get_offset();
         }
         Event::None
@@ -43,7 +43,7 @@ impl Tool for MoveLayer {
         start: Position,
         cur: Position,
     ) -> Event {
-        if let Some(layer) = buffer_view.lock().unwrap().editor.get_cur_layer_mut() {
+        if let Some(layer) = buffer_view.lock().editor.get_cur_layer_mut() {
             layer.set_offset(self.pos + cur - start);
         }
         Event::None

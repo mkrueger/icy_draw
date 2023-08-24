@@ -8,8 +8,5 @@
     clippy::cast_precision_loss
 )]
 
-mod editor;
-pub use editor::*;
-
 mod tools;
 pub use tools::*;

@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    model::Tool, Document, EditSauceDialog, FontEditor, ModalDialog, NewFileDialog,
+    model::Tool, AnsiEditor, Document, EditSauceDialog, FontEditor, ModalDialog, NewFileDialog,
     SelectOutlineDialog,
 };
 use eframe::{
@@ -18,9 +18,9 @@ use eframe::{
 use egui_dock::{DockArea, Node, Style, Tree};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, Position, Rectangle, SaveOptions};
+use icy_engine::{BitFont, Buffer, Position, SaveOptions, Selection};
 
-use super::{ansi_editor::AnsiEditor, SetCanvasSizeDialog};
+use super::SetCanvasSizeDialog;
 use egui_file::FileDialog;
 
 pub struct MainWindow {
@@ -169,7 +169,7 @@ impl MainWindow {
             }
         }
         let buf = Buffer::load_buffer(path, true).unwrap();
-        let editor = AnsiEditor::new(&self.gl, buf);
+        let editor = AnsiEditor::new(&self.gl, 0, buf);
         self.tree
             .push_to_focused_leaf((Some(full_path), Box::new(editor)));
     }
@@ -247,7 +247,7 @@ impl MainWindow {
                     }
 
                     self.modal_dialog = Some(Box::new(crate::ExportFileDialog::new(
-                        &buffer_opt.unwrap().lock().unwrap().editor.buf,
+                        &buffer_opt.unwrap().buffer_view.lock().buf,
                     )));
                     ui.close_menu();
                 }
@@ -313,7 +313,7 @@ impl MainWindow {
                     }
 
                     self.modal_dialog = Some(Box::new(EditSauceDialog::new(
-                        &buffer_opt.unwrap().lock().unwrap().editor.buf,
+                        &buffer_opt.unwrap().buffer_view.lock().buf,
                     )));
                     ui.close_menu();
                 }
@@ -331,7 +331,7 @@ impl MainWindow {
                         buffer_opt = t.1.get_buffer_view();
                     }
                     self.modal_dialog = Some(Box::new(SetCanvasSizeDialog::new(
-                        &buffer_opt.unwrap().lock().unwrap().editor.buf,
+                        &buffer_opt.unwrap().buffer_view.lock().buf,
                     )));
                     ui.close_menu();
                 }
@@ -541,9 +541,9 @@ impl MainWindow {
     fn redo_command(&mut self) {
         if let Some(t) = self.tree.find_active_focused() {
             let doc = t.1 .1.get_buffer_view();
-            if let Some(view) = &doc {
-                view.lock().unwrap().editor.redo();
-                view.lock().unwrap().redraw_view();
+            if let Some(editor) = &doc {
+                editor.redo();
+                editor.buffer_view.lock().redraw_view();
             }
         }
     }
@@ -551,9 +551,9 @@ impl MainWindow {
     fn undo_command(&mut self) {
         if let Some(t) = self.tree.find_active_focused() {
             let doc = t.1 .1.get_buffer_view();
-            if let Some(view) = &doc {
-                view.lock().unwrap().editor.undo();
-                view.lock().unwrap().redraw_view();
+            if let Some(editor) = &doc {
+                editor.undo();
+                editor.buffer_view.lock().redraw_view();
             }
         }
     }
@@ -561,16 +561,14 @@ impl MainWindow {
     fn select_all_command(&mut self) {
         if let Some(t) = self.tree.find_active_focused() {
             let doc = t.1 .1.get_buffer_view();
-            if let Some(view) = &doc {
-                let editor = &mut view.lock().unwrap().editor;
-                let w = editor.buf.get_buffer_width();
-                let h = editor.buf.get_real_buffer_height();
+            if let Some(ansi_editor) = doc {
+                let buf = &mut ansi_editor.buffer_view.lock();
+                let w = buf.buf.get_buffer_width();
+                let h = buf.buf.get_real_buffer_height();
 
-                editor.cur_selection = Some(crate::model::Selection {
-                    rectangle: Rectangle::from_pt(Position::new(0, 0), Position::new(w, h)),
-                    is_preview: false,
-                    shape: crate::model::Shape::Rectangle,
-                });
+                buf.set_selection(Some(Selection::from_rectangle(
+                    0.0, 0.0, w as f32, h as f32,
+                )));
             }
         }
     }
@@ -659,12 +657,13 @@ impl eframe::App for MainWindow {
         SidePanel::left("left_panel").show(ctx, |ui| {
             let mut buffer_opt = None;
             if let Some((_, t)) = self.tree.find_active_focused() {
-                buffer_opt = t.1.get_buffer_view();
+                if let Some(editor) = t.1.get_buffer_view() {
+                    ui.vertical_centered(|ui| {
+                        ui.add(crate::palette_switcher(ctx, editor));
+                    });
+                    ui.add(crate::palette_editor_16(editor));
+                }
             }
-            ui.vertical_centered(|ui| {
-                ui.add(crate::palette_switcher(ctx, buffer_opt.clone()));
-            });
-            ui.add(crate::palette_editor_16(buffer_opt.clone()));
             crate::add_tool_switcher(ctx, ui, self);
 
             if let Some(tool) = self.tab_viewer.tools.get_mut(self.tab_viewer.selected_tool) {
@@ -675,12 +674,12 @@ impl eframe::App for MainWindow {
             }
         });
         SidePanel::right("right_panel").show(ctx, |ui| {
-            let mut buffer_opt = None;
             if let Some((_, t)) = self.tree.find_active_focused() {
-                buffer_opt = t.1.get_buffer_view();
+                if let Some(editor) = t.1.get_buffer_view() {
+                    crate::show_layer_view(ctx, ui, editor);
+                }
             }
             // ui.add(crate::show_char_table(buffer_opt.clone()));
-            crate::show_layer_view(ctx, ui, buffer_opt.clone());
         });
 
         DockArea::new(&mut self.tree)
@@ -702,8 +701,7 @@ impl eframe::App for MainWindow {
             if dialog.show(ctx).selected() {
                 if let Some(file) = dialog.path() {
                     if let Some((_, t)) = self.tree.find_active_focused() {
-                        if let Some(view) = t.1.get_buffer_view() {
-                            let editor = &mut view.lock().unwrap().editor;
+                        if let Some(editor) = t.1.get_buffer_view() {
                             let options = SaveOptions::new();
                             editor
                                 .save_content(file.to_path_buf().as_path(), &options)
@@ -720,7 +718,7 @@ impl eframe::App for MainWindow {
             if dialog.show(ctx) {
                 if dialog.create {
                     let buf = Buffer::create(dialog.width, dialog.height);
-                    let editor = AnsiEditor::new(&self.gl, buf);
+                    let editor = AnsiEditor::new(&self.gl, 0, buf);
                     self.tree.push_to_focused_leaf((None, Box::new(editor)));
                 }
                 self.new_file_dialog = None;
@@ -732,9 +730,7 @@ impl eframe::App for MainWindow {
             if dialog.show(ctx) {
                 if dialog.should_commit() {
                     if let Some((_, t)) = self.tree.find_active_focused() {
-                        if let Some(view) = t.1.get_buffer_view() {
-                            let editor = &mut view.lock().unwrap().editor;
-                            // todo error handling:
+                        if let Some(editor) = t.1.get_buffer_view() {
                             dialog.commit(editor).unwrap();
                         }
                     }

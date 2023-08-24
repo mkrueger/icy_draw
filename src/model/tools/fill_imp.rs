@@ -33,59 +33,56 @@ impl FillTool {
         editor: &mut Editor,
         visited: &mut HashSet<Position>,
         pos: Position,
-        opt_old_ch: Option<AttributedChar>,
+        old_ch: AttributedChar,
         new_ch: AttributedChar,
     ) {
         if !editor.point_is_valid(pos) || !visited.insert(pos) {
             return;
         }
 
-        let cur_char = editor.buf.get_char(pos).unwrap_or_default();
-        if let Some(old_ch) = opt_old_ch {
-            if matches!(self.fill_type, FillType::Character) && self.use_fore && self.use_back {
-                if cur_char != old_ch || cur_char == new_ch {
-                    return;
-                }
-            } else if self.use_fore && self.use_back {
-                if cur_char.attribute != old_ch.attribute || cur_char.attribute == new_ch.attribute
-                {
-                    return;
-                }
-            } else if matches!(self.fill_type, FillType::Character) && self.use_fore {
-                if cur_char.ch != old_ch.ch
-                    && cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground()
-                    || cur_char.ch == new_ch.ch
-                        && cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground()
-                {
-                    return;
-                }
-            } else if matches!(self.fill_type, FillType::Character) && self.use_back {
-                if cur_char.ch != old_ch.ch
-                    && cur_char.attribute.get_background() != old_ch.attribute.get_background()
-                    || cur_char.ch == new_ch.ch
-                        && cur_char.attribute.get_background() == new_ch.attribute.get_background()
-                {
-                    return;
-                }
-            } else if matches!(self.fill_type, FillType::Character) {
-                if cur_char.ch != old_ch.ch || cur_char.ch == new_ch.ch {
-                    return;
-                }
-            } else if self.use_fore {
-                if cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground()
-                    || cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground()
-                {
-                    return;
-                }
-            } else if self.use_back {
-                if cur_char.attribute.get_background() != old_ch.attribute.get_background()
-                    || cur_char.attribute.get_background() == new_ch.attribute.get_background()
-                {
-                    return;
-                }
-            } else {
-                panic!("should never happen!");
+        let cur_char = editor.buf.get_char(pos);
+        if matches!(self.fill_type, FillType::Character) && self.use_fore && self.use_back {
+            if cur_char != old_ch || cur_char == new_ch {
+                return;
             }
+        } else if self.use_fore && self.use_back {
+            if cur_char.attribute != old_ch.attribute || cur_char.attribute == new_ch.attribute {
+                return;
+            }
+        } else if matches!(self.fill_type, FillType::Character) && self.use_fore {
+            if cur_char.ch != old_ch.ch
+                && cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground()
+                || cur_char.ch == new_ch.ch
+                    && cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground()
+            {
+                return;
+            }
+        } else if matches!(self.fill_type, FillType::Character) && self.use_back {
+            if cur_char.ch != old_ch.ch
+                && cur_char.attribute.get_background() != old_ch.attribute.get_background()
+                || cur_char.ch == new_ch.ch
+                    && cur_char.attribute.get_background() == new_ch.attribute.get_background()
+            {
+                return;
+            }
+        } else if matches!(self.fill_type, FillType::Character) {
+            if cur_char.ch != old_ch.ch || cur_char.ch == new_ch.ch {
+                return;
+            }
+        } else if self.use_fore {
+            if cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground()
+                || cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground()
+            {
+                return;
+            }
+        } else if self.use_back {
+            if cur_char.attribute.get_background() != old_ch.attribute.get_background()
+                || cur_char.attribute.get_background() == new_ch.attribute.get_background()
+            {
+                return;
+            }
+        } else {
+            panic!("should never happen!");
         }
         let mut repl_ch = cur_char;
         if matches!(self.fill_type, FillType::Character) {
@@ -102,36 +99,12 @@ impl FillTool {
                 .set_background(new_ch.attribute.get_background());
         }
 
-        editor.set_char(pos, Some(repl_ch));
+        editor.set_char(pos, repl_ch);
 
-        self.fill(
-            editor,
-            visited,
-            pos + Position::new(-1, 0),
-            opt_old_ch,
-            new_ch,
-        );
-        self.fill(
-            editor,
-            visited,
-            pos + Position::new(1, 0),
-            opt_old_ch,
-            new_ch,
-        );
-        self.fill(
-            editor,
-            visited,
-            pos + Position::new(0, -1),
-            opt_old_ch,
-            new_ch,
-        );
-        self.fill(
-            editor,
-            visited,
-            pos + Position::new(0, 1),
-            opt_old_ch,
-            new_ch,
-        );
+        self.fill(editor, visited, pos + Position::new(-1, 0), old_ch, new_ch);
+        self.fill(editor, visited, pos + Position::new(1, 0), old_ch, new_ch);
+        self.fill(editor, visited, pos + Position::new(0, -1), old_ch, new_ch);
+        self.fill(editor, visited, pos + Position::new(0, 1), old_ch, new_ch);
     }
 }
 
@@ -151,7 +124,7 @@ impl Tool for FillTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {
@@ -197,7 +170,7 @@ impl Tool for FillTool {
         pos: Position,
     ) -> Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().unwrap().editor;
+            let editor = &mut buffer_view.lock().editor;
             if editor.cur_layer >= editor.buf.layers.len() as i32 {
                 return Event::None;
             }

@@ -1,6 +1,6 @@
 use eframe::epaint::Vec2;
 use glow::NativeTexture;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use icy_engine::{Buffer, BufferParser, CallbackAction, EngineResult, Position};
 
@@ -52,6 +52,7 @@ pub struct BufferView {
     pub scroll_first_line: i32,
 
     pub button_pressed: bool,
+    pub font_lookup_table: HashMap<usize, usize>,
 
     pub program: glow::Program,
     pub vertex_array: glow::VertexArray,
@@ -62,7 +63,6 @@ pub struct BufferView {
     pub colors: usize,
 
     pub redraw_font: bool,
-    pub fonts: usize,
     //scaling: Scaling,
     // post_processing: PostProcessing,
     pub font_texture: NativeTexture,
@@ -77,7 +77,7 @@ pub struct BufferView {
 }
 
 impl BufferView {
-    pub fn new(gl: &Arc<glow::Context>, buf: Buffer) -> Self {
+    pub fn new(gl: &Arc<glow::Context>, mut buf: Buffer) -> Self {
         use glow::HasContext as _;
         unsafe {
             let sixel_shader = gl.create_program().expect("Cannot create program");
@@ -255,8 +255,11 @@ void main() {
             let vertex_array = gl
                 .create_vertex_array()
                 .expect("Cannot create vertex array");
+            let font_texture = gl.create_texture().unwrap();
+            let font_lookup_table = create_font_texture(gl, &mut buf, &font_texture);
+
             let buffer_texture = gl.create_texture().unwrap();
-            create_buffer_texture(gl, &buf, 0, buffer_texture);
+            create_buffer_texture(gl, &buf, 0, buffer_texture, &font_lookup_table);
             gl.tex_parameter_i32(
                 glow::TEXTURE_2D_ARRAY,
                 glow::TEXTURE_MIN_FILTER,
@@ -301,8 +304,6 @@ void main() {
                 glow::CLAMP_TO_EDGE as i32,
             );
 
-            let font_texture = gl.create_texture().unwrap();
-            create_font_texture(gl, &buf, font_texture);
             gl.tex_parameter_i32(
                 glow::TEXTURE_2D_ARRAY,
                 glow::TEXTURE_MIN_FILTER,
@@ -324,7 +325,6 @@ void main() {
                 glow::CLAMP_TO_EDGE as i32,
             );
             let colors = buf.palette.colors.len();
-            let fonts = buf.font_table.len();
             let framebuffer = gl.create_framebuffer().unwrap();
 
             gl.bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer));
@@ -452,7 +452,6 @@ void main() {
                 redraw_font: false,
                 scroll_first_line: 0,
                 colors,
-                fonts,
                 program,
                 draw_program,
                 vertex_array,
@@ -467,6 +466,7 @@ void main() {
 
                 sixel_shader,
                 sixel_render_texture,
+                font_lookup_table,
             }
         }
     }
@@ -487,7 +487,7 @@ void main() {
 
         for y in start.y..=end.y {
             for x in start.x..end.x {
-                let ch = self.editor.get_char(Position::new(x, y)).unwrap();
+                let ch = self.editor.get_char(Position::new(x, y));
                 res.push(buffer_parser.convert_to_unicode(ch.ch));
             }
             res.push('\n');

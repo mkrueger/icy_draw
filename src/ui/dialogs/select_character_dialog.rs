@@ -10,8 +10,9 @@ use eframe::{
 };
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
+use icy_engine_egui::BufferView;
 
-use crate::{ansi_editor::BufferView, ModalDialog, TerminalResult};
+use crate::{ModalDialog, TerminalResult};
 
 pub struct SelectCharacterDialog {
     should_commit: bool,
@@ -40,7 +41,8 @@ impl ModalDialog for SelectCharacterDialog {
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "select-character-title"));
-            let font = &self.buf.lock().unwrap().editor.buf.font_table[font_page];
+            let buffer_view = self.buf.lock().unwrap();
+            let font = buffer_view.buf.get_font(font_page).unwrap();
             let scale = 4.;
 
             //   ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {

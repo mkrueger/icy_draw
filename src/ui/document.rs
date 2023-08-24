@@ -1,8 +1,4 @@
-use std::sync::{Arc, Mutex};
-
-use crate::{model::Tool, TerminalResult};
-
-use super::ansi_editor::BufferView;
+use crate::{model::Tool, AnsiEditor, TerminalResult};
 
 pub trait Document {
     fn get_title(&self) -> String;
@@ -14,7 +10,7 @@ pub trait Document {
 
     fn destroy(&self, gl: &glow::Context);
 
-    fn get_buffer_view(&self) -> Option<Arc<Mutex<BufferView>>>;
+    fn get_buffer_view(&mut self) -> Option<&mut AnsiEditor>;
 
     fn set_enabled(&mut self, enabled: bool);
 }

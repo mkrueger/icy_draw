@@ -10,8 +10,8 @@ pub trait UndoOperation: Send {
 pub struct UndoSetChar {
     pub pos: Position,
     pub layer: usize,
-    pub old: Option<AttributedChar>,
-    pub new: Option<AttributedChar>,
+    pub old: AttributedChar,
+    pub new: AttributedChar,
 }
 
 impl UndoOperation for UndoSetChar {
@@ -66,15 +66,17 @@ pub struct UndoReplaceLayers {
 
 impl UndoOperation for UndoReplaceLayers {
     fn undo(&self, buffer: &mut Buffer) {
+        /* TODO
         buffer.layers = self.old_layer.clone();
         buffer.set_buffer_width(self.old_size.width);
-        buffer.set_buffer_height(self.old_size.height);
+        buffer.set_buffer_height(self.old_size.height);*/
     }
 
     fn redo(&self, buffer: &mut Buffer) {
+        /* TODO
         buffer.layers = self.new_layer.clone();
         buffer.set_buffer_width(self.new_size.width);
-        buffer.set_buffer_height(self.new_size.height);
+        buffer.set_buffer_height(self.new_size.height);*/
     }
 }
 

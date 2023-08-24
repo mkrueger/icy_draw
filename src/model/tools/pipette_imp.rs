@@ -21,7 +21,7 @@ impl Tool for PipetteTool {
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<crate::ui::ansi_editor::BufferView>>>,
+        _buffer_opt: Option<std::sync::Arc<std::sync::Mutex<BufferView>>>,
     ) -> ToolUiResult {
         ToolUiResult::default()
     }
@@ -33,8 +33,8 @@ impl Tool for PipetteTool {
         pos: Position,
     ) -> Event {
         if button == 1 {
-            let editor = &mut buffer_view.lock().unwrap().editor;
-            let ch = editor.get_char(pos).unwrap_or_default();
+            let editor = &mut buffer_view.lock().editor;
+            let ch = editor.get_char(pos);
             editor.set_caret_attribute(ch.attribute);
         }
         Event::None
