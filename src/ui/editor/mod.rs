@@ -8,7 +8,7 @@ use std::{
 };
 
 use eframe::{
-    egui::{self, CursorIcon, Key, PointerButton, RichText},
+    egui::{self, CursorIcon, Key, PointerButton, Response, RichText},
     epaint::{mutex::Mutex, FontId, Pos2, Vec2},
 };
 use i18n_embed_fl::fl;
@@ -18,7 +18,9 @@ use icy_engine::{
 };
 
 mod undo_stack;
-use icy_engine_egui::{show_terminal_area, BackgroundEffect, BufferView, MonitorSettings};
+use icy_engine_egui::{
+    show_terminal_area, BackgroundEffect, BufferView, MonitorSettings, TerminalCalc,
+};
 pub use undo_stack::*;
 
 use crate::{
@@ -125,220 +127,28 @@ impl Document for AnsiEditor {
         cur_tool: &mut Box<dyn Tool>,
         options: &DocumentOptions,
     ) {
-        ui.horizontal(|ui| {
-            let pos = self.buffer_view.lock().caret.get_position();
+        ui.allocate_ui(
+            Vec2::new(ui.available_width(), ui.available_height() - 35.0),
+            |ui| {
+                let opt = icy_engine_egui::TerminalOptions {
+                    focus_lock: false,
+                    stick_to_bottom: false,
+                    scale: Some(options.scale),
+                    settings: MonitorSettings {
+                        background_effect: BackgroundEffect::Checkers,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                };
 
-            let label_font_size = 20.0;
-
-            ui.vertical(|ui| {
-                ui.add_space(4.);
-                ui.label(
-                    RichText::new(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "toolbar-position",
-                        line = pos.y,
-                        column = pos.x
-                    ))
-                    .font(FontId::proportional(label_font_size)),
-                );
-            });
-
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let cur_outline = self.cur_outline;
-                let cur_font_page = self.buffer_view.lock().caret.get_font_page();
-
-                let button_font_size = 16.0;
-                if ui
-                    .selectable_label(
-                        false,
-                        RichText::new("▶").font(FontId::proportional(button_font_size)),
-                    )
-                    .clicked()
-                {
-                    self.cur_outline = (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
-                }
-                ui.label(
-                    RichText::new((cur_outline + 1).to_string())
-                        .font(FontId::proportional(label_font_size)),
-                );
-
-                if ui
-                    .selectable_label(
-                        false,
-                        RichText::new("◀").font(FontId::proportional(button_font_size)),
-                    )
-                    .clicked()
-                {
-                    self.cur_outline = (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
-                        % DEFAULT_OUTLINE_TABLE.len();
-                }
-
-                for i in (0..10).rev() {
-                    let ch = self.get_outline_char_code(i).unwrap();
-                    ui.add(crate::model::pencil_imp::draw_glyph_plain(
-                        self,
-                        unsafe { char::from_u32_unchecked(ch as u32) },
-                        cur_font_page,
-                    ));
-
-                    ui.label(
-                        RichText::new(format!("F{}", i + 1))
-                            .font(FontId::proportional(label_font_size)),
-                    );
-                }
-            });
-        });
-
-        let (mut response, calc) = show_terminal_area(
-            ui,
-            self.buffer_view.clone(),
-            false,
-            glow::NEAREST as i32,
-            MonitorSettings {
-                background_effect: BackgroundEffect::Checkers,
-                ..Default::default()
+                let (mut response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
+                self.handle_response(ui, response, calc, cur_tool);
             },
-            false,
-            Some(options.scale),
         );
+        self.show_toolbar(ui);
 
         // TODO: Context menu
         //let response = response.context_menu(|ui| terminal_context_menu(&self, ui));
-
-        if self.enabled {
-            let events = ui.input(|i| i.events.clone());
-            for e in &events {
-                match e {
-                    egui::Event::Copy => {
-                        let buffer_view = self.buffer_view.clone();
-                        let mut l = buffer_view.lock();
-                        if let Some(txt) = l.get_copy_text(&*self.buffer_parser) {
-                            ui.output_mut(|o| o.copied_text = txt);
-                        }
-                    }
-                    egui::Event::Cut => {}
-                    egui::Event::Paste(text) => {
-                        self.output_string(text);
-                        self.buffer_view.lock().redraw_view();
-                    }
-
-                    egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
-                        for c in text.chars() {
-                            cur_tool.handle_key(self, MKey::Character(c as u16), MModifiers::None);
-                        }
-                        self.redraw_view();
-                    }
-
-                    egui::Event::Key {
-                        key,
-                        pressed: true,
-                        modifiers,
-                        ..
-                    } => {
-                        let mut key_code = *key as u32;
-                        if modifiers.ctrl || modifiers.command {
-                            key_code |= CTRL_MOD;
-                        }
-                        if modifiers.shift {
-                            key_code |= SHIFT_MOD;
-                        }
-
-                        let mut modifier: MModifiers = MModifiers::None;
-                        if modifiers.ctrl || modifiers.command {
-                            modifier = MModifiers::Control;
-                        }
-
-                        if modifiers.shift {
-                            modifier = MModifiers::Shift;
-                        }
-                        for (k, m) in ANSI_KEY_MAP {
-                            if *k == key_code {
-                                cur_tool.handle_key(self, *m, modifier);
-                                self.buffer_view.lock().redraw_view();
-                                ui.input_mut(|i| i.consume_key(*modifiers, *key));
-                                self.redraw_view();
-                                break;
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        if response.clicked() {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos) {
-                    let click_pos = calc.calc_click_pos(mouse_pos);
-                    println!("click !");
-                    /*
-                    let b: i32 = match responsee.b {
-                                     PointerButton::Primary => 1,
-                                     PointerButton::Secondary => 2,
-                                     PointerButton::Middle => 3,
-                                     PointerButton::Extra1 => 4,
-                                     PointerButton::Extra2 => 5,
-                                 }; */
-                    cur_tool.handle_click(
-                        self,
-                        1,
-                        Position::new(click_pos.x as i32, click_pos.y as i32),
-                    );
-                    self.redraw_view();
-                }
-            }
-        }
-
-        if response.drag_started() {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos) {
-                    let click_pos = calc.calc_click_pos(mouse_pos);
-                    self.last_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
-                    self.drag_start = Some(click_pos);
-                }
-            }
-            self.last_pos = Position::new(-1, -1);
-            self.redraw_view();
-        }
-
-        if response.dragged() {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
-                let click_pos = calc.calc_click_pos(mouse_pos);
-                if let Some(ds) = self.drag_start {
-                    let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
-
-                    if cur != self.last_pos {
-                        self.last_pos = cur;
-                        cur_tool.handle_drag(self, Position::new(ds.x as i32, ds.y as i32), cur);
-                    }
-                }
-            }
-            self.redraw_view();
-        }
-
-        if response.drag_released() {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
-                let click_pos = calc.calc_click_pos(mouse_pos);
-                if let Some(ds) = self.drag_start {
-                    let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
-
-                    cur_tool.handle_drag_end(self, Position::new(ds.x as i32, ds.y as i32), cur);
-                }
-            }
-            self.last_pos = Position::new(-1, -1);
-
-            self.drag_start = None;
-            self.redraw_view();
-        }
-
-        if response.hovered() {
-            let hover_pos_opt = ui.input(|i| i.pointer.hover_pos());
-            if let Some(hover_pos) = hover_pos_opt {
-                if calc.terminal_rect.contains(hover_pos) {
-                    ui.output_mut(|o| o.cursor_icon = CursorIcon::Text);
-                }
-            }
-        }
     }
 
     fn get_buffer_view(&mut self) -> Option<&mut AnsiEditor> {
@@ -976,6 +786,216 @@ impl AnsiEditor {
         self.begin_atomic_undo();
         // TODO
         self.end_atomic_undo();
+    }
+
+    fn show_toolbar(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            let pos = self.buffer_view.lock().caret.get_position();
+
+            let label_font_size = 20.0;
+
+            ui.vertical(|ui| {
+                ui.add_space(4.);
+                ui.label(
+                    RichText::new(fl!(
+                        crate::LANGUAGE_LOADER,
+                        "toolbar-position",
+                        line = pos.y,
+                        column = pos.x
+                    ))
+                    .font(FontId::proportional(label_font_size)),
+                );
+            });
+
+            let r = ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let cur_outline = self.cur_outline;
+                let cur_font_page = self.buffer_view.lock().caret.get_font_page();
+
+                let button_font_size = 16.0;
+                if ui
+                    .selectable_label(
+                        false,
+                        RichText::new("▶").font(FontId::proportional(button_font_size)),
+                    )
+                    .clicked()
+                {
+                    self.cur_outline = (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
+                }
+                ui.label(
+                    RichText::new((cur_outline + 1).to_string())
+                        .font(FontId::proportional(label_font_size)),
+                );
+
+                if ui
+                    .selectable_label(
+                        false,
+                        RichText::new("◀").font(FontId::proportional(button_font_size)),
+                    )
+                    .clicked()
+                {
+                    self.cur_outline = (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
+                        % DEFAULT_OUTLINE_TABLE.len();
+                }
+
+                for i in (0..10).rev() {
+                    let ch = self.get_outline_char_code(i).unwrap();
+                    ui.add(crate::model::pencil_imp::draw_glyph_plain(
+                        self,
+                        unsafe { char::from_u32_unchecked(ch as u32) },
+                        cur_font_page,
+                    ));
+
+                    ui.label(
+                        RichText::new(format!("F{}", i + 1))
+                            .font(FontId::proportional(label_font_size)),
+                    );
+                }
+            });
+            r.response
+        });
+    }
+
+    fn handle_response(
+        &mut self,
+        ui: &mut egui::Ui,
+        response: Response,
+        calc: TerminalCalc,
+        cur_tool: &mut Box<dyn Tool>,
+    ) {
+        if self.enabled {
+            let events = ui.input(|i| i.events.clone());
+            for e in &events {
+                match e {
+                    egui::Event::Copy => {
+                        let buffer_view = self.buffer_view.clone();
+                        let mut l = buffer_view.lock();
+                        if let Some(txt) = l.get_copy_text(&*self.buffer_parser) {
+                            ui.output_mut(|o| o.copied_text = txt);
+                        }
+                    }
+                    egui::Event::Cut => {}
+                    egui::Event::Paste(text) => {
+                        self.output_string(text);
+                        self.buffer_view.lock().redraw_view();
+                    }
+
+                    egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
+                        for c in text.chars() {
+                            cur_tool.handle_key(self, MKey::Character(c as u16), MModifiers::None);
+                        }
+                        self.redraw_view();
+                    }
+
+                    egui::Event::Key {
+                        key,
+                        pressed: true,
+                        modifiers,
+                        ..
+                    } => {
+                        let mut key_code = *key as u32;
+                        if modifiers.ctrl || modifiers.command {
+                            key_code |= CTRL_MOD;
+                        }
+                        if modifiers.shift {
+                            key_code |= SHIFT_MOD;
+                        }
+
+                        let mut modifier: MModifiers = MModifiers::None;
+                        if modifiers.ctrl || modifiers.command {
+                            modifier = MModifiers::Control;
+                        }
+
+                        if modifiers.shift {
+                            modifier = MModifiers::Shift;
+                        }
+                        for (k, m) in ANSI_KEY_MAP {
+                            if *k == key_code {
+                                cur_tool.handle_key(self, *m, modifier);
+                                self.buffer_view.lock().redraw_view();
+                                ui.input_mut(|i| i.consume_key(*modifiers, *key));
+                                self.redraw_view();
+                                break;
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        if response.clicked() {
+            if let Some(mouse_pos) = response.interact_pointer_pos() {
+                if calc.buffer_rect.contains(mouse_pos) {
+                    let click_pos = calc.calc_click_pos(mouse_pos);
+                    println!("click !");
+                    /*
+                    let b: i32 = match responsee.b {
+                                     PointerButton::Primary => 1,
+                                     PointerButton::Secondary => 2,
+                                     PointerButton::Middle => 3,
+                                     PointerButton::Extra1 => 4,
+                                     PointerButton::Extra2 => 5,
+                                 }; */
+                    cur_tool.handle_click(
+                        self,
+                        1,
+                        Position::new(click_pos.x as i32, click_pos.y as i32),
+                    );
+                    self.redraw_view();
+                }
+            }
+        }
+
+        if response.drag_started() {
+            if let Some(mouse_pos) = response.interact_pointer_pos() {
+                if calc.buffer_rect.contains(mouse_pos) {
+                    let click_pos = calc.calc_click_pos(mouse_pos);
+                    self.last_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
+                    self.drag_start = Some(click_pos);
+                }
+            }
+            self.last_pos = Position::new(-1, -1);
+            self.redraw_view();
+        }
+
+        if response.dragged() {
+            if let Some(mouse_pos) = response.interact_pointer_pos() {
+                let click_pos = calc.calc_click_pos(mouse_pos);
+                if let Some(ds) = self.drag_start {
+                    let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
+
+                    if cur != self.last_pos {
+                        self.last_pos = cur;
+                        cur_tool.handle_drag(self, Position::new(ds.x as i32, ds.y as i32), cur);
+                    }
+                }
+            }
+            self.redraw_view();
+        }
+
+        if response.drag_released() {
+            if let Some(mouse_pos) = response.interact_pointer_pos() {
+                let click_pos = calc.calc_click_pos(mouse_pos);
+                if let Some(ds) = self.drag_start {
+                    let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
+
+                    cur_tool.handle_drag_end(self, Position::new(ds.x as i32, ds.y as i32), cur);
+                }
+            }
+            self.last_pos = Position::new(-1, -1);
+
+            self.drag_start = None;
+            self.redraw_view();
+        }
+
+        if response.hovered() {
+            let hover_pos_opt = ui.input(|i| i.pointer.hover_pos());
+            if let Some(hover_pos) = hover_pos_opt {
+                if calc.terminal_rect.contains(hover_pos) {
+                    ui.output_mut(|o| o.cursor_icon = CursorIcon::Text);
+                }
+            }
+        }
     }
 }
 
