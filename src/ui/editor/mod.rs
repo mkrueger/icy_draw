@@ -166,6 +166,7 @@ impl AnsiEditor {
             gl,
             buf,
             glow::NEAREST as i32,
+            icy_engine_egui::FontExtension::Off
         )));
         // let buffer_parser = ansi::Parser::default();
         let buffer_parser = ansi::Parser::default();
@@ -198,7 +199,7 @@ impl AnsiEditor {
 
     pub fn output_string(&mut self, str: &str) {
         for ch in str.chars() {
-            let translated_char = self.buffer_parser.convert_from_unicode(ch);
+            let translated_char = self.buffer_parser.convert_from_unicode(ch, 0);
             if let Err(err) = self.print_char(translated_char as u8) {
                 eprintln!("{}", err);
             }
