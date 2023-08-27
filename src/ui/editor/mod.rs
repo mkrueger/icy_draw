@@ -8,7 +8,7 @@ use std::{
 };
 
 use eframe::{
-    egui::{self, CursorIcon, Key, PointerButton, Response, RichText},
+    egui::{self, CursorIcon, Key, PointerButton, Response, RichText, Id},
     epaint::{mutex::Mutex, FontId, Pos2, Vec2},
 };
 use i18n_embed_fl::fl;
@@ -87,6 +87,8 @@ pub struct AnsiEditor {
 
     pub undo_stack: Vec<Box<dyn UndoOperation>>,
     pub redo_stack: Vec<Box<dyn UndoOperation>>,
+
+    pub egui_id: Id,
     //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
     //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
 }
@@ -99,6 +101,9 @@ impl Document for AnsiEditor {
             "Untitled".to_string()
         }
     }
+
+    fn get_id(&self) -> usize { self.id }
+
 
     fn is_dirty(&self) -> bool {
         self.is_dirty
@@ -138,6 +143,7 @@ impl Document for AnsiEditor {
                         background_effect: BackgroundEffect::Checkers,
                         ..Default::default()
                     },
+                    id: Some(Id::new(self.id + 10000)),
                     ..Default::default()
                 };
 
@@ -194,6 +200,7 @@ impl AnsiEditor {
             drag_start: None,
             last_pos: Position::default(),
             buffer_parser: Box::new(buffer_parser),
+            egui_id: Id::new(id),
         }
     }
 

@@ -12,7 +12,7 @@ use crate::{
     NewFileDialog, SelectOutlineDialog,
 };
 use eframe::{
-    egui::{self, menu, Modifiers, Response, SidePanel, TextStyle, TopBottomPanel, Ui},
+    egui::{self, menu, Modifiers, Response, SidePanel, TextStyle, TopBottomPanel, Ui, Id},
     epaint::{pos2, Vec2},
 };
 use egui_dock::{DockArea, Node, Style, Tree};
@@ -36,9 +36,15 @@ pub struct MainWindow {
     new_file_dialog: Option<NewFileDialog>,
 
     modal_dialog: Option<Box<dyn ModalDialog>>,
+    id: usize,
 }
 
 impl MainWindow {
+    fn create_id(&mut self) -> usize {
+        self.id += 1;
+        self.id
+    }
+
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let tree = Tree::new(Vec::new());
 
@@ -147,6 +153,7 @@ impl MainWindow {
             save_file_dialog: None,
             new_file_dialog: None,
             modal_dialog: None,
+            id: 0
         }
     }
 
@@ -162,9 +169,10 @@ impl MainWindow {
                     }
                     let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
                     if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
+                        let id = self.create_id();
                         self.tree.push_to_focused_leaf((
                             Some(full_path),
-                            Box::new(FontEditor::new(font)),
+                            Box::new(FontEditor::new(font, id)),
                         ));
                         return;
                     }
@@ -172,7 +180,8 @@ impl MainWindow {
             }
         }
         let buf = Buffer::load_buffer(path, true).unwrap();
-        let editor = AnsiEditor::new(&self.gl, 0, buf);
+        let id = self.create_id();
+        let editor = AnsiEditor::new(&self.gl, id, buf);
         self.tree
             .push_to_focused_leaf((Some(full_path), Box::new(editor)));
     }
@@ -598,17 +607,22 @@ pub struct TabViewer {
     pub tools: Vec<Box<dyn Tool>>,
     pub selected_tool: usize,
     pub document_options: DocumentOptions,
+
 }
 
 impl egui_dock::TabViewer for TabViewer {
     type Tab = (Option<String>, Box<dyn Document>);
 
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab) {
-        tab.1.show_ui(
+       tab.1.show_ui(
             ui,
             &mut self.tools[self.selected_tool],
             &self.document_options,
         );
+    }
+
+    fn id(&mut self, tab: &mut Self::Tab) -> Id {
+        Id::new(tab.1.get_id())
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText {
@@ -738,7 +752,8 @@ impl eframe::App for MainWindow {
             if dialog.show(ctx) {
                 if dialog.create {
                     let buf = Buffer::create(dialog.width, dialog.height);
-                    let editor = AnsiEditor::new(&self.gl, 0, buf);
+                    let id = self.create_id();
+                    let editor = AnsiEditor::new(&self.gl, id, buf);
                     self.tree.push_to_focused_leaf((None, Box::new(editor)));
                 }
                 self.new_file_dialog = None;

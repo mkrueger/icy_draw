@@ -14,15 +14,17 @@ pub struct FontEditor {
     selected_char_opt: Option<char>,
     is_dirty: bool,
     enabled: bool,
+    id:usize
 }
 
 impl FontEditor {
-    pub fn new(font: BitFont) -> Self {
+    pub fn new(font: BitFont, id: usize) -> Self {
         Self {
             font,
             selected_char_opt: None,
             is_dirty: false,
             enabled: true,
+            id
         }
     }
 
@@ -158,6 +160,9 @@ impl FontEditor {
 impl Document for FontEditor {
     fn get_title(&self) -> String {
         self.font.name.to_string()
+    }
+    fn get_id(&self) -> usize {
+        self.id
     }
 
     fn is_dirty(&self) -> bool {
