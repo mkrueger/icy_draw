@@ -392,7 +392,7 @@ fn get_half_block(
     )
 }
 
-pub fn set_half_block(editor: &mut AnsiEditor, pos: Position, col: u32) {
+pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
     let w = editor.buffer_view.lock().buf.get_buffer_width();
     let h = editor.buffer_view.lock().buf.get_real_buffer_height();
 
@@ -452,7 +452,7 @@ pub fn set_half_block(editor: &mut AnsiEditor, pos: Position, col: u32) {
     optimize_block(editor, Position::new(pos.x, text_y));
 }
 
-fn optimize_block(editor: &mut AnsiEditor, pos: Position) {
+fn optimize_block(editor: &AnsiEditor, pos: Position) {
     let block = if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
         layer.get_char(pos)
     } else {

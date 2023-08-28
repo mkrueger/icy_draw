@@ -17,7 +17,7 @@ mod icons;
 
 use eframe::egui;
 use egui_extras::RetainedImage;
-use icy_engine::{AttributedChar, Position};
+use icy_engine::{AttributedChar, Position, TextAttribute};
 pub use scan_lines::*;
 
 use crate::{AnsiEditor, Event};
@@ -412,10 +412,13 @@ trait Plottable {
     fn get_char_code(&self) -> char;
 }
 
-fn plot_point(editor: &mut AnsiEditor, tool: &dyn Plottable, pos: Position) {
+fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
     let ch = editor.get_char_from_cur_layer(pos);
     let editor_attr = editor.buffer_view.lock().caret.get_attribute();
     let mut attribute = ch.attribute;
+    if !ch.is_visible() {
+        attribute = TextAttribute::default();
+    }
     if tool.get_use_back() {
         attribute.set_background(editor_attr.get_background());
     }
