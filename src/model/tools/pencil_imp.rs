@@ -196,7 +196,7 @@ impl Tool for PencilTool {
     }
 }
 
-pub fn draw_glyph_plain(editor: &mut AnsiEditor, ch: char, font_page: usize) -> impl egui::Widget {
+pub fn draw_glyph_plain(editor: &AnsiEditor, ch: char, font_page: usize) -> impl egui::Widget {
     let bv = editor.buffer_view.clone();
     move |ui: &mut egui::Ui| {
         if let Some(font) = bv.lock().buf.get_font(font_page) {

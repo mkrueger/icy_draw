@@ -330,8 +330,8 @@ void main() {
             gl.bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer));
             let render_texture = gl.create_texture().unwrap();
             let render_buffer_size = Vec2::new(
-                buf.get_font_dimensions().width as f32 * buf.get_buffer_width() as f32,
-                buf.get_font_dimensions().height as f32 * buf.get_buffer_height() as f32,
+                buf.get_font_dimensions().width as f32 * buf.get_width() as f32,
+                buf.get_font_dimensions().height as f32 * buf.get_height() as f32,
             );
 
             let filter = glow::NEAREST as i32; /*match options.scaling {
@@ -388,8 +388,8 @@ void main() {
 
             let sixel_render_texture = gl.create_texture().unwrap();
             let render_buffer_size = Vec2::new(
-                buf.get_font_dimensions().width as f32 * buf.get_buffer_width() as f32,
-                buf.get_font_dimensions().height as f32 * buf.get_buffer_height() as f32,
+                buf.get_font_dimensions().width as f32 * buf.get_width() as f32,
+                buf.get_font_dimensions().height as f32 * buf.get_height() as f32,
             );
 
             gl.bind_texture(glow::TEXTURE_2D, Some(sixel_render_texture));

@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::Arc,
-    time::Duration,
+    time::Duration, ffi::OsStr,
 };
 
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
     NewFileDialog, SelectOutlineDialog,
 };
 use eframe::{
-    egui::{self, menu, Modifiers, Response, SidePanel, TextStyle, TopBottomPanel, Ui, Id},
+    egui::{self, menu, Id, Modifiers, Response, SidePanel, TextStyle, TopBottomPanel, Ui},
     epaint::{pos2, Vec2},
 };
 use egui_dock::{DockArea, Node, Style, Tree};
@@ -153,7 +153,7 @@ impl MainWindow {
             save_file_dialog: None,
             new_file_dialog: None,
             modal_dialog: None,
-            id: 0
+            id: 0,
         }
     }
 
@@ -223,8 +223,18 @@ impl MainWindow {
                     .clicked()
                 {
                     if let Some(t) = self.tree.find_active_focused() {
+                        let mut save_as = true;
                         if let Some(str) = &t.1 .0 {
-                            t.1 .1.save(str).unwrap();
+                            let path = PathBuf::from(str);
+                            if let Some(ext) = path.extension()  {
+                                if ext == "icd" {
+                                    t.1 .1.save(str).unwrap();
+                                    save_as = false;
+                                }
+                            } 
+                        } 
+                        if save_as {
+                            self.save_as();
                         }
                     }
                     ui.close_menu();
@@ -236,14 +246,8 @@ impl MainWindow {
                     )
                     .clicked()
                 {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        if let Some(str) = &t.1 .0 {
-                            let mut dialog = FileDialog::save_file(Some(PathBuf::from(str)));
-                            dialog.open();
-                            self.save_file_dialog = Some(dialog);
-                            ui.close_menu();
-                        }
-                    }
+                    self.save_as();
+                    ui.close_menu();
                 }
 
                 if ui
@@ -561,6 +565,14 @@ impl MainWindow {
         }
     }
 
+    fn save_as(&mut self) {
+        if let Some(t) = self.tree.find_active_focused() {
+            let mut dialog = FileDialog::save_file(None);
+            dialog.open();
+            self.save_file_dialog = Some(dialog);
+        }
+    }
+
     fn redo_command(&mut self) {
         if let Some(t) = self.tree.find_active_focused() {
             let doc = t.1 .1.get_buffer_view();
@@ -586,8 +598,8 @@ impl MainWindow {
             let doc = t.1 .1.get_buffer_view();
             if let Some(ansi_editor) = doc {
                 let buf = &mut ansi_editor.buffer_view.lock();
-                let w = buf.buf.get_buffer_width();
-                let h = buf.buf.get_real_buffer_height();
+                let w = buf.buf.get_width();
+                let h = buf.buf.get_line_count();
 
                 buf.set_selection(Selection::from_rectangle(0.0, 0.0, w as f32, h as f32));
             }
@@ -607,14 +619,13 @@ pub struct TabViewer {
     pub tools: Vec<Box<dyn Tool>>,
     pub selected_tool: usize,
     pub document_options: DocumentOptions,
-
 }
 
 impl egui_dock::TabViewer for TabViewer {
     type Tab = (Option<String>, Box<dyn Document>);
 
     fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab) {
-       tab.1.show_ui(
+        tab.1.show_ui(
             ui,
             &mut self.tools[self.selected_tool],
             &self.document_options,
@@ -721,6 +732,7 @@ impl eframe::App for MainWindow {
             .show(ctx, &mut self.tab_viewer);
 
         self.dialog_open = false;
+
         if let Some(dialog) = &mut self.open_file_dialog {
             self.dialog_open = true;
             if dialog.show(ctx).selected() {
@@ -730,16 +742,19 @@ impl eframe::App for MainWindow {
                 self.open_file_dialog = None;
             }
         }
+
         if let Some(dialog) = &mut self.save_file_dialog {
             self.dialog_open = true;
             if dialog.show(ctx).selected() {
                 if let Some(file) = dialog.path() {
+                    let file = file.with_extension("icd");
                     if let Some((_, t)) = self.tree.find_active_focused() {
                         if let Some(editor) = t.1.get_buffer_view() {
                             let options = SaveOptions::new();
                             editor
                                 .save_content(file.to_path_buf().as_path(), &options)
                                 .unwrap();
+                            editor.set_file_name(file);
                         }
                     }
                 }

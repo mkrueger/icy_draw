@@ -64,9 +64,9 @@ pub fn show_layer_view(ctx: &egui::Context, ui: &mut egui::Ui, editor: &mut Ansi
                         }
                     });
                     row.col(|ui| {
-                        let r = ui.selectable_label((i as i32) == cur_layer, &title);
+                        let r = ui.selectable_label(i == cur_layer, &title);
                         if r.clicked() {
-                            editor.cur_layer = i as i32;
+                            editor.cur_layer = i;
                         }
                     });
                 });
@@ -85,8 +85,9 @@ pub fn show_layer_view(ctx: &egui::Context, ui: &mut egui::Ui, editor: &mut Ansi
             });
 
         if r.clicked() {
-            let mut new_layer = icy_engine::Layer::new();
-            new_layer.title = "New layer".to_string();
+            let w = editor.buffer_view.lock().buf.get_width();
+            let h = editor.buffer_view.lock().buf.get_height();
+            let new_layer = icy_engine::Layer::new("New Layer", w, h);
             editor.buffer_view.lock().buf.layers.insert(0, new_layer);
         }
 
@@ -107,7 +108,7 @@ pub fn show_layer_view(ctx: &egui::Context, ui: &mut egui::Ui, editor: &mut Ansi
                 .lock()
                 .buf
                 .layers
-                .swap(cur_layer as usize, cur_layer as usize - 1);
+                .swap(cur_layer, cur_layer - 1);
             editor.cur_layer -= 1;
         }
 
@@ -122,13 +123,13 @@ pub fn show_layer_view(ctx: &egui::Context, ui: &mut egui::Ui, editor: &mut Ansi
                 );
             });
 
-        if r.clicked() && (1 + cur_layer as usize) < max {
+        if r.clicked() && (1 + cur_layer) < max {
             editor
                 .buffer_view
                 .lock()
                 .buf
                 .layers
-                .swap(cur_layer as usize, cur_layer as usize + 1);
+                .swap(cur_layer, cur_layer + 1);
             editor.cur_layer += 1;
         }
 
@@ -143,14 +144,14 @@ pub fn show_layer_view(ctx: &egui::Context, ui: &mut egui::Ui, editor: &mut Ansi
                 );
             });
 
-        if r.clicked() && cur_layer >= 0 && cur_layer < max as i32 {
+        if r.clicked() && cur_layer < max {
             editor
                 .buffer_view
                 .lock()
                 .buf
                 .layers
-                .remove(cur_layer as usize);
-            editor.cur_layer = std::cmp::min(cur_layer, (max as i32) - 1);
+                .remove(cur_layer);
+            editor.cur_layer = std::cmp::min(cur_layer, (max) - 1);
         }
     });
 }

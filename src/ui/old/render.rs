@@ -104,8 +104,8 @@ impl BufferView {
             gl.uniform_2_f32(
                 gl.get_uniform_location(self.program, "u_terminal_size")
                     .as_ref(),
-                self.editor.buf.get_buffer_width() as f32 - 0.0001,
-                self.editor.buf.get_buffer_height() as f32 - 0.0001,
+                self.editor.buf.get_width() as f32 - 0.0001,
+                self.editor.buf.get_height() as f32 - 0.0001,
             );
 
             gl.uniform_1_i32(gl.get_uniform_location(self.program, "u_fonts").as_ref(), 0);
@@ -353,8 +353,8 @@ impl BufferView {
 
         let editor = &self.editor;
         let render_buffer_size = Vec2::new(
-            editor.buf.get_font_dimensions().width as f32 * editor.buf.get_buffer_width() as f32,
-            editor.buf.get_font_dimensions().height as f32 * editor.buf.get_buffer_height() as f32,
+            editor.buf.get_font_dimensions().width as f32 * editor.buf.get_width() as f32,
+            editor.buf.get_font_dimensions().height as f32 * editor.buf.get_height() as f32,
         );
 
         if render_buffer_size != self.render_buffer_size {
@@ -569,17 +569,17 @@ pub fn create_buffer_texture(
     buffer_texture: NativeTexture,
     font_lookup_table: &HashMap<usize, usize>,
 ) {
-    let first_line = 0.max(buf.layers[0].lines.len() as i32 - buf.get_buffer_height());
+    let first_line = 0.max(buf.layers[0].lines.len() as i32 - buf.get_height());
     let mut buffer_data = Vec::with_capacity(
-        2 * buf.get_buffer_width() as usize * 4 * buf.get_real_buffer_height() as usize,
+        2 * buf.get_width() as usize * 4 * buf.get_line_count() as usize,
     );
     let colors = buf.palette.colors.len() as u32 - 1;
     let mut y = 0;
 
-    while y < buf.get_buffer_height() {
+    while y < buf.get_height() {
         let mut is_double_height = false;
 
-        for x in 0..buf.get_buffer_width() {
+        for x in 0..buf.get_width() {
             let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
             if ch.attribute.is_double_height() {
                 is_double_height = true;
@@ -604,7 +604,7 @@ pub fn create_buffer_texture(
         }
 
         if is_double_height {
-            for x in 0..buf.get_buffer_width() {
+            for x in 0..buf.get_width() {
                 let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
 
                 if ch.attribute.is_double_height() {
@@ -637,10 +637,10 @@ pub fn create_buffer_texture(
         }
     }
     y = 0;
-    while y < buf.get_buffer_height() {
+    while y < buf.get_height() {
         let mut is_double_height = false;
 
-        for x in 0..buf.get_buffer_width() {
+        for x in 0..buf.get_width() {
             let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
 
             let mut attr = if ch.attribute.is_double_underlined() {
@@ -664,7 +664,7 @@ pub fn create_buffer_texture(
         }
 
         if is_double_height {
-            for x in 0..buf.get_buffer_width() {
+            for x in 0..buf.get_width() {
                 let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
                 let mut attr = if ch.attribute.is_double_underlined() {
                     3
@@ -702,8 +702,8 @@ pub fn create_buffer_texture(
             glow::TEXTURE_2D_ARRAY,
             0,
             glow::RGBA32F as i32,
-            buf.get_buffer_width(),
-            buf.get_buffer_height(),
+            buf.get_width(),
+            buf.get_height(),
             2,
             0,
             glow::RGBA,

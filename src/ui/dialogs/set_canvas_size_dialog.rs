@@ -15,8 +15,8 @@ impl SetCanvasSizeDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
         SetCanvasSizeDialog {
             should_commit: false,
-            width: buf.get_buffer_width(),
-            height: buf.get_real_buffer_height(),
+            width: buf.get_width(),
+            height: buf.get_line_count(),
         }
     }
 }

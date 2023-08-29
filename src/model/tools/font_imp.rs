@@ -143,7 +143,7 @@ impl Tool for FontTool {
 
             MKey::Home => {
                 if let MModifiers::Control = modifier {
-                    let end = editor.buffer_view.lock().buf.get_buffer_width();
+                    let end = editor.buffer_view.lock().buf.get_width();
                     for i in 0..end {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
@@ -159,7 +159,7 @@ impl Tool for FontTool {
 
             MKey::End => {
                 if let MModifiers::Control = modifier {
-                    let end = editor.buffer_view.lock().buf.get_buffer_width();
+                    let end = editor.buffer_view.lock().buf.get_width();
                     for i in (0..end).rev() {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
@@ -170,7 +170,7 @@ impl Tool for FontTool {
                         }
                     }
                 }
-                let w = editor.buffer_view.lock().buf.get_buffer_width();
+                let w = editor.buffer_view.lock().buf.get_width();
                 editor.set_caret(w - 1, pos.y);
             }
 
@@ -192,8 +192,7 @@ impl Tool for FontTool {
                 if pos.x > 0 {
                     editor.set_caret_position(pos + Position::new(-(letter_size.width), 0));
                     if editor.buffer_view.lock().caret.insert_mode {
-                        let end =
-                            editor.buffer_view.lock().buf.get_buffer_width() - (letter_size.width);
+                        let end = editor.buffer_view.lock().buf.get_width() - (letter_size.width);
                         for i in pos.x..end {
                             let next = editor.get_char_from_cur_layer(Position::new(
                                 i + letter_size.width,
@@ -202,7 +201,7 @@ impl Tool for FontTool {
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(
-                            editor.buffer_view.lock().buf.get_buffer_width() - (letter_size.width),
+                            editor.buffer_view.lock().buf.get_width() - (letter_size.width),
                             pos.y,
                         );
                         editor.fill(

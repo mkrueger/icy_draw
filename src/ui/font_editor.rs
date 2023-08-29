@@ -14,7 +14,7 @@ pub struct FontEditor {
     selected_char_opt: Option<char>,
     is_dirty: bool,
     enabled: bool,
-    id:usize
+    id: usize,
 }
 
 impl FontEditor {
@@ -24,7 +24,7 @@ impl FontEditor {
             selected_char_opt: None,
             is_dirty: false,
             enabled: true,
-            id
+            id,
         }
     }
 
@@ -216,7 +216,7 @@ impl Document for FontEditor {
     }
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
-        fs::write(file_name, self.font.to_bytes()?)?;
+        fs::write(file_name, self.font.to_psf2_bytes()?)?;
         self.is_dirty = false;
         Ok(())
     }

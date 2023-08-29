@@ -393,8 +393,8 @@ fn get_half_block(
 }
 
 pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
-    let w = editor.buffer_view.lock().buf.get_buffer_width();
-    let h = editor.buffer_view.lock().buf.get_real_buffer_height();
+    let w = editor.buffer_view.lock().buf.get_width();
+    let h = editor.buffer_view.lock().buf.get_line_count();
 
     if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 {
         return;

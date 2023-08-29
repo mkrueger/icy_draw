@@ -108,7 +108,7 @@ impl Document for AnsiEditor {
                     .unwrap()
                     .editor
                     .buf
-                    .get_real_buffer_height();
+                    .get_line_count();
 
                 self.buffer_view
                     .lock()
@@ -127,14 +127,14 @@ impl Document for AnsiEditor {
                     .unwrap()
                     .editor
                     .buf
-                    .get_buffer_width();
+                    .get_width();
                 let buf_h = self
                     .buffer_view
                     .lock()
                     .unwrap()
                     .editor
                     .buf
-                    .get_buffer_height();
+                    .get_height();
 
                 let char_size = Vec2::new(
                     font_dimensions.width as f32 * scale,

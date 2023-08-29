@@ -86,13 +86,15 @@ impl ModalDialog for ExportFileDialog {
                         }
 
                         let mut format_type = 0;
-                        if let Some(ext) = self.file_name.extension().unwrap().to_str() {
-                            let ext = ext.to_lowercase();
-                            for i in 0..TYPE_DESCRIPTIONS.len() {
-                                let td = TYPE_DESCRIPTIONS[i];
-                                if ext == td.2 {
-                                    format_type = i;
-                                    break;
+                        if let Some(ext) = self.file_name.extension() {
+                            if let Some(ext) = ext.to_str() {
+                                let ext = ext.to_lowercase();
+                                for i in 0..TYPE_DESCRIPTIONS.len() {
+                                    let td = TYPE_DESCRIPTIONS[i];
+                                    if ext == td.2 {
+                                        format_type = i;
+                                        break;
+                                    }
                                 }
                             }
                         }

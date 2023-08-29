@@ -16,11 +16,11 @@ pub struct UndoSetChar {
 
 impl UndoOperation for UndoSetChar {
     fn undo(&self, buffer: &mut Buffer) {
-        buffer.set_char(self.layer, self.pos, self.old);
+        buffer.layers[self.layer].set_char(self.pos, self.old);
     }
 
     fn redo(&self, buffer: &mut Buffer) {
-        buffer.set_char(self.layer, self.pos, self.new);
+        buffer.layers[self.layer].set_char(self.pos, self.new);
     }
 }
 
@@ -81,19 +81,19 @@ impl UndoOperation for UndoReplaceLayers {
 }
 
 pub struct ClearLayerOperation {
-    pub layer_num: i32,
+    pub layer_num: usize,
     pub lines: Vec<super::Line>,
 }
 
 impl UndoOperation for ClearLayerOperation {
     fn undo(&self, buffer: &mut Buffer) {
-        buffer.layers[self.layer_num as usize].lines.clear();
-        buffer.layers[self.layer_num as usize]
+        buffer.layers[self.layer_num].lines.clear();
+        buffer.layers[self.layer_num]
             .lines
             .extend(self.lines.clone());
     }
 
     fn redo(&self, buffer: &mut Buffer) {
-        buffer.layers[self.layer_num as usize].lines.clear();
+        buffer.layers[self.layer_num].lines.clear();
     }
 }

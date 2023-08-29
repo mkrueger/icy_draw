@@ -31,16 +31,14 @@ impl Tool for MoveLayer {
         _start: Position,
         _cur: Position,
     ) -> Event {
-        let cur_layer = editor.cur_layer as usize;
-        if let Some(layer) = editor.buffer_view.lock().buf.layers.get(cur_layer) {
+        if let Some(layer) = editor.buffer_view.lock().buf.layers.get(editor.cur_layer) {
             self.pos = layer.get_offset();
         }
         Event::None
     }
 
     fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
-        let cur_layer = editor.cur_layer as usize;
-        if let Some(layer) = editor.buffer_view.lock().buf.layers.get_mut(cur_layer) {
+        if let Some(layer) = editor.buffer_view.lock().buf.layers.get_mut(editor.cur_layer) {
             layer.set_offset(self.pos + cur - start);
         }
         Event::None
