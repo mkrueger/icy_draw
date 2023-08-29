@@ -32,15 +32,11 @@ impl NewFileDialog {
                     .num_columns(2)
                     .spacing([4.0, 8.0])
                     .show(ui, |ui| {
-                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-                        });
+                        ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
                         ui.add(egui::DragValue::new(&mut self.width));
                         ui.end_row();
 
-                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
-                        });
+                        ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
                         ui.add(egui::DragValue::new(&mut self.height));
                         ui.end_row();
                     });

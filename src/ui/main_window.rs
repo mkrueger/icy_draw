@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::Arc,
-    time::Duration, ffi::OsStr,
+    time::Duration,
 };
 
 use crate::{
@@ -226,13 +226,13 @@ impl MainWindow {
                         let mut save_as = true;
                         if let Some(str) = &t.1 .0 {
                             let path = PathBuf::from(str);
-                            if let Some(ext) = path.extension()  {
+                            if let Some(ext) = path.extension() {
                                 if ext == "icd" {
                                     t.1 .1.save(str).unwrap();
                                     save_as = false;
                                 }
-                            } 
-                        } 
+                            }
+                        }
                         if save_as {
                             self.save_as();
                         }
@@ -721,7 +721,51 @@ impl eframe::App for MainWindow {
         SidePanel::right("right_panel").show(ctx, |ui| {
             if let Some((_, t)) = self.tree.find_active_focused() {
                 if let Some(editor) = t.1.get_buffer_view() {
-                    crate::show_layer_view(ctx, ui, editor);
+                    let message = crate::show_layer_view(ctx, ui, editor);
+                    match message {
+                        Some(crate::Message::EditLayer(i)) => {
+                            self.modal_dialog = Some(Box::new(crate::EditLayerDialog::new(
+                                &editor.buffer_view.lock().buf,
+                                i,
+                            )));
+                        }
+                        Some(crate::Message::NewLayer) => {
+                            let w = editor.buffer_view.lock().buf.get_width();
+                            let h = editor.buffer_view.lock().buf.get_height();
+                            let new_layer = icy_engine::Layer::new("New Layer", w, h);
+                            editor.buffer_view.lock().buf.layers.insert(0, new_layer);
+                        }
+                        Some(crate::Message::MoveLayerUp(cur_layer)) => {
+                            editor
+                                .buffer_view
+                                .lock()
+                                .buf
+                                .layers
+                                .swap(cur_layer, cur_layer - 1);
+                            editor.cur_layer -= 1;
+                        }
+                        Some(crate::Message::MoveLayerDown(cur_layer)) => {
+                            editor
+                                .buffer_view
+                                .lock()
+                                .buf
+                                .layers
+                                .swap(cur_layer, cur_layer + 1);
+                            editor.cur_layer += 1;
+                        }
+                        Some(crate::Message::DeleteLayer(cur_layer)) => {
+                            editor.buffer_view.lock().buf.layers.remove(cur_layer);
+                            editor.cur_layer = editor.cur_layer.clamp(0, editor.buffer_view.lock().buf.layers.len() - 1);
+                        }
+                        Some(crate::Message::ToggleVisibility(cur_layer)) => {
+                            let is_visible = editor.buffer_view.lock().buf.layers[cur_layer].is_visible;
+                            editor.buffer_view.lock().buf.layers[cur_layer].is_visible = !is_visible;
+                        }
+                        Some(crate::Message::SelectLayer(cur_layer)) => {
+                            editor.cur_layer = cur_layer;
+                        }
+                        None => {}
+                    }
                 }
             }
             // ui.add(crate::show_char_table(buffer_opt.clone()));

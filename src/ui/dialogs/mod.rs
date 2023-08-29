@@ -18,3 +18,6 @@ pub use select_outline_dialog::*;
 
 mod about_dialog;
 pub use about_dialog::*;
+
+mod edit_layer_dialog;
+pub use edit_layer_dialog::*;

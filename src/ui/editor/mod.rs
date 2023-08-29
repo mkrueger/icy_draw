@@ -8,7 +8,7 @@ use std::{
 };
 
 use eframe::{
-    egui::{self, CursorIcon, Id, Key,  Response, RichText},
+    egui::{self, CursorIcon, Id, Key, Response, RichText},
     epaint::{mutex::Mutex, FontId, Vec2},
 };
 use i18n_embed_fl::fl;
