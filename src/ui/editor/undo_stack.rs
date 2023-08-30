@@ -60,19 +60,19 @@ impl UndoOperation for UndoSwapChar {
 pub struct UndoReplaceLayers {
     pub old_layer: Vec<Layer>,
     pub new_layer: Vec<Layer>,
-    pub old_size: Size<i32>,
-    pub new_size: Size<i32>,
+    pub old_size: Size,
+    pub new_size: Size,
 }
 
 impl UndoOperation for UndoReplaceLayers {
-    fn undo(&self, buffer: &mut Buffer) {
+    fn undo(&self, _buffer: &mut Buffer) {
         /* TODO
         buffer.layers = self.old_layer.clone();
         buffer.set_buffer_width(self.old_size.width);
         buffer.set_buffer_height(self.old_size.height);*/
     }
 
-    fn redo(&self, buffer: &mut Buffer) {
+    fn redo(&self, _buffer: &mut Buffer) {
         /* TODO
         buffer.layers = self.new_layer.clone();
         buffer.set_buffer_width(self.new_size.width);

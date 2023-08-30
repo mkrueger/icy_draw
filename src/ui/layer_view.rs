@@ -78,13 +78,11 @@ pub fn show_layer_view(
                         if r.clicked() {
                             result = Some(Message::ToggleVisibility(i));
                         }
-
                     });
                     row.col(|ui| {
                         let r = ui.selectable_label(i == cur_layer, &title);
                         if r.clicked() {
                             result = Some(Message::SelectLayer(i));
-
                         }
 
                         if r.double_clicked() {

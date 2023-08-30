@@ -566,7 +566,7 @@ impl MainWindow {
     }
 
     fn save_as(&mut self) {
-        if let Some(t) = self.tree.find_active_focused() {
+        if self.tree.find_active_focused().is_some() {
             let mut dialog = FileDialog::save_file(None);
             dialog.open();
             self.save_file_dialog = Some(dialog);
@@ -755,11 +755,15 @@ impl eframe::App for MainWindow {
                         }
                         Some(crate::Message::DeleteLayer(cur_layer)) => {
                             editor.buffer_view.lock().buf.layers.remove(cur_layer);
-                            editor.cur_layer = editor.cur_layer.clamp(0, editor.buffer_view.lock().buf.layers.len() - 1);
+                            editor.cur_layer = editor
+                                .cur_layer
+                                .clamp(0, editor.buffer_view.lock().buf.layers.len() - 1);
                         }
                         Some(crate::Message::ToggleVisibility(cur_layer)) => {
-                            let is_visible = editor.buffer_view.lock().buf.layers[cur_layer].is_visible;
-                            editor.buffer_view.lock().buf.layers[cur_layer].is_visible = !is_visible;
+                            let is_visible =
+                                editor.buffer_view.lock().buf.layers[cur_layer].is_visible;
+                            editor.buffer_view.lock().buf.layers[cur_layer].is_visible =
+                                !is_visible;
                         }
                         Some(crate::Message::SelectLayer(cur_layer)) => {
                             editor.cur_layer = cur_layer;
@@ -810,7 +814,7 @@ impl eframe::App for MainWindow {
             self.dialog_open = true;
             if dialog.show(ctx) {
                 if dialog.create {
-                    let buf = Buffer::create(dialog.width, dialog.height);
+                    let buf = Buffer::create(dialog.width as usize, dialog.height as usize);
                     let id = self.create_id();
                     let editor = AnsiEditor::new(&self.gl, id, buf);
                     self.tree.push_to_focused_leaf((None, Box::new(editor)));

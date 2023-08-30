@@ -59,7 +59,7 @@ impl FontEditor {
             if let Some(glyph) = self.font.get_glyph(ch) {
                 for y in 0..s.height {
                     for x in 0..s.width {
-                        if glyph.data[y as usize] & (128 >> x) != 0 {
+                        if glyph.data[y] & (128 >> x) != 0 {
                             painter.rect_filled(
                                 Rect::from_min_size(
                                     Pos2::new(
@@ -128,7 +128,7 @@ impl FontEditor {
                                 ),
                                 Vec2::new(scale, scale),
                             );
-                            let col = if glyph.data[y as usize] & (128 >> x) != 0 {
+                            let col = if glyph.data[y] & (128 >> x) != 0 {
                                 if let Some(pos) = response.hover_pos() {
                                     if rect.contains(pos) {
                                         Color32::WHITE
@@ -177,7 +177,7 @@ impl Document for FontEditor {
         &mut self,
         ui: &mut eframe::egui::Ui,
         _cur_tool: &mut Box<dyn Tool>,
-        options: &DocumentOptions,
+        _options: &DocumentOptions,
     ) {
         ui.vertical_centered(|ui| ui.add(self.edit_glyph()));
 

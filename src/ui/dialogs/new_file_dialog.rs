@@ -1,4 +1,4 @@
-use eframe::egui::{self, Layout};
+use eframe::egui::{self};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 

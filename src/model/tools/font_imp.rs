@@ -13,7 +13,7 @@ use walkdir::{DirEntry, WalkDir};
 pub struct FontTool {
     pub selected_font: i32,
     pub fonts: Vec<TheDrawFont>,
-    pub sizes: Vec<Size<i32>>,
+    pub sizes: Vec<Size>,
 }
 
 impl FontTool {
@@ -143,7 +143,7 @@ impl Tool for FontTool {
 
             MKey::Home => {
                 if let MModifiers::Control = modifier {
-                    let end = editor.buffer_view.lock().buf.get_width();
+                    let end = editor.buffer_view.lock().buf.get_width() as i32;
                     for i in 0..end {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
@@ -159,7 +159,7 @@ impl Tool for FontTool {
 
             MKey::End => {
                 if let MModifiers::Control = modifier {
-                    let end = editor.buffer_view.lock().buf.get_width();
+                    let end = editor.buffer_view.lock().buf.get_width() as i32;
                     for i in (0..end).rev() {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
@@ -170,7 +170,7 @@ impl Tool for FontTool {
                         }
                     }
                 }
-                let w = editor.buffer_view.lock().buf.get_width();
+                let w = editor.buffer_view.lock().buf.get_width() as i32;
                 editor.set_caret(w - 1, pos.y);
             }
 
@@ -190,18 +190,20 @@ impl Tool for FontTool {
                 editor.cur_selection = None;
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
-                    editor.set_caret_position(pos + Position::new(-(letter_size.width), 0));
+                    editor.set_caret_position(pos + Position::new(-(letter_size.width as i32), 0));
                     if editor.buffer_view.lock().caret.insert_mode {
-                        let end = editor.buffer_view.lock().buf.get_width() - (letter_size.width);
+                        let end = (editor.buffer_view.lock().buf.get_width() - (letter_size.width))
+                            as i32;
                         for i in pos.x..end {
                             let next = editor.get_char_from_cur_layer(Position::new(
-                                i + letter_size.width,
+                                i + letter_size.width as i32,
                                 pos.y,
                             ));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(
-                            editor.buffer_view.lock().buf.get_width() - (letter_size.width),
+                            (editor.buffer_view.lock().buf.get_width() - (letter_size.width))
+                                as i32,
                             pos.y,
                         );
                         editor.fill(
@@ -231,16 +233,16 @@ impl Tool for FontTool {
                 let opt_size = font.render(
                     &mut editor.buffer_view.lock().buf,
                     0,
-                    c_pos,
+                    c_pos.as_uposition(),
                     attr,
                     unsafe { SETTINGS.font_outline_style },
                     ch as u8,
                 );
                 if let Some(size) = opt_size {
-                    editor.set_caret(c_pos.x + size.width + font.spaces, c_pos.y);
+                    editor.set_caret(c_pos.x + size.width as i32 + font.spaces, c_pos.y);
                     let new_pos = editor.get_caret_position();
                     self.sizes.push(Size {
-                        width: (new_pos.x - c_pos.x),
+                        width: (new_pos.x - c_pos.x) as usize,
                         height: size.height,
                     });
                 } else {

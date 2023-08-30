@@ -107,8 +107,8 @@ impl Tool for DrawRectangleFilledTool {
 
         let draw = move |rect: Rectangle| {
             println!("draw rect: {:?}", rect);
-            for y in 0..rect.size.height {
-                for x in 0..rect.size.width {
+            for y in 0..(rect.size.height as i32) {
+                for x in 0..(rect.size.width as i32) {
                     plot_point(
                         editor,
                         self,

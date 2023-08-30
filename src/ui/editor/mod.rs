@@ -228,8 +228,8 @@ impl AnsiEditor {
     pub fn set_caret_position(&mut self, pos: Position) {
         let buffer_view = &mut self.buffer_view.lock();
         let pos = Position::new(
-            min(buffer_view.buf.get_width() - 1, max(0, pos.x)),
-            min(buffer_view.buf.get_line_count() - 1, max(0, pos.y)),
+            min(buffer_view.buf.get_width() as i32 - 1, max(0, pos.x)),
+            min(buffer_view.buf.get_line_count() as i32 - 1, max(0, pos.y)),
         );
         buffer_view.caret.set_position(pos);
         //(self.pos_changed)(self, pos);
@@ -295,8 +295,8 @@ impl AnsiEditor {
 
     pub fn set_caret(&mut self, x: i32, y: i32) -> Event {
         let old = self.buffer_view.lock().caret.get_position();
-        let w = self.buffer_view.lock().buf.get_width() - 1;
-        let h = self.buffer_view.lock().buf.get_line_count() - 1;
+        let w = self.buffer_view.lock().buf.get_width() as i32 - 1;
+        let h = self.buffer_view.lock().buf.get_line_count() as i32 - 1;
         self.set_caret_position(Position::new(min(max(0, x), w), min(max(0, y), h)));
         Event::CursorPositionChange(old, self.buffer_view.lock().caret.get_position())
     }
@@ -425,14 +425,14 @@ impl AnsiEditor {
 
         pos.x >= 0
             && pos.y >= 0
-            && pos.x < self.buffer_view.lock().buf.get_width()
-            && pos.y < self.buffer_view.lock().buf.get_line_count()
+            && pos.x < self.buffer_view.lock().buf.get_width() as i32
+            && pos.y < self.buffer_view.lock().buf.get_line_count() as i32
     }
 
     pub fn type_key(&mut self, char_code: char) {
         let pos = self.buffer_view.lock().caret.get_position();
         if self.buffer_view.lock().caret.insert_mode {
-            let start = self.buffer_view.lock().buf.get_width() - 1;
+            let start = self.buffer_view.lock().buf.get_width() as i32 - 1;
             for i in start..=pos.x {
                 let next = self.get_char_from_cur_layer(Position::new(i - 1, pos.y));
                 self.set_char(Position::new(i, pos.y), next);
@@ -475,14 +475,14 @@ impl AnsiEditor {
             (
                 r.start.x,
                 r.start.y,
-                r.start.x + r.size.width - 1,
-                r.start.y + r.size.height - 1,
+                r.start.x + r.size.width as i32 - 1,
+                r.start.y + r.size.height as i32 - 1,
             )
         } else {
             (
                 0,
                 self.buffer_view.lock().caret.get_position().y,
-                self.buffer_view.lock().buf.get_width() - 1,
+                self.buffer_view.lock().buf.get_width() as i32 - 1,
                 self.buffer_view.lock().caret.get_position().y,
             )
         }
@@ -674,8 +674,8 @@ impl AnsiEditor {
         let new_height = y2 - y1;
         let new_width = x2 - x1;
 
-        if new_height == self.buffer_view.lock().buf.get_line_count()
-            && new_width == self.buffer_view.lock().buf.get_width()
+        if new_height == self.buffer_view.lock().buf.get_line_count() as i32
+            && new_width == self.buffer_view.lock().buf.get_width() as i32
         {
             return;
         }
@@ -715,8 +715,14 @@ impl AnsiEditor {
         })); */
 
         self.buffer_view.lock().buf.layers = new_layers;
-        self.buffer_view.lock().buf.set_buffer_width(new_width);
-        self.buffer_view.lock().buf.set_buffer_height(new_height);
+        self.buffer_view
+            .lock()
+            .buf
+            .set_buffer_width(new_width as usize);
+        self.buffer_view
+            .lock()
+            .buf
+            .set_buffer_height(new_height as usize);
         self.end_atomic_undo();
     }
     pub fn switch_fg_bg_color(&mut self) {

@@ -111,8 +111,8 @@ impl Tool for DrawEllipseFilledTool {
         }
 
         let draw = move |rect: Rectangle| {
-            for y in 0..rect.size.height {
-                for x in 0..rect.size.width {
+            for y in 0..(rect.size.height as i32) {
+                for x in 0..(rect.size.width as i32) {
                     plot_point(
                         editor,
                         self,

@@ -56,7 +56,7 @@ impl ModalDialog for SelectCharacterDialog {
                 if let Some(glyph) = font.get_glyph(ch) {
                     for y in 0..s.height {
                         for x in 0..s.width {
-                            if glyph.data[y as usize] & (128 >> x) != 0 {
+                            if glyph.data[y] & (128 >> x) != 0 {
                                 painter.rect_filled(
                                     Rect::from_min_size(
                                         egui::Pos2::new(
@@ -130,7 +130,7 @@ impl ModalDialog for SelectCharacterDialog {
                     if let Some(glyph) = font.get_glyph(ch) {
                         for y in 0..s.height {
                             for x in 0..s.width {
-                                if glyph.data[y as usize] & (128 >> x) != 0 {
+                                if glyph.data[y] & (128 >> x) != 0 {
                                     painter.rect_filled(
                                         Rect::from_min_size(
                                             egui::Pos2::new(

@@ -81,7 +81,7 @@ impl ModalDialog for EditLayerDialog {
                             ),
                         );
                         ui.end_row();
-                        
+
                         ui.label(fl!(
                             crate::LANGUAGE_LOADER,
                             "edit-layer-dialog-is-x-offset-label"
