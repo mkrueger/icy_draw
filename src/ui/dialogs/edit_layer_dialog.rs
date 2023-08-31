@@ -68,12 +68,14 @@ impl ModalDialog for EditLayerDialog {
                             let mut use_color = true;
 
                             if let Some(color) = &mut self.color {
-                                ui.checkbox(&mut use_color, "Use Color");
+                                ui.label("");
+                                ui.horizontal(|ui| {
+                                    let mut c = (*color).into();
+                                    color_picker::color_edit_button_rgb(ui, &mut c);
+                                    *color = c.into();
 
-                                let mut c = (*color).into();
-                                color_picker::color_edit_button_rgb(ui, &mut c);
-                                *color = c.into();
-
+                                    ui.checkbox(&mut use_color, "Use Color");
+                                });
                                 ui.end_row();
                             }
 
@@ -129,6 +131,7 @@ impl ModalDialog for EditLayerDialog {
                         ui.end_row();
 
                         if self.has_alpha_channel {
+                            ui.label("");
                             ui.checkbox(
                                 &mut self.is_alpha_channel_locked,
                                 fl!(

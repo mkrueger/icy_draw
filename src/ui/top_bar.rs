@@ -23,16 +23,16 @@ impl MainWindow {
             {
                 frame.info().window_info.fullscreen
             }
-        };
+        };/* 
         let top_bar_style: hypex_ui::TopBarStyle =
             self.hypex_ui
                 .top_bar_style(native_pixels_per_point, fullscreen, false);
-
+*/
         TopBottomPanel::top("top_panel")
-            .frame(self.hypex_ui.top_panel_frame())
-            .exact_height(top_bar_style.height)
+          //  .frame(self.hypex_ui.top_panel_frame())
+         //   .exact_height(top_bar_style.height)
             .show(ctx, |ui| {
-                result = self.main_menu(ui, frame, &top_bar_style);
+                result = self.main_menu(ui, frame);
             });
         result
     }
@@ -41,12 +41,9 @@ impl MainWindow {
         &mut self,
         ui: &mut Ui,
         frame: &mut eframe::Frame,
-        top_bar_style: &hypex_ui::TopBarStyle,
     ) -> Option<Message> {
         let mut result = None;
         menu::bar(ui, |ui| {
-            ui.set_height(top_bar_style.height);
-            ui.add_space(top_bar_style.indent);
 
             let mut buffer_opt = None;
             if let Some(doc) = self.get_active_document_mut() {
@@ -388,7 +385,7 @@ impl MainWindow {
     fn top_bar_ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             // From right-to-left:
-
+/*
             if hypex_ui::CUSTOM_WINDOW_DECORATIONS {
                 ui.add_space(8.0);
                 hypex_ui::native_window_buttons_ui(frame, ui);
@@ -411,7 +408,7 @@ impl MainWindow {
                 ui,
                 &hypex_ui::icons::LEFT_PANEL_TOGGLE,
                 &mut self.left_panel,
-            );
+            );*/
         });
     }
 }

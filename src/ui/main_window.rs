@@ -9,12 +9,9 @@ use eframe::{
     epaint::pos2,
 };
 use glow::Context;
-use hypex_ui::toasts;
 use icy_engine::{BitFont, Buffer, Position};
 
 pub struct MainWindow {
-    pub hypex_ui: hypex_ui::HypexUi,
-    pub toasts: toasts::Toasts,
     pub tree: egui_tiles::Tree<Tab>,
 
     pub tab_viewer: TabBehavior,
@@ -125,11 +122,7 @@ impl MainWindow {
             }),
         ];
 
-        let hypex_ui = hypex_ui::HypexUi::load_and_apply(&cc.egui_ctx);
-
         MainWindow {
-            hypex_ui,
-            toasts: Default::default(),
             tab_viewer: TabBehavior {
                 tools,
                 selected_tool: 0,
@@ -332,7 +325,6 @@ impl eframe::App for MainWindow {
 
         let panel_frame = egui::Frame {
             fill: ctx.style().visuals.panel_fill,
-            inner_margin: hypex_ui::HypexUi::view_padding().into(),
             ..Default::default()
         };
 
