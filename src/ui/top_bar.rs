@@ -13,24 +13,7 @@ impl MainWindow {
         frame: &mut eframe::Frame,
     ) -> Option<Message> {
         let mut result = None;
-        let native_pixels_per_point = frame.info().native_pixels_per_point;
-        let fullscreen = {
-            #[cfg(target_arch = "wasm32")]
-            {
-                false
-            }
-            #[cfg(not(target_arch = "wasm32"))]
-            {
-                frame.info().window_info.fullscreen
-            }
-        };/* 
-        let top_bar_style: hypex_ui::TopBarStyle =
-            self.hypex_ui
-                .top_bar_style(native_pixels_per_point, fullscreen, false);
-*/
         TopBottomPanel::top("top_panel")
-          //  .frame(self.hypex_ui.top_panel_frame())
-         //   .exact_height(top_bar_style.height)
             .show(ctx, |ui| {
                 result = self.main_menu(ui, frame);
             });
@@ -205,13 +188,7 @@ impl MainWindow {
                     "Del",
                 );
                 if button.clicked() {
-                    if let Some(doc) = self.get_active_document_mut() {
-                        let doc = doc.get_ansi_editor_mut();
-                        if let Some(editor) = doc {
-                            editor.delete_selection();
-                            editor.redraw_view();
-                        }
-                    }
+                    result = Some(Message::DeleteSelection);
                     ui.close_menu();
                 }
 

@@ -115,7 +115,10 @@ impl Tool for FontTool {
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
             editor.set_caret_position(pos);
-            editor.cur_selection = None;
+            editor
+                .buffer_view
+                .lock()
+                .clear_selection();
         }
         Event::None
     }
@@ -187,7 +190,10 @@ impl Tool for FontTool {
 
             MKey::Backspace => {
                 let letter_size = self.sizes.pop().unwrap_or_else(|| Size::new(1, 1));
-                editor.cur_selection = None;
+                editor
+                .buffer_view
+                .lock()
+                .clear_selection();
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
                     editor.set_caret_position(pos + Position::new(-(letter_size.width as i32), 0));

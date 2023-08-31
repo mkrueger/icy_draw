@@ -26,6 +26,7 @@ pub enum Message {
     SetCanvasSize,
     SelectAll,
     Deselect,
+    DeleteSelection,
 
     ShowAboutDialog,
 }
@@ -120,8 +121,20 @@ impl MainWindow {
                 if let Some(doc) = self.get_active_document_mut() {
                     let doc = doc.get_ansi_editor_mut();
                     if let Some(editor) = doc {
-                        editor.cur_selection = None;
+                        editor.buffer_view.lock().clear_selection();
                         editor.redraw_view();
+                    }
+                }
+            }
+
+            Message::DeleteSelection => {
+                if let Some(doc) = self.get_active_document_mut() {
+                    let doc = doc.get_ansi_editor_mut();
+                    if let Some(editor) = doc {
+                        if editor.buffer_view.lock().get_selection().is_some() {
+                            editor.delete_selection();
+                            editor.redraw_view();
+                        }
                     }
                 }
             }

@@ -25,7 +25,10 @@ impl Tool for ClickTool {
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
             editor.set_caret_position(pos);
-            editor.cur_selection = None;
+            editor
+                .buffer_view
+                .lock()
+                .clear_selection();
         }
         Event::None
     }
@@ -59,7 +62,10 @@ impl Tool for ClickTool {
         }
 
         if start == cur {
-            editor.cur_selection = None;
+            editor
+                .buffer_view
+                .lock()
+                .clear_selection();
         }
 
         Event::None

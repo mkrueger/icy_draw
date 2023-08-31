@@ -33,7 +33,7 @@ impl FillTool {
         old_ch: AttributedChar,
         new_ch: AttributedChar,
     ) {
-        if !editor.point_is_valid(pos) || !visited.insert(pos) {
+        if pos.x < 0 || pos.y < 0 || pos.x >= editor.buffer_view.lock().buf.get_width() as i32  || pos.x >= editor.buffer_view.lock().buf.get_height() as i32 || !visited.insert(pos) {
             return;
         }
 

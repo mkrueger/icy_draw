@@ -389,8 +389,11 @@ fn handle_outline_insertion(editor: &mut AnsiEditor, modifier: MModifiers, outli
             return;
         }
     }
-    editor.cur_selection = None;
-    let ch = editor.get_outline_char_code(outline);
+    editor
+    .buffer_view
+    .lock()
+    .clear_selection();
+let ch = editor.get_outline_char_code(outline);
     if let Ok(ch) = ch {
         editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
     }

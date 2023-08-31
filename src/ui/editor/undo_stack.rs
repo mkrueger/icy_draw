@@ -1,4 +1,4 @@
-use icy_engine::AttributedChar;
+use icy_engine::{AttributedChar, UPosition};
 
 use super::{Buffer, Layer, Position, Size};
 
@@ -8,7 +8,7 @@ pub trait UndoOperation: Send {
 }
 
 pub struct UndoSetChar {
-    pub pos: Position,
+    pub pos: UPosition,
     pub layer: usize,
     pub old: AttributedChar,
     pub new: AttributedChar,

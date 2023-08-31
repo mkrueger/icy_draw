@@ -14,7 +14,7 @@ use eframe::{
 use i18n_embed_fl::fl;
 use icy_engine::{
     ansi, AttributedChar, Buffer, BufferParser, Layer, Line, Position, Rectangle, SaveOptions,
-    Size, TextAttribute,
+    Size, TextAttribute, UPosition,
 };
 
 mod undo_stack;
@@ -33,35 +33,6 @@ pub enum Event {
     CursorPositionChange(Position, Position),
 }
 
-#[derive(Clone, Debug)]
-pub enum Shape {
-    Rectangle,
-    Elipse,
-}
-
-#[derive(Clone, Debug)]
-pub struct Selection {
-    pub shape: Shape,
-    pub rectangle: Rectangle,
-    pub is_preview: bool,
-}
-
-impl Selection {
-    pub fn new() -> Self {
-        Selection {
-            shape: Shape::Rectangle,
-            rectangle: Rectangle::from(-1, -1, 0, 0),
-            is_preview: true,
-        }
-    }
-}
-
-impl Default for Selection {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 pub struct AnsiEditor {
     pub id: usize,
 
@@ -69,7 +40,6 @@ pub struct AnsiEditor {
     drag_start: Option<Vec2>,
     last_pos: Position,
 
-    pub cur_selection: Option<Selection>,
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
     buffer_parser: Box<dyn BufferParser>,
 
@@ -177,7 +147,6 @@ impl AnsiEditor {
         AnsiEditor {
             id,
             buffer_view,
-            cur_selection: None,
             cur_outline: 0,
             is_inactive: false,
             reference_image: None,
@@ -354,18 +323,17 @@ impl AnsiEditor {
         self.buffer_view.lock().buf.layers[self.cur_layer].get_char(pos)
     }
 
-    pub fn set_char(&mut self, pos: Position, dos_char: AttributedChar) {
-        if self.point_is_valid(pos) {
-            self.redo_stack.clear();
-            let old = self.buffer_view.lock().buf.layers[self.cur_layer].get_char(pos);
-            self.buffer_view.lock().buf.layers[self.cur_layer].set_char(pos, dos_char);
-            self.undo_stack.push(Box::new(UndoSetChar {
-                pos,
-                layer: self.cur_layer,
-                old,
-                new: dos_char,
-            }));
-        }
+    pub fn set_char(&mut self, pos: impl Into <UPosition>, dos_char: AttributedChar) {
+        let pos = pos.into();
+        self.redo_stack.clear();
+        let old = self.buffer_view.lock().buf.layers[self.cur_layer].get_char(pos);
+        self.buffer_view.lock().buf.layers[self.cur_layer].set_char(pos, dos_char);
+        self.undo_stack.push(Box::new(UndoSetChar {
+            pos,
+            layer: self.cur_layer,
+            old,
+            new: dos_char,
+        }));
     }
     pub fn begin_atomic_undo(&mut self) {
         self.atomic_undo_stack.push(self.undo_stack.len());
@@ -414,15 +382,17 @@ impl AnsiEditor {
         self.end_atomic_undo();
     }
 
-    pub fn point_is_valid(&self, pos: Position) -> bool {
-        if let Some(selection) = &self.cur_selection {
-            return selection.rectangle.contains_pt(pos);
-        }
-
-        pos.x >= 0
-            && pos.y >= 0
-            && pos.x < self.buffer_view.lock().buf.get_width() as i32
-            && pos.y < self.buffer_view.lock().buf.get_line_count() as i32
+    fn cur_selection(&self) -> Option<icy_engine::Selection> {
+        self
+        .buffer_view
+        .lock()
+        .get_selection().clone()
+    }
+    fn clear_selection(&self) {
+        self
+        .buffer_view
+        .lock()
+        .clear_selection();
     }
 
     pub fn type_key(&mut self, char_code: char) {
@@ -440,23 +410,18 @@ impl AnsiEditor {
     }
 
     pub fn delete_selection(&mut self) {
-        if let Some(selection) = &self.cur_selection.clone() {
+        if let Some(selection) = &self.cur_selection() {
             self.begin_atomic_undo();
-            let mut pos = selection.rectangle.start;
-            for _ in 0..selection.rectangle.size.height {
-                for _ in 0..selection.rectangle.size.width {
-                    if self.cur_layer == self.buffer_view.lock().buf.layers.len() - 1 {
-                        self.set_char(pos, AttributedChar::default());
-                    } else {
-                        self.set_char(pos, AttributedChar::invisible());
-                    }
-                    pos.x += 1;
+            let min = selection.min().as_uposition();
+            let max = selection.max().as_uposition();
+            println!("delete selection! {} - {} ", min, max);
+            for y in min.y..=max.y {
+                for x in min.x..=max.x {
+                    self.set_char( (x, y), AttributedChar::invisible());
                 }
-                pos.y += 1;
-                pos.x = selection.rectangle.start.x;
             }
             self.end_atomic_undo();
-            self.cur_selection = None;
+            self.clear_selection();
         }
     }
 
@@ -466,20 +431,22 @@ impl AnsiEditor {
     }
 
     fn get_blockaction_rectangle(&self) -> (i32, i32, i32, i32) {
-        if let Some(selection) = &self.cur_selection {
-            let r = &selection.rectangle;
+        if let Some(selection) = &self.cur_selection() {
+            let min = selection.min();
+            let max = selection.max();
             (
-                r.start.x,
-                r.start.y,
-                r.start.x + r.size.width as i32 - 1,
-                r.start.y + r.size.height as i32 - 1,
+                min.x,
+                min.y,
+                max.x,
+                max.y,
             )
         } else {
+            let size = self.buffer_view.lock().buf.get_buffer_size();
             (
                 0,
-                self.buffer_view.lock().caret.get_position().y,
-                self.buffer_view.lock().buf.get_width() as i32 - 1,
-                self.buffer_view.lock().caret.get_position().y,
+                0,
+                size.width as i32 - 1,
+                size.height as i32 - 1,
             )
         }
     }
@@ -512,7 +479,7 @@ impl AnsiEditor {
                         AttributedChar::invisible()
                     };
 
-                    let pos = Position::new(x, y);
+                    let pos = UPosition::new(x as usize, y as usize);
                     let old = layer.get_char(pos);
                     layer.set_char(pos, ch);
                     self.undo_stack.push(Box::new(UndoSetChar {
@@ -559,7 +526,7 @@ impl AnsiEditor {
                         AttributedChar::invisible()
                     };
 
-                    let pos = Position::new(x2 - x, y);
+                    let pos = UPosition::new((x2 - x) as usize, y as usize);
                     let old = layer.get_char(pos);
                     layer.set_char(pos, ch);
                     self.undo_stack.push(Box::new(UndoSetChar {
@@ -603,7 +570,7 @@ impl AnsiEditor {
                         AttributedChar::invisible()
                     };
 
-                    let pos = Position::new(x2 - x, y);
+                    let pos = UPosition::new((x2 - x) as usize, y as usize);
                     let old = layer.get_char(pos);
                     layer.set_char(pos, ch);
                     self.undo_stack.push(Box::new(UndoSetChar {
@@ -677,7 +644,8 @@ impl AnsiEditor {
         }
 
         let mut new_layers = Vec::new();
-        for l in 0..self.buffer_view.lock().buf.layers.len() {
+        let max = self.buffer_view.lock().buf.layers.len();
+        for l in 0..max {
             let old_layer = &self.buffer_view.lock().buf.layers[l];
             let mut new_layer = Layer::default();
             new_layer.title = old_layer.title.clone();

@@ -9,10 +9,12 @@ use eframe::{
     epaint::pos2,
 };
 use glow::Context;
+use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, Position};
 
 pub struct MainWindow {
     pub tree: egui_tiles::Tree<Tab>,
+    toasts: egui_notify::Toasts,
 
     pub tab_viewer: TabBehavior,
     pub gl: Arc<Context>,
@@ -130,6 +132,7 @@ impl MainWindow {
                     scale: eframe::egui::Vec2::new(1.0, 1.0),
                 },
             },
+            toasts: egui_notify::Toasts::default(),
             tree: DockingContainer::default(),
             gl: cc.gl.clone().unwrap(),
             dialog_open: false,
@@ -164,10 +167,20 @@ impl MainWindow {
                 }
             }
         }
-        let buf = Buffer::load_buffer(path, true).unwrap();
-        let id = self.create_id();
-        let editor = AnsiEditor::new(&self.gl, id, buf);
-        add_child(&mut self.tree, Some(full_path), Box::new(editor));
+        match Buffer::load_buffer(path, true) {
+            Ok(buf) => {
+                let id = self.create_id();
+                let editor = AnsiEditor::new(&self.gl, id, buf);
+                add_child(&mut self.tree, Some(full_path), Box::new(editor));
+            }
+            Err(err) => {
+                log::error!("Error loading file: {}", err);
+                self.toasts
+                .error(fl!(crate::LANGUAGE_LOADER, "error-load-file", error = err.to_string()))
+                .set_duration(Some(Duration::from_secs(5)));
+
+            }
+        }
     }
 
     pub fn get_active_pane(&mut self) -> Option<&mut Tab> {
@@ -372,6 +385,8 @@ impl eframe::App for MainWindow {
                 }
             }
         }
+        self.toasts.show(ctx);
+
         ctx.request_repaint_after(Duration::from_millis(150));
     }
 
