@@ -66,7 +66,6 @@ pub struct AnsiEditor {
     pub id: usize,
 
     is_dirty: bool,
-    enabled: bool,
     drag_start: Option<Vec2>,
     last_pos: Position,
 
@@ -107,10 +106,6 @@ impl Document for AnsiEditor {
 
     fn is_dirty(&self) -> bool {
         self.is_dirty
-    }
-
-    fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
     }
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
@@ -197,7 +192,6 @@ impl AnsiEditor {
             redo_stack: Vec::new(),
 
             is_dirty: false,
-            enabled: true,
             drag_start: None,
             last_pos: Position::default(),
             buffer_parser: Box::new(buffer_parser),

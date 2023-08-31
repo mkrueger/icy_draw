@@ -40,7 +40,6 @@ impl AnsiEditor {
 
         Self {
             is_dirty: false,
-            enabled: true,
             pressed_button: -1,
             drag_start: Position::default(),
             drag_pos: Position::default(),
@@ -62,10 +61,6 @@ impl Document for AnsiEditor {
 
     fn is_dirty(&self) -> bool {
         self.is_dirty
-    }
-
-    fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
     }
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {

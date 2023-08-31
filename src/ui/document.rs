@@ -22,7 +22,6 @@ pub trait Document {
     fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor>;
     fn get_ansi_editor(&self) -> Option<&AnsiEditor>;
 
-    fn set_enabled(&mut self, enabled: bool);
 }
 
 pub struct DocumentOptions {

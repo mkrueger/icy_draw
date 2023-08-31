@@ -294,8 +294,6 @@ pub fn button_with_shortcut(
 
 impl eframe::App for MainWindow {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-    
-
         let msg = self.show_top_bar(ctx, frame);
         self.handle_message(msg);
 
@@ -381,18 +379,6 @@ impl eframe::App for MainWindow {
                     modal_dialog.commit_self(self).unwrap();
                 }
             }
-
-            let enabled = !self.dialog_open;
-            if enabled {
-                self.enumerate_documents( move |doc| {
-                    doc.set_enabled(true);
-                });
-            } else {
-                self.enumerate_documents( move |doc| {
-                    doc.set_enabled(false);
-                });
-            }
-
         }
         ctx.request_repaint_after(Duration::from_millis(150));
     }

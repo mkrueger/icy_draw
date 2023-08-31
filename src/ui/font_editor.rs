@@ -13,7 +13,6 @@ pub struct FontEditor {
     font: BitFont,
     selected_char_opt: Option<char>,
     is_dirty: bool,
-    enabled: bool,
     id: usize,
 }
 
@@ -23,7 +22,6 @@ impl FontEditor {
             font,
             selected_char_opt: None,
             is_dirty: false,
-            enabled: true,
             id,
         }
     }
@@ -168,11 +166,6 @@ impl Document for FontEditor {
     fn is_dirty(&self) -> bool {
         self.is_dirty
     }
-
-    fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
-    }
-
     fn show_ui(
         &mut self,
         ui: &mut eframe::egui::Ui,
