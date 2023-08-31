@@ -199,6 +199,7 @@ impl MainWindow {
                 let buf = &mut editor.buffer_view.lock().buf;
                 let size = buf.get_buffer_size();
                 let mut new_layer = icy_engine::Layer::new("New Layer", size);
+                new_layer.has_alpha_channel = true;
                 if buf.layers.is_empty() {
                     new_layer.has_alpha_channel = false;
                 }
