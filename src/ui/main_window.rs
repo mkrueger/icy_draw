@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fs, path::Path, rc::Rc, sync::Arc, time::Duration};
+use std::{cell::RefCell, fs, path::Path, rc::Rc, sync::{Arc, Mutex}, time::Duration};
 
 use crate::{
     add_child, model::Tool, AnsiEditor, DockingContainer, Document, DocumentOptions, FontEditor,
@@ -15,7 +15,7 @@ use icy_engine::{BitFont, Buffer, Position};
 pub struct MainWindow {
     pub tree: egui_tiles::Tree<Tab>,
     toasts: egui_notify::Toasts,
-
+    
     pub tab_viewer: TabBehavior,
     pub gl: Arc<Context>,
 
@@ -126,7 +126,7 @@ impl MainWindow {
 
         MainWindow {
             tab_viewer: TabBehavior {
-                tools,
+                tools: Arc::new(Mutex::new(tools)),
                 selected_tool: 0,
                 document_options: DocumentOptions {
                     scale: eframe::egui::Vec2::new(1.0, 1.0),
@@ -135,7 +135,7 @@ impl MainWindow {
             toasts: egui_notify::Toasts::default(),
             tree: DockingContainer::default(),
             gl: cc.gl.clone().unwrap(),
-            dialog_open: false,
+                        dialog_open: false,
             modal_dialog: None,
             id: 0,
             left_panel: true,
@@ -320,9 +320,8 @@ impl eframe::App for MainWindow {
                     }
                 }
                 crate::add_tool_switcher(ctx, ui, self);
-                /* TODO: Tool UI is not working yet
-                let modal = if let Some(tool) = self.tab_viewer.tools.get_mut(self.tab_viewer.selected_tool) {
-                    if let Some(doc) = self.get_active_document() {
+                let modal = if let Some(tool) = self.tab_viewer.tools.clone().lock().unwrap().get_mut(self.tab_viewer.selected_tool) {
+                    if let Some(doc) = self.get_active_document_mut() {
                        let doc = doc.get_ansi_editor();
                         if let Some(editor) = doc {
                             let tool_result = tool.show_ui(ctx, ui, editor);
@@ -333,7 +332,7 @@ impl eframe::App for MainWindow {
 
                 if modal.is_some() {
                     self.modal_dialog = modal;
-                }*/
+                }
             });
 
         let panel_frame = egui::Frame {

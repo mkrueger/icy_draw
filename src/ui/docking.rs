@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use crate::{model::Tool, Document, DocumentOptions};
 use eframe::egui;
 pub type DockingContainer = egui_tiles::Tree<Tab>;
@@ -8,7 +10,7 @@ pub struct Tab {
 }
 
 pub struct TabBehavior {
-    pub tools: Vec<Box<dyn Tool>>,
+    pub tools: Arc<Mutex<Vec<Box<dyn Tool>>>>,
     pub selected_tool: usize,
     pub document_options: DocumentOptions,
 }
@@ -30,7 +32,7 @@ impl egui_tiles::Behavior<Tab> for TabBehavior {
     ) -> egui_tiles::UiResponse {
         pane.doc.show_ui(
             ui,
-            &mut self.tools[self.selected_tool],
+            &mut self.tools.lock().unwrap()[self.selected_tool],
             &self.document_options,
         );
         // You can make your pane draggable like so:
