@@ -183,11 +183,9 @@ impl MainWindow {
         if let Some(root) = self.tree.root {
             stack.push(root);
         }
-        while !stack.is_empty() {
-            let id = stack.pop().unwrap();
-
+        while let Some(id) = stack.pop() {
             match self.tree.tiles.get(id) {
-                Some(egui_tiles::Tile::Pane(p)) => {
+                Some(egui_tiles::Tile::Pane(_)) => {
                     if let Some(egui_tiles::Tile::Pane(p)) = self.tree.tiles.get_mut(id) {
                         return Some(p);
                     } else {
@@ -217,6 +215,43 @@ impl MainWindow {
 
         None
     }
+
+    pub fn enumerate_documents(&mut self, callback: fn(&mut Box<dyn Document>)) {
+        let mut stack = vec![];
+
+        if let Some(root) = self.tree.root {
+            stack.push(root);
+        }
+        while let Some(id) = stack.pop() {
+            match self.tree.tiles.get(id) {
+                Some(egui_tiles::Tile::Pane(_)) => {
+                    if let Some(egui_tiles::Tile::Pane(p)) = self.tree.tiles.get_mut(id) {
+                        callback(&mut p.doc);
+                    }
+                }
+                Some(egui_tiles::Tile::Container(container)) => match container {
+                    egui_tiles::Container::Tabs(tabs) => {
+                        if let Some(active) = tabs.active {
+                            stack.push(active);
+                        }
+                    }
+                    egui_tiles::Container::Linear(l) => {
+                        for child in l.children.iter() {
+                            stack.push(*child);
+                        }
+                    }
+                    egui_tiles::Container::Grid(g) => {
+                        for child in g.children() {
+                            stack.push(*child);
+                        }
+                    }
+                },
+                None => {}
+            }
+        }
+    }
+
+
 
     pub fn get_active_document_mut(&mut self) -> Option<&mut Box<dyn Document>> {
         if let Some(pane) = self.get_active_pane() {
@@ -259,20 +294,7 @@ pub fn button_with_shortcut(
 
 impl eframe::App for MainWindow {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        use egui::FontFamily::Proportional;
-        use egui::FontId;
-        use egui::TextStyle::*;
-
-        let mut style: egui::Style = (*ctx.style()).clone();
-        style.text_styles = [
-            (Heading, FontId::new(30.0, Proportional)),
-            (Body, FontId::new(14.0, Proportional)),
-            (Monospace, FontId::new(20.0, Proportional)),
-            (Button, FontId::new(20.0, Proportional)),
-            (Small, FontId::new(16.0, Proportional)),
-        ]
-        .into();
-        ctx.set_style(style);
+    
 
         let msg = self.show_top_bar(ctx, frame);
         self.handle_message(msg);
@@ -360,28 +382,26 @@ impl eframe::App for MainWindow {
                 }
             }
 
-            for (_, tile) in self.tree.tiles.iter_mut() {
-                match tile {
-                    egui_tiles::Tile::Pane(Tab { doc, .. }) => {
-                        doc.set_enabled(!self.dialog_open);
-                    }
-                    _ => {}
-                }
+            let enabled = !self.dialog_open;
+            if enabled {
+                self.enumerate_documents( move |doc| {
+                    doc.set_enabled(true);
+                });
+            } else {
+                self.enumerate_documents( move |doc| {
+                    doc.set_enabled(false);
+                });
             }
+
         }
         ctx.request_repaint_after(Duration::from_millis(150));
     }
 
-    fn on_exit(&mut self, gl: Option<&glow::Context>) {
-        if let Some(gl) = gl {
-            for (_, tile) in self.tree.tiles.iter() {
-                match tile {
-                    egui_tiles::Tile::Pane(Tab { doc, .. }) => {
-                        doc.destroy(gl);
-                    }
-                    _ => {}
-                }
-            }
-        }
+    fn on_exit(&mut self, _gl: Option<&glow::Context>) {
+        /* TODO
+        
+        self.enumerate_documents( move |doc| {
+            doc.destroy(gl);
+        });*/
     }
 }

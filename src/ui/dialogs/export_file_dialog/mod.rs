@@ -109,7 +109,6 @@ impl ModalDialog for ExportFileDialog {
                                 });
                             });
                         if old_format != format_type {
-                            println!("change extension to {}", format_type);
                             self.file_name
                                 .set_extension(TYPE_DESCRIPTIONS[format_type].2);
                         }

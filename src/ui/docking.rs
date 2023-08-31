@@ -15,7 +15,6 @@ pub struct TabBehavior {
 
 impl egui_tiles::Behavior<Tab> for TabBehavior {
     fn tab_title_for_pane(&mut self, pane: &Tab) -> egui::WidgetText {
-        println!("get title for pane {}", pane.doc.get_title());
         let mut title = pane.doc.get_title();
         if pane.doc.is_dirty() {
             title.push('*');

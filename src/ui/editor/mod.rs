@@ -146,9 +146,8 @@ impl Document for AnsiEditor {
                     id: Some(Id::new(self.id + 10000)),
                     ..Default::default()
                 };
-
                 let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
-                self.handle_response(ui, response, calc, cur_tool);
+                self.handle_response(ui, response, calc, cur_tool)
             },
         );
         self.show_toolbar(ui);
@@ -869,8 +868,8 @@ impl AnsiEditor {
         response: Response,
         calc: TerminalCalc,
         cur_tool: &mut Box<dyn Tool>,
-    ) {
-        if self.enabled {
+    ) -> Response {
+        if response.has_focus() {
             let events = ui.input(|i| i.events.clone());
             for e in &events {
                 match e {
@@ -938,7 +937,6 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    println!("click !");
                     /*
                     let b: i32 = match responsee.b {
                                      PointerButton::Primary => 1,
@@ -1009,6 +1007,7 @@ impl AnsiEditor {
                 }
             }
         }
+        response
     }
 
     pub(crate) fn set_file_name(&self, file_name: impl Into<PathBuf>) {
