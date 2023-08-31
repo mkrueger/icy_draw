@@ -730,10 +730,14 @@ impl eframe::App for MainWindow {
                             )));
                         }
                         Some(crate::Message::NewLayer) => {
-                            let w = editor.buffer_view.lock().buf.get_width();
-                            let h = editor.buffer_view.lock().buf.get_height();
-                            let new_layer = icy_engine::Layer::new("New Layer", w, h);
-                            editor.buffer_view.lock().buf.layers.insert(0, new_layer);
+                            let buf = &mut editor.buffer_view.lock().buf;
+                            let size = buf.get_buffer_size();
+                            let mut new_layer = icy_engine::Layer::new("New Layer", size);
+                            if buf.layers.is_empty() {
+                                new_layer.has_alpha_channel = false;
+                            }
+
+                            buf.layers.insert(0, new_layer);
                         }
                         Some(crate::Message::MoveLayerUp(cur_layer)) => {
                             editor
@@ -755,9 +759,10 @@ impl eframe::App for MainWindow {
                         }
                         Some(crate::Message::DeleteLayer(cur_layer)) => {
                             editor.buffer_view.lock().buf.layers.remove(cur_layer);
-                            editor.cur_layer = editor
-                                .cur_layer
-                                .clamp(0, editor.buffer_view.lock().buf.layers.len() - 1);
+                            editor.cur_layer = editor.cur_layer.clamp(
+                                0,
+                                editor.buffer_view.lock().buf.layers.len().saturating_sub(1),
+                            );
                         }
                         Some(crate::Message::ToggleVisibility(cur_layer)) => {
                             let is_visible =
@@ -814,7 +819,7 @@ impl eframe::App for MainWindow {
             self.dialog_open = true;
             if dialog.show(ctx) {
                 if dialog.create {
-                    let buf = Buffer::create(dialog.width as usize, dialog.height as usize);
+                    let buf = Buffer::create((dialog.width, dialog.height));
                     let id = self.create_id();
                     let editor = AnsiEditor::new(&self.gl, id, buf);
                     self.tree.push_to_focused_leaf((None, Box::new(editor)));

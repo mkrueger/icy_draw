@@ -1,7 +1,7 @@
-use eframe::egui::{self, Layout};
+use eframe::egui::{self, color_picker, Layout, RichText};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::Position;
+use icy_engine::{Color, Mode, Position};
 
 use crate::{AnsiEditor, ModalDialog, TerminalResult};
 
@@ -14,6 +14,12 @@ pub struct EditLayerDialog {
     is_visible: bool,
     is_locked: bool,
     is_position_locked: bool,
+    has_alpha_channel: bool,
+    is_alpha_channel_locked: bool,
+
+    mode: Mode,
+
+    color: Option<Color>,
 
     x_offset: i32,
     y_offset: i32,
@@ -26,9 +32,13 @@ impl EditLayerDialog {
             should_commit: false,
             layer,
             title: l.title.clone(),
+            color: l.color,
             is_visible: l.is_visible,
             is_locked: l.is_locked,
             is_position_locked: l.is_position_locked,
+            has_alpha_channel: l.has_alpha_channel,
+            is_alpha_channel_locked: l.is_alpha_channel_locked,
+            mode: l.mode,
             x_offset: l.offset.x,
             y_offset: l.offset.y,
         }
@@ -53,6 +63,32 @@ impl ModalDialog for EditLayerDialog {
                         });
                         ui.add(egui::TextEdit::singleline(&mut self.title));
                         ui.end_row();
+
+                        if self.color.is_some() {
+                            let mut use_color = true;
+
+                            if let Some(color) = &mut self.color {
+                                ui.checkbox(&mut use_color, "Use Color");
+
+                                let mut c = (*color).into();
+                                color_picker::color_edit_button_rgb(ui, &mut c);
+                                *color = c.into();
+
+                                ui.end_row();
+                            }
+
+                            if !use_color {
+                                self.color = None;
+                            }
+                        } else {
+                            ui.label("");
+                            let mut use_color = false;
+                            ui.checkbox(&mut use_color, "Use Color");
+                            ui.end_row();
+                            if use_color {
+                                self.color = Some(Color::new(255, 255, 255));
+                            }
+                        }
 
                         ui.label("");
                         ui.checkbox(
@@ -80,6 +116,46 @@ impl ModalDialog for EditLayerDialog {
                                 "edit-layer-dialog-is-position-locked-checkbox"
                             ),
                         );
+                        ui.end_row();
+
+                        ui.label("");
+                        ui.checkbox(
+                            &mut self.has_alpha_channel,
+                            fl!(
+                                crate::LANGUAGE_LOADER,
+                                "edit-layer-dialog-has-alpha-checkbox"
+                            ),
+                        );
+                        ui.end_row();
+
+                        if self.has_alpha_channel {
+                            ui.checkbox(
+                                &mut self.is_alpha_channel_locked,
+                                fl!(
+                                    crate::LANGUAGE_LOADER,
+                                    "edit-layer-dialog-is-alpha-locked-checkbox"
+                                ),
+                            );
+                            ui.end_row();
+                        }
+
+                        ui.label("Mode:");
+
+                        egui::ComboBox::from_id_source("combobox1")
+                            .selected_text(RichText::new(match self.mode {
+                                Mode::Normal => "Normal",
+                                Mode::Chars => "Chars only",
+                                Mode::Attributes => "Attribute only",
+                            }))
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut self.mode, Mode::Normal, "Normal");
+                                ui.selectable_value(&mut self.mode, Mode::Chars, "Chars only");
+                                ui.selectable_value(
+                                    &mut self.mode,
+                                    Mode::Attributes,
+                                    "Attribute only",
+                                );
+                            });
                         ui.end_row();
 
                         ui.label(fl!(
@@ -126,10 +202,14 @@ impl ModalDialog for EditLayerDialog {
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool> {
         let layer = &mut editor.buffer_view.lock().buf.layers[self.layer];
         layer.title = self.title.clone();
+        layer.color = self.color;
         layer.is_visible = self.is_visible;
         layer.is_locked = self.is_locked;
         layer.is_position_locked = self.is_position_locked;
         layer.offset = Position::new(self.x_offset, self.y_offset);
+        layer.has_alpha_channel = self.has_alpha_channel;
+        layer.is_alpha_channel_locked = self.is_alpha_channel_locked;
+        layer.mode = self.mode;
 
         Ok(true)
     }

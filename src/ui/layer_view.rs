@@ -1,6 +1,6 @@
 use eframe::{
     egui::{self, RichText},
-    epaint::Vec2,
+    epaint::{Vec2, Color32},
 };
 use egui_extras::{Column, TableBuilder};
 use i18n_embed_fl::fl;
@@ -46,9 +46,9 @@ pub fn show_layer_view(
         })
         .body(|mut body| {
             for i in 0..max {
-                let (is_visible, title) = {
+                let (is_visible, title, color) = {
                     let layer = &editor.buffer_view.lock().buf.layers[i];
-                    (layer.is_visible, layer.title.clone())
+                    (layer.is_visible, layer.title.clone(), layer.color)
                 };
 
                 body.row(20.0, |mut row| {
@@ -80,7 +80,12 @@ pub fn show_layer_view(
                         }
                     });
                     row.col(|ui| {
-                        let r = ui.selectable_label(i == cur_layer, &title);
+                        let mut text = RichText::new(title);
+                        if let Some(color) = color {
+                            let (r, g, b) = color.into();
+                            text = text.color(Color32::from_rgb(r, g, b));
+                        }
+                        let r = ui.selectable_label(i == cur_layer, text);
                         if r.clicked() {
                             result = Some(Message::SelectLayer(i));
                         }
