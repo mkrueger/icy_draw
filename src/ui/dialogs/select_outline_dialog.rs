@@ -101,7 +101,7 @@ const OUTLINE_FONT_CHAR: [u8; 48] = [
 impl ModalDialog for SelectOutlineDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
-        let modal = Modal::new(ctx, "my_modal");
+        let modal = Modal::new(ctx, "select_outline_dialog");
 
         modal.show(|ui| {
             modal.title(

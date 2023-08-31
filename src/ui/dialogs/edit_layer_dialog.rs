@@ -48,7 +48,7 @@ impl EditLayerDialog {
 impl ModalDialog for EditLayerDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
-        let modal: Modal = Modal::new(ctx, "my_modal");
+        let modal: Modal = Modal::new(ctx, "edit_layer_dialog");
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "edit-layer-dialog-title"));

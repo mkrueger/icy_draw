@@ -1,8 +1,8 @@
 use eframe::egui;
 
-use crate::AnsiEditor;
+use crate::{AnsiEditor, Message};
 
-use super::{Event, Position, Tool, ToolUiResult};
+use super::{Event, Position, Tool};
 pub struct FlipTool {}
 
 impl Tool for FlipTool {
@@ -20,8 +20,8 @@ impl Tool for FlipTool {
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
         _buffer_opt: &AnsiEditor,
-    ) -> ToolUiResult {
-        ToolUiResult::default()
+    ) -> Option<Message> {
+        None
     }
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {

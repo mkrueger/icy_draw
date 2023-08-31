@@ -1,18 +1,21 @@
-use std::fs;
+use std::{
+    fs,
+    sync::{Arc, Mutex},
+};
 
-use crate::{AnsiEditor, SETTINGS};
+use crate::{AnsiEditor, Message, SETTINGS};
 
-use super::{Event, MKey, MModifiers, Position, Tool, ToolUiResult};
+use super::{Event, MKey, MModifiers, Position, Tool};
 use directories::ProjectDirs;
 use eframe::{
-    egui::{self, ComboBox},
-    epaint::{text::LayoutJob, Color32, FontId},
+    egui::{self, RichText},
+    epaint::{FontFamily, FontId},
 };
 use icy_engine::{Rectangle, Size, TextAttribute, TheDrawFont};
 use walkdir::{DirEntry, WalkDir};
 pub struct FontTool {
-    pub selected_font: i32,
-    pub fonts: Vec<TheDrawFont>,
+    pub selected_font: Arc<Mutex<i32>>,
+    pub fonts: Arc<Mutex<Vec<TheDrawFont>>>,
     pub sizes: Vec<Size>,
 }
 
@@ -39,7 +42,7 @@ impl FontTool {
                     )
                 });
             }
-            self.fonts.clear();
+            let mut fonts = Vec::new();
             let walker = WalkDir::new(tdf_dir).into_iter();
             for entry in walker.filter_entry(|e| !FontTool::is_hidden(e)) {
                 if let Err(e) = entry {
@@ -64,10 +67,12 @@ impl FontTool {
 
                 if extension == "tdf" {
                     if let Some(font) = TheDrawFont::load(path) {
-                        self.fonts.push(font);
+                        fonts.push(font);
                     }
                 }
             }
+
+            self.fonts = Arc::new(Mutex::new(fonts));
         }
     }
 }
@@ -85,49 +90,148 @@ impl Tool for FontTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         _buffer_opt: &AnsiEditor,
-    ) -> ToolUiResult {
+    ) -> Option<Message> {
+        let mut select = false;
+        let font_count = self.fonts.lock().unwrap().len();
+        let selected_font = *self.selected_font.lock().unwrap();
+
         ui.vertical_centered(|ui| {
+            ui.label("Selected font");
+
             let mut selected_text = "<none>".to_string();
 
-            if self.selected_font >= 0 && (self.selected_font as usize) < self.fonts.len() {
-                if let Some(font) = self.fonts.get(self.selected_font as usize) {
+            if selected_font >= 0 && (selected_font as usize) < font_count {
+                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
                     selected_text = font.name.clone();
                 }
             }
-
-            ComboBox::from_label("Font")
-                .wrap(false)
-                .selected_text(selected_text)
-                .show_ui(ui, |ui| {
-                    for i in 0..self.fonts.len() {
-                        let text = LayoutJob::simple_singleline(
-                            self.fonts[i].name.clone(),
-                            FontId::default(),
-                            Color32::WHITE,
-                        );
-                        ui.selectable_value(&mut self.selected_font, i as i32, text);
-                    }
-                });
+            let selected_text =
+                RichText::new(selected_text).font(FontId::new(18.0, FontFamily::Proportional));
+            select = ui.button(selected_text).clicked();
         });
-        ToolUiResult::default()
+
+        ui.add_space(8.0);
+
+        ui.vertical_centered(|ui| {
+            ui.horizontal(|ui| {
+                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                    for ch in '!'..'@' {
+                        ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+                        let color = if font.has_char(ch as u8) {
+                            ui.style().visuals.strong_text_color()
+                        } else {
+                            ui.style().visuals.text_color()
+                        };
+
+                        ui.colored_label(
+                            color,
+                            RichText::new(ch.to_string())
+                                .font(FontId::new(12.0, FontFamily::Monospace)),
+                        );
+                    }
+                }
+            });
+
+            ui.horizontal(|ui| {
+                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                    for ch in '@'..'_' {
+                        ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+                        let color = if font.has_char(ch as u8) {
+                            ui.style().visuals.strong_text_color()
+                        } else {
+                            ui.style().visuals.text_color()
+                        };
+
+                        ui.colored_label(
+                            color,
+                            RichText::new(ch.to_string())
+                                .font(FontId::new(12.0, FontFamily::Monospace)),
+                        );
+                    }
+                }
+            });
+
+            ui.horizontal(|ui| {
+                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                    ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+                    for ch in '_'..'~' {
+                        let color = if font.has_char(ch as u8) {
+                            ui.style().visuals.strong_text_color()
+                        } else {
+                            ui.style().visuals.text_color()
+                        };
+
+                        ui.colored_label(
+                            color,
+                            RichText::new(ch.to_string())
+                                .font(FontId::new(12.0, FontFamily::Monospace)),
+                        );
+                    }
+                }
+            });
+            ui.horizontal(|ui| {
+                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                    ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+                    for ch in '~'..='~' {
+                        let color = if font.has_char(ch as u8) {
+                            ui.style().visuals.strong_text_color()
+                        } else {
+                            ui.style().visuals.text_color()
+                        };
+
+                        ui.colored_label(
+                            color,
+                            RichText::new(ch.to_string())
+                                .font(FontId::new(12.0, FontFamily::Monospace)),
+                        );
+                    }
+                }
+            });
+        });
+        ui.add_space(32.0);
+        if ui.button("Select Font Outline").clicked() {
+            return Some(Message::ShowOutlineDialog);
+        }
+
+        ui.add_space(32.0);
+        ui.label("Install new fonts in the font directory.");
+        if ui.button("Open font directory").clicked() {
+            if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+                let tdf_dir = proj_dirs.config_dir().join("tdf");
+                if let Err(err) = open::that(tdf_dir) {
+                    return Some(Message::ShowError(format!(
+                        "Can't open font directory: {}",
+                        err
+                    )));
+                }
+            }
+        }
+
+        if select {
+            Some(Message::SelectFontDialog(
+                self.fonts.clone(),
+                self.selected_font.clone(),
+            ))
+        } else {
+            None
+        }
     }
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
             editor.set_caret_position(pos);
-            editor
-                .buffer_view
-                .lock()
-                .clear_selection();
+            editor.buffer_view.lock().clear_selection();
         }
         Event::None
     }
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
-        if self.selected_font < 0 || self.selected_font >= self.fonts.len() as i32 {
+        let selected_font = *self.selected_font.lock().unwrap();
+
+        if selected_font < 0 || selected_font >= self.fonts.lock().unwrap().len() as i32 {
             return Event::None;
         }
-        let font = &self.fonts[self.selected_font as usize];
+        let font = &self.fonts.lock().unwrap()[selected_font as usize];
         let pos = editor.buffer_view.lock().caret.get_position();
 
         match key {
@@ -190,10 +294,7 @@ impl Tool for FontTool {
 
             MKey::Backspace => {
                 let letter_size = self.sizes.pop().unwrap_or_else(|| Size::new(1, 1));
-                editor
-                .buffer_view
-                .lock()
-                .clear_selection();
+                editor.buffer_view.lock().clear_selection();
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
                     editor.set_caret_position(pos + Position::new(-(letter_size.width as i32), 0));
@@ -236,7 +337,7 @@ impl Tool for FontTool {
                 let c_pos = editor.get_caret_position();
                 editor.begin_atomic_undo();
                 let attr = editor.buffer_view.lock().caret.get_attribute();
-                let opt_size = font.render(
+                let opt_size: Option<Size> = font.render(
                     &mut editor.buffer_view.lock().buf,
                     0,
                     c_pos.as_uposition(),

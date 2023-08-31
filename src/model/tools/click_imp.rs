@@ -2,9 +2,9 @@ use eframe::egui;
 use egui_extras::RetainedImage;
 use icy_engine::Selection;
 
-use crate::AnsiEditor;
+use crate::{AnsiEditor, Message};
 
-use super::{Event, Position, Tool, ToolUiResult};
+use super::{Event, Position, Tool};
 
 pub struct ClickTool {}
 
@@ -18,17 +18,14 @@ impl Tool for ClickTool {
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
         _buffer_opt: &AnsiEditor,
-    ) -> ToolUiResult {
-        ToolUiResult::default()
+    ) -> Option<Message> {
+        None
     }
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
             editor.set_caret_position(pos);
-            editor
-                .buffer_view
-                .lock()
-                .clear_selection();
+            editor.buffer_view.lock().clear_selection();
         }
         Event::None
     }
@@ -62,10 +59,7 @@ impl Tool for ClickTool {
         }
 
         if start == cur {
-            editor
-                .buffer_view
-                .lock()
-                .clear_selection();
+            editor.buffer_view.lock().clear_selection();
         }
 
         Event::None

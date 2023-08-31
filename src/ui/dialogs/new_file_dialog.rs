@@ -25,7 +25,7 @@ impl Default for NewFileDialog {
 impl crate::ModalDialog for NewFileDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
-        let modal = Modal::new(ctx, "my_modal");
+        let modal = Modal::new(ctx, "new_file_dialog");
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "new-file-title"));

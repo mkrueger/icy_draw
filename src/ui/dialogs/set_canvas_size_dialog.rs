@@ -24,7 +24,7 @@ impl SetCanvasSizeDialog {
 impl ModalDialog for SetCanvasSizeDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
-        let modal = Modal::new(ctx, "my_modal");
+        let modal = Modal::new(ctx, "set_canvas_size_dialog");
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "edit-canvas-size-title"));

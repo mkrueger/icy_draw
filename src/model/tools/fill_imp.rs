@@ -4,9 +4,9 @@ use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, TextAttribute};
 
-use crate::AnsiEditor;
+use crate::{AnsiEditor, Message};
 
-use super::{brush_imp::draw_glyph, Event, Position, Tool, ToolUiResult};
+use super::{brush_imp::draw_glyph, Event, Position, Tool};
 
 #[derive(PartialEq, Eq)]
 pub enum FillType {
@@ -33,7 +33,12 @@ impl FillTool {
         old_ch: AttributedChar,
         new_ch: AttributedChar,
     ) {
-        if pos.x < 0 || pos.y < 0 || pos.x >= editor.buffer_view.lock().buf.get_width() as i32  || pos.x >= editor.buffer_view.lock().buf.get_height() as i32 || !visited.insert(pos) {
+        if pos.x < 0
+            || pos.y < 0
+            || pos.x >= editor.buffer_view.lock().buf.get_width() as i32
+            || pos.x >= editor.buffer_view.lock().buf.get_height() as i32
+            || !visited.insert(pos)
+        {
             return;
         }
 
@@ -122,8 +127,8 @@ impl Tool for FillTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         editor: &AnsiEditor,
-    ) -> ToolUiResult {
-        let mut result = ToolUiResult::default();
+    ) -> Option<Message> {
+        let mut result = None;
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -148,7 +153,7 @@ impl Tool for FillTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            draw_glyph(ui, editor, &mut result, &self.char_code, self.font_page);
+            result = draw_glyph(ui, editor, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.fill_type,

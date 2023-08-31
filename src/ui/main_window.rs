@@ -1,4 +1,11 @@
-use std::{cell::RefCell, fs, path::Path, rc::Rc, sync::{Arc, Mutex}, time::Duration};
+use std::{
+    cell::RefCell,
+    fs,
+    path::Path,
+    rc::Rc,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
 use crate::{
     add_child, model::Tool, AnsiEditor, DockingContainer, Document, DocumentOptions, FontEditor,
@@ -14,8 +21,8 @@ use icy_engine::{BitFont, Buffer, Position};
 
 pub struct MainWindow {
     pub tree: egui_tiles::Tree<Tab>,
-    toasts: egui_notify::Toasts,
-    
+    pub toasts: egui_notify::Toasts,
+
     pub tab_viewer: TabBehavior,
     pub gl: Arc<Context>,
 
@@ -36,8 +43,8 @@ impl MainWindow {
 
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut fnt = crate::model::font_imp::FontTool {
-            selected_font: 0,
-            fonts: Vec::new(),
+            selected_font: Arc::new(Mutex::new(0)),
+            fonts: Arc::new(Mutex::new(Vec::new())),
             sizes: Vec::new(),
         };
         fnt.load_fonts();
@@ -135,7 +142,7 @@ impl MainWindow {
             toasts: egui_notify::Toasts::default(),
             tree: DockingContainer::default(),
             gl: cc.gl.clone().unwrap(),
-                        dialog_open: false,
+            dialog_open: false,
             modal_dialog: None,
             id: 0,
             left_panel: true,
@@ -176,9 +183,12 @@ impl MainWindow {
             Err(err) => {
                 log::error!("Error loading file: {}", err);
                 self.toasts
-                .error(fl!(crate::LANGUAGE_LOADER, "error-load-file", error = err.to_string()))
-                .set_duration(Some(Duration::from_secs(5)));
-
+                    .error(fl!(
+                        crate::LANGUAGE_LOADER,
+                        "error-load-file",
+                        error = err.to_string()
+                    ))
+                    .set_duration(Some(Duration::from_secs(5)));
             }
         }
     }
@@ -257,8 +267,6 @@ impl MainWindow {
         }
     }
 
-
-
     pub fn get_active_document_mut(&mut self) -> Option<&mut Box<dyn Document>> {
         if let Some(pane) = self.get_active_pane() {
             return Some(&mut pane.doc);
@@ -320,18 +328,21 @@ impl eframe::App for MainWindow {
                     }
                 }
                 crate::add_tool_switcher(ctx, ui, self);
-                let modal = if let Some(tool) = self.tab_viewer.tools.clone().lock().unwrap().get_mut(self.tab_viewer.selected_tool) {
+                if let Some(tool) = self
+                    .tab_viewer
+                    .tools
+                    .clone()
+                    .lock()
+                    .unwrap()
+                    .get_mut(self.tab_viewer.selected_tool)
+                {
                     if let Some(doc) = self.get_active_document_mut() {
-                       let doc = doc.get_ansi_editor();
+                        let doc = doc.get_ansi_editor();
                         if let Some(editor) = doc {
                             let tool_result = tool.show_ui(ctx, ui, editor);
-                            tool_result.modal_dialog
-                        } else { None }
-                    } else { None }
-                } else { None };
-
-                if modal.is_some() {
-                    self.modal_dialog = modal;
+                            self.handle_message(tool_result);
+                        }
+                    }
                 }
             });
 
@@ -391,7 +402,7 @@ impl eframe::App for MainWindow {
 
     fn on_exit(&mut self, _gl: Option<&glow::Context>) {
         /* TODO
-        
+
         self.enumerate_documents( move |doc| {
             doc.destroy(gl);
         });*/

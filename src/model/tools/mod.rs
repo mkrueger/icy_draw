@@ -20,7 +20,7 @@ use egui_extras::RetainedImage;
 use icy_engine::{AttributedChar, Position, TextAttribute};
 pub use scan_lines::*;
 
-use crate::{AnsiEditor, Event};
+use crate::{AnsiEditor, Event, Message};
 pub mod scan_lines;
 
 #[derive(Copy, Clone, Debug)]
@@ -76,11 +76,6 @@ impl MModifiers {
     }
 }
 
-#[derive(Default)]
-pub struct ToolUiResult {
-    pub modal_dialog: Option<Box<dyn crate::ModalDialog>>,
-}
-
 pub trait Tool {
     fn get_icon_name(&self) -> &'static RetainedImage;
 
@@ -97,7 +92,7 @@ pub trait Tool {
         ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: &AnsiEditor,
-    ) -> ToolUiResult;
+    ) -> Option<Message>;
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
         // TODO Keys:
@@ -389,11 +384,8 @@ fn handle_outline_insertion(editor: &mut AnsiEditor, modifier: MModifiers, outli
             return;
         }
     }
-    editor
-    .buffer_view
-    .lock()
-    .clear_selection();
-let ch = editor.get_outline_char_code(outline);
+    editor.buffer_view.lock().clear_selection();
+    let ch = editor.get_outline_char_code(outline);
     if let Ok(ch) = ch {
         editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
     }

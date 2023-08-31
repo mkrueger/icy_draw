@@ -1,5 +1,5 @@
-use super::{Event, Position, Tool, ToolUiResult};
-use crate::AnsiEditor;
+use super::{Event, Position, Tool};
+use crate::{AnsiEditor, Message};
 use eframe::egui;
 
 pub struct MoveLayer {
@@ -21,8 +21,8 @@ impl Tool for MoveLayer {
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
         _buffer_opt: &AnsiEditor,
-    ) -> ToolUiResult {
-        ToolUiResult::default()
+    ) -> Option<Message> {
+        None
     }
 
     fn handle_drag_begin(

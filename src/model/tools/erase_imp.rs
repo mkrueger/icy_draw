@@ -2,9 +2,9 @@ use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, TextAttribute};
 
-use crate::AnsiEditor;
+use crate::{AnsiEditor, Message};
 
-use super::{Position, Tool, ToolUiResult};
+use super::{Position, Tool};
 
 #[derive(PartialEq, Eq)]
 pub enum EraseType {
@@ -83,7 +83,7 @@ impl Tool for EraseTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         _buffer_opt: &AnsiEditor,
-    ) -> ToolUiResult {
+    ) -> Option<Message> {
         ui.horizontal(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
             ui.add(
@@ -102,7 +102,7 @@ impl Tool for EraseTool {
             EraseType::Shade,
             fl!(crate::LANGUAGE_LOADER, "tool-shade"),
         );
-        ToolUiResult::default()
+        None
     }
 
     fn handle_click(

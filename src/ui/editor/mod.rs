@@ -323,7 +323,7 @@ impl AnsiEditor {
         self.buffer_view.lock().buf.layers[self.cur_layer].get_char(pos)
     }
 
-    pub fn set_char(&mut self, pos: impl Into <UPosition>, dos_char: AttributedChar) {
+    pub fn set_char(&mut self, pos: impl Into<UPosition>, dos_char: AttributedChar) {
         let pos = pos.into();
         self.redo_stack.clear();
         let old = self.buffer_view.lock().buf.layers[self.cur_layer].get_char(pos);
@@ -383,16 +383,10 @@ impl AnsiEditor {
     }
 
     fn cur_selection(&self) -> Option<icy_engine::Selection> {
-        self
-        .buffer_view
-        .lock()
-        .get_selection().clone()
+        self.buffer_view.lock().get_selection().clone()
     }
     fn clear_selection(&self) {
-        self
-        .buffer_view
-        .lock()
-        .clear_selection();
+        self.buffer_view.lock().clear_selection();
     }
 
     pub fn type_key(&mut self, char_code: char) {
@@ -417,7 +411,7 @@ impl AnsiEditor {
             println!("delete selection! {} - {} ", min, max);
             for y in min.y..=max.y {
                 for x in min.x..=max.x {
-                    self.set_char( (x, y), AttributedChar::invisible());
+                    self.set_char((x, y), AttributedChar::invisible());
                 }
             }
             self.end_atomic_undo();
@@ -434,20 +428,10 @@ impl AnsiEditor {
         if let Some(selection) = &self.cur_selection() {
             let min = selection.min();
             let max = selection.max();
-            (
-                min.x,
-                min.y,
-                max.x,
-                max.y,
-            )
+            (min.x, min.y, max.x, max.y)
         } else {
             let size = self.buffer_view.lock().buf.get_buffer_size();
-            (
-                0,
-                0,
-                size.width as i32 - 1,
-                size.height as i32 - 1,
-            )
+            (0, 0, size.width as i32 - 1, size.height as i32 - 1)
         }
     }
 

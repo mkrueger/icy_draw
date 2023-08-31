@@ -28,7 +28,7 @@ impl EditSauceDialog {
 impl ModalDialog for EditSauceDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
-        let modal: Modal = Modal::new(ctx, "my_modal");
+        let modal: Modal = Modal::new(ctx, "edit_sauce_dialog");
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "edit-sauce-title"));

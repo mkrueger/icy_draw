@@ -105,7 +105,6 @@ about-dialog-description =
     Source code is available at www.github.com/mkrueger/icy_draw
 about-dialog-created_by = Created by { $authors }
 
-
 edit-layer-dialog-title=Layer properties
 edit-layer-dialog-name-label=Name:
 edit-layer-dialog-is-visible-checkbox=Visible
@@ -116,5 +115,11 @@ edit-layer-dialog-is-y-offset-label=Y offset:
 edit-layer-dialog-has-alpha-checkbox=Has alpha
 edit-layer-dialog-is-alpha-locked-checkbox=Alpha locked
 
-
 error-load-file=Error loading file: { $error }
+
+
+select-font-dialog-title=Select Font ({ $fontcount} available)
+select-font-dialog-select=Select
+select-font-dialog-filter-text=Filter fonts
+select-font-dialog-no-fonts=No fonts matches the filter
+select-font-dialog-no-fonts-installed=No fonts installed

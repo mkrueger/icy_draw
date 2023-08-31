@@ -7,9 +7,9 @@ use i18n_embed_fl::fl;
 use icy_engine::AttributedChar;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{AnsiEditor, SelectCharacterDialog};
+use crate::{AnsiEditor, Message};
 
-use super::{Position, Tool, ToolUiResult};
+use super::{Position, Tool};
 
 #[derive(PartialEq, Eq)]
 pub enum BrushType {
@@ -116,8 +116,8 @@ impl Tool for BrushTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: &AnsiEditor,
-    ) -> ToolUiResult {
-        let mut result = ToolUiResult::default();
+    ) -> Option<Message> {
+        let mut result = None;
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -154,7 +154,7 @@ impl Tool for BrushTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            draw_glyph(ui, buffer_opt, &mut result, &self.char_code, self.font_page);
+            result = draw_glyph(ui, buffer_opt, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.brush_type,
@@ -190,10 +190,9 @@ impl Tool for BrushTool {
 pub fn draw_glyph(
     ui: &mut egui::Ui,
     editor: &AnsiEditor,
-    ui_result: &mut ToolUiResult,
     ch: &Rc<RefCell<char>>,
     font_page: usize,
-) {
+) -> Option<Message> {
     if let Some(font) = editor.buffer_view.lock().buf.get_font(font_page) {
         let scale = 1.5;
         let (id, stroke_rect) = ui.allocate_space(Vec2::new(
@@ -209,10 +208,7 @@ pub fn draw_glyph(
         };
 
         if response.clicked() {
-            ui_result.modal_dialog = Some(Box::new(SelectCharacterDialog::new(
-                editor.buffer_view.clone(),
-                ch.clone(),
-            )));
+            return Some(crate::Message::ShowCharacterSelectionDialog(ch.clone()));
         }
 
         let painter = ui.painter_at(stroke_rect);
@@ -261,4 +257,5 @@ pub fn draw_glyph(
             });
         }
     }
+    None
 }

@@ -6,9 +6,9 @@ use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Rectangle};
 
-use crate::{model::ScanLines, AnsiEditor};
+use crate::{model::ScanLines, AnsiEditor, Message};
 
-use super::{brush_imp::draw_glyph, line_imp::set_half_block, Position, Tool, ToolUiResult};
+use super::{brush_imp::draw_glyph, line_imp::set_half_block, Position, Tool};
 
 #[derive(PartialEq, Eq)]
 pub enum PencilType {
@@ -125,8 +125,8 @@ impl Tool for PencilTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         buffer_opt: &AnsiEditor,
-    ) -> ToolUiResult {
-        let mut result = ToolUiResult::default();
+    ) -> Option<Message> {
+        let mut result = None;
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -160,7 +160,7 @@ impl Tool for PencilTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            draw_glyph(ui, buffer_opt, &mut result, &self.char_code, self.font_page);
+            result = draw_glyph(ui, buffer_opt, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.brush_type,

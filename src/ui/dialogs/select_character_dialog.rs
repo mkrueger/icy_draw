@@ -33,7 +33,7 @@ impl ModalDialog for SelectCharacterDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let font_page = 0;
         let mut result = false;
-        let modal = Modal::new(ctx, "my_modal");
+        let modal = Modal::new(ctx, "select_character_dialog");
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "select-character-title"));
@@ -73,7 +73,6 @@ impl ModalDialog for SelectCharacterDialog {
                     }
                 }
             });
-            //   });
 
             ui.horizontal(|ui| {
                 ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-char-label")).small());

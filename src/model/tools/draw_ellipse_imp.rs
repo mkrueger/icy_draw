@@ -2,11 +2,11 @@ use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{Rectangle, TextAttribute};
 
-use crate::AnsiEditor;
+use crate::{AnsiEditor, Message};
 
 use super::{
     brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
-    ScanLines, Tool, ToolUiResult,
+    ScanLines, Tool,
 };
 
 pub struct DrawEllipseTool {
@@ -51,8 +51,8 @@ impl Tool for DrawEllipseTool {
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
         editor: &AnsiEditor,
-    ) -> ToolUiResult {
-        let mut result = ToolUiResult::default();
+    ) -> Option<Message> {
+        let mut result = None;
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if ui
@@ -82,7 +82,7 @@ impl Tool for DrawEllipseTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            draw_glyph(ui, editor, &mut result, &self.char_code, self.font_page);
+            result = draw_glyph(ui, editor, &self.char_code, self.font_page);
         });
         ui.radio_value(
             &mut self.draw_mode,

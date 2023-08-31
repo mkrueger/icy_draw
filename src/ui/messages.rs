@@ -1,9 +1,17 @@
-use std::path::PathBuf;
+use std::{
+    cell::RefCell,
+    path::PathBuf,
+    rc::Rc,
+    sync::{Arc, Mutex},
+};
 
 use eframe::egui;
-use icy_engine::Selection;
+use icy_engine::{Selection, TheDrawFont};
 
-use crate::{MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectOutlineDialog};
+use crate::{
+    MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
+    SelectOutlineDialog,
+};
 
 pub enum Message {
     NewFile,
@@ -29,6 +37,9 @@ pub enum Message {
     DeleteSelection,
 
     ShowAboutDialog,
+    ShowCharacterSelectionDialog(Rc<RefCell<char>>),
+    SelectFontDialog(Arc<Mutex<Vec<TheDrawFont>>>, Arc<Mutex<i32>>),
+    ShowError(String),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -139,6 +150,19 @@ impl MainWindow {
                 }
             }
 
+            Message::ShowCharacterSelectionDialog(ch) => {
+                if let Some(doc) = self.get_active_document_mut() {
+                    let doc = doc.get_ansi_editor_mut();
+                    if let Some(editor) = doc {
+                        let buf = editor.buffer_view.clone();
+                        self.open_dialog(SelectCharacterDialog::new(buf, ch));
+                    }
+                }
+            }
+            Message::SelectFontDialog(fonts, selected_font) => {
+                self.open_dialog(crate::SelectFontDialog::new(fonts, selected_font));
+            }
+
             Message::EditSauce => {
                 let mut buffer_opt = None;
                 if let Some(doc) = self.get_active_document_mut() {
@@ -243,6 +267,11 @@ impl MainWindow {
 
             Message::ShowAboutDialog => {
                 self.open_dialog(crate::AboutDialog::default());
+            }
+
+            Message::ShowError(msg) => {
+                log::error!("{msg}");
+                self.toasts.error(msg);
             }
         }
     }

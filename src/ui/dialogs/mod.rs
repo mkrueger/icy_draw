@@ -24,5 +24,9 @@ pub use edit_layer_dialog::*;
 
 mod open_file_dialog;
 pub use open_file_dialog::*;
+
 mod save_file_dialog;
 pub use save_file_dialog::*;
+
+mod select_font_dialog;
+pub use select_font_dialog::*;

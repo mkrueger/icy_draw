@@ -13,21 +13,15 @@ impl MainWindow {
         frame: &mut eframe::Frame,
     ) -> Option<Message> {
         let mut result = None;
-        TopBottomPanel::top("top_panel")
-            .show(ctx, |ui| {
-                result = self.main_menu(ui, frame);
-            });
+        TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            result = self.main_menu(ui, frame);
+        });
         result
     }
 
-    fn main_menu(
-        &mut self,
-        ui: &mut Ui,
-        frame: &mut eframe::Frame,
-    ) -> Option<Message> {
+    fn main_menu(&mut self, ui: &mut Ui, frame: &mut eframe::Frame) -> Option<Message> {
         let mut result = None;
         menu::bar(ui, |ui| {
-
             let mut buffer_opt = None;
             if let Some(doc) = self.get_active_document_mut() {
                 buffer_opt = doc.get_ansi_editor_mut();
@@ -362,7 +356,7 @@ impl MainWindow {
     fn top_bar_ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             // From right-to-left:
-/*
+            /*
             if hypex_ui::CUSTOM_WINDOW_DECORATIONS {
                 ui.add_space(8.0);
                 hypex_ui::native_window_buttons_ui(frame, ui);
