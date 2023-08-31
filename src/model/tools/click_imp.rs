@@ -31,10 +31,6 @@ impl Tool for ClickTool {
     }
 
     fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
-        let mut cur = cur;
-        if start < cur {
-            cur = cur + Position::new(1, 1);
-        }
         if start == cur {
             editor.buffer_view.lock().clear_selection();
         } else {
@@ -42,13 +38,12 @@ impl Tool for ClickTool {
                 .buffer_view
                 .lock()
                 .set_selection(Selection::from_rectangle(
-                    start.x as f32,
-                    start.y as f32,
-                    cur.x as f32,
-                    cur.y as f32,
+                    start.x.min(cur.x) as f32,
+                    start.y.min(cur.y) as f32,
+                    (cur.x - start.x).abs() as f32,
+                    (cur.y - start.y).abs() as f32,
                 ));
         }
-        editor.set_caret_position(cur);
         Event::None
     }
 
@@ -65,18 +60,7 @@ impl Tool for ClickTool {
 
         if start == cur {
             editor.cur_selection = None;
-        } else {
-            editor
-                .buffer_view
-                .lock()
-                .set_selection(Selection::from_rectangle(
-                    start.x as f32,
-                    start.y as f32,
-                    cur.x as f32,
-                    cur.y as f32,
-                ));
         }
-        editor.set_caret_position(cur);
 
         Event::None
     }
