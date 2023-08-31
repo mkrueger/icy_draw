@@ -1,6 +1,9 @@
 use eframe::egui::{self};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
+use icy_engine::Buffer;
+
+use crate::{add_child, AnsiEditor, MainWindow};
 
 pub struct NewFileDialog {
     pub width: i32,
@@ -19,8 +22,8 @@ impl Default for NewFileDialog {
     }
 }
 
-impl NewFileDialog {
-    pub fn show(&mut self, ctx: &egui::Context) -> bool {
+impl crate::ModalDialog for NewFileDialog {
+    fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
         let modal = Modal::new(ctx, "my_modal");
 
@@ -61,5 +64,18 @@ impl NewFileDialog {
         });
         modal.open();
         result
+    }
+
+    fn should_commit(&self) -> bool {
+        self.create
+    }
+
+    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<bool> {
+        let buf = Buffer::create((self.width, self.height));
+        let id = window.create_id();
+        let editor = AnsiEditor::new(&window.gl, id, buf);
+
+        add_child(&mut window.tree, None, Box::new(editor));
+        Ok(true)
     }
 }

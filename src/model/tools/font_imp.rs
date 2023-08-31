@@ -84,7 +84,7 @@ impl Tool for FontTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        _buffer_opt: &mut AnsiEditor,
+        _buffer_opt: &AnsiEditor,
     ) -> ToolUiResult {
         ui.vertical_centered(|ui| {
             let mut selected_text = "<none>".to_string();

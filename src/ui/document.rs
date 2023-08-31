@@ -1,4 +1,4 @@
-use eframe::epaint::Vec2;
+use eframe::{egui, epaint::Vec2};
 
 use crate::{model::Tool, AnsiEditor, TerminalResult};
 
@@ -12,14 +12,15 @@ pub trait Document {
 
     fn show_ui(
         &mut self,
-        ui: &mut egui_dock::egui::Ui,
+        ui: &mut egui::Ui,
         cur_tool: &mut Box<dyn Tool>,
         options: &DocumentOptions,
     );
 
     fn destroy(&self, gl: &glow::Context);
 
-    fn get_buffer_view(&mut self) -> Option<&mut AnsiEditor>;
+    fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor>;
+    fn get_ansi_editor(&self) -> Option<&AnsiEditor>;
 
     fn set_enabled(&mut self, enabled: bool);
 }

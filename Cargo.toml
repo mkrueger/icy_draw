@@ -15,8 +15,9 @@ egui_extras = { version="0.22.0", features = ["svg"] }
 egui_glow = "0.22.0"
 egui-modal = "0.2.4"
 glow = "0.12.1"
-egui_dock = "0.6"
 egui_file = "0.10.0"
+hypex_ui = "0.22.0"
+egui_tiles = "0.2"
 
 icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
 icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }

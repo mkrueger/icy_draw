@@ -115,7 +115,7 @@ impl Tool for BrushTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: &mut AnsiEditor,
+        buffer_opt: &AnsiEditor,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {

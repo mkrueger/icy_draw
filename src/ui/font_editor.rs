@@ -221,7 +221,11 @@ impl Document for FontEditor {
         Ok(())
     }
 
-    fn get_buffer_view(&mut self) -> Option<&mut AnsiEditor> {
+    fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor> {
+        None
+    }
+
+    fn get_ansi_editor(&self) -> Option<&AnsiEditor> {
         None
     }
 

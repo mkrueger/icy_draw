@@ -1,21 +1,11 @@
 use eframe::{
     egui::{self, RichText},
-    epaint::{Vec2, Color32},
+    epaint::{Color32, Vec2},
 };
 use egui_extras::{Column, TableBuilder};
 use i18n_embed_fl::fl;
 
-use crate::AnsiEditor;
-
-pub enum Message {
-    NewLayer,
-    EditLayer(usize),
-    DeleteLayer(usize),
-    MoveLayerUp(usize),
-    MoveLayerDown(usize),
-    ToggleVisibility(usize),
-    SelectLayer(usize),
-}
+use crate::{AnsiEditor, Message};
 
 pub fn show_layer_view(
     ctx: &egui::Context,

@@ -50,7 +50,7 @@ impl Tool for DrawEllipseFilledTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        editor: &mut AnsiEditor,
+        editor: &AnsiEditor,
     ) -> ToolUiResult {
         let mut result = ToolUiResult::default();
         ui.vertical_centered(|ui| {

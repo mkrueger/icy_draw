@@ -20,7 +20,7 @@ impl Tool for MoveLayer {
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: &mut AnsiEditor,
+        _buffer_opt: &AnsiEditor,
     ) -> ToolUiResult {
         ToolUiResult::default()
     }

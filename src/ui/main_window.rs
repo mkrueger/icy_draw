@@ -1,53 +1,41 @@
-use std::{
-    cell::RefCell,
-    fs,
-    path::{Path, PathBuf},
-    rc::Rc,
-    sync::Arc,
-    time::Duration,
-};
+use std::{cell::RefCell, fs, path::Path, rc::Rc, sync::Arc, time::Duration};
 
 use crate::{
-    model::Tool, AnsiEditor, Document, DocumentOptions, EditSauceDialog, FontEditor, ModalDialog,
-    NewFileDialog, SelectOutlineDialog,
+    add_child, model::Tool, AnsiEditor, DockingContainer, Document, DocumentOptions, FontEditor,
+    ModalDialog, Tab, TabBehavior,
 };
 use eframe::{
-    egui::{self, menu, Id, Modifiers, Response, SidePanel, TextStyle, TopBottomPanel, Ui},
-    epaint::{pos2, Vec2},
+    egui::{self, Response, SidePanel, TextStyle, Ui},
+    epaint::pos2,
 };
-use egui_dock::{DockArea, Node, Style, Tree};
 use glow::Context;
-use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, Position, SaveOptions, Selection};
-
-use super::SetCanvasSizeDialog;
-use egui_file::FileDialog;
+use hypex_ui::toasts;
+use icy_engine::{BitFont, Buffer, Position};
 
 pub struct MainWindow {
-    pub tab_viewer: TabViewer,
-    tree: Tree<(Option<String>, Box<dyn Document>)>,
-    gl: Arc<Context>,
+    pub hypex_ui: hypex_ui::HypexUi,
+    pub toasts: toasts::Toasts,
+    pub tree: egui_tiles::Tree<Tab>,
 
-    opened_file: Option<PathBuf>,
+    pub tab_viewer: TabBehavior,
+    pub gl: Arc<Context>,
 
     dialog_open: bool,
-    open_file_dialog: Option<FileDialog>,
-    save_file_dialog: Option<FileDialog>,
-    new_file_dialog: Option<NewFileDialog>,
-
     modal_dialog: Option<Box<dyn ModalDialog>>,
     id: usize,
+
+    pub left_panel: bool,
+    pub right_panel: bool,
+    pub bottom_panel: bool,
 }
 
 impl MainWindow {
-    fn create_id(&mut self) -> usize {
+    pub fn create_id(&mut self) -> usize {
         self.id += 1;
         self.id
     }
 
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let tree = Tree::new(Vec::new());
-
         let mut fnt = crate::model::font_imp::FontTool {
             selected_font: 0,
             fonts: Vec::new(),
@@ -137,23 +125,26 @@ impl MainWindow {
             }),
         ];
 
+        let hypex_ui = hypex_ui::HypexUi::load_and_apply(&cc.egui_ctx);
+
         MainWindow {
-            tab_viewer: TabViewer {
+            hypex_ui,
+            toasts: Default::default(),
+            tab_viewer: TabBehavior {
                 tools,
                 selected_tool: 0,
                 document_options: DocumentOptions {
                     scale: eframe::egui::Vec2::new(1.0, 1.0),
                 },
             },
-            tree,
+            tree: DockingContainer::default(),
             gl: cc.gl.clone().unwrap(),
-            opened_file: None,
             dialog_open: false,
-            open_file_dialog: None,
-            save_file_dialog: None,
-            new_file_dialog: None,
             modal_dialog: None,
             id: 0,
+            left_panel: true,
+            right_panel: true,
+            bottom_panel: false,
         }
     }
 
@@ -170,10 +161,11 @@ impl MainWindow {
                     let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
                     if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
                         let id = self.create_id();
-                        self.tree.push_to_focused_leaf((
+                        add_child(
+                            &mut self.tree,
                             Some(full_path),
                             Box::new(FontEditor::new(font, id)),
-                        ));
+                        );
                         return;
                     }
                 }
@@ -182,466 +174,59 @@ impl MainWindow {
         let buf = Buffer::load_buffer(path, true).unwrap();
         let id = self.create_id();
         let editor = AnsiEditor::new(&self.gl, id, buf);
-        self.tree
-            .push_to_focused_leaf((Some(full_path), Box::new(editor)));
+        add_child(&mut self.tree, Some(full_path), Box::new(editor));
     }
 
-    fn main_menu(&mut self, ui: &mut Ui, _frame: &mut eframe::Frame) {
-        menu::bar(ui, |ui| {
-            let mut buffer_opt = None;
-            if let Some((_, t)) = self.tree.find_active_focused() {
-                buffer_opt = t.1.get_buffer_view();
-            }
+    pub fn get_active_pane(&mut self) -> Option<&mut Tab> {
+        let mut stack = vec![];
 
-            let has_buffer = buffer_opt.is_some();
-
-            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
-                if ui
-                    .add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-new")).wrap(false))
-                    .clicked()
-                {
-                    self.new_file_dialog = Some(NewFileDialog::default());
-                    ui.close_menu();
-                }
-
-                if ui
-                    .add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-open")).wrap(false))
-                    .clicked()
-                {
-                    let mut dialog = FileDialog::open_file(self.opened_file.clone());
-                    dialog.open();
-                    self.open_file_dialog = Some(dialog);
-
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui
-                    .add_enabled(
-                        has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false),
-                    )
-                    .clicked()
-                {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let mut save_as = true;
-                        if let Some(str) = &t.1 .0 {
-                            let path = PathBuf::from(str);
-                            if let Some(ext) = path.extension() {
-                                if ext == "icd" {
-                                    t.1 .1.save(str).unwrap();
-                                    save_as = false;
-                                }
-                            }
-                        }
-                        if save_as {
-                            self.save_as();
-                        }
-                    }
-                    ui.close_menu();
-                }
-                if ui
-                    .add_enabled(
-                        has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save-as")).wrap(false),
-                    )
-                    .clicked()
-                {
-                    self.save_as();
-                    ui.close_menu();
-                }
-
-                if ui
-                    .add_enabled(
-                        has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-export")).wrap(false),
-                    )
-                    .clicked()
-                {
-                    let mut buffer_opt = None;
-                    if let Some((_, t)) = self.tree.find_active_focused() {
-                        buffer_opt = t.1.get_buffer_view();
-                    }
-
-                    self.modal_dialog = Some(Box::new(crate::ExportFileDialog::new(
-                        &buffer_opt.unwrap().buffer_view.lock().buf,
-                    )));
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui
-                    .add(
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-font-outline"))
-                            .wrap(false),
-                    )
-                    .clicked()
-                {
-                    self.modal_dialog = Some(Box::<SelectOutlineDialog>::default());
-                    ui.close_menu();
-                }
-
-                ui.separator();
-                let button: Response = button_with_shortcut(
-                    ui,
-                    true,
-                    fl!(crate::LANGUAGE_LOADER, "menu-close"),
-                    "Ctrl+Q",
-                );
-                if button.clicked() {
-                    _frame.close();
-                    ui.close_menu();
-                }
-            });
-
-            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-undo"),
-                    "Ctrl+Z",
-                );
-                if button.clicked() {
-                    self.undo_command();
-                    ui.close_menu();
-                }
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-redo"),
-                    "Ctrl+Shift+Z",
-                );
-                if button.clicked() {
-                    self.redo_command();
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui
-                    .add_enabled(
-                        has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-sauce"))
-                            .wrap(false),
-                    )
-                    .clicked()
-                {
-                    let mut buffer_opt = None;
-                    if let Some((_, t)) = self.tree.find_active_focused() {
-                        buffer_opt = t.1.get_buffer_view();
-                    }
-
-                    self.modal_dialog = Some(Box::new(EditSauceDialog::new(
-                        &buffer_opt.unwrap().buffer_view.lock().buf,
-                    )));
-                    ui.close_menu();
-                }
-
-                if ui
-                    .add_enabled(
-                        has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-set-canvas-size"))
-                            .wrap(false),
-                    )
-                    .clicked()
-                {
-                    let mut buffer_opt = None;
-                    if let Some((_, t)) = self.tree.find_active_focused() {
-                        buffer_opt = t.1.get_buffer_view();
-                    }
-                    self.modal_dialog = Some(Box::new(SetCanvasSizeDialog::new(
-                        &buffer_opt.unwrap().buffer_view.lock().buf,
-                    )));
-                    ui.close_menu();
-                }
-            });
-
-            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-selection"), |ui| {
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-select-all"),
-                    "Ctrl+A",
-                );
-                if button.clicked() {
-                    self.select_all_command();
-                    ui.close_menu();
-                }
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-deselect"),
-                    "Esc",
-                );
-                if button.clicked() {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let doc = t.1 .1.get_buffer_view();
-                        if let Some(editor) = doc {
-                            editor.cur_selection = None;
-                            editor.redraw_view();
-                        }
-                    }
-                    ui.close_menu();
-                }
-                ui.separator();
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-erase"),
-                    "Del",
-                );
-                if button.clicked() {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let doc = t.1 .1.get_buffer_view();
-                        if let Some(editor) = doc {
-                            editor.delete_selection();
-                            editor.redraw_view();
-                        }
-                    }
-                    ui.close_menu();
-                }
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-flipx"),
-                    "X",
-                );
-                if button.clicked() {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let doc: Option<&mut AnsiEditor> = t.1 .1.get_buffer_view();
-                        if let Some(editor) = doc {
-                            editor.flip_x();
-                            editor.redraw_view();
-                        }
-                    }
-                    ui.close_menu();
-                }
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-flipy"),
-                    "Y",
-                );
-                if button.clicked() {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let doc = t.1 .1.get_buffer_view();
-                        if let Some(editor) = doc {
-                            editor.flip_y();
-                            editor.redraw_view();
-                        }
-                    }
-                    ui.close_menu();
-                }
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"),
-                    "Y",
-                );
-                if button.clicked() {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let doc = t.1 .1.get_buffer_view();
-                        if let Some(editor) = doc {
-                            editor.justify_center();
-                            editor.redraw_view();
-                        }
-                    }
-                    ui.close_menu();
-                }
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"),
-                    "L",
-                );
-                if button.clicked() {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let doc = t.1 .1.get_buffer_view();
-                        if let Some(editor) = doc {
-                            editor.justify_left();
-                            editor.redraw_view();
-                        }
-                    }
-                    ui.close_menu();
-                }
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-justifyright"),
-                    "R",
-                );
-                if button.clicked() {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let doc = t.1 .1.get_buffer_view();
-                        if let Some(editor) = doc {
-                            editor.justify_right();
-                            editor.redraw_view();
-                        }
-                    }
-                    ui.close_menu();
-                }
-                ui.separator();
-
-                let button: Response = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-crop"),
-                    "",
-                );
-                if button.clicked() {
-                    if let Some(t) = self.tree.find_active_focused() {
-                        let doc = t.1 .1.get_buffer_view();
-                        if let Some(editor) = doc {
-                            editor.crop();
-                            editor.redraw_view();
-                        }
-                    }
-                    ui.close_menu();
-                }
-            });
-
-            ui.menu_button("View", |ui| {
-                if ui.button("100%").clicked() {
-                    self.tab_viewer.document_options.scale = Vec2::new(1.0, 1.0);
-                    ui.close_menu();
-                }
-                if ui.button("200%").clicked() {
-                    self.tab_viewer.document_options.scale = Vec2::new(2.0, 2.0);
-                    ui.close_menu();
-                }
-                if ui.button("300%").clicked() {
-                    self.tab_viewer.document_options.scale = Vec2::new(3.0, 3.0);
-                    ui.close_menu();
-                }
-            });
-
-            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-help"), |ui| {
-                let r = ui.hyperlink_to(
-                    fl!(crate::LANGUAGE_LOADER, "menu-discuss"),
-                    "https://github.com/mkrueger/icy_draw/discussions",
-                );
-                if r.clicked() {
-                    ui.close_menu();
-                }
-                let r = ui.hyperlink_to(
-                    fl!(crate::LANGUAGE_LOADER, "menu-report-bug"),
-                    "https://github.com/mkrueger/icy_draw/issues/new",
-                );
-                if r.clicked() {
-                    ui.close_menu();
-                }
-                ui.separator();
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "menu-about"))
-                    .clicked()
-                {
-                    self.modal_dialog = Some(Box::<crate::AboutDialog>::default());
-                    ui.close_menu();
-                }
-            });
-        });
-
-        if ui.input(|i| i.key_pressed(egui::Key::Q) && i.modifiers.ctrl) {
-            _frame.close();
+        if let Some(root) = self.tree.root {
+            stack.push(root);
         }
+        while !stack.is_empty() {
+            let id = stack.pop().unwrap();
 
-        if ui.input(|i| i.key_pressed(egui::Key::A) && i.modifiers.ctrl) {
-            ui.input_mut(|i| i.consume_key(Modifiers::CTRL, egui::Key::A));
-            self.select_all_command();
-        }
-
-        if ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.ctrl && !i.modifiers.shift) {
-            ui.input_mut(|i| i.consume_key(Modifiers::CTRL, egui::Key::Z));
-            self.undo_command();
-        }
-
-        if ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.shift && i.modifiers.ctrl) {
-            ui.input_mut(|i| i.consume_key(CTRL_SHIFT, egui::Key::Z));
-            self.redo_command();
-        }
-    }
-
-    fn save_as(&mut self) {
-        if self.tree.find_active_focused().is_some() {
-            let mut dialog = FileDialog::save_file(None);
-            dialog.open();
-            self.save_file_dialog = Some(dialog);
-        }
-    }
-
-    fn redo_command(&mut self) {
-        if let Some(t) = self.tree.find_active_focused() {
-            let doc = t.1 .1.get_buffer_view();
-            if let Some(editor) = doc {
-                editor.redo();
-                editor.buffer_view.lock().redraw_view();
+            match self.tree.tiles.get(id) {
+                Some(egui_tiles::Tile::Pane(p)) => {
+                    if let Some(egui_tiles::Tile::Pane(p)) = self.tree.tiles.get_mut(id) {
+                        return Some(p);
+                    } else {
+                        return None;
+                    }
+                }
+                Some(egui_tiles::Tile::Container(container)) => match container {
+                    egui_tiles::Container::Tabs(tabs) => {
+                        if let Some(active) = tabs.active {
+                            stack.push(active);
+                        }
+                    }
+                    egui_tiles::Container::Linear(l) => {
+                        for child in l.children.iter() {
+                            stack.push(*child);
+                        }
+                    }
+                    egui_tiles::Container::Grid(g) => {
+                        for child in g.children() {
+                            stack.push(*child);
+                        }
+                    }
+                },
+                None => {}
             }
         }
+
+        None
     }
 
-    fn undo_command(&mut self) {
-        if let Some(t) = self.tree.find_active_focused() {
-            let doc = t.1 .1.get_buffer_view();
-            if let Some(editor) = doc {
-                editor.undo();
-                editor.buffer_view.lock().redraw_view();
-            }
+    pub fn get_active_document_mut(&mut self) -> Option<&mut Box<dyn Document>> {
+        if let Some(pane) = self.get_active_pane() {
+            return Some(&mut pane.doc);
         }
+        None
     }
 
-    fn select_all_command(&mut self) {
-        if let Some(t) = self.tree.find_active_focused() {
-            let doc = t.1 .1.get_buffer_view();
-            if let Some(ansi_editor) = doc {
-                let buf = &mut ansi_editor.buffer_view.lock();
-                let w = buf.buf.get_width();
-                let h = buf.buf.get_line_count();
-
-                buf.set_selection(Selection::from_rectangle(0.0, 0.0, w as f32, h as f32));
-            }
-        }
-    }
-}
-
-const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
-    alt: false,
-    ctrl: true,
-    shift: true,
-    mac_cmd: false,
-    command: false,
-};
-
-pub struct TabViewer {
-    pub tools: Vec<Box<dyn Tool>>,
-    pub selected_tool: usize,
-    pub document_options: DocumentOptions,
-}
-
-impl egui_dock::TabViewer for TabViewer {
-    type Tab = (Option<String>, Box<dyn Document>);
-
-    fn ui(&mut self, ui: &mut egui_dock::egui::Ui, tab: &mut Self::Tab) {
-        tab.1.show_ui(
-            ui,
-            &mut self.tools[self.selected_tool],
-            &self.document_options,
-        );
-    }
-
-    fn id(&mut self, tab: &mut Self::Tab) -> Id {
-        Id::new(tab.1.get_id())
-    }
-
-    fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText {
-        let mut title = tab.1.get_title();
-        if tab.1.is_dirty() {
-            title.push('*');
-        }
-        title.into()
+    pub(crate) fn open_dialog<T: ModalDialog + 'static>(&mut self, dialog: T) {
+        self.modal_dialog = Some(Box::new(dialog));
     }
 }
 
@@ -673,15 +258,11 @@ pub fn button_with_shortcut(
 }
 
 impl eframe::App for MainWindow {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         use egui::FontFamily::Proportional;
         use egui::FontId;
         use egui::TextStyle::*;
 
-        if let Some(file) = &self.opened_file.clone() {
-            self.opened_file = None;
-            self.open_file(file);
-        }
         let mut style: egui::Style = (*ctx.style()).clone();
         style.text_styles = [
             (Heading, FontId::new(30.0, Proportional)),
@@ -693,173 +274,112 @@ impl eframe::App for MainWindow {
         .into();
         ctx.set_style(style);
 
-        TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            self.main_menu(ui, _frame);
-        });
-        SidePanel::left("left_panel").show(ctx, |ui| {
-            if let Some((_, t)) = self.tree.find_active_focused() {
-                if let Some(editor) = t.1.get_buffer_view() {
-                    ui.vertical_centered(|ui| {
-                        ui.add(crate::palette_switcher(ctx, editor));
-                    });
-                    ui.add(crate::palette_editor_16(editor));
-                }
-            }
-            crate::add_tool_switcher(ctx, ui, self);
+        let msg = self.show_top_bar(ctx, frame);
+        self.handle_message(msg);
 
-            if let Some(tool) = self.tab_viewer.tools.get_mut(self.tab_viewer.selected_tool) {
-                if let Some((_, t)) = self.tree.find_active_focused() {
-                    if let Some(editor) = t.1.get_buffer_view() {
-                        let tool_result = tool.show_ui(ctx, ui, editor);
-                        if tool_result.modal_dialog.is_some() {
-                            self.modal_dialog = tool_result.modal_dialog;
-                        }
+        SidePanel::left("left_panel")
+            .default_width(500.0)
+            .frame(egui::Frame {
+                fill: ctx.style().visuals.panel_fill,
+                ..Default::default()
+            })
+            .show_animated(ctx, self.left_panel, |ui| {
+                if let Some(doc) = self.get_active_document_mut() {
+                    let doc = doc.get_ansi_editor_mut();
+                    if let Some(editor) = doc {
+                        ui.vertical_centered(|ui| {
+                            ui.add(crate::palette_switcher(ctx, editor));
+                        });
+                        ui.add(crate::palette_editor_16(editor));
                     }
                 }
-            }
-        });
-        SidePanel::right("right_panel").show(ctx, |ui| {
-            if let Some((_, t)) = self.tree.find_active_focused() {
-                if let Some(editor) = t.1.get_buffer_view() {
-                    let message = crate::show_layer_view(ctx, ui, editor);
-                    match message {
-                        Some(crate::Message::EditLayer(i)) => {
-                            self.modal_dialog = Some(Box::new(crate::EditLayerDialog::new(
-                                &editor.buffer_view.lock().buf,
-                                i,
-                            )));
-                        }
-                        Some(crate::Message::NewLayer) => {
-                            let buf = &mut editor.buffer_view.lock().buf;
-                            let size = buf.get_buffer_size();
-                            let mut new_layer = icy_engine::Layer::new("New Layer", size);
-                            if buf.layers.is_empty() {
-                                new_layer.has_alpha_channel = false;
-                            }
+                crate::add_tool_switcher(ctx, ui, self);
+                /* TODO: Tool UI is not working yet
+                let modal = if let Some(tool) = self.tab_viewer.tools.get_mut(self.tab_viewer.selected_tool) {
+                    if let Some(doc) = self.get_active_document() {
+                       let doc = doc.get_ansi_editor();
+                        if let Some(editor) = doc {
+                            let tool_result = tool.show_ui(ctx, ui, editor);
+                            tool_result.modal_dialog
+                        } else { None }
+                    } else { None }
+                } else { None };
 
-                            buf.layers.insert(0, new_layer);
-                        }
-                        Some(crate::Message::MoveLayerUp(cur_layer)) => {
-                            editor
-                                .buffer_view
-                                .lock()
-                                .buf
-                                .layers
-                                .swap(cur_layer, cur_layer - 1);
-                            editor.cur_layer -= 1;
-                        }
-                        Some(crate::Message::MoveLayerDown(cur_layer)) => {
-                            editor
-                                .buffer_view
-                                .lock()
-                                .buf
-                                .layers
-                                .swap(cur_layer, cur_layer + 1);
-                            editor.cur_layer += 1;
-                        }
-                        Some(crate::Message::DeleteLayer(cur_layer)) => {
-                            editor.buffer_view.lock().buf.layers.remove(cur_layer);
-                            editor.cur_layer = editor.cur_layer.clamp(
-                                0,
-                                editor.buffer_view.lock().buf.layers.len().saturating_sub(1),
-                            );
-                        }
-                        Some(crate::Message::ToggleVisibility(cur_layer)) => {
-                            let is_visible =
-                                editor.buffer_view.lock().buf.layers[cur_layer].is_visible;
-                            editor.buffer_view.lock().buf.layers[cur_layer].is_visible =
-                                !is_visible;
-                        }
-                        Some(crate::Message::SelectLayer(cur_layer)) => {
-                            editor.cur_layer = cur_layer;
-                        }
-                        None => {}
+                if modal.is_some() {
+                    self.modal_dialog = modal;
+                }*/
+            });
+
+        let panel_frame = egui::Frame {
+            fill: ctx.style().visuals.panel_fill,
+            inner_margin: hypex_ui::HypexUi::view_padding().into(),
+            ..Default::default()
+        };
+
+        egui::SidePanel::right("right_panel")
+            .frame(panel_frame)
+            .show_animated(ctx, self.right_panel, |ui| {
+                let message = if let Some(doc) = self.get_active_document_mut() {
+                    let doc = doc.get_ansi_editor_mut();
+                    if let Some(editor) = doc {
+                        crate::ui::layer_view::show_layer_view(ctx, ui, editor)
+                    } else {
+                        None
                     }
-                }
-            }
-            // ui.add(crate::show_char_table(buffer_opt.clone()));
-        });
+                } else {
+                    None
+                };
+                self.handle_message(message);
 
-        DockArea::new(&mut self.tree)
-            .style(Style::from_egui(ctx.style().as_ref()))
-            .show(ctx, &mut self.tab_viewer);
+                // ui.add(crate::show_char_table(buffer_opt.clone()));
+            });
+
+        egui::CentralPanel::default()
+            .frame(egui::Frame {
+                fill: ctx.style().visuals.panel_fill,
+                ..Default::default()
+            })
+            .show(ctx, |ui| {
+                self.tree.ui(&mut self.tab_viewer, ui);
+            });
 
         self.dialog_open = false;
 
-        if let Some(dialog) = &mut self.open_file_dialog {
+        if self.modal_dialog.is_some() {
             self.dialog_open = true;
-            if dialog.show(ctx).selected() {
-                if let Some(file) = dialog.path() {
-                    self.opened_file = Some(file.to_path_buf());
-                }
-                self.open_file_dialog = None;
-            }
-        }
-
-        if let Some(dialog) = &mut self.save_file_dialog {
-            self.dialog_open = true;
-            if dialog.show(ctx).selected() {
-                if let Some(file) = dialog.path() {
-                    let file = file.with_extension("icd");
-                    if let Some((_, t)) = self.tree.find_active_focused() {
-                        if let Some(editor) = t.1.get_buffer_view() {
-                            let options = SaveOptions::new();
-                            editor
-                                .save_content(file.to_path_buf().as_path(), &options)
-                                .unwrap();
-                            editor.set_file_name(file);
+            if self.modal_dialog.as_mut().unwrap().show(ctx) {
+                let modal_dialog = self.modal_dialog.take().unwrap();
+                if modal_dialog.should_commit() {
+                    if let Some(doc) = self.get_active_document_mut() {
+                        let doc = doc.get_ansi_editor_mut();
+                        if let Some(editor) = doc {
+                            modal_dialog.commit(editor).unwrap();
                         }
                     }
+                    modal_dialog.commit_self(self).unwrap();
                 }
-                self.save_file_dialog = None;
             }
-        }
 
-        if let Some(dialog) = &mut self.new_file_dialog {
-            self.dialog_open = true;
-            if dialog.show(ctx) {
-                if dialog.create {
-                    let buf = Buffer::create((dialog.width, dialog.height));
-                    let id = self.create_id();
-                    let editor = AnsiEditor::new(&self.gl, id, buf);
-                    self.tree.push_to_focused_leaf((None, Box::new(editor)));
-                }
-                self.new_file_dialog = None;
-            }
-        }
-
-        if let Some(dialog) = &mut self.modal_dialog {
-            self.dialog_open = true;
-            if dialog.show(ctx) {
-                if dialog.should_commit() {
-                    if let Some((_, t)) = self.tree.find_active_focused() {
-                        if let Some(editor) = t.1.get_buffer_view() {
-                            dialog.commit(editor).unwrap();
-                        }
+            for (_, tile) in self.tree.tiles.iter_mut() {
+                match tile {
+                    egui_tiles::Tile::Pane(Tab { doc, .. }) => {
+                        doc.set_enabled(!self.dialog_open);
                     }
-                }
-                self.modal_dialog = None;
-            }
-        }
-
-        for t in self.tree.iter_mut() {
-            if let Node::Leaf { tabs, .. } = t {
-                for (_, t) in tabs {
-                    t.set_enabled(!self.dialog_open);
+                    _ => {}
                 }
             }
         }
-
         ctx.request_repaint_after(Duration::from_millis(150));
     }
 
     fn on_exit(&mut self, gl: Option<&glow::Context>) {
         if let Some(gl) = gl {
-            for t in self.tree.iter() {
-                if let Node::Leaf { tabs, .. } = t {
-                    for (_, t) in tabs {
-                        t.destroy(gl);
+            for (_, tile) in self.tree.tiles.iter() {
+                match tile {
+                    egui_tiles::Tile::Pane(Tab { doc, .. }) => {
+                        doc.destroy(gl);
                     }
+                    _ => {}
                 }
             }
         }

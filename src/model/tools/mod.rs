@@ -96,7 +96,7 @@ pub trait Tool {
         &mut self,
         ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: &mut AnsiEditor,
+        buffer_opt: &AnsiEditor,
     ) -> ToolUiResult;
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {

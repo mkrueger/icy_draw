@@ -23,7 +23,6 @@ mod icons;
 pub use icons::*;
 
 mod layer_view;
-pub use layer_view::*;
 
 mod settings;
 pub use settings::*;
@@ -34,6 +33,14 @@ pub use dialogs::*;
 mod editor;
 pub use editor::*;
 
+mod docking;
+pub use docking::*;
+
+mod top_bar;
+pub use top_bar::*;
+mod messages;
+pub use messages::*;
+
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
 
 pub trait ModalDialog {
@@ -41,5 +48,11 @@ pub trait ModalDialog {
 
     fn should_commit(&self) -> bool;
 
-    fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool>;
+    fn commit(&self, _editor: &mut AnsiEditor) -> TerminalResult<bool> {
+        Ok(true)
+    }
+
+    fn commit_self(&self, _window: &mut MainWindow) -> TerminalResult<bool> {
+        Ok(true)
+    }
 }
