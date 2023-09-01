@@ -329,7 +329,7 @@ impl MainWindow {
                     ui.close_menu();
                 }
             });
-            self.top_bar_ui(ui, frame);
+            //self.top_bar_ui(ui, frame);
         });
 
         if ui.input(|i| i.key_pressed(egui::Key::Q) && i.modifiers.ctrl) {
@@ -352,7 +352,7 @@ impl MainWindow {
         }
         result
     }
-
+/*
     fn top_bar_ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             // From right-to-left:
@@ -381,5 +381,5 @@ impl MainWindow {
                 &mut self.left_panel,
             );*/
         });
-    }
+    }}*/
 }

@@ -200,8 +200,7 @@ impl Tool for FontTool {
                 let tdf_dir = proj_dirs.config_dir().join("tdf");
                 if let Err(err) = open::that(tdf_dir) {
                     return Some(Message::ShowError(format!(
-                        "Can't open font directory: {}",
-                        err
+                        "Can't open font directory: {err}"
                     )));
                 }
             }
