@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::{Arc, Mutex},
-    time::Duration,
+    time::Duration
 };
 
 use crate::{
@@ -149,7 +149,8 @@ impl MainWindow {
         let full_path = path.to_str().unwrap().to_string();
 
         if let Some(ext) = path.extension() {
-            if "psf" == ext.to_str().unwrap().to_ascii_lowercase() {
+            let ext = ext.to_str().unwrap().to_ascii_lowercase();
+            if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext {
                 if let Ok(data) = fs::read(path) {
                     let file_name = path.file_name();
                     if file_name.is_none() {
@@ -167,7 +168,7 @@ impl MainWindow {
                 }
             }
 
-            if "tdf" == ext.to_str().unwrap().to_ascii_lowercase() {
+            if "tdf" == ext {
                 if let Ok(data) = fs::read(path) {
                     let file_name = path.file_name();
                     if file_name.is_none() {
