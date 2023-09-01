@@ -11,6 +11,8 @@ pub struct EditSauceDialog {
     pub author: SauceString<20, b' '>,
     pub group: SauceString<20, b' '>,
     pub comments: Vec<SauceString<64, 0>>,
+    pub use_letter_spacing: bool,
+    pub use_aspect_ratio: bool,
 }
 
 impl EditSauceDialog {
@@ -21,6 +23,8 @@ impl EditSauceDialog {
             author: buf.author.clone(),
             group: buf.group.clone(),
             comments: buf.comments.clone(),
+            use_letter_spacing: buf.use_letter_spacing,
+            use_aspect_ratio: buf.use_aspect_ratio,
         }
     }
 }
@@ -72,6 +76,22 @@ impl ModalDialog for EditSauceDialog {
                             ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(20));
                             self.group = SauceString::from(&tmp_str);
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-group-label-length"));
+                        });
+                        ui.end_row();
+
+                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-letter-spacing"));
+                        });
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut self.use_letter_spacing, "");
+                        });
+                        ui.end_row();
+
+                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-aspect-ratio"));
+                        });
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut self.use_aspect_ratio, "");
                         });
                         ui.end_row();
                     });
@@ -134,6 +154,8 @@ impl ModalDialog for EditSauceDialog {
         editor.buffer_view.lock().buf.author = self.author.clone();
         editor.buffer_view.lock().buf.group = self.group.clone();
         editor.buffer_view.lock().buf.comments = self.comments.clone();
+        editor.buffer_view.lock().buf.use_letter_spacing = self.use_letter_spacing;
+        editor.buffer_view.lock().buf.use_aspect_ratio = self.use_aspect_ratio;
         Ok(true)
     }
 }

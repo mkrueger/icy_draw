@@ -22,7 +22,6 @@ pub struct PencilTool {
     pub use_fore: bool,
     pub use_back: bool,
     pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
-    pub font_page: usize,
 
     pub last_pos: Position,
     pub brush_type: PencilType,
@@ -160,7 +159,7 @@ impl Tool for PencilTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            result = draw_glyph(ui, buffer_opt, &self.char_code, self.font_page);
+            result = draw_glyph(ui, buffer_opt, &self.char_code);
         });
         ui.radio_value(
             &mut self.brush_type,

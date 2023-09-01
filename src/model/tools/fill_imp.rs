@@ -20,7 +20,6 @@ pub struct FillTool {
 
     pub attr: TextAttribute,
     pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
-    pub font_page: usize,
     pub fill_type: FillType,
 }
 
@@ -99,6 +98,14 @@ impl FillTool {
                 .set_background(new_ch.attribute.get_background());
         }
 
+        repl_ch.set_font_page(
+            editor
+                .buffer_view
+                .lock()
+                .caret
+                .get_attribute()
+                .get_font_page(),
+        );
         editor.set_char(pos, repl_ch);
 
         if pos.x != 0 {
@@ -117,7 +124,6 @@ impl FillTool {
 // Attribute, Fore/Back
 // Character
 // Both
-
 impl Tool for FillTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
         &super::icons::FILL_SVG
@@ -156,7 +162,7 @@ impl Tool for FillTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            result = draw_glyph(ui, editor, &self.char_code, self.font_page);
+            result = draw_glyph(ui, editor, &self.char_code);
         });
         ui.radio_value(
             &mut self.fill_type,

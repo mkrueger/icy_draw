@@ -97,11 +97,11 @@ impl crate::ModalDialog for SelectFontDialog {
                         .to_lowercase()
                         .contains(&self.filter.to_lowercase())
                         && (self.show_outline
-                            && matches!(font.font_type, icy_engine::TheDrawFontType::Outline)
+                            && matches!(font.font_type, icy_engine::FontType::Outline)
                             || self.show_block
-                                && matches!(font.font_type, icy_engine::TheDrawFontType::Block)
+                                && matches!(font.font_type, icy_engine::FontType::Block)
                             || self.show_color
-                                && matches!(font.font_type, icy_engine::TheDrawFontType::Color))
+                                && matches!(font.font_type, icy_engine::FontType::Color))
                     {
                         filtered_fonts.push(i);
                     }
@@ -127,9 +127,9 @@ impl crate::ModalDialog for SelectFontDialog {
                                     ui.vertical(|ui| {
                                         ui.horizontal(|ui| {
                                             let font_type = match font.font_type {
-                                                icy_engine::TheDrawFontType::Outline => "OUTLINE",
-                                                icy_engine::TheDrawFontType::Block => "BLOCK",
-                                                icy_engine::TheDrawFontType::Color => "COLOR",
+                                                icy_engine::FontType::Outline => "OUTLINE",
+                                                icy_engine::FontType::Block => "BLOCK",
+                                                icy_engine::FontType::Color => "COLOR",
                                             };
                                             let response = ui.label(font_type);
                                             ui.painter().rect_stroke(
@@ -193,7 +193,7 @@ impl crate::ModalDialog for SelectFontDialog {
                                     if let Some(img) = self.image_cache.get(&filtered_fonts[row]) {
                                         img.show_scaled(ui, 0.5);
                                     } else {
-                                        let mut buffer = Buffer::new((100, 11));
+                                        let mut buffer = Buffer::new((100, 12));
                                         let mut pos = UPosition::default();
                                         let attr = TextAttribute::default();
                                         let outline_style = 0;
@@ -265,8 +265,13 @@ pub fn create_retained_image(buf: &Buffer) -> RetainedImage {
             let ch = buf.get_char((x, y));
             let font = buf.get_font(ch.get_font_page()).unwrap();
 
-            let (fg_r, fg_g, fg_b) =
-                buf.palette.colors[ch.attribute.get_foreground() as usize].get_rgb();
+            let fg = if ch.attribute.is_bold() && ch.attribute.get_foreground() < 8 {
+                ch.attribute.get_foreground() + 8
+            } else {
+                ch.attribute.get_foreground()
+            };
+
+            let (fg_r, fg_g, fg_b) = buf.palette.colors[fg as usize].get_rgb();
             let (bg_r, bg_g, bg_b) =
                 buf.palette.colors[ch.attribute.get_background() as usize].get_rgb();
 

@@ -7,9 +7,6 @@ pub use main_window::*;
 mod document;
 pub use document::*;
 
-mod font_editor;
-pub use font_editor::*;
-
 mod palette_editor;
 pub use palette_editor::*;
 
@@ -40,6 +37,9 @@ mod top_bar;
 pub use top_bar::*;
 mod messages;
 pub use messages::*;
+
+mod bitfont_selector;
+pub use bitfont_selector::*;
 
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
 

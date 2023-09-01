@@ -16,7 +16,6 @@ pub struct DrawRectangleTool {
     pub use_back: bool,
     pub attr: TextAttribute,
     pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
-    pub font_page: usize,
 }
 
 impl Plottable for DrawRectangleTool {
@@ -82,7 +81,7 @@ impl Tool for DrawRectangleTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            result = draw_glyph(ui, editor, &self.char_code, self.font_page);
+            result = draw_glyph(ui, editor, &self.char_code);
         });
         ui.radio_value(
             &mut self.draw_mode,

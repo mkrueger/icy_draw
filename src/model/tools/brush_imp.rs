@@ -23,7 +23,6 @@ pub struct BrushTool {
     pub use_back: bool,
     pub size: i32,
     pub char_code: Rc<RefCell<char>>,
-    pub font_page: usize,
 
     pub brush_type: BrushType,
 }
@@ -154,7 +153,7 @@ impl Tool for BrushTool {
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
 
-            result = draw_glyph(ui, buffer_opt, &self.char_code, self.font_page);
+            result = draw_glyph(ui, buffer_opt, &self.char_code);
         });
         ui.radio_value(
             &mut self.brush_type,
@@ -191,8 +190,8 @@ pub fn draw_glyph(
     ui: &mut egui::Ui,
     editor: &AnsiEditor,
     ch: &Rc<RefCell<char>>,
-    font_page: usize,
 ) -> Option<Message> {
+    let font_page = editor.buffer_view.lock().caret.get_font_page();
     if let Some(font) = editor.buffer_view.lock().buf.get_font(font_page) {
         let scale = 1.5;
         let (id, stroke_rect) = ui.allocate_space(Vec2::new(

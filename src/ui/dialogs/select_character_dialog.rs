@@ -31,13 +31,13 @@ impl SelectCharacterDialog {
 
 impl ModalDialog for SelectCharacterDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
-        let font_page = 0;
         let mut result = false;
         let modal = Modal::new(ctx, "select_character_dialog");
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "select-character-title"));
             let buffer_view = self.buf.lock();
+            let font_page = buffer_view.caret.get_font_page();
             let font = buffer_view.buf.get_font(font_page).unwrap();
             let scale = 4.;
 

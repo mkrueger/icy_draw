@@ -421,6 +421,8 @@ fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
         attribute.set_foreground(editor_attr.get_foreground());
     }
 
+    attribute.set_font_page(editor_attr.get_font_page());
+
     match tool.get_draw_mode() {
         DrawMode::Line => {
             if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {

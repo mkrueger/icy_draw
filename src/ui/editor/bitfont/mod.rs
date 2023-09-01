@@ -10,14 +10,14 @@ use icy_engine::BitFont;
 
 use crate::{model::Tool, AnsiEditor, Document, DocumentOptions, TerminalResult};
 
-pub struct FontEditor {
+pub struct BitFontEditor {
     font: BitFont,
     selected_char_opt: Option<char>,
     is_dirty: bool,
     id: usize,
 }
 
-impl FontEditor {
+impl BitFontEditor {
     pub fn new(font: BitFont, id: usize) -> Self {
         Self {
             font,
@@ -122,37 +122,41 @@ impl FontEditor {
                 }
             } else { */
 
-                if response.dragged_by(egui::PointerButton::Primary) {
-                    if let Some(pos) = response.interact_pointer_pos() {
-                        if let Some(number) = self.selected_char_opt {
-                            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                                let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border)) as usize;
-                                let x = ((pos.x - top_ruler - stroke_rect.left()) / (scale + border)) as usize;
-                                if y < glyph.data.len() && x < 8 {
-                                    glyph.data[y] |= 128 >> x;
-                                    self.is_dirty = true;
-                                    response.mark_changed();
-                                }
+            if response.dragged_by(egui::PointerButton::Primary) {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    if let Some(number) = self.selected_char_opt {
+                        if let Some(glyph) = self.font.get_glyph_mut(number) {
+                            let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border))
+                                as usize;
+                            let x = ((pos.x - top_ruler - stroke_rect.left()) / (scale + border))
+                                as usize;
+                            if y < glyph.data.len() && x < 8 {
+                                glyph.data[y] |= 128 >> x;
+                                self.is_dirty = true;
+                                response.mark_changed();
                             }
                         }
                     }
                 }
-    
-                if response.dragged_by(egui::PointerButton::Secondary) {
-                    if let Some(pos) = response.interact_pointer_pos() {
-                        if let Some(number) = self.selected_char_opt {
-                            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                                let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border)) as usize;
-                                let x = ((pos.x - top_ruler - stroke_rect.left()) / (scale + border)) as usize;
-                                if y < glyph.data.len() && x < 8 {
-                                    glyph.data[y] &= !(128 >> x);
-                                    self.is_dirty = true;
-                                    response.mark_changed();
-                                }
+            }
+
+            if response.dragged_by(egui::PointerButton::Secondary) {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    if let Some(number) = self.selected_char_opt {
+                        if let Some(glyph) = self.font.get_glyph_mut(number) {
+                            let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border))
+                                as usize;
+                            let x = ((pos.x - top_ruler - stroke_rect.left()) / (scale + border))
+                                as usize;
+                            if y < glyph.data.len() && x < 8 {
+                                glyph.data[y] &= !(128 >> x);
+                                self.is_dirty = true;
+                                response.mark_changed();
                             }
                         }
                     }
                 }
+            }
             if let Some(number) = self.selected_char_opt {
                 if let Some(glyph) = self.font.get_glyph_mut(number) {
                     painter.rect_filled(
@@ -341,7 +345,7 @@ impl FontEditor {
     }
 }
 
-impl Document for FontEditor {
+impl Document for BitFontEditor {
     fn get_title(&self) -> String {
         self.font.name.to_string()
     }

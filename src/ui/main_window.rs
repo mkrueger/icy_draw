@@ -8,8 +8,8 @@ use std::{
 };
 
 use crate::{
-    add_child, model::Tool, AnsiEditor, DockingContainer, Document, DocumentOptions, FontEditor,
-    ModalDialog, Tab, TabBehavior,
+    add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, DockingContainer, Document,
+    DocumentOptions, ModalDialog, Tab, TabBehavior,
 };
 use eframe::{
     egui::{self, Response, SidePanel, TextStyle, Ui},
@@ -28,6 +28,7 @@ pub struct MainWindow {
 
     dialog_open: bool,
     modal_dialog: Option<Box<dyn ModalDialog>>,
+    bitfont_selector: Option<BitFontSelector>,
     id: usize,
 
     pub left_panel: bool,
@@ -56,7 +57,6 @@ impl MainWindow {
                 use_fore: true,
                 brush_type: crate::model::pencil_imp::PencilType::Shade,
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
                 last_pos: Position::default(),
             }),
             Box::new(crate::model::brush_imp::BrushTool {
@@ -65,7 +65,6 @@ impl MainWindow {
                 use_fore: true,
                 brush_type: crate::model::brush_imp::BrushType::Shade,
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
             }),
             Box::new(crate::model::erase_imp::EraseTool {
                 size: 3,
@@ -78,7 +77,6 @@ impl MainWindow {
                 use_back: true,
                 attr: icy_engine::TextAttribute::default(),
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
                 old_pos: icy_engine::Position { x: 0, y: 0 },
             }),
             Box::new(crate::model::draw_rectangle_imp::DrawRectangleTool {
@@ -87,7 +85,6 @@ impl MainWindow {
                 use_back: true,
                 attr: icy_engine::TextAttribute::default(),
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
             }),
             Box::new(
                 crate::model::draw_rectangle_filled_imp::DrawRectangleFilledTool {
@@ -96,7 +93,6 @@ impl MainWindow {
                     use_back: true,
                     attr: icy_engine::TextAttribute::default(),
                     char_code: Rc::new(RefCell::new('\u{00B0}')),
-                    font_page: 0,
                 },
             ),
             Box::new(crate::model::draw_ellipse_imp::DrawEllipseTool {
@@ -105,7 +101,6 @@ impl MainWindow {
                 use_back: true,
                 attr: icy_engine::TextAttribute::default(),
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
             }),
             Box::new(
                 crate::model::draw_ellipse_filled_imp::DrawEllipseFilledTool {
@@ -114,14 +109,12 @@ impl MainWindow {
                     use_back: true,
                     attr: icy_engine::TextAttribute::default(),
                     char_code: Rc::new(RefCell::new('\u{00B0}')),
-                    font_page: 0,
                 },
             ),
             Box::new(crate::model::fill_imp::FillTool {
                 use_fore: true,
                 use_back: true,
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
-                font_page: 0,
                 fill_type: crate::model::fill_imp::FillType::Character,
                 attr: icy_engine::TextAttribute::default(),
             }),
@@ -148,6 +141,7 @@ impl MainWindow {
             left_panel: true,
             right_panel: true,
             bottom_panel: false,
+            bitfont_selector: Some(BitFontSelector::default()),
         }
     }
 
@@ -167,7 +161,7 @@ impl MainWindow {
                         add_child(
                             &mut self.tree,
                             Some(full_path),
-                            Box::new(FontEditor::new(font, id)),
+                            Box::new(BitFontEditor::new(font, id)),
                         );
                         return;
                     }
@@ -274,6 +268,13 @@ impl MainWindow {
         None
     }
 
+    pub fn get_active_document(&mut self) -> Option<&Box<dyn Document>> {
+        if let Some(pane) = self.get_active_pane() {
+            return Some(&pane.doc);
+        }
+        None
+    }
+
     pub(crate) fn open_dialog<T: ModalDialog + 'static>(&mut self, dialog: T) {
         self.modal_dialog = Some(Box::new(dialog));
     }
@@ -365,6 +366,20 @@ impl eframe::App for MainWindow {
                     None
                 };
                 self.handle_message(message);
+                let sel = self.bitfont_selector.take().unwrap();
+                let message = if let Some(doc) = self.get_active_document_mut() {
+                    let doc = doc.get_ansi_editor_mut();
+                    if let Some(editor) = doc {
+                        sel.show_ui(ctx, ui, editor)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                self.handle_message(message);
+
+                self.bitfont_selector = Some(sel);
 
                 // ui.add(crate::show_char_table(buffer_opt.clone()));
             });

@@ -6,7 +6,7 @@ use std::{
 };
 
 use eframe::egui;
-use icy_engine::{Selection, TheDrawFont};
+use icy_engine::{BitFont, Selection, TheDrawFont};
 
 use crate::{
     MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
@@ -40,6 +40,7 @@ pub enum Message {
     ShowCharacterSelectionDialog(Rc<RefCell<char>>),
     SelectFontDialog(Arc<Mutex<Vec<TheDrawFont>>>, Arc<Mutex<i32>>),
     ShowError(String),
+    SetFontPage(usize),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -264,6 +265,31 @@ impl MainWindow {
                     .get_ansi_editor_mut()
                     .unwrap();
                 editor.cur_layer = cur_layer;
+            }
+
+            Message::SetFontPage(page) => {
+                let editor = self
+                    .get_active_document_mut()
+                    .unwrap()
+                    .get_ansi_editor_mut()
+                    .unwrap();
+                editor.buffer_view.lock().caret.set_font_page(page);
+
+                let buf = &mut editor.buffer_view.lock().buf;
+                if buf.get_font(page).is_none() {
+                    if let Some(font_name) =
+                        icy_engine::parsers::ansi::constants::ANSI_FONT_NAMES.get(page)
+                    {
+                        match BitFont::from_name(font_name) {
+                            Ok(font) => {
+                                buf.set_font(page, font);
+                            }
+                            Err(err) => {
+                                log::error!("Failed to load font: {err}");
+                            }
+                        }
+                    }
+                }
             }
 
             Message::ShowAboutDialog => {

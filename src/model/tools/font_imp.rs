@@ -66,8 +66,8 @@ impl FontTool {
                 let extension = extension.unwrap().to_lowercase();
 
                 if extension == "tdf" {
-                    if let Some(font) = TheDrawFont::load(path) {
-                        fonts.push(font);
+                    if let Ok(loaded_fonts) = TheDrawFont::load(path) {
+                        fonts.extend(loaded_fonts);
                     }
                 }
             }
