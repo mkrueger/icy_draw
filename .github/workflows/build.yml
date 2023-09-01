@@ -6,7 +6,7 @@ on:
     types: 
       - completed
 env:
-  APP_NAME: icy_term
+  APP_NAME: icy_draw
   CARGO_TERM_COLOR: always
 jobs:
   build_linux:

@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
     rc::Rc,
     sync::{Arc, Mutex},
-    time::Duration
+    time::Duration,
 };
 
 use crate::{
