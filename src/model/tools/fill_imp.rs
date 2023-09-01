@@ -33,10 +33,8 @@ impl FillTool {
         old_ch: AttributedChar,
         new_ch: AttributedChar,
     ) {
-        if pos.x < 0
-            || pos.y < 0
-            || pos.x >= editor.buffer_view.lock().buf.get_width() as i32
-            || pos.x >= editor.buffer_view.lock().buf.get_height() as i32
+        if pos.x >= editor.buffer_view.lock().buf.get_width() as i32
+            || pos.y >= editor.buffer_view.lock().buf.get_height() as i32
             || !visited.insert(pos)
         {
             return;
@@ -103,9 +101,14 @@ impl FillTool {
 
         editor.set_char(pos, repl_ch);
 
-        self.fill(editor, visited, pos + Position::new(-1, 0), old_ch, new_ch);
+        if pos.x != 0 {
+            self.fill(editor, visited, pos + Position::new(-1, 0), old_ch, new_ch);
+        }
         self.fill(editor, visited, pos + Position::new(1, 0), old_ch, new_ch);
-        self.fill(editor, visited, pos + Position::new(0, -1), old_ch, new_ch);
+
+        if pos.y != 0 {
+            self.fill(editor, visited, pos + Position::new(0, -1), old_ch, new_ch);
+        }
         self.fill(editor, visited, pos + Position::new(0, 1), old_ch, new_ch);
     }
 }

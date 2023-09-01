@@ -352,7 +352,7 @@ impl MainWindow {
         }
         result
     }
-/*
+    /*
     fn top_bar_ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             // From right-to-left:
