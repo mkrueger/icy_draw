@@ -535,7 +535,7 @@ pub fn create_font_texture(
                         }
                     }
                 } else {
-                    eprintln!("error in font {} can't get line {y}", font.0);
+                    log::error!("error in font {} can't get line {y}", font.0);
                     font_data.extend(vec![0xFF; w * 4]);
                 }
             }

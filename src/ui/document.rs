@@ -6,8 +6,6 @@ pub trait Document {
     fn get_title(&self) -> String;
     fn is_dirty(&self) -> bool;
 
-    fn get_id(&self) -> usize;
-
     fn save(&mut self, file_name: &str) -> TerminalResult<()>;
 
     fn show_ui(

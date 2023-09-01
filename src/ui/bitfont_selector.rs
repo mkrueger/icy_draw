@@ -1,12 +1,6 @@
-use eframe::{
-    egui::{self, RichText},
-    epaint::{Color32, Vec2},
-};
-use egui_extras::{Column, TableBuilder};
-use i18n_embed_fl::fl;
-use icy_engine::BitFont;
+use eframe::egui;
 
-use crate::{AnsiEditor, Document, Message};
+use crate::{AnsiEditor, Message};
 
 #[derive(Default)]
 pub struct BitFontSelector {}
@@ -14,7 +8,7 @@ pub struct BitFontSelector {}
 impl BitFontSelector {
     pub fn show_ui(
         &self,
-        ctx: &egui::Context,
+        _ctx: &egui::Context,
         ui: &mut egui::Ui,
         editor: &AnsiEditor,
     ) -> Option<Message> {

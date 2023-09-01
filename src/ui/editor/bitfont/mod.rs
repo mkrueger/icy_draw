@@ -14,72 +14,72 @@ pub struct BitFontEditor {
     font: BitFont,
     selected_char_opt: Option<char>,
     is_dirty: bool,
-    id: usize,
+}
+
+pub enum DrawGlyphStyle {
+    Normal,
+    Selected,
+    GrayOut,
 }
 
 impl BitFontEditor {
-    pub fn new(font: BitFont, id: usize) -> Self {
+    pub fn new(font: BitFont) -> Self {
         Self {
             font,
             selected_char_opt: None,
             is_dirty: false,
-            id,
         }
     }
 
-    pub fn draw_glyph(&mut self, ch: char) -> impl egui::Widget + '_ {
-        move |ui: &mut egui::Ui| {
-            let scale = 3.;
-            let (id, stroke_rect) = ui.allocate_space(Vec2::new(
-                scale * self.font.size.width as f32,
-                scale * self.font.size.height as f32,
-            ));
-            let mut response = ui.interact(stroke_rect, id, Sense::click());
-            let is_selected = if let Some(ch2) = self.selected_char_opt {
-                ch == ch2
-            } else {
-                false
-            };
-            let col = if response.hovered() {
-                if is_selected {
-                    Color32::LIGHT_YELLOW
-                } else {
-                    Color32::WHITE
-                }
-            } else if is_selected {
-                Color32::YELLOW
-            } else {
-                Color32::GRAY
-            };
+    pub fn draw_glyph(
+        ui: &mut egui::Ui,
+        font: &BitFont,
+        style: DrawGlyphStyle,
+        ch: char,
+    ) -> egui::Response {
+        let scale = 3.;
+        let (id, stroke_rect) = ui.allocate_space(Vec2::new(
+            scale * font.size.width as f32,
+            scale * font.size.height as f32,
+        ));
+        let response = ui.interact(stroke_rect, id, Sense::click());
+        let col = if response.hovered() {
+            match style {
+                DrawGlyphStyle::Normal => Color32::LIGHT_GRAY,
+                DrawGlyphStyle::Selected => Color32::WHITE,
+                DrawGlyphStyle::GrayOut => Color32::GRAY,
+            }
+        } else {
+            match style {
+                DrawGlyphStyle::Normal => Color32::GRAY,
+                DrawGlyphStyle::Selected => Color32::YELLOW,
+                DrawGlyphStyle::GrayOut => Color32::DARK_GRAY,
+            }
+        };
 
-            let painter = ui.painter_at(stroke_rect);
-            painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
-            let s = self.font.size;
-            if let Some(glyph) = self.font.get_glyph(ch) {
-                for y in 0..s.height {
-                    for x in 0..s.width {
-                        if glyph.data[y] & (128 >> x) != 0 {
-                            painter.rect_filled(
-                                Rect::from_min_size(
-                                    Pos2::new(
-                                        stroke_rect.left() + x as f32 * scale,
-                                        stroke_rect.top() + y as f32 * scale,
-                                    ),
-                                    Vec2::new(scale, scale),
+        let painter = ui.painter_at(stroke_rect);
+        painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+        let s = font.size;
+        if let Some(glyph) = font.get_glyph(ch) {
+            for y in 0..s.height {
+                for x in 0..s.width {
+                    if glyph.data[y] & (128 >> x) != 0 {
+                        painter.rect_filled(
+                            Rect::from_min_size(
+                                Pos2::new(
+                                    stroke_rect.left() + x as f32 * scale,
+                                    stroke_rect.top() + y as f32 * scale,
                                 ),
-                                Rounding::none(),
-                                col,
-                            );
-                        }
+                                Vec2::new(scale, scale),
+                            ),
+                            Rounding::none(),
+                            col,
+                        );
                     }
                 }
             }
-            if response.clicked() {
-                self.selected_char_opt = Some(ch);
-                response.mark_changed();
-            }
-            response
         }
+        response
     }
 
     pub fn edit_glyph(&mut self) -> impl egui::Widget + '_ {
@@ -349,9 +349,6 @@ impl Document for BitFontEditor {
     fn get_title(&self) -> String {
         self.font.name.to_string()
     }
-    fn get_id(&self) -> usize {
-        self.id
-    }
 
     fn is_dirty(&self) -> bool {
         self.is_dirty
@@ -428,27 +425,38 @@ impl Document for BitFontEditor {
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 for i in 0..self.font.length {
-                    ui.add(self.draw_glyph(unsafe { char::from_u32_unchecked(i as u32) }))
-                        .on_hover_ui(|ui| {
-                            ui.horizontal(|ui| {
-                                ui.label(RichText::new("Char").small());
-                                ui.label(
-                                    RichText::new(format!("{0}/0x{0:02X}", i))
-                                        .small()
-                                        .color(Color32::WHITE),
-                                );
-                            });
-                            ui.horizontal(|ui| {
-                                ui.label(RichText::new("ASCII").small());
-                                ui.label(
-                                    RichText::new(format!("'{0}'", unsafe {
-                                        char::from_u32_unchecked(i as u32)
-                                    }))
+                    let ch = unsafe { char::from_u32_unchecked(i as u32) };
+                    let mut style = DrawGlyphStyle::Normal;
+                    if let Some(ch2) = self.selected_char_opt {
+                        if ch == ch2 {
+                            style = DrawGlyphStyle::Selected
+                        }
+                    }
+                    let response = BitFontEditor::draw_glyph(ui, &self.font, style, ch);
+                    if response.clicked() {
+                        self.selected_char_opt = Some(ch);
+                    }
+
+                    response.on_hover_ui(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("Char").small());
+                            ui.label(
+                                RichText::new(format!("{0}/0x{0:02X}", i))
                                     .small()
                                     .color(Color32::WHITE),
-                                );
-                            });
+                            );
                         });
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("ASCII").small());
+                            ui.label(
+                                RichText::new(format!("'{0}'", unsafe {
+                                    char::from_u32_unchecked(i as u32)
+                                }))
+                                .small()
+                                .color(Color32::WHITE),
+                            );
+                        });
+                    });
                 }
             })
         });

@@ -71,10 +71,6 @@ impl Document for AnsiEditor {
         }
     }
 
-    fn get_id(&self) -> usize {
-        self.id
-    }
-
     fn is_dirty(&self) -> bool {
         self.is_dirty
     }
@@ -219,10 +215,6 @@ impl AnsiEditor {
             lines: layers,
         }
     }
-
-    /*   pub fn get_overlay_layer(&mut self) -> &mut Option<Layer> {
-        self.buffer_view.lock().buf.get_overlay_layer()
-    }*/
 
     pub fn join_overlay(&mut self) {
         self.begin_atomic_undo();

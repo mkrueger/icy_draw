@@ -60,6 +60,8 @@ edit-sauce-author-label-length=(20 chars)
 edit-sauce-group-label=Group:
 edit-sauce-group-label-length=(20 chars)
 edit-sauce-comments-label=Comments
+edit-sauce-letter-spacing=Letter spacing:
+edit-sauce-aspect-ratio=Aspect ratio:
 
 edit-canvas-size-title=Set Canvas Size
 edit-canvas-size-width-label=Width:

@@ -1,15 +1,15 @@
 use std::{
     cell::RefCell,
     fs,
-    path::Path,
+    path::{Path, PathBuf},
     rc::Rc,
     sync::{Arc, Mutex},
     time::Duration,
 };
 
 use crate::{
-    add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, DockingContainer, Document,
-    DocumentOptions, ModalDialog, Tab, TabBehavior,
+    add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
+    DockingContainer, Document, DocumentOptions, ModalDialog, Tab, TabBehavior,
 };
 use eframe::{
     egui::{self, Response, SidePanel, TextStyle, Ui},
@@ -17,7 +17,7 @@ use eframe::{
 };
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, Position};
+use icy_engine::{BitFont, Buffer, Position, TheDrawFont};
 
 pub struct MainWindow {
     pub tree: egui_tiles::Tree<Tab>,
@@ -149,7 +149,7 @@ impl MainWindow {
         let full_path = path.to_str().unwrap().to_string();
 
         if let Some(ext) = path.extension() {
-            if let "psf" = ext.to_str().unwrap() {
+            if "psf" == ext.to_str().unwrap().to_ascii_lowercase() {
                 if let Ok(data) = fs::read(path) {
                     let file_name = path.file_name();
                     if file_name.is_none() {
@@ -157,11 +157,29 @@ impl MainWindow {
                     }
                     let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
                     if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
+                        add_child(
+                            &mut self.tree,
+                            Some(full_path),
+                            Box::new(BitFontEditor::new(font)),
+                        );
+                        return;
+                    }
+                }
+            }
+
+            if "tdf" == ext.to_str().unwrap().to_ascii_lowercase() {
+                if let Ok(data) = fs::read(path) {
+                    let file_name = path.file_name();
+                    if file_name.is_none() {
+                        return;
+                    }
+                    let file_name = PathBuf::from(file_name.unwrap());
+                    if let Ok(fonts) = TheDrawFont::from_tdf_bytes(&data) {
                         let id = self.create_id();
                         add_child(
                             &mut self.tree,
                             Some(full_path),
-                            Box::new(BitFontEditor::new(font, id)),
+                            Box::new(CharFontEditor::new(&self.gl, Some(file_name), id, fonts)),
                         );
                         return;
                     }
