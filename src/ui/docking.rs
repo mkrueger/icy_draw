@@ -35,15 +35,7 @@ impl egui_tiles::Behavior<Tab> for TabBehavior {
             &mut self.tools.lock().unwrap()[self.selected_tool],
             &self.document_options,
         );
-        // You can make your pane draggable like so:
-        if ui
-            .add(egui::Button::new("Drag me!").sense(egui::Sense::drag()))
-            .drag_started()
-        {
-            egui_tiles::UiResponse::DragStarted
-        } else {
-            egui_tiles::UiResponse::None
-        }
+        egui_tiles::UiResponse::None
     }
 
     fn simplification_options(&self) -> egui_tiles::SimplificationOptions {
