@@ -167,7 +167,8 @@ pub fn palette_editor_16(ui: &mut egui::Ui, editor: &AnsiEditor) {
         ui.add_space(4.0);
 
         let height = (ui.available_width()) / 8.0;
-        let (id, stroke_rect) = ui.allocate_space(Vec2::new(ui.available_width() - 4.0, height * 2.0));
+        let (id, stroke_rect) =
+            ui.allocate_space(Vec2::new(ui.available_width() - 4.0, height * 2.0));
         let mut response = ui.interact(stroke_rect, id, Sense::click());
 
         let painter = ui.painter_at(stroke_rect);
@@ -267,7 +268,7 @@ pub fn show_extended_palette(ui: &mut Ui, editor: &AnsiEditor) {
             for idx in range {
                 ui.horizontal(|ui| {
                     ui.add_space(4.0);
-                    let width =  ui.available_width();
+                    let width = ui.available_width();
 
                     let (id, back_rect) = ui.allocate_space(Vec2::new(width, row_height));
                     let mut response = ui.interact(back_rect, id, Sense::click());

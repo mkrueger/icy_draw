@@ -46,7 +46,6 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
                 );
             }
 
-
             let painter = ui.painter_at(rect);
             let tint = if i == arg.document_behavior.selected_tool {
                 ui.visuals().widgets.active.fg_stroke.color

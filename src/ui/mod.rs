@@ -13,7 +13,6 @@ pub use palette_editor::*;
 mod tool_switcher;
 pub use tool_switcher::*;
 
-
 mod icons;
 pub use icons::*;
 

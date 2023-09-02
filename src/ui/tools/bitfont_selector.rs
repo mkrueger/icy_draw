@@ -1,14 +1,9 @@
 use std::sync::{Arc, Mutex};
 
-use eframe::{
-    egui::{self, RichText, Sense, TextStyle},
-    epaint::{Color32, Vec2, Rounding, Rect, pos2}, emath::Align2,
-};
-use egui_extras::RetainedImage;
+use eframe::egui::{self, RichText};
 use i18n_embed_fl::fl;
-use icy_engine::{ascii, BufferParser};
 
-use crate::{AnsiEditor, Message, ToolWindow, Document, VISIBLE_SVG, INVISIBLE_SVG};
+use crate::{AnsiEditor, Document, Message, ToolWindow};
 
 #[derive(Default)]
 pub struct BitFontSelector {}
@@ -17,11 +12,11 @@ impl ToolWindow for BitFontSelector {
     fn get_title(&self) -> String {
         fl!(crate::LANGUAGE_LOADER, "bitfont_tool_title")
     }
- 
+
     fn show_ui(
         &mut self,
         ui: &mut egui::Ui,
-        active_document: Option<Arc<Mutex<Box<dyn Document>>>> 
+        active_document: Option<Arc<Mutex<Box<dyn Document>>>>,
     ) -> Option<Message> {
         if let Some(doc) = active_document {
             if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
@@ -36,10 +31,7 @@ impl ToolWindow for BitFontSelector {
     }
 }
 
-fn show_font_list(
-    ui: &mut egui::Ui,
-    editor: &AnsiEditor,
-) -> Option<Message> {
+fn show_font_list(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     let mut result = None;
 
     /*

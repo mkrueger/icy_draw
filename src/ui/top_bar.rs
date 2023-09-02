@@ -31,16 +31,17 @@ impl MainWindow {
         frame: &mut eframe::Frame,
     ) -> Option<Message> {
         let mut result = None;
-        TopBottomPanel::top("top_panel").exact_height(24.0).show(ctx, |ui| {
-            result = self.main_menu(ui, frame);
-        });
+        TopBottomPanel::top("top_panel")
+            .exact_height(24.0)
+            .show(ctx, |ui| {
+                result = self.main_menu(ui, frame);
+            });
         result
     }
 
     fn main_menu(&mut self, ui: &mut Ui, frame: &mut eframe::Frame) -> Option<Message> {
         let mut result = None;
         menu::bar(ui, |ui| {
-
             let mut has_buffer = false;
             if let Some(doc) = self.get_active_document() {
                 has_buffer = doc.lock().unwrap().get_ansi_editor().is_some();
@@ -210,10 +211,16 @@ impl MainWindow {
                     "X",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
+                    if let Some(editor) = self
+                        .get_active_document()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .get_ansi_editor_mut()
+                    {
                         editor.flip_x();
-                            editor.redraw_view();
-                        }
+                        editor.redraw_view();
+                    }
                     ui.close_menu();
                 }
 
@@ -224,10 +231,16 @@ impl MainWindow {
                     "Y",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
+                    if let Some(editor) = self
+                        .get_active_document()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .get_ansi_editor_mut()
+                    {
                         editor.flip_y();
-                            editor.redraw_view();
-                        }
+                        editor.redraw_view();
+                    }
                     ui.close_menu();
                 }
 
@@ -238,10 +251,16 @@ impl MainWindow {
                     "Y",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
+                    if let Some(editor) = self
+                        .get_active_document()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .get_ansi_editor_mut()
+                    {
                         editor.justify_center();
-                            editor.redraw_view();
-                        }
+                        editor.redraw_view();
+                    }
                     ui.close_menu();
                 }
 
@@ -252,9 +271,15 @@ impl MainWindow {
                     "L",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
+                    if let Some(editor) = self
+                        .get_active_document()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .get_ansi_editor_mut()
+                    {
                         editor.justify_left();
-                            editor.redraw_view();
+                        editor.redraw_view();
                     }
                     ui.close_menu();
                 }
@@ -266,9 +291,15 @@ impl MainWindow {
                     "R",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
+                    if let Some(editor) = self
+                        .get_active_document()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .get_ansi_editor_mut()
+                    {
                         editor.justify_right();
-                            editor.redraw_view();
+                        editor.redraw_view();
                     }
                     ui.close_menu();
                 }
@@ -281,9 +312,15 @@ impl MainWindow {
                     "",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
+                    if let Some(editor) = self
+                        .get_active_document()
+                        .unwrap()
+                        .lock()
+                        .unwrap()
+                        .get_ansi_editor_mut()
+                    {
                         editor.crop();
-                            editor.redraw_view();
+                        editor.redraw_view();
                     }
                     ui.close_menu();
                 }
@@ -380,11 +417,5 @@ pub fn medium_toggle_button(
         ui.visuals().widgets.inactive.fg_stroke.color
     };
 
-    ui.add(
-        ImageButton::new(
-            icon.texture_id(ui.ctx()),
-            size_points,
-        )
-        .tint(tint),
-    )
+    ui.add(ImageButton::new(icon.texture_id(ui.ctx()), size_points).tint(tint))
 }

@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
 #![warn(clippy::all, rust_2018_idioms)]
+#![allow(clippy::arc_with_non_send_sync)]
 use eframe::egui;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 mod model;

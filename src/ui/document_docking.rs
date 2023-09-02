@@ -33,7 +33,6 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         _tile_id: egui_tiles::TileId,
         pane: &mut DocumentTab,
     ) -> egui_tiles::UiResponse {
-
         pane.doc.lock().unwrap().show_ui(
             ui,
             &mut self.tools.lock().unwrap()[self.selected_tool],
@@ -77,7 +76,10 @@ pub fn add_child(
     full_path: Option<String>,
     doc: Box<dyn Document>,
 ) {
-    let tile = DocumentTab { full_path, doc: Arc::new(Mutex::new(doc)) };
+    let tile = DocumentTab {
+        full_path,
+        doc: Arc::new(Mutex::new(doc)),
+    };
     let new_child = tree.tiles.insert_pane(tile);
 
     if tree.root.is_none() {

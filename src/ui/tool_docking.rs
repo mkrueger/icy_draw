@@ -8,17 +8,16 @@ pub struct ToolTab {
     pub doc: Box<dyn ToolWindow>,
 }
 impl ToolTab {
-    pub(crate) fn new<T:'static + ToolWindow>(tool_window:  T) -> Self {
+    pub(crate) fn new<T: 'static + ToolWindow>(tool_window: T) -> Self {
         Self {
             doc: Box::new(tool_window),
         }
-
     }
 }
 
 #[derive(Default)]
 pub struct ToolBehavior {
-    pub active_document: Option<Arc<Mutex<Box<dyn Document>>>>, 
+    pub active_document: Option<Arc<Mutex<Box<dyn Document>>>>,
     pub message: Option<Message>,
 }
 
@@ -59,6 +58,6 @@ pub trait ToolWindow {
     fn show_ui(
         &mut self,
         ui: &mut egui::Ui,
-        active_document: Option<Arc<Mutex<Box<dyn Document>>>> 
+        active_document: Option<Arc<Mutex<Box<dyn Document>>>>,
     ) -> Option<Message>;
 }

@@ -8,8 +8,9 @@ use std::{
 };
 
 use crate::{
-    add_child, model::Tool, AnsiEditor, BitFontEditor, CharFontEditor,
-    Document, DocumentOptions, ModalDialog, DocumentTab, DocumentBehavior, TopBar, ToolTab, ToolBehavior, LayerToolWindow, CharTableToolWindow, BitFontSelector,
+    add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
+    CharTableToolWindow, Document, DocumentBehavior, DocumentOptions, DocumentTab, LayerToolWindow,
+    Message, ModalDialog, ToolBehavior, ToolTab, TopBar,
 };
 use eframe::{
     egui::{self, Response, SidePanel, TextStyle, Ui},
@@ -135,7 +136,6 @@ impl MainWindow {
             egui::Visuals::dark()
         });
 
-
         let mut style: egui::Style = (*ctx.style()).clone();
         style.spacing.window_margin = egui::Margin::same(8.0);
         use egui::FontFamily::Proportional;
@@ -150,16 +150,24 @@ impl MainWindow {
         .into();
         ctx.set_style(style);
 
-        let mut tool_tree= egui_tiles::Tree::<ToolTab>::empty("tool_tree");
-        let layers = tool_tree.tiles.insert_pane(ToolTab::new(LayerToolWindow::default()));
-        let charTable = tool_tree.tiles.insert_pane(ToolTab::new(CharTableToolWindow::default()));
-        let bitfont_selector = tool_tree.tiles.insert_pane(ToolTab::new(BitFontSelector::default()));
+        let mut tool_tree = egui_tiles::Tree::<ToolTab>::empty("tool_tree");
+        let layers = tool_tree
+            .tiles
+            .insert_pane(ToolTab::new(LayerToolWindow::default()));
+        let char_table = tool_tree
+            .tiles
+            .insert_pane(ToolTab::new(CharTableToolWindow::default()));
+        let bitfont_selector = tool_tree
+            .tiles
+            .insert_pane(ToolTab::new(BitFontSelector::default()));
 
-        let tab = tool_tree.tiles.insert_tab_tile(vec![charTable, bitfont_selector]);
+        let tab = tool_tree
+            .tiles
+            .insert_tab_tile(vec![char_table, bitfont_selector]);
         let v = tool_tree.tiles.insert_vertical_tile(vec![tab, layers]);
 
         tool_tree.root = Some(v);
-        
+
         MainWindow {
             document_behavior: DocumentBehavior {
                 tools: Arc::new(Mutex::new(tools)),
@@ -171,7 +179,7 @@ impl MainWindow {
             },
             tool_behavior: ToolBehavior::default(),
             toasts: egui_notify::Toasts::default(),
-            document_tree:  egui_tiles::Tree::<DocumentTab>::empty("document_tree"),
+            document_tree: egui_tiles::Tree::<DocumentTab>::empty("document_tree"),
             tool_tree,
             gl: cc.gl.clone().unwrap(),
             dialog_open: false,
@@ -331,11 +339,16 @@ impl MainWindow {
         self.modal_dialog = Some(Box::new(dialog));
     }
 
-    pub(crate) fn run_editor_command<T>(&mut self, param: T, func: fn(&mut MainWindow, &mut AnsiEditor, T))  {
+    pub(crate) fn run_editor_command<T>(
+        &mut self,
+        param: T,
+        func: fn(&mut MainWindow, &mut AnsiEditor, T) -> Option<Message>,
+    ) {
         if let Some(doc) = self.get_active_document() {
             if let Ok(mut doc) = doc.lock() {
                 if let Some(editor) = doc.get_ansi_editor_mut() {
-                    func(self, editor, param);
+                    let msg = func(self, editor, param);
+                    self.handle_message(msg);
                 }
             }
         }
@@ -387,38 +400,38 @@ impl eframe::App for MainWindow {
                 let mut palette: usize = self.palette_mode;
                 if let Some(doc) = self.get_active_document() {
                     if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
-                    ui.vertical_centered(|ui| {
-                        ui.add(crate::palette_switcher(ctx, editor));
-                    });
-                    ui.add_space(8.0);
-                    ui.horizontal(|ui| {
+                        ui.vertical_centered(|ui| {
+                            ui.add(crate::palette_switcher(ctx, editor));
+                        });
                         ui.add_space(8.0);
+                        ui.horizontal(|ui| {
+                            ui.add_space(8.0);
 
-                        if ui.selectable_label(palette == 0, "DOS").clicked() {
-                            palette = 0;
+                            if ui.selectable_label(palette == 0, "DOS").clicked() {
+                                palette = 0;
+                            }
+                            if ui.selectable_label(palette == 1, "Extended").clicked() {
+                                palette = 1;
+                            }
+                            if ui.selectable_label(palette == 2, "Custom").clicked() {
+                                palette = 2;
+                            }
+                        });
+                        ui.separator();
+                        match palette {
+                            0 => {
+                                crate::palette_editor_16(ui, editor);
+                            }
+                            1 => {
+                                crate::show_extended_palette(ui, editor);
+                            }
+                            _ => {
+                                ui.label("TODO");
+                            }
                         }
-                        if ui.selectable_label(palette == 1, "Extended").clicked() {
-                            palette = 1;
-                        }
-                        if ui.selectable_label(palette == 2, "Custom").clicked() {
-                            palette = 2;
-                        }
-                    });
-                    ui.separator();
-                    match palette {
-                        0 => {
-                            crate::palette_editor_16(ui, editor);
-                        }
-                        1 => {
-                            crate::show_extended_palette(ui, editor);
-                        }
-                        _ => {
-                            ui.label("TODO");
-                        }
+                        ui.separator();
                     }
-                    ui.separator();
                 }
-            }
                 self.palette_mode = palette;
 
                 crate::add_tool_switcher(ctx, ui, self);
@@ -433,13 +446,12 @@ impl eframe::App for MainWindow {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
                         ui.vertical(|ui| {
-                if let Some(doc) = self.get_active_document() {
-
-                            if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
-                                let tool_result = tool.show_ui(ctx, ui, editor);
-                                self.handle_message(tool_result);
+                            if let Some(doc) = self.get_active_document() {
+                                if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                                    let tool_result = tool.show_ui(ctx, ui, editor);
+                                    self.handle_message(tool_result);
+                                }
                             }
-                        }
                         });
                     });
                 }
@@ -461,7 +473,7 @@ impl eframe::App for MainWindow {
                 let msg = self.tool_behavior.message.take();
                 self.handle_message(msg);
 
-                /* 
+                /*
                 let message = if let Some(doc) = self.get_active_document_mut() {
                     let doc = doc.get_ansi_editor_mut();
                     if let Some(editor) = doc {
@@ -507,13 +519,12 @@ impl eframe::App for MainWindow {
             if self.modal_dialog.as_mut().unwrap().show(ctx) {
                 let modal_dialog = self.modal_dialog.take().unwrap();
                 if modal_dialog.should_commit() {
-                if let Some(doc) = self.get_active_document() {
-
-                    if let Some(editor) = doc.lock().unwrap().get_ansi_editor_mut() {
-                        modal_dialog.commit(editor).unwrap();
+                    if let Some(doc) = self.get_active_document() {
+                        if let Some(editor) = doc.lock().unwrap().get_ansi_editor_mut() {
+                            modal_dialog.commit(editor).unwrap();
+                        }
                     }
-                }
-                     modal_dialog.commit_self(self).unwrap();
+                    modal_dialog.commit_self(self).unwrap();
                 }
             }
         }
