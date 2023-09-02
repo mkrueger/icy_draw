@@ -131,6 +131,7 @@ impl MainWindow {
                 document_options: DocumentOptions {
                     scale: eframe::egui::Vec2::new(1.0, 1.0),
                 },
+                request_close: None,
             },
             toasts: egui_notify::Toasts::default(),
             tree: DockingContainer::default(),
@@ -430,6 +431,11 @@ impl eframe::App for MainWindow {
             }
         }
         self.toasts.show(ctx);
+        if let Some(close) = self.tab_viewer.request_close {
+
+            self.tree.tiles.remove(close);
+            self.tab_viewer.request_close  = None;
+        }
 
         ctx.request_repaint_after(Duration::from_millis(150));
     }

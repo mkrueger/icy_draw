@@ -1,7 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{model::Tool, Document, DocumentOptions};
-use eframe::egui;
+use eframe::egui::{self, Button, Response};
+use egui_tiles::{Tiles, TileId};
 pub type DockingContainer = egui_tiles::Tree<Tab>;
 
 pub struct Tab {
@@ -13,6 +14,8 @@ pub struct TabBehavior {
     pub tools: Arc<Mutex<Vec<Box<dyn Tool>>>>,
     pub selected_tool: usize,
     pub document_options: DocumentOptions,
+
+    pub request_close: Option<TileId>,
 }
 
 impl egui_tiles::Behavior<Tab> for TabBehavior {
@@ -38,11 +41,40 @@ impl egui_tiles::Behavior<Tab> for TabBehavior {
         egui_tiles::UiResponse::None
     }
 
+    fn on_tab_button(
+        &mut self,
+        tiles: &Tiles<Tab>,
+        tile_id: TileId,
+        button_response: eframe::egui::Response,
+    ) -> Response {
+        button_response.context_menu(|ui| {
+            if ui
+            .button("Close")
+            .clicked()
+            {
+                self.on_close_requested(tiles, tile_id);
+                ui.close_menu();
+            }
+        })
+    }
+
+    fn on_close_requested(
+        &mut self,
+        tiles: &Tiles<Tab>,
+        tile_id: TileId,
+    ) {
+        self.request_close = Some(tile_id);
+    }
+
     fn simplification_options(&self) -> egui_tiles::SimplificationOptions {
         egui_tiles::SimplificationOptions {
             all_panes_must_have_tabs: true,
             ..Default::default()
         }
+    }
+
+    fn has_close_buttons(&self) -> bool {
+        true
     }
 }
 
