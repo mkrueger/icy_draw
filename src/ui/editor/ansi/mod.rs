@@ -43,7 +43,7 @@ pub struct AnsiEditor {
     last_pos: Position,
 
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
-    buffer_parser: Box<dyn BufferParser>,
+    pub buffer_parser: Box<dyn BufferParser>,
 
     pub cur_outline: usize,
     pub is_inactive: bool,

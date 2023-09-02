@@ -28,6 +28,9 @@ pub enum Message {
     MoveLayerDown(usize),
     ToggleVisibility(usize),
     SelectLayer(usize),
+    DuplicateLayer(usize),
+    MergeLayer(usize),
+
     Undo,
     Redo,
     EditSauce,
@@ -41,6 +44,7 @@ pub enum Message {
     SelectFontDialog(Arc<Mutex<Vec<TheDrawFont>>>, Arc<Mutex<i32>>),
     ShowError(String),
     SetFontPage(usize),
+    CharTable(char),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -88,21 +92,26 @@ impl MainWindow {
                 }
             }
             Message::ExportFile => {
-                let mut buffer_opt = self.get_ansi_editor();
-                let view = buffer_opt.unwrap().buffer_view.clone();
-                self.open_dialog(crate::ExportFileDialog::new(&view.lock().buf));
+                self.run_editor_command(0, |window, editor, _| {
+                    let view = editor.buffer_view.clone();
+                    window.open_dialog(crate::ExportFileDialog::new(&view.lock().buf));
+                });
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
+                    let view = editor.buffer_view.clone();
+                    self.open_dialog(crate::ExportFileDialog::new(&view.lock().buf));
+                }
             }
             Message::ShowOutlineDialog => {
                 self.open_dialog(SelectOutlineDialog::default());
             }
             Message::Undo => {
-                if let Some(editor) = self.get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                     editor.undo();
                     editor.buffer_view.lock().redraw_view();
                 }
             }
             Message::Redo => {
-                if let Some(editor) = self.get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                 editor.redo();
                     editor.buffer_view.lock().redraw_view();
                 }
@@ -110,7 +119,7 @@ impl MainWindow {
             }
 
             Message::SelectAll => {
-                if let Some(editor) = self.get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
                     let buf = &mut editor.buffer_view.lock();
                         let w = buf.buf.get_width();
                         let h = buf.buf.get_line_count();
@@ -119,14 +128,14 @@ impl MainWindow {
                     }
             }
             Message::Deselect => {
-                if let Some(editor) = self.get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
                     editor.buffer_view.lock().clear_selection();
                         editor.redraw_view();
                     }
             }
 
             Message::DeleteSelection => {
-                if let Some(editor) = self.get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                     if editor.buffer_view.lock().get_selection().is_some() {
                             editor.delete_selection();
                             editor.redraw_view();
@@ -135,7 +144,7 @@ impl MainWindow {
             }
 
             Message::ShowCharacterSelectionDialog(ch) => {
-                if let Some(editor) = self.get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
                     let buf = editor.buffer_view.clone();
                         self.open_dialog(SelectCharacterDialog::new(buf, ch));
                     }
@@ -145,27 +154,27 @@ impl MainWindow {
             }
 
             Message::EditSauce => {
-                let mut buffer_opt = self.get_ansi_editor() ;
-       
-                let view = buffer_opt.unwrap().buffer_view.clone();
-                self.open_dialog(crate::EditSauceDialog::new(&view.lock().buf));
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor()  {
+                    let view = editor.buffer_view.clone();
+                    self.open_dialog(crate::EditSauceDialog::new(&view.lock().buf));
+                }
             }
             Message::SetCanvasSize => {
-                let mut buffer_opt = self.get_ansi_editor();
-                let view = buffer_opt.unwrap().buffer_view.clone();
-                self.open_dialog(crate::SetCanvasSizeDialog::new(&view.lock().buf));
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor()  {
+                    let view = editor.buffer_view.clone();
+                    self.open_dialog(crate::SetCanvasSizeDialog::new(&view.lock().buf));
+                }
             }
 
             Message::EditLayer(i) => {
-                let editor = self.get_ansi_editor()
-                    .unwrap();
-                let buffer_view = editor.buffer_view.clone();
-                self.open_dialog(crate::EditLayerDialog::new(&buffer_view.lock().buf, i));
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor()  {
+                    let view = editor.buffer_view.clone();
+                    self.open_dialog(crate::EditLayerDialog::new(&view.lock().buf, i));
+                }
             }
             Message::NewLayer => {
-                let editor = self.get_ansi_editor()
-                    .unwrap();
-                let buf = &mut editor.buffer_view.lock().buf;
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut()  {
+                    let buf = &mut editor.buffer_view.lock().buf;
                 let size = buf.get_buffer_size();
                 let mut new_layer = icy_engine::Layer::new("New Layer", size);
                 new_layer.has_alpha_channel = true;
@@ -175,9 +184,9 @@ impl MainWindow {
 
                 buf.layers.insert(0, new_layer);
             }
+            }
             Message::MoveLayerUp(cur_layer) => {
-                let editor = self.get_ansi_editor()
-                    .unwrap();
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut()  {
 
                 editor
                     .buffer_view
@@ -186,60 +195,90 @@ impl MainWindow {
                     .layers
                     .swap(cur_layer, cur_layer - 1);
                 editor.cur_layer -= 1;
+                }
             }
             Message::MoveLayerDown(cur_layer) => {
-                let editor = self.get_ansi_editor()
-                    .unwrap();
-
-                editor
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut()  {
+                    editor
                     .buffer_view
                     .lock()
                     .buf
                     .layers
                     .swap(cur_layer, cur_layer + 1);
                 editor.cur_layer += 1;
+                }
             }
             Message::DeleteLayer(cur_layer) => {
-                let editor = self.get_ansi_editor()
-                    .unwrap();
-                editor.buffer_view.lock().buf.layers.remove(cur_layer);
-                editor.cur_layer = editor.cur_layer.clamp(
+                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
+                    editor.buffer_view.lock().buf.layers.remove(cur_layer);
+                    editor.cur_layer = editor.cur_layer.clamp(
                     0,
                     editor.buffer_view.lock().buf.layers.len().saturating_sub(1),
-                );
+                    );
+                });
             }
+            Message::DuplicateLayer(cur_layer) => {
+                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
+                    let layer = editor.buffer_view.lock().buf.layers[cur_layer].clone();
+                    editor.buffer_view.lock().buf.layers.insert(cur_layer + 1, layer);
+                    editor.cur_layer += 1;
+                });
+            }
+            Message::MergeLayer(cur_layer) => {
+                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
+                    let layer = editor.buffer_view.lock().buf.layers.remove(cur_layer);
+                    if let Some(layer_below) = editor.buffer_view.lock().buf.layers.get_mut(cur_layer) {
+                        for y in 0..layer.get_height() {
+                            for x in 0..layer.get_width() {
+                                println!("{} {}", x, y);
+                                let ch = layer.get_char((x, y));
+                                if ch.is_visible() {
+                                    layer_below.set_char((x, y), ch);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
             Message::ToggleVisibility(cur_layer) => {
-                let editor = self.get_ansi_editor()
-                    .unwrap();
-                let is_visible = editor.buffer_view.lock().buf.layers[cur_layer].is_visible;
-                editor.buffer_view.lock().buf.layers[cur_layer].is_visible = !is_visible;
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut()  {
+                    let is_visible = editor.buffer_view.lock().buf.layers[cur_layer].is_visible;
+                    editor.buffer_view.lock().buf.layers[cur_layer].is_visible = !is_visible;
+                }
             }
             Message::SelectLayer(cur_layer) => {
-                let editor = self .get_ansi_editor()
-                    .unwrap();
-                editor.cur_layer = cur_layer;
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut()  {
+                    editor.cur_layer = cur_layer;
+                }
             }
 
             Message::SetFontPage(page) => {
-                let editor = self.get_ansi_editor()
-                    .unwrap();
-                editor.buffer_view.lock().caret.set_font_page(page);
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut()  {
+                    editor.buffer_view.lock().caret.set_font_page(page);
 
-                let buf = &mut editor.buffer_view.lock().buf;
-                if buf.get_font(page).is_none() {
-                    if let Some(font_name) =
-                        icy_engine::parsers::ansi::constants::ANSI_FONT_NAMES.get(page)
-                    {
-                        match BitFont::from_name(font_name) {
-                            Ok(font) => {
-                                buf.set_font(page, font);
-                            }
-                            Err(err) => {
-                                log::error!("Failed to load font: {err}");
+                    let buf = &mut editor.buffer_view.lock().buf;
+                    if buf.get_font(page).is_none() {
+                        if let Some(font_name) =
+                            icy_engine::parsers::ansi::constants::ANSI_FONT_NAMES.get(page)
+                        {
+                            match BitFont::from_name(font_name) {
+                                Ok(font) => {
+                                    buf.set_font(page, font);
+                                }
+                                Err(err) => {
+                                    log::error!("Failed to load font: {err}");
+                                }
                             }
                         }
                     }
                 }
+            }
+            Message::CharTable(ch) => {
+                let ch  =ch as u8;
+                self.run_editor_command(ch,|_, editor, ch| {
+                    editor.print_char(ch);
+                });
             }
 
             Message::ShowAboutDialog => {

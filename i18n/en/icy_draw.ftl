@@ -127,3 +127,13 @@ select-font-dialog-no-fonts=No fonts matches the filter
 select-font-dialog-no-fonts-installed=No fonts installed
 
 layer_tool_title=Layer
+layer_tool_menu_layer_properties=Layer properties
+layer_tool_menu_new_layer=New layer
+layer_tool_menu_duplicate_layer=Duplicate layer
+layer_tool_menu_merge_layer=Merge layer
+layer_tool_menu_delete_layer=Delete layer
+
+char_table_tool_title=Char table
+bitfont_tool_title=Fonts
+
+no_document_selected=No document selected

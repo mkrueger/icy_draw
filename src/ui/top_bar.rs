@@ -13,7 +13,7 @@ pub struct TopBar {
 }
 
 impl TopBar {
-    pub fn new(ctx: &egui::Context) -> Self {
+    pub fn new(_ctx: &egui::Context) -> Self {
         let left_bytes = include_bytes!("../../data/icons/dock_left.svg");
         let right_bytes = include_bytes!("../../data/icons/dock_right.svg");
 
@@ -40,9 +40,11 @@ impl MainWindow {
     fn main_menu(&mut self, ui: &mut Ui, frame: &mut eframe::Frame) -> Option<Message> {
         let mut result = None;
         menu::bar(ui, |ui| {
-            let mut buffer_opt = self.get_ansi_editor();
 
-            let has_buffer = buffer_opt.is_some();
+            let mut has_buffer = false;
+            if let Some(doc) = self.get_active_document() {
+                has_buffer = doc.lock().unwrap().get_ansi_editor().is_some();
+            }
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
                 if ui
@@ -208,7 +210,7 @@ impl MainWindow {
                     "X",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_ansi_editor() {
+                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                         editor.flip_x();
                             editor.redraw_view();
                         }
@@ -222,7 +224,7 @@ impl MainWindow {
                     "Y",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_ansi_editor() {
+                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                         editor.flip_y();
                             editor.redraw_view();
                         }
@@ -236,7 +238,7 @@ impl MainWindow {
                     "Y",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_ansi_editor() {
+                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                         editor.justify_center();
                             editor.redraw_view();
                         }
@@ -250,7 +252,7 @@ impl MainWindow {
                     "L",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_ansi_editor() {
+                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                         editor.justify_left();
                             editor.redraw_view();
                     }
@@ -264,7 +266,7 @@ impl MainWindow {
                     "R",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_ansi_editor() {
+                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                         editor.justify_right();
                             editor.redraw_view();
                     }
@@ -279,7 +281,7 @@ impl MainWindow {
                     "",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self.get_ansi_editor() {
+                    if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                         editor.crop();
                             editor.redraw_view();
                     }
@@ -352,40 +354,37 @@ impl MainWindow {
 
     fn top_bar_ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let tint = if self.right_panel {
-                ui.visuals().widgets.active.fg_stroke.color
-            } else {
-                ui.visuals().widgets.inactive.fg_stroke.color
-            };
-            let icon_size = 20.0;
-
-            let right = ui.add(
-                ImageButton::new(
-                    self.top_bar.dock_right.texture_id(ui.ctx()),
-                    Vec2::new(icon_size, icon_size),
-                )
-                .tint(tint),
-            );
+            let right = medium_toggle_button(ui, &self.top_bar.dock_right, self.right_panel);
             if right.clicked() {
                 self.right_panel = !self.right_panel;
             }
 
-            let tint = if self.left_panel {
-                ui.visuals().widgets.active.fg_stroke.color
-            } else {
-                ui.visuals().widgets.inactive.fg_stroke.color
-            };
-
-            let left = ui.add(
-                ImageButton::new(
-                    self.top_bar.dock_left.texture_id(ui.ctx()),
-                    Vec2::new(icon_size, icon_size),
-                )
-                .tint(tint),
-            );
+            let left = medium_toggle_button(ui, &self.top_bar.dock_left, self.left_panel);
             if left.clicked() {
                 self.left_panel = !self.left_panel;
             }
         });
     }
+}
+
+pub fn medium_toggle_button(
+    ui: &mut egui::Ui,
+    icon: &RetainedImage,
+    selected: bool,
+) -> egui::Response {
+    let size_points = egui::Vec2::splat(20.0);
+
+    let tint = if selected {
+        ui.visuals().widgets.active.fg_stroke.color
+    } else {
+        ui.visuals().widgets.inactive.fg_stroke.color
+    };
+
+    ui.add(
+        ImageButton::new(
+            icon.texture_id(ui.ctx()),
+            size_points,
+        )
+        .tint(tint),
+    )
 }

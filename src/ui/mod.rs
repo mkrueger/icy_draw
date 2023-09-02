@@ -13,13 +13,9 @@ pub use palette_editor::*;
 mod tool_switcher;
 pub use tool_switcher::*;
 
-mod char_table;
-pub use char_table::*;
 
 mod icons;
 pub use icons::*;
-
-mod layer_view;
 
 mod settings;
 pub use settings::*;
@@ -41,8 +37,8 @@ pub use top_bar::*;
 mod messages;
 pub use messages::*;
 
-mod bitfont_selector;
-pub use bitfont_selector::*;
+mod tools;
+pub use tools::*;
 
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
 

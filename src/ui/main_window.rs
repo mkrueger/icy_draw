@@ -8,8 +8,8 @@ use std::{
 };
 
 use crate::{
-    add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
-    Document, DocumentOptions, ModalDialog, DocumentTab, DocumentBehavior, TopBar, ToolTab, ToolBehavior, ui::layer_view::LayerToolWindow,
+    add_child, model::Tool, AnsiEditor, BitFontEditor, CharFontEditor,
+    Document, DocumentOptions, ModalDialog, DocumentTab, DocumentBehavior, TopBar, ToolTab, ToolBehavior, LayerToolWindow, CharTableToolWindow, BitFontSelector,
 };
 use eframe::{
     egui::{self, Response, SidePanel, TextStyle, Ui},
@@ -30,7 +30,6 @@ pub struct MainWindow {
 
     dialog_open: bool,
     modal_dialog: Option<Box<dyn ModalDialog>>,
-    bitfont_selector: Option<BitFontSelector>,
     id: usize,
     palette_mode: usize,
     pub top_bar: TopBar,
@@ -151,9 +150,15 @@ impl MainWindow {
         .into();
         ctx.set_style(style);
 
-        let mut tool_tree= egui_tiles::Tree::<ToolTab>::default();
+        let mut tool_tree= egui_tiles::Tree::<ToolTab>::empty("tool_tree");
         let layers = tool_tree.tiles.insert_pane(ToolTab::new(LayerToolWindow::default()));
-        tool_tree.root = Some(layers);
+        let charTable = tool_tree.tiles.insert_pane(ToolTab::new(CharTableToolWindow::default()));
+        let bitfont_selector = tool_tree.tiles.insert_pane(ToolTab::new(BitFontSelector::default()));
+
+        let tab = tool_tree.tiles.insert_tab_tile(vec![charTable, bitfont_selector]);
+        let v = tool_tree.tiles.insert_vertical_tile(vec![tab, layers]);
+
+        tool_tree.root = Some(v);
         
         MainWindow {
             document_behavior: DocumentBehavior {
@@ -166,7 +171,7 @@ impl MainWindow {
             },
             tool_behavior: ToolBehavior::default(),
             toasts: egui_notify::Toasts::default(),
-            document_tree:  egui_tiles::Tree::<DocumentTab>::default(),
+            document_tree:  egui_tiles::Tree::<DocumentTab>::empty("document_tree"),
             tool_tree,
             gl: cc.gl.clone().unwrap(),
             dialog_open: false,
@@ -176,7 +181,6 @@ impl MainWindow {
             right_panel: true,
             bottom_panel: false,
             palette_mode: 0,
-            bitfont_selector: Some(BitFontSelector::default()),
             top_bar: TopBar::new(&cc.egui_ctx),
         }
     }
@@ -323,14 +327,18 @@ impl MainWindow {
         None
     }
 
-    pub fn get_ansi_editor(&mut self) -> Option<&AnsiEditor> {
-        if let Some(pane) = self.get_active_document() {
-            return pane.lock().unwrap().get_ansi_editor();
-        }
-        None
-    }
     pub(crate) fn open_dialog<T: ModalDialog + 'static>(&mut self, dialog: T) {
         self.modal_dialog = Some(Box::new(dialog));
+    }
+
+    pub(crate) fn run_editor_command<T>(&mut self, param: T, func: fn(&mut MainWindow, &mut AnsiEditor, T))  {
+        if let Some(doc) = self.get_active_document() {
+            if let Ok(mut doc) = doc.lock() {
+                if let Some(editor) = doc.get_ansi_editor_mut() {
+                    func(self, editor, param);
+                }
+            }
+        }
     }
 }
 
@@ -377,7 +385,8 @@ impl eframe::App for MainWindow {
                 ui.add_space(8.0);
 
                 let mut palette: usize = self.palette_mode;
-                if let Some(editor) = self.get_ansi_editor() {
+                if let Some(doc) = self.get_active_document() {
+                    if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
                     ui.vertical_centered(|ui| {
                         ui.add(crate::palette_switcher(ctx, editor));
                     });
@@ -409,6 +418,7 @@ impl eframe::App for MainWindow {
                     }
                     ui.separator();
                 }
+            }
                 self.palette_mode = palette;
 
                 crate::add_tool_switcher(ctx, ui, self);
@@ -423,10 +433,13 @@ impl eframe::App for MainWindow {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
                         ui.vertical(|ui| {
-                            if let Some(editor) = self.get_ansi_editor() {
+                if let Some(doc) = self.get_active_document() {
+
+                            if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
                                 let tool_result = tool.show_ui(ctx, ui, editor);
                                 self.handle_message(tool_result);
                             }
+                        }
                         });
                     });
                 }
@@ -442,10 +455,11 @@ impl eframe::App for MainWindow {
             .exact_width(200.0)
             .resizable(false)
             .show_animated(ctx, self.right_panel, |ui| {
-               // self.tool_behavior.active_document = Arc::new(Mutex::new(self.get_active_document()));
-
+                self.tool_behavior.active_document = self.get_active_document();
                 self.tool_tree.ui(&mut self.tool_behavior, ui);
-               // self.tool_behavior.active_document = None;
+                self.tool_behavior.active_document = None;
+                let msg = self.tool_behavior.message.take();
+                self.handle_message(msg);
 
                 /* 
                 let message = if let Some(doc) = self.get_active_document_mut() {
@@ -470,7 +484,6 @@ impl eframe::App for MainWindow {
                 } else {
                     None
                 };
-                self.handle_message(message);
 
                 self.bitfont_selector = Some(sel);
 
@@ -494,9 +507,12 @@ impl eframe::App for MainWindow {
             if self.modal_dialog.as_mut().unwrap().show(ctx) {
                 let modal_dialog = self.modal_dialog.take().unwrap();
                 if modal_dialog.should_commit() {
-                    if let Some(editor) = self.get_ansi_editor() {
+                if let Some(doc) = self.get_active_document() {
+
+                    if let Some(editor) = doc.lock().unwrap().get_ansi_editor_mut() {
                         modal_dialog.commit(editor).unwrap();
                     }
+                }
                      modal_dialog.commit_self(self).unwrap();
                 }
             }
