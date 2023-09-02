@@ -30,8 +30,8 @@ pub use dialogs::*;
 mod editor;
 pub use editor::*;
 
-mod docking;
-pub use docking::*;
+mod document_docking;
+pub use document_docking::*;
 
 mod top_bar;
 pub use top_bar::*;

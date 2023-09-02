@@ -71,7 +71,7 @@ impl ModalDialog for EditLayerDialog {
                                 ui.label("");
                                 ui.horizontal(|ui| {
                                     let mut c = (*color).into();
-                                    color_picker::color_edit_button_rgb(ui, &mut c);
+                                    color_picker::color_edit_button_srgb(ui, &mut c);
                                     *color = c.into();
 
                                     ui.checkbox(&mut use_color, "Use Color");

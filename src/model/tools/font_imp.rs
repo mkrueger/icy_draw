@@ -115,7 +115,7 @@ impl Tool for FontTool {
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
-                    for ch in '!'..'@' {
+                    for ch in '!'..'9' {
                         ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
                         let color = if font.has_char(ch as u8) {
                             ui.style().visuals.strong_text_color()
@@ -126,7 +126,7 @@ impl Tool for FontTool {
                         ui.colored_label(
                             color,
                             RichText::new(ch.to_string())
-                                .font(FontId::new(12.0, FontFamily::Monospace)),
+                                .font(FontId::new(14.0, FontFamily::Monospace)),
                         );
                     }
                 }
@@ -134,7 +134,7 @@ impl Tool for FontTool {
 
             ui.horizontal(|ui| {
                 if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
-                    for ch in '@'..'_' {
+                    for ch in '9'..'Q' {
                         ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
                         let color = if font.has_char(ch as u8) {
                             ui.style().visuals.strong_text_color()
@@ -145,7 +145,7 @@ impl Tool for FontTool {
                         ui.colored_label(
                             color,
                             RichText::new(ch.to_string())
-                                .font(FontId::new(12.0, FontFamily::Monospace)),
+                                .font(FontId::new(14.0, FontFamily::Monospace)),
                         );
                     }
                 }
@@ -154,7 +154,7 @@ impl Tool for FontTool {
             ui.horizontal(|ui| {
                 if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
                     ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
-                    for ch in '_'..'~' {
+                    for ch in 'Q'..'i' {
                         let color = if font.has_char(ch as u8) {
                             ui.style().visuals.strong_text_color()
                         } else {
@@ -164,7 +164,7 @@ impl Tool for FontTool {
                         ui.colored_label(
                             color,
                             RichText::new(ch.to_string())
-                                .font(FontId::new(12.0, FontFamily::Monospace)),
+                                .font(FontId::new(14.0, FontFamily::Monospace)),
                         );
                     }
                 }
@@ -172,7 +172,7 @@ impl Tool for FontTool {
             ui.horizontal(|ui| {
                 if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
                     ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
-                    for ch in '~'..='~' {
+                    for ch in 'i'..='~' {
                         let color = if font.has_char(ch as u8) {
                             ui.style().visuals.strong_text_color()
                         } else {
@@ -182,12 +182,13 @@ impl Tool for FontTool {
                         ui.colored_label(
                             color,
                             RichText::new(ch.to_string())
-                                .font(FontId::new(12.0, FontFamily::Monospace)),
+                                .font(FontId::new(14.0, FontFamily::Monospace)),
                         );
                     }
                 }
             });
         });
+
         ui.add_space(32.0);
         if ui.button("Select Font Outline").clicked() {
             return Some(Message::ShowOutlineDialog);

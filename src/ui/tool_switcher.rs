@@ -1,24 +1,69 @@
 use crate::MainWindow;
 use eframe::{
-    egui::{self, ImageButton},
-    epaint::Vec2,
+    egui::{self, Sense},
+    epaint::{pos2, Rect, Rounding, Vec2},
 };
 
 pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainWindow) {
-    ui.horizontal_wrapped(|ui| {
-        if let Ok(tools) = arg.tab_viewer.tools.lock() {
-            for i in 0..tools.len() {
-                let t = &tools[i];
-                if ui
-                    .add(
-                        ImageButton::new(t.get_icon_name().texture_id(ctx), Vec2::new(28., 28.))
-                            .selected(i == arg.tab_viewer.selected_tool),
-                    )
-                    .clicked()
-                {
-                    arg.tab_viewer.selected_tool = i;
-                }
+    let (id, back_rect) = ui.allocate_space(Vec2::new(200., 68.0));
+
+    let spacing = 4.0;
+    let icon_size = 28.0;
+
+    if let Ok(tools) = arg.tab_viewer.tools.lock() {
+        let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
+        let mut pos = back_rect.min + Vec2::new(spacing, spacing);
+
+        for i in 0..tools.len() {
+            let t = &tools[i];
+            let image = t.get_icon_name();
+
+            let rect = Rect::from_min_size(pos.floor(), Vec2::new(icon_size, icon_size));
+            let response = ui.interact(rect, id.with(i), Sense::click());
+            if i == arg.tab_viewer.selected_tool {
+                ui.painter().rect_filled(
+                    rect.expand(2.0),
+                    Rounding::same(4.0),
+                    ui.style().visuals.extreme_bg_color,
+                );
+                ui.painter().rect_stroke(
+                    rect.expand(2.0),
+                    Rounding::same(4.0),
+                    ui.style().visuals.window_stroke,
+                );
+            }
+
+            if response.hovered() {
+                ui.painter().rect_filled(
+                    rect.expand(2.0),
+                    Rounding::same(4.0),
+                    ui.style().visuals.widgets.active.bg_fill,
+                );
+                ui.painter().rect_stroke(
+                    rect.expand(2.0),
+                    Rounding::same(4.0),
+                    ui.style().visuals.window_stroke,
+                );
+            }
+
+
+            let painter = ui.painter_at(rect);
+            let tint = if i == arg.tab_viewer.selected_tool {
+                ui.visuals().widgets.active.fg_stroke.color
+            } else {
+                ui.visuals().widgets.inactive.fg_stroke.color
+            };
+            painter.image(image.texture_id(ctx), rect, uv, tint);
+
+            pos.x += icon_size + spacing;
+            if pos.x - back_rect.min.x - spacing > back_rect.width() {
+                pos.x = back_rect.min.x + spacing;
+                pos.y += icon_size + spacing;
+            }
+
+            if response.clicked() {
+                arg.tab_viewer.selected_tool = i;
             }
         }
-    });
+    }
 }

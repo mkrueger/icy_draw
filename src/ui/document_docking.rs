@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use crate::{model::Tool, Document, DocumentOptions};
-use eframe::egui::{self, Button, Response};
-use egui_tiles::{Tiles, TileId};
+use eframe::egui::{self, Response};
+use egui_tiles::{TileId, Tiles};
 pub type DockingContainer = egui_tiles::Tree<Tab>;
 
 pub struct Tab {
@@ -48,21 +48,14 @@ impl egui_tiles::Behavior<Tab> for TabBehavior {
         button_response: eframe::egui::Response,
     ) -> Response {
         button_response.context_menu(|ui| {
-            if ui
-            .button("Close")
-            .clicked()
-            {
+            if ui.button("Close").clicked() {
                 self.on_close_requested(tiles, tile_id);
                 ui.close_menu();
             }
         })
     }
 
-    fn on_close_requested(
-        &mut self,
-        tiles: &Tiles<Tab>,
-        tile_id: TileId,
-    ) {
+    fn on_close_requested(&mut self, tiles: &Tiles<Tab>, tile_id: TileId) {
         self.request_close = Some(tile_id);
     }
 

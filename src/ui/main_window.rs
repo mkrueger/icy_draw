@@ -13,14 +13,15 @@ use crate::{
 };
 use eframe::{
     egui::{self, Response, SidePanel, TextStyle, Ui},
-    epaint::pos2,
+    epaint::{pos2, FontId},
 };
 use glow::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, Position, TheDrawFont};
 
 pub struct MainWindow {
-    pub tree: egui_tiles::Tree<Tab>,
+    pub document_tree: egui_tiles::Tree<Tab>,
+    pub tool_tree: egui_tiles::Tree<Tab>,
     pub toasts: egui_notify::Toasts,
 
     pub tab_viewer: TabBehavior,
@@ -30,7 +31,7 @@ pub struct MainWindow {
     modal_dialog: Option<Box<dyn ModalDialog>>,
     bitfont_selector: Option<BitFontSelector>,
     id: usize,
-
+    palette_mode: usize,
     pub top_bar: TopBar,
     pub left_panel: bool,
     pub right_panel: bool,
@@ -125,6 +126,30 @@ impl MainWindow {
             }),
         ];
 
+        let ctx: &egui::Context = &cc.egui_ctx;
+
+        // try to detect dark vs light mode from the host system; default to dark
+        ctx.set_visuals(if dark_light::detect() == dark_light::Mode::Light {
+            egui::Visuals::light()
+        } else {
+            egui::Visuals::dark()
+        });
+
+
+        let mut style: egui::Style = (*ctx.style()).clone();
+        style.spacing.window_margin = egui::Margin::same(8.0);
+        use egui::FontFamily::Proportional;
+        use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
+        style.text_styles = [
+            (Heading, FontId::new(24.0, Proportional)),
+            (Body, FontId::new(18.0, Proportional)),
+            (Monospace, FontId::new(18.0, egui::FontFamily::Monospace)),
+            (Button, FontId::new(18.0, Proportional)),
+            (Small, FontId::new(14.0, Proportional)),
+        ]
+        .into();
+        ctx.set_style(style);
+        
         MainWindow {
             tab_viewer: TabBehavior {
                 tools: Arc::new(Mutex::new(tools)),
@@ -135,7 +160,8 @@ impl MainWindow {
                 request_close: None,
             },
             toasts: egui_notify::Toasts::default(),
-            tree: DockingContainer::default(),
+            document_tree: DockingContainer::default(),
+            tool_tree: DockingContainer::default(),
             gl: cc.gl.clone().unwrap(),
             dialog_open: false,
             modal_dialog: None,
@@ -143,6 +169,7 @@ impl MainWindow {
             left_panel: true,
             right_panel: true,
             bottom_panel: false,
+            palette_mode: 0,
             bitfont_selector: Some(BitFontSelector::default()),
             top_bar: TopBar::new(&cc.egui_ctx),
         }
@@ -162,7 +189,7 @@ impl MainWindow {
                     let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
                     if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
                         add_child(
-                            &mut self.tree,
+                            &mut self.document_tree,
                             Some(full_path),
                             Box::new(BitFontEditor::new(font)),
                         );
@@ -181,7 +208,7 @@ impl MainWindow {
                     if let Ok(fonts) = TheDrawFont::from_tdf_bytes(&data) {
                         let id = self.create_id();
                         add_child(
-                            &mut self.tree,
+                            &mut self.document_tree,
                             Some(full_path),
                             Box::new(CharFontEditor::new(&self.gl, Some(file_name), id, fonts)),
                         );
@@ -194,7 +221,7 @@ impl MainWindow {
             Ok(buf) => {
                 let id = self.create_id();
                 let editor = AnsiEditor::new(&self.gl, id, buf);
-                add_child(&mut self.tree, Some(full_path), Box::new(editor));
+                add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
             }
             Err(err) => {
                 log::error!("Error loading file: {}", err);
@@ -212,13 +239,13 @@ impl MainWindow {
     pub fn get_active_pane(&mut self) -> Option<&mut Tab> {
         let mut stack = vec![];
 
-        if let Some(root) = self.tree.root {
+        if let Some(root) = self.document_tree.root {
             stack.push(root);
         }
         while let Some(id) = stack.pop() {
-            match self.tree.tiles.get(id) {
+            match self.document_tree.tiles.get(id) {
                 Some(egui_tiles::Tile::Pane(_)) => {
-                    if let Some(egui_tiles::Tile::Pane(p)) = self.tree.tiles.get_mut(id) {
+                    if let Some(egui_tiles::Tile::Pane(p)) = self.document_tree.tiles.get_mut(id) {
                         return Some(p);
                     } else {
                         return None;
@@ -251,13 +278,13 @@ impl MainWindow {
     pub fn enumerate_documents(&mut self, callback: fn(&mut Box<dyn Document>)) {
         let mut stack = vec![];
 
-        if let Some(root) = self.tree.root {
+        if let Some(root) = self.document_tree.root {
             stack.push(root);
         }
         while let Some(id) = stack.pop() {
-            match self.tree.tiles.get(id) {
+            match self.document_tree.tiles.get(id) {
                 Some(egui_tiles::Tile::Pane(_)) => {
-                    if let Some(egui_tiles::Tile::Pane(p)) = self.tree.tiles.get_mut(id) {
+                    if let Some(egui_tiles::Tile::Pane(p)) = self.document_tree.tiles.get_mut(id) {
                         callback(&mut p.doc);
                     }
                 }
@@ -335,22 +362,53 @@ impl eframe::App for MainWindow {
         self.handle_message(msg);
 
         SidePanel::left("left_panel")
-            .exact_width(200.0)
+            .exact_width(240.0)
             .resizable(false)
             .frame(egui::Frame {
                 fill: ctx.style().visuals.panel_fill,
                 ..Default::default()
             })
             .show_animated(ctx, self.left_panel, |ui| {
+                ui.add_space(8.0);
+
+                let mut palette: usize = self.palette_mode;
                 if let Some(doc) = self.get_active_document_mut() {
                     let doc = doc.get_ansi_editor_mut();
                     if let Some(editor) = doc {
                         ui.vertical_centered(|ui| {
                             ui.add(crate::palette_switcher(ctx, editor));
                         });
-                        ui.add(crate::palette_editor_16(editor));
+                        ui.add_space(8.0);
+                        ui.horizontal(|ui| {
+                            ui.add_space(8.0);
+
+                            if ui.selectable_label(palette == 0, "DOS").clicked() {
+                                palette = 0;
+                            }
+                            if ui.selectable_label(palette == 1, "Extended").clicked() {
+                                palette = 1;
+                            }
+                            if ui.selectable_label(palette == 2, "Custom").clicked() {
+                                palette = 2;
+                            }
+                        });
+                        ui.separator();
+                        match palette {
+                            0 => {
+                                crate::palette_editor_16(ui, editor);
+                            }
+                            1 => {
+                                crate::show_extended_palette(ui, editor);
+                            }
+                            _ => {
+                                ui.label("TODO");
+                            }
+                        }
+                        ui.separator();
                     }
                 }
+                self.palette_mode = palette;
+
                 crate::add_tool_switcher(ctx, ui, self);
                 if let Some(tool) = self
                     .tab_viewer
@@ -360,13 +418,18 @@ impl eframe::App for MainWindow {
                     .unwrap()
                     .get_mut(self.tab_viewer.selected_tool)
                 {
-                    if let Some(doc) = self.get_active_document_mut() {
-                        let doc = doc.get_ansi_editor();
-                        if let Some(editor) = doc {
-                            let tool_result = tool.show_ui(ctx, ui, editor);
-                            self.handle_message(tool_result);
-                        }
-                    }
+                    ui.horizontal(|ui| {
+                        ui.add_space(4.0);
+                        ui.vertical(|ui| {
+                            if let Some(doc) = self.get_active_document_mut() {
+                                let doc = doc.get_ansi_editor();
+                                if let Some(editor) = doc {
+                                    let tool_result = tool.show_ui(ctx, ui, editor);
+                                    self.handle_message(tool_result);
+                                }
+                            }
+                        });
+                    });
                 }
             });
 
@@ -377,6 +440,8 @@ impl eframe::App for MainWindow {
 
         egui::SidePanel::right("right_panel")
             .frame(panel_frame)
+            .exact_width(200.0)
+            .resizable(false)
             .show_animated(ctx, self.right_panel, |ui| {
                 let message = if let Some(doc) = self.get_active_document_mut() {
                     let doc = doc.get_ansi_editor_mut();
@@ -413,7 +478,7 @@ impl eframe::App for MainWindow {
                 ..Default::default()
             })
             .show(ctx, |ui| {
-                self.tree.ui(&mut self.tab_viewer, ui);
+                self.document_tree.ui(&mut self.tab_viewer, ui);
             });
 
         self.dialog_open = false;
@@ -435,9 +500,8 @@ impl eframe::App for MainWindow {
         }
         self.toasts.show(ctx);
         if let Some(close) = self.tab_viewer.request_close {
-
-            self.tree.tiles.remove(close);
-            self.tab_viewer.request_close  = None;
+            self.document_tree.tiles.remove(close);
+            self.tab_viewer.request_close = None;
         }
 
         ctx.request_repaint_after(Duration::from_millis(150));

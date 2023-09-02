@@ -1,6 +1,8 @@
 use crate::{AnsiEditor, SWAP_SVG};
-use eframe::egui::{self, Sense};
-use eframe::epaint::{Color32, Pos2, Rect, Rounding, Stroke, Vec2};
+use eframe::egui::{self, Sense, TextStyle, Ui};
+use eframe::emath::Align2;
+use eframe::epaint::{Color32, FontId, Pos2, Rect, Rounding, Stroke, Vec2};
+use icy_engine::XTERM_256_PALETTE;
 use std::cmp::min;
 
 pub fn palette_switcher(ctx: &egui::Context, editor: &AnsiEditor) -> impl egui::Widget {
@@ -11,7 +13,7 @@ pub fn palette_switcher(ctx: &egui::Context, editor: &AnsiEditor) -> impl egui::
     let buffer_view = editor.buffer_view.clone();
 
     move |ui: &mut egui::Ui| {
-        let height = 42.0;
+        let height = 62.0;
         let (id, rect) = ui.allocate_space(Vec2::new(height, height));
         let mut response = ui.interact(rect, id, Sense::click());
         let painter = ui.painter_at(rect);
@@ -156,15 +158,16 @@ pub fn palette_switcher(ctx: &egui::Context, editor: &AnsiEditor) -> impl egui::
     }
 }
 
-pub fn palette_editor_16(editor: &AnsiEditor) -> impl egui::Widget {
+pub fn palette_editor_16(ui: &mut egui::Ui, editor: &AnsiEditor) {
     let caret_attr = editor.buffer_view.lock().caret.get_attribute();
     let palette = editor.buffer_view.lock().buf.palette.clone();
     let buffer_view = editor.buffer_view.clone();
 
-    move |ui: &mut egui::Ui| {
-        let height = ui.available_width() / 8.0;
+    ui.horizontal(|ui| {
+        ui.add_space(4.0);
 
-        let (id, stroke_rect) = ui.allocate_space(Vec2::new(ui.available_width(), height * 2.0));
+        let height = (ui.available_width()) / 8.0;
+        let (id, stroke_rect) = ui.allocate_space(Vec2::new(ui.available_width() - 4.0, height * 2.0));
         let mut response = ui.interact(stroke_rect, id, Sense::click());
 
         let painter = ui.painter_at(stroke_rect);
@@ -252,7 +255,93 @@ pub fn palette_editor_16(editor: &AnsiEditor) -> impl egui::Widget {
                 response.mark_changed();
             }
         }
+    });
+}
 
-        response
-    }
+pub fn show_extended_palette(ui: &mut Ui, editor: &AnsiEditor) {
+    let row_height = 24.0;
+    egui::ScrollArea::vertical()
+        .id_source("bitfont_scroll_area")
+        .max_height(200.)
+        .show_rows(ui, row_height, XTERM_256_PALETTE.len(), |ui, range| {
+            for idx in range {
+                ui.horizontal(|ui| {
+                    ui.add_space(4.0);
+                    let width =  ui.available_width();
+
+                    let (id, back_rect) = ui.allocate_space(Vec2::new(width, row_height));
+                    let mut response = ui.interact(back_rect, id, Sense::click());
+
+                    let back_painter = ui.painter_at(back_rect);
+
+                    if response.hovered() {
+                        back_painter.rect_filled(
+                            back_rect,
+                            Rounding::none(),
+                            ui.style().visuals.widgets.active.bg_fill,
+                        );
+                    }
+
+                    let stroke_rect = Rect::from_min_size(
+                        back_rect.min + Vec2::new(0.0, 1.0),
+                        Vec2::new(52.0, 22.0),
+                    );
+
+                    let painter = ui.painter_at(stroke_rect);
+
+                    let (r, g, b) = XTERM_256_PALETTE[idx].1.get_rgb();
+                    painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+                    painter.rect_filled(stroke_rect.shrink(1.0), Rounding::none(), Color32::WHITE);
+                    let color = Color32::from_rgb(r, g, b);
+                    painter.rect_filled(stroke_rect.shrink(2.0), Rounding::none(), color);
+
+                    let text_color =
+                        if (r as f32 * 0.299 + g as f32 * 0.587 + b as f32 * 0.114) > 186.0 {
+                            Color32::BLACK
+                        } else {
+                            Color32::WHITE
+                        };
+
+                    let text = format!("#{:02x}{:02x}{:02x}", r, g, b);
+                    let font_id: eframe::epaint::FontId = FontId::monospace(10.0);
+                    painter.text(
+                        stroke_rect.left_center() + Vec2::new(4., 0.),
+                        Align2::LEFT_CENTER,
+                        text,
+                        font_id,
+                        text_color,
+                    );
+
+                    let font_id = TextStyle::Button.resolve(ui.style());
+
+                    let color = if response.hovered() {
+                        ui.style().visuals.strong_text_color()
+                    } else {
+                        ui.style().visuals.text_color()
+                    };
+
+                    back_painter.text(
+                        stroke_rect.right_center() + Vec2::new(4., 0.),
+                        Align2::LEFT_CENTER,
+                        XTERM_256_PALETTE[idx].0,
+                        font_id,
+                        color,
+                    );
+
+                    let buffer_view = editor.buffer_view.clone();
+                    if response.clicked() {
+                        let color = buffer_view.lock().buf.palette.insert_color_rgb(r, g, b);
+                        buffer_view.lock().caret.set_foreground(color);
+                        response.mark_changed();
+                    }
+
+                    if response.secondary_clicked() {
+                        let color = buffer_view.lock().buf.palette.insert_color_rgb(r, g, b);
+                        buffer_view.lock().caret.set_background(color);
+                        response.mark_changed();
+                    }
+                    response
+                });
+            }
+        });
 }

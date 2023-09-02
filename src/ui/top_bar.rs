@@ -1,5 +1,5 @@
 use eframe::{
-    egui::{self, menu, Modifiers, TopBottomPanel, Ui, ImageButton},
+    egui::{self, menu, ImageButton, Modifiers, TopBottomPanel, Ui},
     epaint::Vec2,
 };
 use egui_extras::RetainedImage;
@@ -9,24 +9,20 @@ use crate::{button_with_shortcut, MainWindow, Message};
 
 pub struct TopBar {
     pub dock_left: RetainedImage,
-    pub dock_right: RetainedImage
+    pub dock_right: RetainedImage,
 }
 
 impl TopBar {
-
     pub fn new(ctx: &egui::Context) -> Self {
-
         let left_bytes = include_bytes!("../../data/icons/dock_left.svg");
         let right_bytes = include_bytes!("../../data/icons/dock_right.svg");
-        
-   
+
         Self {
             dock_left: RetainedImage::from_svg_bytes("dock_left.svg", left_bytes).unwrap(),
             dock_right: RetainedImage::from_svg_bytes("dock_right.svg", right_bytes).unwrap(),
         }
     }
 }
-
 
 impl MainWindow {
     pub fn show_top_bar(
@@ -35,7 +31,7 @@ impl MainWindow {
         frame: &mut eframe::Frame,
     ) -> Option<Message> {
         let mut result = None;
-        TopBottomPanel::top("top_panel").show(ctx, |ui| {
+        TopBottomPanel::top("top_panel").exact_height(24.0).show(ctx, |ui| {
             result = self.main_menu(ui, frame);
         });
         result
@@ -374,17 +370,23 @@ impl MainWindow {
         }
         result
     }
-    
+
     fn top_bar_ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-
             let tint = if self.right_panel {
                 ui.visuals().widgets.active.fg_stroke.color
             } else {
                 ui.visuals().widgets.inactive.fg_stroke.color
             };
-    
-            let right = ui.add(ImageButton::new(self.top_bar.dock_right.texture_id(ui.ctx()), Vec2::new(16., 16.)).tint(tint));
+            let icon_size = 20.0;
+
+            let right = ui.add(
+                ImageButton::new(
+                    self.top_bar.dock_right.texture_id(ui.ctx()),
+                    Vec2::new(icon_size, icon_size),
+                )
+                .tint(tint),
+            );
             if right.clicked() {
                 self.right_panel = !self.right_panel;
             }
@@ -395,11 +397,16 @@ impl MainWindow {
                 ui.visuals().widgets.inactive.fg_stroke.color
             };
 
-            let left = ui.add(ImageButton::new(self.top_bar.dock_left.texture_id(ui.ctx()), Vec2::new(16., 16.)).tint(tint));
+            let left = ui.add(
+                ImageButton::new(
+                    self.top_bar.dock_left.texture_id(ui.ctx()),
+                    Vec2::new(icon_size, icon_size),
+                )
+                .tint(tint),
+            );
             if left.clicked() {
                 self.left_panel = !self.left_panel;
             }
-
         });
     }
 }

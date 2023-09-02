@@ -75,7 +75,7 @@ impl crate::ModalDialog for NewFileDialog {
         let id = window.create_id();
         let editor = AnsiEditor::new(&window.gl, id, buf);
 
-        add_child(&mut window.tree, None, Box::new(editor));
+        add_child(&mut window.document_tree, None, Box::new(editor));
         Ok(true)
     }
 }

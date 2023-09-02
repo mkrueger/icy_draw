@@ -1,8 +1,7 @@
 use eframe::{
-    egui::{self, RichText},
-    epaint::{Color32, Vec2},
+    egui::{self, RichText, Sense, TextStyle},
+    epaint::{Color32, Vec2, Rounding, Rect, pos2}, emath::Align2,
 };
-use egui_extras::{Column, TableBuilder};
 use i18n_embed_fl::fl;
 
 use crate::{AnsiEditor, Message};
@@ -12,81 +11,108 @@ pub fn show_layer_view(
     ui: &mut egui::Ui,
     editor: &AnsiEditor,
 ) -> Option<Message> {
+    let row_height = 24.0;
     let mut result = None;
 
     let max = editor.buffer_view.lock().buf.layers.len();
     let cur_layer = editor.cur_layer;
+    let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
 
-    let table = TableBuilder::new(ui)
-        .striped(false)
-        .resizable(false)
-        .cell_layout(egui::Layout::left_to_right(egui::Align::Center))
-        .column(Column::initial(40.0).at_least(40.0).clip(true))
-        .column(Column::remainder())
-        .min_scrolled_height(0.0);
-
-    table
-        .header(20.0, |mut header| {
-            header.col(|ui| {
-                ui.strong("Visible");
-            });
-            header.col(|ui| {
-                ui.strong("Layer title");
-            });
-        })
-        .body(|mut body| {
-            for i in 0..max {
+    egui::ScrollArea::vertical()
+    .id_source("layer_view_scroll_area")
+    .max_height(200.)
+    .show_rows(ui, row_height, max, |ui, range| {
+        for i in range {           
+            ui.horizontal(|ui| {
+                ui.add_space(4.0);
                 let (is_visible, title, color) = {
                     let layer = &editor.buffer_view.lock().buf.layers[i];
                     (layer.is_visible, layer.title.clone(), layer.color)
                 };
+                let width =  ui.available_width();
 
-                body.row(20.0, |mut row| {
-                    row.col(|ui| {
-                        let r = ui
-                            .add(
-                                egui::ImageButton::new(
-                                    if is_visible {
-                                        super::VISIBLE_SVG.texture_id(ctx)
-                                    } else {
-                                        super::INVISIBLE_SVG.texture_id(ctx)
-                                    },
-                                    Vec2::new(16., 16.),
-                                )
-                                .frame(false),
-                            )
-                            .on_hover_ui(|ui| {
-                                ui.label(
-                                    RichText::new(fl!(
-                                        crate::LANGUAGE_LOADER,
-                                        "move_layer_up_tooltip"
-                                    ))
-                                    .small(),
-                                );
-                            });
+                let (id, back_rect) = ui.allocate_space(Vec2::new(width, row_height));
+                let response = ui.interact(back_rect, id, Sense::click());
 
-                        if r.clicked() {
-                            result = Some(Message::ToggleVisibility(i));
-                        }
-                    });
-                    row.col(|ui| {
-                        let mut text = RichText::new(title);
-                        if let Some(color) = color {
-                            let (r, g, b) = color.into();
-                            text = text.color(Color32::from_rgb(r, g, b));
-                        }
-                        let r = ui.selectable_label(i == cur_layer, text);
-                        if r.clicked() {
-                            result = Some(Message::SelectLayer(i));
-                        }
+                let back_painter = ui.painter_at(back_rect);
 
-                        if r.double_clicked() {
-                            result = Some(Message::EditLayer(i));
-                        }
-                    });
-                });
-            }
-        });
+                if response.hovered() {
+                    back_painter.rect_filled(
+                        back_rect,
+                        Rounding::none(),
+                        ui.style().visuals.widgets.active.bg_fill,
+                    );
+                } else if i == cur_layer {
+                    back_painter.rect_filled(
+                        back_rect,
+                        Rounding::none(),
+                        ui.style().visuals.extreme_bg_color,
+                    );
+                }
+
+                let stroke_rect = Rect::from_min_size(
+                    back_rect.min + Vec2::new(0.0, 1.0),
+                    Vec2::new(22.0, 22.0),
+                );
+                let visible_icon_response = ui.interact(stroke_rect, id.with("visible"), Sense::click());
+
+                let painter = ui.painter_at(stroke_rect);
+
+    
+                if let Some(color) = color {
+                    let (r, g, b) = color.into();
+                    painter.rect_filled(
+                        stroke_rect,
+                        Rounding::none(),
+                        Color32::from_rgb(r, g, b)
+                    );
+                } 
+
+                let image = if is_visible {
+                    super::VISIBLE_SVG.texture_id(ctx)
+                } else {
+                    super::INVISIBLE_SVG.texture_id(ctx)
+                };
+
+                let tint = if i == cur_layer {
+                    ui.visuals().widgets.active.fg_stroke.color
+                } else {
+                    ui.visuals().widgets.inactive.fg_stroke.color
+                };
+                
+                painter.image(image, stroke_rect, uv, tint);
+                
+
+                let color = if  i == cur_layer {
+                    ui.style().visuals.strong_text_color()
+                } else {
+                    ui.style().visuals.text_color()
+                };
+                let font_id = TextStyle::Button.resolve(ui.style());
+
+                back_painter.text(
+                    stroke_rect.right_center() + Vec2::new(4., 0.),
+                    Align2::LEFT_CENTER,
+                    title,
+                    font_id,
+                    color,
+                );
+
+                if visible_icon_response.clicked() {
+                    result = Some(Message::ToggleVisibility(i));
+                }
+
+                if response.clicked() {
+                    result = Some(Message::SelectLayer(i));
+                }
+
+                if response.double_clicked() {
+                    result = Some(Message::EditLayer(i));
+                }
+            });
+        }
+    });
+            
 
     let img_size = Vec2::new(24., 24.);
     ui.horizontal(|ui| {
