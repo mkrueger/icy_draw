@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
-    DockingContainer, Document, DocumentOptions, ModalDialog, Tab, TabBehavior,
+    DockingContainer, Document, DocumentOptions, ModalDialog, Tab, TabBehavior, TopBar,
 };
 use eframe::{
     egui::{self, Response, SidePanel, TextStyle, Ui},
@@ -31,6 +31,7 @@ pub struct MainWindow {
     bitfont_selector: Option<BitFontSelector>,
     id: usize,
 
+    pub top_bar: TopBar,
     pub left_panel: bool,
     pub right_panel: bool,
     pub bottom_panel: bool,
@@ -143,6 +144,7 @@ impl MainWindow {
             right_panel: true,
             bottom_panel: false,
             bitfont_selector: Some(BitFontSelector::default()),
+            top_bar: TopBar::new(&cc.egui_ctx),
         }
     }
 
@@ -333,7 +335,8 @@ impl eframe::App for MainWindow {
         self.handle_message(msg);
 
         SidePanel::left("left_panel")
-            .default_width(500.0)
+            .exact_width(200.0)
+            .resizable(false)
             .frame(egui::Frame {
                 fill: ctx.style().visuals.panel_fill,
                 ..Default::default()

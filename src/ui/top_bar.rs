@@ -1,10 +1,32 @@
 use eframe::{
-    egui::{self, menu, Modifiers, TopBottomPanel, Ui},
+    egui::{self, menu, Modifiers, TopBottomPanel, Ui, ImageButton},
     epaint::Vec2,
 };
+use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 
 use crate::{button_with_shortcut, MainWindow, Message};
+
+pub struct TopBar {
+    pub dock_left: RetainedImage,
+    pub dock_right: RetainedImage
+}
+
+impl TopBar {
+
+    pub fn new(ctx: &egui::Context) -> Self {
+
+        let left_bytes = include_bytes!("../../data/icons/dock_left.svg");
+        let right_bytes = include_bytes!("../../data/icons/dock_right.svg");
+        
+   
+        Self {
+            dock_left: RetainedImage::from_svg_bytes("dock_left.svg", left_bytes).unwrap(),
+            dock_right: RetainedImage::from_svg_bytes("dock_right.svg", right_bytes).unwrap(),
+        }
+    }
+}
+
 
 impl MainWindow {
     pub fn show_top_bar(
@@ -329,7 +351,7 @@ impl MainWindow {
                     ui.close_menu();
                 }
             });
-            //self.top_bar_ui(ui, frame);
+            self.top_bar_ui(ui, frame);
         });
 
         if ui.input(|i| i.key_pressed(egui::Key::Q) && i.modifiers.ctrl) {
@@ -352,34 +374,32 @@ impl MainWindow {
         }
         result
     }
-    /*
-    fn top_bar_ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+    
+    fn top_bar_ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            // From right-to-left:
-            /*
-            if hypex_ui::CUSTOM_WINDOW_DECORATIONS {
-                ui.add_space(8.0);
-                hypex_ui::native_window_buttons_ui(frame, ui);
-                ui.separator();
+
+            let tint = if self.right_panel {
+                ui.visuals().widgets.active.fg_stroke.color
             } else {
-                ui.add_space(16.0);
+                ui.visuals().widgets.inactive.fg_stroke.color
+            };
+    
+            let right = ui.add(ImageButton::new(self.top_bar.dock_right.texture_id(ui.ctx()), Vec2::new(16., 16.)).tint(tint));
+            if right.clicked() {
+                self.right_panel = !self.right_panel;
             }
 
-            self.hypex_ui.medium_icon_toggle_button(
-                ui,
-                &hypex_ui::icons::RIGHT_PANEL_TOGGLE,
-                &mut self.right_panel,
-            ); /*
-               self.hypex_ui.medium_icon_toggle_button(
-                   ui,
-                   &hypex_ui::icons::BOTTOM_PANEL_TOGGLE,
-                   &mut self.bottom_panel,
-               );*/
-            self.hypex_ui.medium_icon_toggle_button(
-                ui,
-                &hypex_ui::icons::LEFT_PANEL_TOGGLE,
-                &mut self.left_panel,
-            );*/
+            let tint = if self.left_panel {
+                ui.visuals().widgets.active.fg_stroke.color
+            } else {
+                ui.visuals().widgets.inactive.fg_stroke.color
+            };
+
+            let left = ui.add(ImageButton::new(self.top_bar.dock_left.texture_id(ui.ctx()), Vec2::new(16., 16.)).tint(tint));
+            if left.clicked() {
+                self.left_panel = !self.left_panel;
+            }
+
         });
-    }}*/
+    }
 }
