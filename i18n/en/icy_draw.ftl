@@ -125,3 +125,5 @@ select-font-dialog-select=Select
 select-font-dialog-filter-text=Filter fonts
 select-font-dialog-no-fonts=No fonts matches the filter
 select-font-dialog-no-fonts-installed=No fonts installed
+
+layer_tool_title=Layer

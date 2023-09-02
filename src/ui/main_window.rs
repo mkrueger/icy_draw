@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
-    DockingContainer, Document, DocumentOptions, ModalDialog, Tab, TabBehavior, TopBar,
+    Document, DocumentOptions, ModalDialog, DocumentTab, DocumentBehavior, TopBar, ToolTab, ToolBehavior, ui::layer_view::LayerToolWindow,
 };
 use eframe::{
     egui::{self, Response, SidePanel, TextStyle, Ui},
@@ -20,11 +20,12 @@ use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, Position, TheDrawFont};
 
 pub struct MainWindow {
-    pub document_tree: egui_tiles::Tree<Tab>,
-    pub tool_tree: egui_tiles::Tree<Tab>,
+    pub document_tree: egui_tiles::Tree<DocumentTab>,
+    pub tool_tree: egui_tiles::Tree<ToolTab>,
     pub toasts: egui_notify::Toasts,
 
-    pub tab_viewer: TabBehavior,
+    pub document_behavior: DocumentBehavior,
+    pub tool_behavior: ToolBehavior,
     pub gl: Arc<Context>,
 
     dialog_open: bool,
@@ -149,9 +150,13 @@ impl MainWindow {
         ]
         .into();
         ctx.set_style(style);
+
+        let mut tool_tree= egui_tiles::Tree::<ToolTab>::default();
+        let layers = tool_tree.tiles.insert_pane(ToolTab::new(LayerToolWindow::default()));
+        tool_tree.root = Some(layers);
         
         MainWindow {
-            tab_viewer: TabBehavior {
+            document_behavior: DocumentBehavior {
                 tools: Arc::new(Mutex::new(tools)),
                 selected_tool: 0,
                 document_options: DocumentOptions {
@@ -159,9 +164,10 @@ impl MainWindow {
                 },
                 request_close: None,
             },
+            tool_behavior: ToolBehavior::default(),
             toasts: egui_notify::Toasts::default(),
-            document_tree: DockingContainer::default(),
-            tool_tree: DockingContainer::default(),
+            document_tree:  egui_tiles::Tree::<DocumentTab>::default(),
+            tool_tree,
             gl: cc.gl.clone().unwrap(),
             dialog_open: false,
             modal_dialog: None,
@@ -236,7 +242,7 @@ impl MainWindow {
         }
     }
 
-    pub fn get_active_pane(&mut self) -> Option<&mut Tab> {
+    pub fn get_active_pane(&mut self) -> Option<&mut DocumentTab> {
         let mut stack = vec![];
 
         if let Some(root) = self.document_tree.root {
@@ -285,7 +291,7 @@ impl MainWindow {
             match self.document_tree.tiles.get(id) {
                 Some(egui_tiles::Tile::Pane(_)) => {
                     if let Some(egui_tiles::Tile::Pane(p)) = self.document_tree.tiles.get_mut(id) {
-                        callback(&mut p.doc);
+                        callback(&mut p.doc.lock().unwrap());
                     }
                 }
                 Some(egui_tiles::Tile::Container(container)) => match container {
@@ -310,20 +316,19 @@ impl MainWindow {
         }
     }
 
-    pub fn get_active_document_mut(&mut self) -> Option<&mut Box<dyn Document>> {
+    pub fn get_active_document(&mut self) -> Option<Arc<Mutex<Box<dyn Document>>>> {
         if let Some(pane) = self.get_active_pane() {
-            return Some(&mut pane.doc);
+            return Some(pane.doc.clone());
         }
         None
     }
 
-    pub fn get_active_document(&mut self) -> Option<&Box<dyn Document>> {
-        if let Some(pane) = self.get_active_pane() {
-            return Some(&pane.doc);
+    pub fn get_ansi_editor(&mut self) -> Option<&AnsiEditor> {
+        if let Some(pane) = self.get_active_document() {
+            return pane.lock().unwrap().get_ansi_editor();
         }
         None
     }
-
     pub(crate) fn open_dialog<T: ModalDialog + 'static>(&mut self, dialog: T) {
         self.modal_dialog = Some(Box::new(dialog));
     }
@@ -372,61 +377,55 @@ impl eframe::App for MainWindow {
                 ui.add_space(8.0);
 
                 let mut palette: usize = self.palette_mode;
-                if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(editor) = doc {
-                        ui.vertical_centered(|ui| {
-                            ui.add(crate::palette_switcher(ctx, editor));
-                        });
+                if let Some(editor) = self.get_ansi_editor() {
+                    ui.vertical_centered(|ui| {
+                        ui.add(crate::palette_switcher(ctx, editor));
+                    });
+                    ui.add_space(8.0);
+                    ui.horizontal(|ui| {
                         ui.add_space(8.0);
-                        ui.horizontal(|ui| {
-                            ui.add_space(8.0);
 
-                            if ui.selectable_label(palette == 0, "DOS").clicked() {
-                                palette = 0;
-                            }
-                            if ui.selectable_label(palette == 1, "Extended").clicked() {
-                                palette = 1;
-                            }
-                            if ui.selectable_label(palette == 2, "Custom").clicked() {
-                                palette = 2;
-                            }
-                        });
-                        ui.separator();
-                        match palette {
-                            0 => {
-                                crate::palette_editor_16(ui, editor);
-                            }
-                            1 => {
-                                crate::show_extended_palette(ui, editor);
-                            }
-                            _ => {
-                                ui.label("TODO");
-                            }
+                        if ui.selectable_label(palette == 0, "DOS").clicked() {
+                            palette = 0;
                         }
-                        ui.separator();
+                        if ui.selectable_label(palette == 1, "Extended").clicked() {
+                            palette = 1;
+                        }
+                        if ui.selectable_label(palette == 2, "Custom").clicked() {
+                            palette = 2;
+                        }
+                    });
+                    ui.separator();
+                    match palette {
+                        0 => {
+                            crate::palette_editor_16(ui, editor);
+                        }
+                        1 => {
+                            crate::show_extended_palette(ui, editor);
+                        }
+                        _ => {
+                            ui.label("TODO");
+                        }
                     }
+                    ui.separator();
                 }
                 self.palette_mode = palette;
 
                 crate::add_tool_switcher(ctx, ui, self);
                 if let Some(tool) = self
-                    .tab_viewer
+                    .document_behavior
                     .tools
                     .clone()
                     .lock()
                     .unwrap()
-                    .get_mut(self.tab_viewer.selected_tool)
+                    .get_mut(self.document_behavior.selected_tool)
                 {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
                         ui.vertical(|ui| {
-                            if let Some(doc) = self.get_active_document_mut() {
-                                let doc = doc.get_ansi_editor();
-                                if let Some(editor) = doc {
-                                    let tool_result = tool.show_ui(ctx, ui, editor);
-                                    self.handle_message(tool_result);
-                                }
+                            if let Some(editor) = self.get_ansi_editor() {
+                                let tool_result = tool.show_ui(ctx, ui, editor);
+                                self.handle_message(tool_result);
                             }
                         });
                     });
@@ -443,6 +442,12 @@ impl eframe::App for MainWindow {
             .exact_width(200.0)
             .resizable(false)
             .show_animated(ctx, self.right_panel, |ui| {
+               // self.tool_behavior.active_document = Arc::new(Mutex::new(self.get_active_document()));
+
+                self.tool_tree.ui(&mut self.tool_behavior, ui);
+               // self.tool_behavior.active_document = None;
+
+                /* 
                 let message = if let Some(doc) = self.get_active_document_mut() {
                     let doc = doc.get_ansi_editor_mut();
                     if let Some(editor) = doc {
@@ -470,6 +475,7 @@ impl eframe::App for MainWindow {
                 self.bitfont_selector = Some(sel);
 
                 // ui.add(crate::show_char_table(buffer_opt.clone()));
+                */
             });
 
         egui::CentralPanel::default()
@@ -478,7 +484,7 @@ impl eframe::App for MainWindow {
                 ..Default::default()
             })
             .show(ctx, |ui| {
-                self.document_tree.ui(&mut self.tab_viewer, ui);
+                self.document_tree.ui(&mut self.document_behavior, ui);
             });
 
         self.dialog_open = false;
@@ -488,20 +494,17 @@ impl eframe::App for MainWindow {
             if self.modal_dialog.as_mut().unwrap().show(ctx) {
                 let modal_dialog = self.modal_dialog.take().unwrap();
                 if modal_dialog.should_commit() {
-                    if let Some(doc) = self.get_active_document_mut() {
-                        let doc = doc.get_ansi_editor_mut();
-                        if let Some(editor) = doc {
-                            modal_dialog.commit(editor).unwrap();
-                        }
+                    if let Some(editor) = self.get_ansi_editor() {
+                        modal_dialog.commit(editor).unwrap();
                     }
-                    modal_dialog.commit_self(self).unwrap();
+                     modal_dialog.commit_self(self).unwrap();
                 }
             }
         }
         self.toasts.show(ctx);
-        if let Some(close) = self.tab_viewer.request_close {
+        if let Some(close) = self.document_behavior.request_close {
             self.document_tree.tiles.remove(close);
-            self.tab_viewer.request_close = None;
+            self.document_behavior.request_close = None;
         }
 
         ctx.request_repaint_after(Duration::from_millis(150));

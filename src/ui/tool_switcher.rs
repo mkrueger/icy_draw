@@ -10,7 +10,7 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
     let spacing = 4.0;
     let icon_size = 28.0;
 
-    if let Ok(tools) = arg.tab_viewer.tools.lock() {
+    if let Ok(tools) = arg.document_behavior.tools.lock() {
         let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
         let mut pos = back_rect.min + Vec2::new(spacing, spacing);
 
@@ -20,7 +20,7 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
 
             let rect = Rect::from_min_size(pos.floor(), Vec2::new(icon_size, icon_size));
             let response = ui.interact(rect, id.with(i), Sense::click());
-            if i == arg.tab_viewer.selected_tool {
+            if i == arg.document_behavior.selected_tool {
                 ui.painter().rect_filled(
                     rect.expand(2.0),
                     Rounding::same(4.0),
@@ -48,7 +48,7 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
 
 
             let painter = ui.painter_at(rect);
-            let tint = if i == arg.tab_viewer.selected_tool {
+            let tint = if i == arg.document_behavior.selected_tool {
                 ui.visuals().widgets.active.fg_stroke.color
             } else {
                 ui.visuals().widgets.inactive.fg_stroke.color
@@ -62,7 +62,7 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
             }
 
             if response.clicked() {
-                arg.tab_viewer.selected_tool = i;
+                arg.document_behavior.selected_tool = i;
             }
         }
     }

@@ -33,6 +33,9 @@ pub use editor::*;
 mod document_docking;
 pub use document_docking::*;
 
+mod tool_docking;
+pub use tool_docking::*;
+
 mod top_bar;
 pub use top_bar::*;
 mod messages;

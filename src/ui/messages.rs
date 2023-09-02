@@ -72,7 +72,7 @@ impl MainWindow {
                         let path = PathBuf::from(str);
                         if let Some(ext) = path.extension() {
                             if ext == "icd" {
-                                doc.doc.save(str).unwrap();
+                                doc.doc.lock().unwrap().save(str).unwrap();
                                 save_as = false;
                             }
                         }
@@ -83,15 +83,12 @@ impl MainWindow {
                 }
             }
             Message::SaveFileAs => {
-                if self.get_active_document_mut().is_some() {
+                if self.get_active_document().is_some() {
                     self.open_dialog(SaveFileDialog::default());
                 }
             }
             Message::ExportFile => {
-                let mut buffer_opt = None;
-                if let Some(doc) = self.get_active_document_mut() {
-                    buffer_opt = doc.get_ansi_editor_mut();
-                }
+                let mut buffer_opt = self.get_ansi_editor();
                 let view = buffer_opt.unwrap().buffer_view.clone();
                 self.open_dialog(crate::ExportFileDialog::new(&view.lock().buf));
             }
@@ -99,103 +96,74 @@ impl MainWindow {
                 self.open_dialog(SelectOutlineDialog::default());
             }
             Message::Undo => {
-                if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(editor) = doc {
-                        editor.undo();
-                        editor.buffer_view.lock().redraw_view();
-                    }
+                if let Some(editor) = self.get_ansi_editor() {
+                    editor.undo();
+                    editor.buffer_view.lock().redraw_view();
                 }
             }
             Message::Redo => {
-                if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(editor) = doc {
-                        editor.redo();
-                        editor.buffer_view.lock().redraw_view();
-                    }
+                if let Some(editor) = self.get_ansi_editor() {
+                editor.redo();
+                    editor.buffer_view.lock().redraw_view();
                 }
+            
             }
 
             Message::SelectAll => {
-                if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(ansi_editor) = doc {
-                        let buf = &mut ansi_editor.buffer_view.lock();
+                if let Some(editor) = self.get_ansi_editor() {
+                    let buf = &mut editor.buffer_view.lock();
                         let w = buf.buf.get_width();
                         let h = buf.buf.get_line_count();
 
                         buf.set_selection(Selection::from_rectangle(0.0, 0.0, w as f32, h as f32));
                     }
-                }
             }
             Message::Deselect => {
-                if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(editor) = doc {
-                        editor.buffer_view.lock().clear_selection();
+                if let Some(editor) = self.get_ansi_editor() {
+                    editor.buffer_view.lock().clear_selection();
                         editor.redraw_view();
                     }
-                }
             }
 
             Message::DeleteSelection => {
-                if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(editor) = doc {
-                        if editor.buffer_view.lock().get_selection().is_some() {
+                if let Some(editor) = self.get_ansi_editor() {
+                    if editor.buffer_view.lock().get_selection().is_some() {
                             editor.delete_selection();
                             editor.redraw_view();
                         }
-                    }
                 }
             }
 
             Message::ShowCharacterSelectionDialog(ch) => {
-                if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(editor) = doc {
-                        let buf = editor.buffer_view.clone();
+                if let Some(editor) = self.get_ansi_editor() {
+                    let buf = editor.buffer_view.clone();
                         self.open_dialog(SelectCharacterDialog::new(buf, ch));
                     }
-                }
             }
             Message::SelectFontDialog(fonts, selected_font) => {
                 self.open_dialog(crate::SelectFontDialog::new(fonts, selected_font));
             }
 
             Message::EditSauce => {
-                let mut buffer_opt = None;
-                if let Some(doc) = self.get_active_document_mut() {
-                    buffer_opt = doc.get_ansi_editor_mut();
-                }
+                let mut buffer_opt = self.get_ansi_editor() ;
+       
                 let view = buffer_opt.unwrap().buffer_view.clone();
                 self.open_dialog(crate::EditSauceDialog::new(&view.lock().buf));
             }
             Message::SetCanvasSize => {
-                let mut buffer_opt = None;
-                if let Some(doc) = self.get_active_document_mut() {
-                    buffer_opt = doc.get_ansi_editor_mut();
-                }
-
+                let mut buffer_opt = self.get_ansi_editor();
                 let view = buffer_opt.unwrap().buffer_view.clone();
                 self.open_dialog(crate::SetCanvasSizeDialog::new(&view.lock().buf));
             }
 
             Message::EditLayer(i) => {
-                let editor = self
-                    .get_active_document_mut()
-                    .unwrap()
-                    .get_ansi_editor_mut()
+                let editor = self.get_ansi_editor()
                     .unwrap();
                 let buffer_view = editor.buffer_view.clone();
                 self.open_dialog(crate::EditLayerDialog::new(&buffer_view.lock().buf, i));
             }
             Message::NewLayer => {
-                let editor = self
-                    .get_active_document_mut()
-                    .unwrap()
-                    .get_ansi_editor_mut()
+                let editor = self.get_ansi_editor()
                     .unwrap();
                 let buf = &mut editor.buffer_view.lock().buf;
                 let size = buf.get_buffer_size();
@@ -208,10 +176,7 @@ impl MainWindow {
                 buf.layers.insert(0, new_layer);
             }
             Message::MoveLayerUp(cur_layer) => {
-                let editor = self
-                    .get_active_document_mut()
-                    .unwrap()
-                    .get_ansi_editor_mut()
+                let editor = self.get_ansi_editor()
                     .unwrap();
 
                 editor
@@ -223,10 +188,7 @@ impl MainWindow {
                 editor.cur_layer -= 1;
             }
             Message::MoveLayerDown(cur_layer) => {
-                let editor = self
-                    .get_active_document_mut()
-                    .unwrap()
-                    .get_ansi_editor_mut()
+                let editor = self.get_ansi_editor()
                     .unwrap();
 
                 editor
@@ -238,10 +200,7 @@ impl MainWindow {
                 editor.cur_layer += 1;
             }
             Message::DeleteLayer(cur_layer) => {
-                let editor = self
-                    .get_active_document_mut()
-                    .unwrap()
-                    .get_ansi_editor_mut()
+                let editor = self.get_ansi_editor()
                     .unwrap();
                 editor.buffer_view.lock().buf.layers.remove(cur_layer);
                 editor.cur_layer = editor.cur_layer.clamp(
@@ -250,28 +209,19 @@ impl MainWindow {
                 );
             }
             Message::ToggleVisibility(cur_layer) => {
-                let editor = self
-                    .get_active_document_mut()
-                    .unwrap()
-                    .get_ansi_editor_mut()
+                let editor = self.get_ansi_editor()
                     .unwrap();
                 let is_visible = editor.buffer_view.lock().buf.layers[cur_layer].is_visible;
                 editor.buffer_view.lock().buf.layers[cur_layer].is_visible = !is_visible;
             }
             Message::SelectLayer(cur_layer) => {
-                let editor = self
-                    .get_active_document_mut()
-                    .unwrap()
-                    .get_ansi_editor_mut()
+                let editor = self .get_ansi_editor()
                     .unwrap();
                 editor.cur_layer = cur_layer;
             }
 
             Message::SetFontPage(page) => {
-                let editor = self
-                    .get_active_document_mut()
-                    .unwrap()
-                    .get_ansi_editor_mut()
+                let editor = self.get_ansi_editor()
                     .unwrap();
                 editor.buffer_view.lock().caret.set_font_page(page);
 

@@ -1,13 +1,41 @@
+use std::sync::{Arc, Mutex};
+
 use eframe::{
     egui::{self, RichText, Sense, TextStyle},
     epaint::{Color32, Vec2, Rounding, Rect, pos2}, emath::Align2,
 };
 use i18n_embed_fl::fl;
 
-use crate::{AnsiEditor, Message};
+use crate::{AnsiEditor, Message, ToolWindow, Document};
 
-pub fn show_layer_view(
-    ctx: &egui::Context,
+#[derive(Default)]
+pub struct LayerToolWindow {}
+
+
+impl ToolWindow for LayerToolWindow {
+    fn get_title(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "layer_tool_title")
+    }
+ 
+    fn show_ui(
+        &mut self,
+        ui: &mut egui::Ui,
+        active_document: Option<Arc<Mutex<Box<dyn Document>>>> 
+    ) -> Option<Message> {
+
+        if let Some(doc) = active_document {
+            if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                return show_layer_view(ui, editor);
+            }
+        }
+
+        ui.label("No document selected");
+        None
+    }
+}
+
+
+fn show_layer_view(
     ui: &mut egui::Ui,
     editor: &AnsiEditor,
 ) -> Option<Message> {
@@ -69,9 +97,9 @@ pub fn show_layer_view(
                 } 
 
                 let image = if is_visible {
-                    super::VISIBLE_SVG.texture_id(ctx)
+                    super::VISIBLE_SVG.texture_id(ui.ctx())
                 } else {
-                    super::INVISIBLE_SVG.texture_id(ctx)
+                    super::INVISIBLE_SVG.texture_id(ui.ctx())
                 };
 
                 let tint = if i == cur_layer {
@@ -118,7 +146,7 @@ pub fn show_layer_view(
     ui.horizontal(|ui| {
         let r = ui
             .add(egui::ImageButton::new(
-                super::ADD_LAYER_SVG.texture_id(ctx),
+                super::ADD_LAYER_SVG.texture_id(ui.ctx()),
                 img_size,
             ))
             .on_hover_ui(|ui| {
@@ -131,7 +159,7 @@ pub fn show_layer_view(
 
         let r = ui
             .add(egui::ImageButton::new(
-                super::MOVE_UP_SVG.texture_id(ctx),
+                super::MOVE_UP_SVG.texture_id(ui.ctx()),
                 img_size,
             ))
             .on_hover_ui(|ui| {
@@ -146,7 +174,7 @@ pub fn show_layer_view(
 
         let r = ui
             .add(egui::ImageButton::new(
-                super::MOVE_DOWN_SVG.texture_id(ctx),
+                super::MOVE_DOWN_SVG.texture_id(ui.ctx()),
                 img_size,
             ))
             .on_hover_ui(|ui| {
@@ -161,7 +189,7 @@ pub fn show_layer_view(
 
         let r = ui
             .add(egui::ImageButton::new(
-                super::DELETE_SVG.texture_id(ctx),
+                super::DELETE_SVG.texture_id(ui.ctx()),
                 img_size,
             ))
             .on_hover_ui(|ui| {
