@@ -16,8 +16,8 @@ egui_glow = "0.22.0"
 egui-modal = "0.2.4"
 glow = "0.12.1"
 egui_file = "0.10.0"
-#egui_tiles = { git ="https://github.com/mkrueger/egui_tiles"}
-egui_tiles = { path = "../egui_tiles"  }
+egui_tiles = { git ="https://github.com/mkrueger/egui_tiles"}
+#egui_tiles = { path = "../egui_tiles"  }
 egui-notify = "0.8.0"
 log = "0.4.20"
 open = "5.0.0"
