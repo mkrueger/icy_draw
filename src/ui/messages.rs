@@ -6,7 +6,7 @@ use std::{
 };
 
 use eframe::egui;
-use icy_engine::{BitFont, Selection, TheDrawFont};
+use icy_engine::{BitFont, EngineResult, Selection, TheDrawFont};
 
 use crate::{
     MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
@@ -21,15 +21,15 @@ pub enum Message {
     ExportFile,
     ShowOutlineDialog,
 
-    AddLayer,
+    AddNewLayer(usize),
     EditLayer(usize),
     RemoveLayer(usize),
-    MoveLayerUp(usize),
-    MoveLayerDown(usize),
-    ToggleVisibility(usize),
+    RaiseLayer(usize),
+    LowerLayer(usize),
+    ToggleLayerVisibility(usize),
     SelectLayer(usize),
     DuplicateLayer(usize),
-    MergeLayer(usize),
+    MergeLayerDown(usize),
 
     Undo,
     Redo,
@@ -64,7 +64,6 @@ impl MainWindow {
             Message::NewFile => {
                 self.open_dialog(NewFileDialog::default());
             }
-
             Message::OpenFile => {
                 self.open_dialog(OpenFileDialog::default());
             }
@@ -137,6 +136,7 @@ impl MainWindow {
                     buf.set_selection(Selection::from_rectangle(0.0, 0.0, w as f32, h as f32));
                 }
             }
+
             Message::Deselect => {
                 if let Some(editor) = self
                     .get_active_document()
@@ -149,7 +149,6 @@ impl MainWindow {
                     editor.redraw_view();
                 }
             }
-
             Message::DeleteSelection => {
                 if let Some(editor) = self
                     .get_active_document()
@@ -164,7 +163,6 @@ impl MainWindow {
                     }
                 }
             }
-
             Message::ShowCharacterSelectionDialog(ch) => {
                 if let Some(editor) = self
                     .get_active_document()
@@ -190,9 +188,10 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::EditSauceDialog::new(&view.lock().get_buffer()));
+                    self.open_dialog(crate::EditSauceDialog::new(view.lock().get_buffer()));
                 }
             }
+
             Message::SetCanvasSize => {
                 if let Some(editor) = self
                     .get_active_document()
@@ -202,7 +201,7 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::SetCanvasSizeDialog::new(&view.lock().get_buffer()));
+                    self.open_dialog(crate::SetCanvasSizeDialog::new(view.lock().get_buffer()));
                 }
             }
 
@@ -215,116 +214,65 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::EditLayerDialog::new(&view.lock().get_buffer(), i));
+                    self.open_dialog(crate::EditLayerDialog::new(view.lock().get_buffer(), i));
                 }
             }
-            Message::AddLayer => {
-                self.run_editor_command(0, |_, editor, _| {
+            Message::AddNewLayer(cur_layer) => {
+                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
                     let mut lock = editor.buffer_view.lock();
-                    lock.get_edit_state_mut().add_layer();
-                    None
+                    to_message(lock.get_edit_state_mut().add_new_layer(cur_layer))
                 });
             }
-            Message::MoveLayerUp(cur_layer) => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .layers
-                        .swap(cur_layer, cur_layer - 1);
-                    editor.set_cur_layer(editor.get_cur_layer() - 1);
-                }
+            Message::RaiseLayer(cur_layer) => {
+                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().raise_layer(cur_layer))
+                });
             }
-            Message::MoveLayerDown(cur_layer) => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .layers
-                        .swap(cur_layer, cur_layer + 1);
-                    editor.set_cur_layer(editor.get_cur_layer() + 1);
-                }
+            Message::LowerLayer(cur_layer) => {
+                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().lower_layer(cur_layer))
+                });
             }
             Message::RemoveLayer(cur_layer) => {
-
-                self.run_editor_command(cur_layer, |_, editor: &mut crate::AnsiEditor, cur_layer| {
-                    let mut lock = editor.buffer_view.lock();
-                    lock.get_edit_state_mut().remove_layer(cur_layer);
-                    None
-                });
-
-                
+                self.run_editor_command(
+                    cur_layer,
+                    |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                        let mut lock = editor.buffer_view.lock();
+                        to_message(lock.get_edit_state_mut().remove_layer(cur_layer))
+                    },
+                );
             }
             Message::DuplicateLayer(cur_layer) => {
-                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
-                    let layer = editor.buffer_view.lock().get_buffer().layers[cur_layer].clone();
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .layers
-                        .insert(cur_layer + 1, layer);
-                    editor.set_cur_layer(editor.get_cur_layer() + 1);
-                    None
-                });
+                self.run_editor_command(
+                    cur_layer,
+                    |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                        let mut lock = editor.buffer_view.lock();
+                        to_message(lock.get_edit_state_mut().duplicate_layer(cur_layer))
+                    },
+                );
             }
-            Message::MergeLayer(cur_layer) => {
-                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
-                    let layer = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .layers
-                        .remove(cur_layer);
-                    if let Some(layer_below) = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .layers
-                        .get_mut(cur_layer)
-                    {
-                        for y in 0..layer.get_height() {
-                            for x in 0..layer.get_width() {
-                                println!("{} {}", x, y);
-                                let ch = layer.get_char((x, y));
-                                if ch.is_visible() {
-                                    layer_below.set_char((x, y), ch);
-                                }
-                            }
-                        }
-                    }
-                    None
-                });
+            Message::MergeLayerDown(cur_layer) => {
+                self.run_editor_command(
+                    cur_layer,
+                    |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                        let mut lock = editor.buffer_view.lock();
+                        to_message(lock.get_edit_state_mut().merge_layer_down(cur_layer))
+                    },
+                );
             }
 
-            Message::ToggleVisibility(cur_layer) => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
-                    let is_visible =
-                        editor.buffer_view.lock().get_buffer().layers[cur_layer].is_visible;
-                    editor.buffer_view.lock().get_buffer_mut().layers[cur_layer].is_visible =
-                        !is_visible;
-                }
+            Message::ToggleLayerVisibility(cur_layer) => {
+                self.run_editor_command(
+                    cur_layer,
+                    |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                        let mut lock = editor.buffer_view.lock();
+                        to_message(lock.get_edit_state_mut().toggle_layer_visibility(cur_layer))
+                    },
+                );
             }
+
             Message::SelectLayer(cur_layer) => {
                 if let Some(editor) = self
                     .get_active_document()
@@ -369,6 +317,7 @@ impl MainWindow {
                     }
                 }
             }
+
             Message::CharTable(ch) => {
                 let ch = ch as u8;
                 self.run_editor_command(ch, |_, editor, ch| {
@@ -388,5 +337,13 @@ impl MainWindow {
                 self.toasts.error(msg);
             }
         }
+    }
+}
+
+fn to_message<T>(result: EngineResult<T>) -> Option<Message> {
+    if let Err(result) = result {
+        Some(Message::ShowError(format!("{result}")))
+    } else {
+        None
     }
 }

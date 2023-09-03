@@ -335,7 +335,7 @@ impl Tool for FontTool {
 
             MKey::Character(ch) => {
                 let c_pos = editor.get_caret_position();
-                editor.begin_atomic_undo();
+                let _undo = editor.begin_atomic_undo("Typing");
                 let attr = editor.buffer_view.lock().get_caret().get_attribute();
                 let opt_size: Option<Size> = font.render(
                     editor.buffer_view.lock().get_buffer_mut(),
@@ -356,7 +356,6 @@ impl Tool for FontTool {
                     editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
                     self.sizes.push(Size::new(1, 1));
                 }
-                editor.end_atomic_undo();
             }
             _ => {}
         }

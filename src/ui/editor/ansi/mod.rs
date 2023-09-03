@@ -13,11 +13,10 @@ use eframe::{
 };
 use i18n_embed_fl::fl;
 use icy_engine::{
-    editor::UndoState, AttributedChar, Buffer, Layer, Line, Position, Rectangle, SaveOptions, Size,
-    TextAttribute, UPosition,
+    editor::{AtomicUndoGuard, UndoState},
+    AttributedChar, Buffer, Layer, Line, Position, Rectangle, SaveOptions, TextAttribute,
+    UPosition,
 };
-pub mod undo_stack;
-use undo_stack::{AtomicUndo, UndoOperation, UndoSetChar, UndoSwapChar};
 
 use icy_engine_egui::{
     show_terminal_area, BackgroundEffect, BufferView, MonitorSettings, TerminalCalc,
@@ -25,10 +24,8 @@ use icy_engine_egui::{
 
 use crate::{
     model::{MKey, MModifiers, Tool},
-    Document, DocumentOptions, TerminalResult,
+    ClipboardHandler, Document, DocumentOptions, TerminalResult,
 };
-
-use self::undo_stack::ClearLayerOperation;
 
 pub enum Event {
     None,
@@ -48,11 +45,6 @@ pub struct AnsiEditor {
     pub reference_image: Option<PathBuf>,
     // pub outline_changed: std::boxed::Box<dyn Fn(&Editor)>,
     //pub request_refresh: Box<dyn Fn ()>,
-    atomic_undo_stack: Vec<usize>,
-
-    pub undo_stack: Vec<Box<dyn UndoOperation>>,
-    pub redo_stack: Vec<Box<dyn UndoOperation>>,
-
     pub egui_id: Id,
     //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
     //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
@@ -67,7 +59,7 @@ impl UndoState for AnsiEditor {
         self.buffer_view.lock().get_edit_state().can_undo()
     }
 
-    fn undo(&mut self) {
+    fn undo(&mut self) -> icy_engine::EngineResult<()> {
         self.buffer_view.lock().get_edit_state_mut().undo()
     }
 
@@ -79,10 +71,12 @@ impl UndoState for AnsiEditor {
         self.buffer_view.lock().get_edit_state().can_redo()
     }
 
-    fn redo(&mut self) {
+    fn redo(&mut self) -> icy_engine::EngineResult<()> {
         self.buffer_view.lock().get_edit_state_mut().redo()
     }
 }
+
+impl ClipboardHandler for AnsiEditor {}
 
 impl Document for AnsiEditor {
     fn get_title(&self) -> String {
@@ -171,13 +165,6 @@ impl AnsiEditor {
             cur_outline: 0,
             is_inactive: false,
             reference_image: None,
-            //outline_changed: Box::new(|_| {}),
-            // request_refresh: Box::new(|| {}),
-            atomic_undo_stack: Vec::new(),
-            //pos_changed: Box::new(|_, _| {}),
-            //attr_changed: Box::new(|_| {}),
-            undo_stack: Vec::new(),
-            redo_stack: Vec::new(),
 
             is_dirty: false,
             drag_start: None,
@@ -250,17 +237,8 @@ impl AnsiEditor {
         // (self.attr_changed)(attr);
     }
 
-    pub fn clear_layer(&mut self, layer_num: usize) -> ClearLayerOperation {
-        let layers =
-            std::mem::take(&mut self.buffer_view.lock().get_buffer_mut().layers[layer_num].lines);
-        ClearLayerOperation {
-            layer_num,
-            lines: layers,
-        }
-    }
-
-    pub fn join_overlay(&mut self) {
-        self.begin_atomic_undo();
+    pub fn join_overlay(&mut self, description: impl Into<String>) {
+        let _undo = self.begin_atomic_undo(description.into());
         let opt_layer = self.buffer_view.lock().get_buffer_mut().remove_overlay();
 
         if let Some(layer) = &opt_layer {
@@ -274,7 +252,6 @@ impl AnsiEditor {
                 }
             }
         }
-        self.end_atomic_undo();
     }
 
     pub fn delete_line(&mut self, line: i32) {
@@ -375,55 +352,23 @@ impl AnsiEditor {
     }
 
     pub fn set_char(&mut self, pos: impl Into<UPosition>, attributed_char: AttributedChar) {
-        let pos = pos.into();
-        self.redo_stack.clear();
-        let cur_layer = self.get_cur_layer();
-
-        let old = self.buffer_view.lock().get_buffer().layers[cur_layer].get_char(pos);
-        self.buffer_view.lock().get_buffer_mut().layers[cur_layer].set_char(pos, attributed_char);
-        self.undo_stack.push(Box::new(UndoSetChar {
-            pos,
-            layer: self.get_cur_layer(),
-            old,
-            new: attributed_char,
-        }));
-    }
-    pub fn begin_atomic_undo(&mut self) {
-        self.atomic_undo_stack.push(self.undo_stack.len());
+        self.buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .set_char(pos, attributed_char);
     }
 
-    pub fn end_atomic_undo(&mut self) {
-        let base_count = self.atomic_undo_stack.pop().unwrap();
-        let count = self.undo_stack.len();
-        if base_count == count {
-            return;
-        }
-
-        let mut stack = Vec::new();
-        while base_count < self.undo_stack.len() {
-            let op = self.undo_stack.pop().unwrap();
-            stack.push(op);
-        }
-        self.undo_stack.push(Box::new(AtomicUndo { stack }));
-    }
-
-    pub fn undo(&mut self) {
-        if let Some(op) = self.undo_stack.pop() {
-            op.undo(self.buffer_view.lock().get_buffer_mut());
-            self.redo_stack.push(op);
-        }
-    }
-
-    pub fn redo(&mut self) {
-        if let Some(op) = self.redo_stack.pop() {
-            op.redo(self.buffer_view.lock().get_buffer_mut());
-            self.undo_stack.push(op);
-        }
+    #[must_use]
+    pub fn begin_atomic_undo(&mut self, description: impl Into<String>) -> AtomicUndoGuard {
+        self.buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .begin_atomic_undo(description.into())
     }
 
     pub fn fill(&mut self, rect: Rectangle, dos_char: AttributedChar) {
         let mut pos = rect.start;
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Fill");
         for _ in 0..rect.size.height {
             for _ in 0..rect.size.width {
                 self.set_char(pos, dos_char);
@@ -432,11 +377,10 @@ impl AnsiEditor {
             pos.y += 1;
             pos.x = rect.start.x;
         }
-        self.end_atomic_undo();
     }
 
     fn cur_selection(&self) -> Option<icy_engine::Selection> {
-        self.buffer_view.lock().get_selection().clone()
+        self.buffer_view.lock().get_selection()
     }
     fn clear_selection(&self) {
         self.buffer_view.lock().clear_selection();
@@ -458,7 +402,7 @@ impl AnsiEditor {
 
     pub fn delete_selection(&mut self) {
         if let Some(selection) = &self.cur_selection() {
-            self.begin_atomic_undo();
+            let _undo = self.begin_atomic_undo("Delete selection");
             let min = selection.min().as_uposition();
             let max = selection.max().as_uposition();
             println!("delete selection! {} - {} ", min, max);
@@ -467,14 +411,8 @@ impl AnsiEditor {
                     self.set_char((x, y), AttributedChar::invisible());
                 }
             }
-            self.end_atomic_undo();
             self.clear_selection();
         }
-    }
-
-    pub fn clear_cur_layer(&mut self) {
-        let b = Box::new(self.clear_layer(self.get_cur_layer()));
-        self.undo_stack.push(b);
     }
 
     fn get_blockaction_rectangle(&self) -> (i32, i32, i32, i32) {
@@ -489,7 +427,7 @@ impl AnsiEditor {
     }
 
     pub fn justify_left(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Justify left");
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
         let is_bg_layer =
             self.get_cur_layer() == self.buffer_view.lock().get_buffer().layers.len() - 1;
@@ -520,22 +458,18 @@ impl AnsiEditor {
                     };
 
                     let pos = UPosition::new(x as usize, y as usize);
-                    let old = layer.get_char(pos);
-                    layer.set_char(pos, ch);
-                    self.undo_stack.push(Box::new(UndoSetChar {
-                        pos,
-                        layer: self.get_cur_layer(),
-                        old,
-                        new: ch,
-                    }));
+                    self.buffer_view
+                        .lock()
+                        .get_edit_state_mut()
+                        .set_char(pos, ch)
+                        .unwrap();
                 }
             }
         }
-        self.end_atomic_undo();
     }
 
     pub fn justify_center(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Justify center");
         self.justify_left();
 
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
@@ -572,21 +506,17 @@ impl AnsiEditor {
 
                     let pos = UPosition::new((x2 - x) as usize, y as usize);
                     let old = layer.get_char(pos);
-                    layer.set_char(pos, ch);
-                    self.undo_stack.push(Box::new(UndoSetChar {
-                        pos,
-                        layer: self.get_cur_layer(),
-                        old,
-                        new: ch,
-                    }));
+                    self.buffer_view
+                        .lock()
+                        .get_edit_state_mut()
+                        .set_char(pos, ch);
                 }
             }
         }
-        self.end_atomic_undo();
     }
 
     pub fn justify_right(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Justify right");
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
         let is_bg_layer =
             self.get_cur_layer() == self.buffer_view.lock().get_buffer().layers.len() - 1;
@@ -620,41 +550,30 @@ impl AnsiEditor {
 
                     let pos = UPosition::new((x2 - x) as usize, y as usize);
                     let old = layer.get_char(pos);
-                    layer.set_char(pos, ch);
-                    self.undo_stack.push(Box::new(UndoSetChar {
-                        pos,
-                        layer: self.get_cur_layer(),
-                        old,
-                        new: ch,
-                    }));
+                    self.buffer_view
+                        .lock()
+                        .get_edit_state_mut()
+                        .set_char(pos, ch);
                 }
             }
         }
-        self.end_atomic_undo();
     }
 
     pub fn flip_x(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Flip X");
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
         {
-            let mut lock: eframe::epaint::mutex::MutexGuard<'_, BufferView> =
-                self.buffer_view.lock();
-            let cur_layer = self.get_cur_layer();
-            let layer = &mut lock.get_buffer_mut().layers[cur_layer];
             for y in y1..=y2 {
                 for x in 0..=(x2 - x1) / 2 {
                     let pos1 = Position::new(x1 + x, y);
                     let pos2 = Position::new(x2 - x, y);
-                    layer.swap_char(pos1, pos2);
-                    self.undo_stack.push(Box::new(UndoSwapChar {
-                        layer: self.get_cur_layer(),
-                        pos1,
-                        pos2,
-                    }));
+                    self.buffer_view
+                        .lock()
+                        .get_edit_state_mut()
+                        .swap_char(pos1, pos2);
                 }
             }
         }
-        self.end_atomic_undo();
     }
 
     pub fn redraw_view(&self) {
@@ -662,30 +581,24 @@ impl AnsiEditor {
     }
 
     pub fn flip_y(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Flip Y");
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
         {
-            let mut lock: eframe::epaint::mutex::MutexGuard<'_, BufferView> =
-                self.buffer_view.lock();
-            let cur_layer = self.get_cur_layer();
-            let layer = &mut lock.get_buffer_mut().layers[cur_layer];
             for x in x1..=x2 {
                 for y in 0..=(y2 - y1) / 2 {
                     let pos1 = Position::new(x, y1 + y);
                     let pos2 = Position::new(x, y2 - y);
-                    layer.swap_char(pos1, pos2);
-                    self.undo_stack.push(Box::new(UndoSwapChar {
-                        layer: self.get_cur_layer(),
-                        pos1,
-                        pos2,
-                    }));
+                    self.buffer_view
+                        .lock()
+                        .get_edit_state_mut()
+                        .swap_char(pos1, pos2);
                 }
             }
         }
-        self.end_atomic_undo();
     }
+
     pub fn crop(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Crop");
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
 
         let new_height = y2 - y1;
@@ -742,8 +655,8 @@ impl AnsiEditor {
             .lock()
             .get_buffer_mut()
             .set_buffer_height(new_height as usize);
-        self.end_atomic_undo();
     }
+
     pub fn switch_fg_bg_color(&mut self) {
         let mut attr = self.buffer_view.lock().get_caret().get_attribute();
         let bg = attr.get_background();
@@ -753,63 +666,53 @@ impl AnsiEditor {
     }
 
     pub fn erase_line(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Erase line");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn erase_line_to_start(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Erase line to start");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn erase_line_to_end(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Erase line to end");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn erase_column(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Erase column");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn erase_column_to_start(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Erase column to start");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn erase_column_to_end(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Erase column to end");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn delete_row(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Delete row");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn insert_row(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Insert row");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn delete_column(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Delete column");
         // TODO
-        self.end_atomic_undo();
     }
 
     pub fn insert_column(&mut self) {
-        self.begin_atomic_undo();
+        let _undo = self.begin_atomic_undo("Insert column");
         // TODO
-        self.end_atomic_undo();
     }
 
     fn show_toolbar(&mut self, ui: &mut egui::Ui) {

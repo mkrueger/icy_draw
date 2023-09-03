@@ -1,9 +1,32 @@
 use eframe::{egui, epaint::Vec2};
-use icy_engine::editor::UndoState;
+use icy_engine::{editor::UndoState, EngineResult};
 
 use crate::{model::Tool, AnsiEditor, TerminalResult};
 
-pub trait Document: UndoState {
+pub trait ClipboardHandler {
+    fn can_cut(&self) -> bool {
+        false
+    }
+    fn cut(&mut self) -> EngineResult<()> {
+        Ok(())
+    }
+
+    fn can_copy(&self) -> bool {
+        false
+    }
+    fn copy(&mut self) -> EngineResult<()> {
+        Ok(())
+    }
+
+    fn can_paste(&self) -> bool {
+        false
+    }
+    fn paste(&mut self) -> EngineResult<()> {
+        Ok(())
+    }
+}
+
+pub trait Document: UndoState + ClipboardHandler {
     fn get_title(&self) -> String;
     fn is_dirty(&self) -> bool;
 

@@ -180,7 +180,8 @@ impl Tool for FillTool {
             let attr = editor.buffer_view.lock().get_caret().get_attribute();
             let ch = editor.buffer_view.lock().get_buffer().get_char(pos);
             if self.use_back || self.use_fore || matches!(self.fill_type, FillType::Character) {
-                editor.begin_atomic_undo();
+                let _undo =
+                    editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-bucket-fill"));
                 let mut visited = HashSet::new();
                 self.fill(
                     editor,
@@ -189,7 +190,6 @@ impl Tool for FillTool {
                     ch,
                     AttributedChar::new(*self.char_code.borrow(), attr),
                 );
-                editor.end_atomic_undo();
             }
         }
         Event::None

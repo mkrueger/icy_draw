@@ -1,14 +1,19 @@
-use std::fs;
+use std::{borrow::Cow, fs};
 
+use arboard::{Clipboard, ImageData};
 use eframe::{
     egui::{self, RichText, Sense},
     emath::Align2,
     epaint::{Color32, FontFamily, FontId, Pos2, Rect, Rounding, Vec2},
 };
 use i18n_embed_fl::fl;
-use icy_engine::{editor::UndoState, BitFont};
+use icy_engine::{
+    editor::UndoState,
+    util::{pop_data, push_data, BITFONT_GLYPH},
+    BitFont, EngineResult, Glyph,
+};
 
-use crate::{model::Tool, AnsiEditor, Document, DocumentOptions, TerminalResult};
+use crate::{model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, TerminalResult};
 
 pub struct BitFontEditor {
     font: BitFont,
@@ -345,6 +350,48 @@ impl BitFontEditor {
     }
 }
 
+impl ClipboardHandler for BitFontEditor {
+    fn can_copy(&self) -> bool {
+        self.selected_char_opt.is_some()
+    }
+
+    fn copy(&mut self) -> EngineResult<()> {
+        if let Some(ch) = self.selected_char_opt {
+            if let Some(data) = self.font.get_clipboard_data(ch) {
+                push_data(BITFONT_GLYPH, &data)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn can_paste(&self) -> bool {
+        if self.selected_char_opt.is_none() {
+            return false;
+        }
+
+        if let Ok(mut ctx) = Clipboard::new() {
+            return ctx.get_image().is_ok();
+        }
+
+        false
+    }
+
+    fn paste(&mut self) -> EngineResult<()> {
+        if let Some(data) = pop_data(BITFONT_GLYPH) {
+            let (_, g) = Glyph::from_clipbard_data(&data);
+            let len = self.font.size.height;
+            if let Some(ch) = self.selected_char_opt {
+                if let Some(glyph) = self.font.get_glyph_mut(ch) {
+                    glyph.data = g.data;
+                    glyph.data.resize(len, 0);
+                    self.is_dirty = true;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 impl UndoState for BitFontEditor {
     fn undo_description(&self) -> Option<String> {
         todo!()
@@ -354,7 +401,7 @@ impl UndoState for BitFontEditor {
         false
     }
 
-    fn undo(&mut self) {
+    fn undo(&mut self) -> EngineResult<()> {
         todo!()
     }
 
@@ -366,7 +413,7 @@ impl UndoState for BitFontEditor {
         false
     }
 
-    fn redo(&mut self) {
+    fn redo(&mut self) -> EngineResult<()> {
         todo!()
     }
 }

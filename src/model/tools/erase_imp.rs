@@ -23,7 +23,7 @@ impl EraseTool {
 
         let center = pos + mid;
         let gradient = ['\u{00DB}', '\u{00B2}', '\u{00B1}', '\u{00B0}', ' '];
-        editor.begin_atomic_undo();
+        let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser"));
 
         for y in 0..self.size {
             for x in 0..self.size {
@@ -65,7 +65,6 @@ impl EraseTool {
                 }
             }
         }
-        editor.end_atomic_undo();
     }
 }
 

@@ -149,7 +149,7 @@ impl Tool for DrawRectangleTool {
         if start == cur {
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {
-            editor.join_overlay();
+            editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-draw-rectangle"));
         }
         Event::None
     }

@@ -125,7 +125,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                     );
 
                     if visible_icon_response.clicked() {
-                        result = Some(Message::ToggleVisibility(i));
+                        result = Some(Message::ToggleLayerVisibility(i));
                     }
 
                     response = response.context_menu(|ui| {
@@ -144,7 +144,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                             .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_new_layer"))
                             .clicked()
                         {
-                            result = Some(Message::AddLayer);
+                            result = Some(Message::AddNewLayer(i));
                             ui.close_menu();
                         }
                         if ui
@@ -161,7 +161,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                             .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_merge_layer"))
                             .clicked()
                         {
-                            result = Some(Message::MergeLayer(i));
+                            result = Some(Message::MergeLayerDown(i));
                             ui.close_menu();
                         }
                         if ui
@@ -193,23 +193,23 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
         });
 
         if r.clicked() {
-            result = Some(Message::AddLayer);
+            result = Some(Message::AddNewLayer(cur_layer));
         }
 
         let r = medium_hover_button(ui, &crate::MOVE_UP_SVG).on_hover_ui(|ui| {
             ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_up_tooltip")).small());
         });
 
-        if r.clicked() && cur_layer > 0 {
-            result = Some(Message::MoveLayerUp(cur_layer));
+        if r.clicked() {
+            result = Some(Message::RaiseLayer(cur_layer));
         }
 
         let r = medium_hover_button(ui, &crate::MOVE_DOWN_SVG).on_hover_ui(|ui| {
             ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_down_tooltip")).small());
         });
 
-        if r.clicked() && (1 + cur_layer) < max {
-            result = Some(Message::MoveLayerDown(cur_layer));
+        if r.clicked() {
+            result = Some(Message::LowerLayer(cur_layer));
         }
 
         let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {

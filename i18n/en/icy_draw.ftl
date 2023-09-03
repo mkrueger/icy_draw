@@ -17,6 +17,7 @@ menu-redo=Redo
 menu-undo-op=Undo: { $op }
 menu-redo-op=Redo: { $op }
 
+menu-cut=Cut
 menu-copy=Copy
 menu-paste=Paste
 menu-erase=Erase
@@ -139,3 +140,10 @@ char_table_tool_title=Char table
 bitfont_tool_title=Fonts
 
 no_document_selected=No document selected
+
+undo-draw-ellipse=Draw ellipse
+undo-draw-rectangle=Draw rectangle
+undo-paint-brush=Paintbrush
+undo-eraser=Eraser
+undo-bucket-fill=Bucket fill
+undo-line=Line

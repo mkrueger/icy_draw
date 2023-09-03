@@ -33,8 +33,7 @@ impl BrushTool {
 
         let center = pos + mid;
         let gradient = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
-        editor.begin_atomic_undo();
-
+        let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush"));
         for y in 0..self.size {
             for x in 0..self.size {
                 match self.brush_type {
@@ -97,7 +96,6 @@ impl BrushTool {
                 }
             }
         }
-        editor.end_atomic_undo();
     }
 }
 

@@ -174,7 +174,41 @@ impl MainWindow {
                 } else {
                     add_default_undo_redo(ui);
                 }
+                ui.separator();
+                if let Some(doc) = self.get_active_document() {
+                    let button = button_with_shortcut(
+                        ui,
+                        doc.lock().unwrap().can_cut(),
+                        fl!(crate::LANGUAGE_LOADER, "menu-cut"),
+                        "Ctrl+X",
+                    );
+                    if button.clicked() {
+                        doc.lock().unwrap().cut();
+                        ui.close_menu();
+                    }
 
+                    let button = button_with_shortcut(
+                        ui,
+                        doc.lock().unwrap().can_copy(),
+                        fl!(crate::LANGUAGE_LOADER, "menu-copy"),
+                        "Ctrl+C",
+                    );
+                    if button.clicked() {
+                        doc.lock().unwrap().copy();
+                        ui.close_menu();
+                    }
+
+                    let button = button_with_shortcut(
+                        ui,
+                        doc.lock().unwrap().can_paste(),
+                        fl!(crate::LANGUAGE_LOADER, "menu-paste"),
+                        "Ctrl+V",
+                    );
+                    if button.clicked() {
+                        doc.lock().unwrap().paste();
+                        ui.close_menu();
+                    }
+                }
                 ui.separator();
                 if ui
                     .add_enabled(
