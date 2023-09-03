@@ -18,7 +18,7 @@ use eframe::{
 };
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, Position, TheDrawFont};
+use icy_engine::{BitFont, Buffer, EngineResult, Position, TheDrawFont};
 
 pub struct MainWindow {
     pub document_tree: egui_tiles::Tree<DocumentTab>,
@@ -351,6 +351,19 @@ impl MainWindow {
                     self.handle_message(msg);
                 }
             }
+        }
+    }
+
+    pub(crate) fn handle_result<T>(&mut self, result: EngineResult<T>) {
+        if let Err(err) = result {
+            log::error!("Error: {}", err);
+            self.toasts
+                .error(fl!(
+                    crate::LANGUAGE_LOADER,
+                    "error-load-file",
+                    error = err.to_string()
+                ))
+                .set_duration(Some(Duration::from_secs(5)));
         }
     }
 }

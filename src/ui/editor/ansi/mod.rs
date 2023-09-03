@@ -352,7 +352,8 @@ impl AnsiEditor {
     }
 
     pub fn set_char(&mut self, pos: impl Into<UPosition>, attributed_char: AttributedChar) {
-        self.buffer_view
+        let _ = self
+            .buffer_view
             .lock()
             .get_edit_state_mut()
             .set_char(pos, attributed_char);
@@ -505,8 +506,8 @@ impl AnsiEditor {
                     };
 
                     let pos = UPosition::new((x2 - x) as usize, y as usize);
-                    let old = layer.get_char(pos);
-                    self.buffer_view
+                    let _ = self
+                        .buffer_view
                         .lock()
                         .get_edit_state_mut()
                         .set_char(pos, ch);
@@ -549,8 +550,8 @@ impl AnsiEditor {
                     };
 
                     let pos = UPosition::new((x2 - x) as usize, y as usize);
-                    let old = layer.get_char(pos);
-                    self.buffer_view
+                    let _ = self
+                        .buffer_view
                         .lock()
                         .get_edit_state_mut()
                         .set_char(pos, ch);
@@ -567,7 +568,8 @@ impl AnsiEditor {
                 for x in 0..=(x2 - x1) / 2 {
                     let pos1 = Position::new(x1 + x, y);
                     let pos2 = Position::new(x2 - x, y);
-                    self.buffer_view
+                    let _ = self
+                        .buffer_view
                         .lock()
                         .get_edit_state_mut()
                         .swap_char(pos1, pos2);
@@ -588,7 +590,8 @@ impl AnsiEditor {
                 for y in 0..=(y2 - y1) / 2 {
                     let pos1 = Position::new(x, y1 + y);
                     let pos2 = Position::new(x, y2 - y);
-                    self.buffer_view
+                    let _ = self
+                        .buffer_view
                         .lock()
                         .get_edit_state_mut()
                         .swap_char(pos1, pos2);
@@ -975,7 +978,7 @@ pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) {
         ui.close_menu();*/
     }
 
-    let sel = editor.buffer_view.lock().get_selection().clone();
+    let sel = editor.buffer_view.lock().get_selection();
 
     if let Some(_sel) = sel {
         if ui

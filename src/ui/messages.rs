@@ -93,7 +93,7 @@ impl MainWindow {
             Message::ExportFile => {
                 self.run_editor_command(0, |window, editor, _| {
                     let view = editor.buffer_view.clone();
-                    window.open_dialog(crate::ExportFileDialog::new(&view.lock().get_buffer()));
+                    window.open_dialog(crate::ExportFileDialog::new(view.lock().get_buffer()));
                     None
                 });
                 if let Some(editor) = self
@@ -104,7 +104,7 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::ExportFileDialog::new(&view.lock().get_buffer()));
+                    self.open_dialog(crate::ExportFileDialog::new(view.lock().get_buffer()));
                 }
             }
             Message::ShowOutlineDialog => {
@@ -112,12 +112,12 @@ impl MainWindow {
             }
             Message::Undo => {
                 if let Some(editor) = self.get_active_document() {
-                    editor.lock().unwrap().undo();
+                    self.handle_result(editor.lock().unwrap().undo());
                 }
             }
             Message::Redo => {
                 if let Some(editor) = self.get_active_document() {
-                    editor.lock().unwrap().redo();
+                    self.handle_result(editor.lock().unwrap().redo());
                 }
             }
 
