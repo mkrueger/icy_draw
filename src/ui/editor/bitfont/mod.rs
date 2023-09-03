@@ -1,6 +1,5 @@
-use std::{borrow::Cow, fs};
+use std::fs;
 
-use arboard::{Clipboard, ImageData};
 use eframe::{
     egui::{self, RichText, Sense},
     emath::Align2,
@@ -369,11 +368,7 @@ impl ClipboardHandler for BitFontEditor {
             return false;
         }
 
-        if let Ok(mut ctx) = Clipboard::new() {
-            return ctx.get_image().is_ok();
-        }
-
-        false
+        pop_data(BITFONT_GLYPH).is_some()
     }
 
     fn paste(&mut self) -> EngineResult<()> {
