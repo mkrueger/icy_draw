@@ -31,7 +31,13 @@ impl Tool for MoveLayer {
         _start: Position,
         _cur: Position,
     ) -> Event {
-        if let Some(layer) = editor.buffer_view.lock().buf.layers.get(editor.cur_layer) {
+        if let Some(layer) = editor
+            .buffer_view
+            .lock()
+            .get_buffer()
+            .layers
+            .get(editor.get_cur_layer())
+        {
             self.pos = layer.get_offset();
         }
         Event::None
@@ -41,9 +47,9 @@ impl Tool for MoveLayer {
         if let Some(layer) = editor
             .buffer_view
             .lock()
-            .buf
+            .get_buffer_mut()
             .layers
-            .get_mut(editor.cur_layer)
+            .get_mut(editor.get_cur_layer())
         {
             layer.set_offset(self.pos + cur - start);
         }

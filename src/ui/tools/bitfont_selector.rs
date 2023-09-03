@@ -35,7 +35,7 @@ fn show_font_list(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     let mut result = None;
 
     /*
-    for (id, font) in editor.buffer_view.lock().buf.font_iter() {
+    for (id, font) in editor.buffer_view.lock().get_buffer().font_iter() {
 
         if id >= 100 {
             // TODO
@@ -43,7 +43,7 @@ fn show_font_list(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     }*/
     let row_height = 23.0;
 
-    let cur_font_page = editor.buffer_view.lock().caret.get_font_page();
+    let cur_font_page = editor.buffer_view.lock().get_caret().get_font_page();
 
     egui::ScrollArea::vertical()
         .id_source("bitfont_scroll_area")

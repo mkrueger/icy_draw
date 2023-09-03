@@ -37,19 +37,15 @@ pub enum Event {
 
 pub struct AnsiEditor {
     pub id: usize,
-
     is_dirty: bool,
     drag_start: Option<Vec2>,
     last_pos: Position,
 
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
-    pub buffer_parser: Box<dyn BufferParser>,
-
     pub cur_outline: usize,
     pub is_inactive: bool,
 
     pub reference_image: Option<PathBuf>,
-    pub cur_layer: usize,
     // pub outline_changed: std::boxed::Box<dyn Fn(&Editor)>,
     //pub request_refresh: Box<dyn Fn ()>,
     atomic_undo_stack: Vec<usize>,
@@ -64,7 +60,7 @@ pub struct AnsiEditor {
 
 impl Document for AnsiEditor {
     fn get_title(&self) -> String {
-        if let Some(file_name) = &self.buffer_view.lock().buf.file_name {
+        if let Some(file_name) = &self.buffer_view.lock().get_buffer().file_name {
             file_name.file_name().unwrap().to_str().unwrap().to_string()
         } else {
             "Untitled".to_string()
@@ -81,7 +77,7 @@ impl Document for AnsiEditor {
         let bytes = self
             .buffer_view
             .lock()
-            .buf
+            .get_buffer()
             .to_bytes(file.extension().unwrap().to_str().unwrap(), &options)?;
         fs::write(file_name, bytes)?;
         self.is_dirty = false;
@@ -95,7 +91,7 @@ impl Document for AnsiEditor {
         options: &DocumentOptions,
     ) {
         let mut scale = options.scale;
-        if self.buffer_view.lock().buf.use_aspect_ratio {
+        if self.buffer_view.lock().get_buffer().use_aspect_ratio {
             scale.y *= 1.35;
         }
         ui.allocate_ui(
@@ -142,8 +138,6 @@ impl AnsiEditor {
             glow::NEAREST as i32,
         )));
         // let buffer_parser = ansi::Parser::default();
-        let buffer_parser = ansi::Parser::default();
-
         AnsiEditor {
             id,
             buffer_view,
@@ -152,7 +146,6 @@ impl AnsiEditor {
             reference_image: None,
             //outline_changed: Box::new(|_| {}),
             // request_refresh: Box::new(|| {}),
-            cur_layer: 0,
             atomic_undo_stack: Vec::new(),
             //pos_changed: Box::new(|_, _| {}),
             //attr_changed: Box::new(|_| {}),
@@ -162,14 +155,32 @@ impl AnsiEditor {
             is_dirty: false,
             drag_start: None,
             last_pos: Position::default(),
-            buffer_parser: Box::new(buffer_parser),
             egui_id: Id::new(id),
         }
     }
 
+    pub fn get_cur_layer(&self) -> usize {
+        self.buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .get_current_layer()
+    }
+
+    pub fn set_cur_layer(&self, layer: usize) {
+        self.buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .set_current_layer(layer);
+    }
+
     pub fn output_string(&mut self, str: &str) {
         for ch in str.chars() {
-            let translated_char = self.buffer_parser.convert_from_unicode(ch, 0);
+            let translated_char = self
+                .buffer_view
+                .lock()
+                .get_edit_state()
+                .get_parser()
+                .convert_from_unicode(ch, 0);
             if let Err(err) = self.print_char(translated_char as u8) {
                 eprintln!("{}", err);
             }
@@ -179,37 +190,42 @@ impl AnsiEditor {
     pub fn print_char(&mut self, c: u8) -> Result<(), Box<dyn std::error::Error>> {
         self.buffer_view
             .lock()
-            .print_char(&mut self.buffer_parser, unsafe {
-                char::from_u32_unchecked(c as u32)
-            })?;
+            .print_char(unsafe { char::from_u32_unchecked(c as u32) })?;
         self.buffer_view.lock().redraw_view();
         Ok(())
     }
     pub fn get_caret_position(&self) -> Position {
-        self.buffer_view.lock().caret.get_position()
+        self.buffer_view.lock().get_caret().get_position()
     }
 
     pub fn set_caret_position(&mut self, pos: Position) {
         let buffer_view = &mut self.buffer_view.lock();
         let pos = Position::new(
-            min(buffer_view.buf.get_width() as i32 - 1, max(0, pos.x)),
-            min(buffer_view.buf.get_line_count() as i32 - 1, max(0, pos.y)),
+            min(
+                buffer_view.get_buffer().get_width() as i32 - 1,
+                max(0, pos.x),
+            ),
+            min(
+                buffer_view.get_buffer().get_line_count() as i32 - 1,
+                max(0, pos.y),
+            ),
         );
-        buffer_view.caret.set_position(pos);
+        buffer_view.get_caret_mut().set_position(pos);
         //(self.pos_changed)(self, pos);
     }
 
     pub fn set_caret_attribute(&mut self, attr: TextAttribute) {
-        if attr == self.buffer_view.lock().caret.get_attribute() {
+        if attr == self.buffer_view.lock().get_caret().get_attribute() {
             return;
         }
 
-        self.buffer_view.lock().caret.set_attr(attr);
+        self.buffer_view.lock().get_caret_mut().set_attr(attr);
         // (self.attr_changed)(attr);
     }
 
     pub fn clear_layer(&mut self, layer_num: usize) -> ClearLayerOperation {
-        let layers = std::mem::take(&mut self.buffer_view.lock().buf.layers[layer_num].lines);
+        let layers =
+            std::mem::take(&mut self.buffer_view.lock().get_buffer_mut().layers[layer_num].lines);
         ClearLayerOperation {
             layer_num,
             lines: layers,
@@ -218,7 +234,7 @@ impl AnsiEditor {
 
     pub fn join_overlay(&mut self) {
         self.begin_atomic_undo();
-        let opt_layer = self.buffer_view.lock().buf.remove_overlay();
+        let opt_layer = self.buffer_view.lock().get_buffer_mut().remove_overlay();
 
         if let Some(layer) = &opt_layer {
             for y in 0..layer.lines.len() {
@@ -236,29 +252,38 @@ impl AnsiEditor {
 
     pub fn delete_line(&mut self, line: i32) {
         // TODO: Undo
-        let layer = &mut self.buffer_view.lock().buf.layers[self.cur_layer];
+        let mut lock = self.buffer_view.lock();
+        let cur_layer = self.get_cur_layer();
+
+        let layer = &mut lock.get_buffer_mut().layers[cur_layer];
         layer.remove_line(line);
     }
 
     pub fn insert_line(&mut self, line: i32) {
         // TODO: Undo
-        let layer = &mut self.buffer_view.lock().buf.layers[self.cur_layer];
+        let mut binding = self.buffer_view.lock();
+        let cur_layer = self.get_cur_layer();
+
+        let layer = &mut binding.get_buffer_mut().layers[cur_layer];
         layer.insert_line(line, Line::new());
     }
 
     pub fn pickup_color(&mut self, pos: Position) {
-        let ch = self.buffer_view.lock().buf.get_char(pos);
+        let ch = self.buffer_view.lock().get_buffer().get_char(pos);
         if ch.is_visible() {
-            self.buffer_view.lock().caret.set_attr(ch.attribute);
+            self.buffer_view
+                .lock()
+                .get_caret_mut()
+                .set_attr(ch.attribute);
         }
     }
 
     pub fn set_caret(&mut self, x: i32, y: i32) -> Event {
-        let old = self.buffer_view.lock().caret.get_position();
-        let w = self.buffer_view.lock().buf.get_width() as i32 - 1;
-        let h = self.buffer_view.lock().buf.get_line_count() as i32 - 1;
+        let old = self.buffer_view.lock().get_caret().get_position();
+        let w = self.buffer_view.lock().get_buffer().get_width() as i32 - 1;
+        let h = self.buffer_view.lock().get_buffer().get_line_count() as i32 - 1;
         self.set_caret_position(Position::new(min(max(0, x), w), min(max(0, y), h)));
-        Event::CursorPositionChange(old, self.buffer_view.lock().caret.get_position())
+        Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())
     }
 
     pub fn get_cur_outline(&self) -> usize {
@@ -277,10 +302,13 @@ impl AnsiEditor {
             let ext = OsStr::to_str(ext).unwrap().to_lowercase();
             self.buffer_view
                 .lock()
-                .buf
+                .get_buffer()
                 .to_bytes(ext.as_str(), options)?
         } else {
-            self.buffer_view.lock().buf.to_bytes("icd", options)?
+            self.buffer_view
+                .lock()
+                .get_buffer()
+                .to_bytes("icd", options)?
         };
         f.write_all(&content)?;
         Ok(true)
@@ -308,24 +336,27 @@ impl AnsiEditor {
     }
 
     pub fn get_char(&self, pos: Position) -> AttributedChar {
-        self.buffer_view.lock().buf.get_char(pos)
+        self.buffer_view.lock().get_buffer().get_char(pos)
     }
 
     pub fn get_char_from_cur_layer(&self, pos: Position) -> AttributedChar {
-        if self.cur_layer >= self.buffer_view.lock().buf.layers.len() {
+        if self.get_cur_layer() >= self.buffer_view.lock().get_buffer().layers.len() {
             return AttributedChar::invisible();
         }
-        self.buffer_view.lock().buf.layers[self.cur_layer].get_char(pos)
+        let cur_layer = self.get_cur_layer();
+        self.buffer_view.lock().get_buffer().layers[cur_layer].get_char(pos)
     }
 
     pub fn set_char(&mut self, pos: impl Into<UPosition>, attributed_char: AttributedChar) {
         let pos = pos.into();
         self.redo_stack.clear();
-        let old = self.buffer_view.lock().buf.layers[self.cur_layer].get_char(pos);
-        self.buffer_view.lock().buf.layers[self.cur_layer].set_char(pos, attributed_char);
+        let cur_layer = self.get_cur_layer();
+
+        let old = self.buffer_view.lock().get_buffer().layers[cur_layer].get_char(pos);
+        self.buffer_view.lock().get_buffer_mut().layers[cur_layer].set_char(pos, attributed_char);
         self.undo_stack.push(Box::new(UndoSetChar {
             pos,
-            layer: self.cur_layer,
+            layer: self.get_cur_layer(),
             old,
             new: attributed_char,
         }));
@@ -351,14 +382,14 @@ impl AnsiEditor {
 
     pub fn undo(&mut self) {
         if let Some(op) = self.undo_stack.pop() {
-            op.undo(&mut self.buffer_view.lock().buf);
+            op.undo(&mut self.buffer_view.lock().get_buffer_mut());
             self.redo_stack.push(op);
         }
     }
 
     pub fn redo(&mut self) {
         if let Some(op) = self.redo_stack.pop() {
-            op.redo(&mut self.buffer_view.lock().buf);
+            op.redo(&mut self.buffer_view.lock().get_buffer_mut());
             self.undo_stack.push(op);
         }
     }
@@ -385,15 +416,15 @@ impl AnsiEditor {
     }
 
     pub fn type_key(&mut self, char_code: char) {
-        let pos = self.buffer_view.lock().caret.get_position();
-        if self.buffer_view.lock().caret.insert_mode {
-            let start = self.buffer_view.lock().buf.get_width() as i32 - 1;
+        let pos = self.buffer_view.lock().get_caret().get_position();
+        if self.buffer_view.lock().get_caret().insert_mode {
+            let start = self.buffer_view.lock().get_buffer().get_width() as i32 - 1;
             for i in start..=pos.x {
                 let next = self.get_char_from_cur_layer(Position::new(i - 1, pos.y));
                 self.set_char(Position::new(i, pos.y), next);
             }
         }
-        let attr = self.buffer_view.lock().caret.get_attribute();
+        let attr = self.buffer_view.lock().get_caret().get_attribute();
         self.set_char(pos, AttributedChar::new(char_code, attr));
         self.set_caret(pos.x + 1, pos.y);
     }
@@ -415,7 +446,7 @@ impl AnsiEditor {
     }
 
     pub fn clear_cur_layer(&mut self) {
-        let b = Box::new(self.clear_layer(self.cur_layer));
+        let b = Box::new(self.clear_layer(self.get_cur_layer()));
         self.undo_stack.push(b);
     }
 
@@ -425,7 +456,7 @@ impl AnsiEditor {
             let max = selection.max();
             (min.x, min.y, max.x, max.y)
         } else {
-            let size = self.buffer_view.lock().buf.get_buffer_size();
+            let size = self.buffer_view.lock().get_buffer().get_buffer_size();
             (0, 0, size.width as i32 - 1, size.height as i32 - 1)
         }
     }
@@ -433,9 +464,12 @@ impl AnsiEditor {
     pub fn justify_left(&mut self) {
         self.begin_atomic_undo();
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
-        let is_bg_layer = self.cur_layer == self.buffer_view.lock().buf.layers.len() - 1;
+        let is_bg_layer =
+            self.get_cur_layer() == self.buffer_view.lock().get_buffer().layers.len() - 1;
         {
-            let layer = &mut self.buffer_view.lock().buf.layers[self.cur_layer];
+            let lock = &mut self.buffer_view.lock();
+            let cur_layer = self.get_cur_layer();
+            let layer = &mut lock.get_buffer_mut().layers[cur_layer];
             for y in y1..=y2 {
                 let mut removed_chars = 0;
                 let len = x2 - x1 + 1;
@@ -463,7 +497,7 @@ impl AnsiEditor {
                     layer.set_char(pos, ch);
                     self.undo_stack.push(Box::new(UndoSetChar {
                         pos,
-                        layer: self.cur_layer,
+                        layer: self.get_cur_layer(),
                         old,
                         new: ch,
                     }));
@@ -478,9 +512,13 @@ impl AnsiEditor {
         self.justify_left();
 
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
-        let is_bg_layer = self.cur_layer == self.buffer_view.lock().buf.layers.len() - 1;
+        let is_bg_layer =
+            self.get_cur_layer() == self.buffer_view.lock().get_buffer().layers.len() - 1;
         {
-            let layer = &mut self.buffer_view.lock().buf.layers[self.cur_layer];
+            let mut lock: eframe::epaint::mutex::MutexGuard<'_, BufferView> =
+                self.buffer_view.lock();
+            let cur_layer = self.get_cur_layer();
+            let layer = &mut lock.get_buffer_mut().layers[cur_layer];
             for y in y1..=y2 {
                 let mut removed_chars = 0;
                 let len = x2 - x1 + 1;
@@ -510,7 +548,7 @@ impl AnsiEditor {
                     layer.set_char(pos, ch);
                     self.undo_stack.push(Box::new(UndoSetChar {
                         pos,
-                        layer: self.cur_layer,
+                        layer: self.get_cur_layer(),
                         old,
                         new: ch,
                     }));
@@ -523,9 +561,13 @@ impl AnsiEditor {
     pub fn justify_right(&mut self) {
         self.begin_atomic_undo();
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
-        let is_bg_layer = self.cur_layer == self.buffer_view.lock().buf.layers.len() - 1;
+        let is_bg_layer =
+            self.get_cur_layer() == self.buffer_view.lock().get_buffer().layers.len() - 1;
         {
-            let layer = &mut self.buffer_view.lock().buf.layers[self.cur_layer];
+            let mut lock: eframe::epaint::mutex::MutexGuard<'_, BufferView> =
+                self.buffer_view.lock();
+            let cur_layer = self.get_cur_layer();
+            let layer = &mut lock.get_buffer_mut().layers[cur_layer];
             for y in y1..=y2 {
                 let mut removed_chars = 0;
                 let len = x2 - x1 + 1;
@@ -554,7 +596,7 @@ impl AnsiEditor {
                     layer.set_char(pos, ch);
                     self.undo_stack.push(Box::new(UndoSetChar {
                         pos,
-                        layer: self.cur_layer,
+                        layer: self.get_cur_layer(),
                         old,
                         new: ch,
                     }));
@@ -568,14 +610,17 @@ impl AnsiEditor {
         self.begin_atomic_undo();
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
         {
-            let layer = &mut self.buffer_view.lock().buf.layers[self.cur_layer];
+            let mut lock: eframe::epaint::mutex::MutexGuard<'_, BufferView> =
+                self.buffer_view.lock();
+            let cur_layer = self.get_cur_layer();
+            let layer = &mut lock.get_buffer_mut().layers[cur_layer];
             for y in y1..=y2 {
                 for x in 0..=(x2 - x1) / 2 {
                     let pos1 = Position::new(x1 + x, y);
                     let pos2 = Position::new(x2 - x, y);
                     layer.swap_char(pos1, pos2);
                     self.undo_stack.push(Box::new(UndoSwapChar {
-                        layer: self.cur_layer,
+                        layer: self.get_cur_layer(),
                         pos1,
                         pos2,
                     }));
@@ -593,14 +638,17 @@ impl AnsiEditor {
         self.begin_atomic_undo();
         let (x1, y1, x2, y2) = self.get_blockaction_rectangle();
         {
-            let layer = &mut self.buffer_view.lock().buf.layers[self.cur_layer];
+            let mut lock: eframe::epaint::mutex::MutexGuard<'_, BufferView> =
+                self.buffer_view.lock();
+            let cur_layer = self.get_cur_layer();
+            let layer = &mut lock.get_buffer_mut().layers[cur_layer];
             for x in x1..=x2 {
                 for y in 0..=(y2 - y1) / 2 {
                     let pos1 = Position::new(x, y1 + y);
                     let pos2 = Position::new(x, y2 - y);
                     layer.swap_char(pos1, pos2);
                     self.undo_stack.push(Box::new(UndoSwapChar {
-                        layer: self.cur_layer,
+                        layer: self.get_cur_layer(),
                         pos1,
                         pos2,
                     }));
@@ -616,16 +664,17 @@ impl AnsiEditor {
         let new_height = y2 - y1;
         let new_width = x2 - x1;
 
-        if new_height == self.buffer_view.lock().buf.get_line_count() as i32
-            && new_width == self.buffer_view.lock().buf.get_width() as i32
+        if new_height == self.buffer_view.lock().get_buffer().get_line_count() as i32
+            && new_width == self.buffer_view.lock().get_buffer().get_width() as i32
         {
             return;
         }
 
         let mut new_layers = Vec::new();
-        let max = self.buffer_view.lock().buf.layers.len();
+        let max = self.buffer_view.lock().get_buffer().layers.len();
         for l in 0..max {
-            let old_layer = &self.buffer_view.lock().buf.layers[l];
+            let lock = &self.buffer_view.lock();
+            let old_layer = &lock.get_buffer().layers[l];
             let mut new_layer = Layer::default();
             new_layer.title = old_layer.title.clone();
             new_layer.is_visible = old_layer.is_visible;
@@ -648,28 +697,28 @@ impl AnsiEditor {
         /* TODO
         self.undo_stack.push(Box::new(super::UndoReplaceLayers {
 
-            old_layer: self.buffer_view.lock().buf.layers.clone(),
+            old_layer: self.buffer_view.lock().get_buffer().layers.clone(),
             new_layer: new_layers.clone(),
             old_size: Size::new(
-                self.buffer_view.lock().buf.get_width(),
-                self.buffer_view.lock().buf.get_line_count(),
+                self.buffer_view.lock().get_buffer().get_width(),
+                self.buffer_view.lock().get_buffer().get_line_count(),
             ),
             new_size: Size::new(new_width, new_height),
         })); */
 
-        self.buffer_view.lock().buf.layers = new_layers;
+        self.buffer_view.lock().get_buffer_mut().layers = new_layers;
         self.buffer_view
             .lock()
-            .buf
+            .get_buffer_mut()
             .set_buffer_width(new_width as usize);
         self.buffer_view
             .lock()
-            .buf
+            .get_buffer_mut()
             .set_buffer_height(new_height as usize);
         self.end_atomic_undo();
     }
     pub fn switch_fg_bg_color(&mut self) {
-        let mut attr = self.buffer_view.lock().caret.get_attribute();
+        let mut attr = self.buffer_view.lock().get_caret().get_attribute();
         let bg = attr.get_background();
         attr.set_background(attr.get_foreground());
         attr.set_foreground(bg);
@@ -738,7 +787,7 @@ impl AnsiEditor {
 
     fn show_toolbar(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            let pos = self.buffer_view.lock().caret.get_position();
+            let pos = self.buffer_view.lock().get_caret().get_position();
 
             let label_font_size = 20.0;
 
@@ -757,7 +806,7 @@ impl AnsiEditor {
 
             let r = ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let cur_outline = self.cur_outline;
-                let cur_font_page = self.buffer_view.lock().caret.get_font_page();
+                let cur_font_page = self.buffer_view.lock().get_caret().get_font_page();
 
                 let button_font_size = 16.0;
                 if ui
@@ -817,7 +866,7 @@ impl AnsiEditor {
                     egui::Event::Copy => {
                         let buffer_view = self.buffer_view.clone();
                         let mut l = buffer_view.lock();
-                        if let Some(txt) = l.get_copy_text(&*self.buffer_parser) {
+                        if let Some(txt) = l.get_copy_text() {
                             ui.output_mut(|o| o.copied_text = txt);
                         }
                     }
@@ -952,7 +1001,7 @@ impl AnsiEditor {
     }
 
     pub(crate) fn set_file_name(&self, file_name: impl Into<PathBuf>) {
-        self.buffer_view.lock().buf.file_name = Some(file_name.into());
+        self.buffer_view.lock().get_buffer_mut().file_name = Some(file_name.into());
     }
 }
 

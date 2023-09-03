@@ -42,7 +42,7 @@ impl PencilTool {
                     let col = editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .get_foreground();
                     for y in 0..(rect.size.height as i32) {
@@ -59,7 +59,7 @@ impl PencilTool {
             }
             PencilType::Shade => {
                 let ch = editor.get_char_from_cur_layer(center);
-                let attribute = editor.buffer_view.lock().caret.get_attribute();
+                let attribute = editor.buffer_view.lock().get_caret().get_attribute();
 
                 let mut char_code = gradient[0];
                 if ch.ch == gradient[gradient.len() - 1] {
@@ -75,7 +75,7 @@ impl PencilTool {
                 editor.set_char(center, AttributedChar::new(char_code, attribute));
             }
             PencilType::Solid => {
-                let attribute = editor.buffer_view.lock().caret.get_attribute();
+                let attribute = editor.buffer_view.lock().get_caret().get_attribute();
                 editor.set_char(
                     center,
                     AttributedChar::new(*self.char_code.borrow(), attribute),
@@ -89,7 +89,7 @@ impl PencilTool {
                         editor
                             .buffer_view
                             .lock()
-                            .caret
+                            .get_caret()
                             .get_attribute()
                             .get_foreground(),
                     );
@@ -99,7 +99,7 @@ impl PencilTool {
                         editor
                             .buffer_view
                             .lock()
-                            .caret
+                            .get_caret()
                             .get_attribute()
                             .get_background(),
                     );
@@ -198,7 +198,7 @@ impl Tool for PencilTool {
 pub fn draw_glyph_plain(editor: &AnsiEditor, ch: char, font_page: usize) -> impl egui::Widget {
     let bv = editor.buffer_view.clone();
     move |ui: &mut egui::Ui| {
-        if let Some(font) = bv.lock().buf.get_font(font_page) {
+        if let Some(font) = bv.lock().get_buffer().get_font(font_page) {
             let scale = 1.8;
             let padding = 2.;
             let (id, stroke_rect) = ui.allocate_space(Vec2::new(

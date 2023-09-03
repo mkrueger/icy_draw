@@ -52,7 +52,7 @@ impl AnsiEditor {
 
 impl Document for AnsiEditor {
     fn get_title(&self) -> String {
-        if let Some(file_name) = &self.buffer_view.lock().editor.buf.file_name {
+        if let Some(file_name) = &self.buffer_view.lock().editor.get_buffer().file_name {
             file_name.file_name().unwrap().to_str().unwrap().to_string()
         } else {
             "Untitled".to_string()
@@ -360,7 +360,7 @@ impl Document for AnsiEditor {
             });
 
         ui.horizontal(|ui| {
-            let pos = self.buffer_view.lock().editor.caret.get_position();
+            let pos = self.buffer_view.lock().editor.get_caret().get_position();
 
             let label_font_size = 20.0;
 

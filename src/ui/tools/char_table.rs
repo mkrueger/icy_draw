@@ -34,11 +34,11 @@ impl ToolWindow for CharTableToolWindow {
 pub fn show_char_table(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     let mut result = None;
 
-    let font_page = editor.buffer_view.lock().caret.get_font_page();
+    let font_page = editor.buffer_view.lock().get_caret().get_font_page();
     let font_length = editor
         .buffer_view
         .lock()
-        .buf
+        .get_buffer()
         .get_font(font_page)
         .unwrap()
         .length;

@@ -232,7 +232,7 @@ impl Tool for FontTool {
             return Event::None;
         }
         let font = &self.fonts.lock().unwrap()[selected_font as usize];
-        let pos = editor.buffer_view.lock().caret.get_position();
+        let pos = editor.buffer_view.lock().get_caret().get_position();
 
         match key {
             MKey::Down => {
@@ -250,7 +250,7 @@ impl Tool for FontTool {
 
             MKey::Home => {
                 if let MModifiers::Control = modifier {
-                    let end = editor.buffer_view.lock().buf.get_width() as i32;
+                    let end = editor.buffer_view.lock().get_buffer().get_width() as i32;
                     for i in 0..end {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
@@ -266,7 +266,7 @@ impl Tool for FontTool {
 
             MKey::End => {
                 if let MModifiers::Control = modifier {
-                    let end = editor.buffer_view.lock().buf.get_width() as i32;
+                    let end = editor.buffer_view.lock().get_buffer().get_width() as i32;
                     for i in (0..end).rev() {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
@@ -277,7 +277,7 @@ impl Tool for FontTool {
                         }
                     }
                 }
-                let w = editor.buffer_view.lock().buf.get_width() as i32;
+                let w = editor.buffer_view.lock().get_buffer().get_width() as i32;
                 editor.set_caret(w - 1, pos.y);
             }
 
@@ -298,9 +298,9 @@ impl Tool for FontTool {
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
                     editor.set_caret_position(pos + Position::new(-(letter_size.width as i32), 0));
-                    if editor.buffer_view.lock().caret.insert_mode {
-                        let end = (editor.buffer_view.lock().buf.get_width() - (letter_size.width))
-                            as i32;
+                    if editor.buffer_view.lock().get_caret().insert_mode {
+                        let end = (editor.buffer_view.lock().get_buffer().get_width()
+                            - (letter_size.width)) as i32;
                         for i in pos.x..end {
                             let next = editor.get_char_from_cur_layer(Position::new(
                                 i + letter_size.width as i32,
@@ -309,8 +309,8 @@ impl Tool for FontTool {
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(
-                            (editor.buffer_view.lock().buf.get_width() - (letter_size.width))
-                                as i32,
+                            (editor.buffer_view.lock().get_buffer().get_width()
+                                - (letter_size.width)) as i32,
                             pos.y,
                         );
                         editor.fill(
@@ -336,9 +336,9 @@ impl Tool for FontTool {
             MKey::Character(ch) => {
                 let c_pos = editor.get_caret_position();
                 editor.begin_atomic_undo();
-                let attr = editor.buffer_view.lock().caret.get_attribute();
+                let attr = editor.buffer_view.lock().get_caret().get_attribute();
                 let opt_size: Option<Size> = font.render(
-                    &mut editor.buffer_view.lock().buf,
+                    &mut editor.buffer_view.lock().get_buffer_mut(),
                     0,
                     c_pos.as_uposition(),
                     attr,

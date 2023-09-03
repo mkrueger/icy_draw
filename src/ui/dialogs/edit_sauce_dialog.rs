@@ -150,12 +150,14 @@ impl ModalDialog for EditSauceDialog {
     }
 
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool> {
-        editor.buffer_view.lock().buf.title = self.title.clone();
-        editor.buffer_view.lock().buf.author = self.author.clone();
-        editor.buffer_view.lock().buf.group = self.group.clone();
-        editor.buffer_view.lock().buf.comments = self.comments.clone();
-        editor.buffer_view.lock().buf.use_letter_spacing = self.use_letter_spacing;
-        editor.buffer_view.lock().buf.use_aspect_ratio = self.use_aspect_ratio;
+        let bv = &mut editor.buffer_view.lock();
+        let buf = bv.get_buffer_mut();
+        buf.title = self.title.clone();
+        buf.author = self.author.clone();
+        buf.group = self.group.clone();
+        buf.comments = self.comments.clone();
+        buf.use_letter_spacing = self.use_letter_spacing;
+        buf.use_aspect_ratio = self.use_aspect_ratio;
         Ok(true)
     }
 }

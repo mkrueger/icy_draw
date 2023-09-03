@@ -203,7 +203,8 @@ impl ModalDialog for EditLayerDialog {
     }
 
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool> {
-        let layer = &mut editor.buffer_view.lock().buf.layers[self.layer];
+        let mut bv = editor.buffer_view.lock();
+        let layer = &mut bv.get_buffer_mut().layers[self.layer];
         layer.title = self.title.clone();
         layer.color = self.color;
         layer.is_visible = self.is_visible;

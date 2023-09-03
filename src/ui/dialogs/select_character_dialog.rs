@@ -37,8 +37,8 @@ impl ModalDialog for SelectCharacterDialog {
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "select-character-title"));
             let buffer_view = self.buf.lock();
-            let font_page = buffer_view.caret.get_font_page();
-            let font = buffer_view.buf.get_font(font_page).unwrap();
+            let font_page = buffer_view.get_caret().get_font_page();
+            let font = buffer_view.get_buffer().get_font(font_page).unwrap();
             let scale = 4.;
 
             //   ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {

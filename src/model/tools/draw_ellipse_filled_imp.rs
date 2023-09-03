@@ -96,7 +96,12 @@ impl Tool for DrawEllipseFilledTool {
     }
 
     fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
-        if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+        if let Some(layer) = editor
+            .buffer_view
+            .lock()
+            .get_buffer_mut()
+            .get_overlay_layer()
+        {
             layer.clear();
         }
 
@@ -130,7 +135,7 @@ impl Tool for DrawEllipseFilledTool {
         cur: Position,
     ) -> Event {
         if start == cur {
-            editor.buffer_view.lock().buf.remove_overlay();
+            editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {
             editor.join_overlay();
         }

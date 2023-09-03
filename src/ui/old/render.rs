@@ -74,18 +74,18 @@ impl BufferView {
                 0.0,
             );
 
-            let sbl = (self.editor.buf.get_first_visible_line() - self.scroll_first_line) as f32;
+            let sbl = (self.editor.get_buffer().get_first_visible_line() - self.scroll_first_line) as f32;
             gl.uniform_4_f32(
                 gl.get_uniform_location(self.program, "u_caret_position")
                     .as_ref(),
-                self.editor.caret.get_position().x as f32,
-                self.editor.caret.get_position().y as f32 + sbl,
-                if self.caret_blink.is_on() && self.editor.caret.is_visible {
+                self.editor.get_caret().get_position().x as f32,
+                self.editor.get_caret().get_position().y as f32 + sbl,
+                if self.caret_blink.is_on() && self.editor.get_caret().is_visible {
                     1.0
                 } else {
                     0.0
                 },
-                if self.editor.caret.insert_mode {
+                if self.editor.get_caret().insert_mode {
                     1.0
                 } else {
                     0.0
@@ -104,8 +104,8 @@ impl BufferView {
             gl.uniform_2_f32(
                 gl.get_uniform_location(self.program, "u_terminal_size")
                     .as_ref(),
-                self.editor.buf.get_width() as f32 - 0.0001,
-                self.editor.buf.get_height() as f32 - 0.0001,
+                self.editor.get_buffer().get_width() as f32 - 0.0001,
+                self.editor.get_buffer().get_height() as f32 - 0.0001,
             );
 
             gl.uniform_1_i32(gl.get_uniform_location(self.program, "u_fonts").as_ref(), 0);
@@ -234,8 +234,8 @@ impl BufferView {
                                 self.render_buffer_size.y,
                             );
 
-                            let x = sixel.pos.x as f32 * self.editor.buf.get_font_dimensions().width as f32;
-                            let y = sixel.pos.y as f32 * self.editor.buf.get_font_dimensions().height as f32;
+                            let x = sixel.pos.x as f32 * self.editor.get_buffer().get_font_dimensions().width as f32;
+                            let y = sixel.pos.y as f32 * self.editor.get_buffer().get_font_dimensions().height as f32;
 
                             let w = sixel.size.width as f32 * sixel.x_scale as f32;
                             let h = sixel.size.height as f32 * sixel.y_scale as f32;
@@ -328,7 +328,7 @@ impl BufferView {
             self.redraw_view = true;
         }
 
-        if self.redraw_font || self.editor.buf.is_font_table_updated() {
+        if self.redraw_font || self.editor.get_buffer().is_font_table_updated() {
             self.redraw_font = false;
             self.font_lookup_table =
                 create_font_texture(gl, &mut self.editor.buf, &self.font_texture);
@@ -345,16 +345,16 @@ impl BufferView {
             );
         }
 
-        if self.redraw_palette || self.colors != self.editor.buf.palette.colors.len() {
+        if self.redraw_palette || self.colors != self.editor.get_buffer().palette.colors.len() {
             self.redraw_palette = false;
             create_palette_texture(gl, &self.editor.buf, self.palette_texture);
-            self.colors = self.editor.buf.palette.colors.len();
+            self.colors = self.editor.get_buffer().palette.colors.len();
         }
 
         let editor = &self.editor;
         let render_buffer_size = Vec2::new(
-            editor.buf.get_font_dimensions().width as f32 * editor.buf.get_width() as f32,
-            editor.buf.get_font_dimensions().height as f32 * editor.buf.get_height() as f32,
+            editor.get_buffer().get_font_dimensions().width as f32 * editor.get_buffer().get_width() as f32,
+            editor.get_buffer().get_font_dimensions().height as f32 * editor.get_buffer().get_height() as f32,
         );
 
         if render_buffer_size != self.render_buffer_size {
@@ -461,7 +461,7 @@ pub fn create_palette_texture(
     palette_texture: NativeTexture,
 ) {
     let mut palette_data = Vec::new();
-    for i in 0..buf.palette.colors.len() {
+    for i in 0..get_buffer().palette.colors.len() {
         let (r, g, b) = buf.palette.colors[i].get_rgb();
         palette_data.push(r);
         palette_data.push(g);
@@ -579,7 +579,7 @@ pub fn create_buffer_texture(
     while y < buf.get_height() {
         let mut is_double_height = false;
 
-        for x in 0..buf.get_width() {
+        for x in 0..get_buffer().get_width() {
             let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
             if ch.attribute.is_double_height() {
                 is_double_height = true;
@@ -604,7 +604,7 @@ pub fn create_buffer_texture(
         }
 
         if is_double_height {
-            for x in 0..buf.get_width() {
+            for x in 0..get_buffer().get_width() {
                 let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
 
                 if ch.attribute.is_double_height() {
@@ -640,7 +640,7 @@ pub fn create_buffer_texture(
     while y < buf.get_height() {
         let mut is_double_height = false;
 
-        for x in 0..buf.get_width() {
+        for x in 0..get_buffer().get_width() {
             let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
 
             let mut attr = if ch.attribute.is_double_underlined() {
@@ -664,7 +664,7 @@ pub fn create_buffer_texture(
         }
 
         if is_double_height {
-            for x in 0..buf.get_width() {
+            for x in 0..get_buffer().get_width() {
                 let ch = buf.get_char_xy(x, first_line - scroll_back_line + y);
                 let mut attr = if ch.attribute.is_double_underlined() {
                     3

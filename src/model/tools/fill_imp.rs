@@ -32,14 +32,14 @@ impl FillTool {
         old_ch: AttributedChar,
         new_ch: AttributedChar,
     ) {
-        if pos.x >= editor.buffer_view.lock().buf.get_width() as i32
-            || pos.y >= editor.buffer_view.lock().buf.get_height() as i32
+        if pos.x >= editor.buffer_view.lock().get_buffer().get_width() as i32
+            || pos.y >= editor.buffer_view.lock().get_buffer().get_height() as i32
             || !visited.insert(pos)
         {
             return;
         }
 
-        let cur_char = editor.buffer_view.lock().buf.get_char(pos);
+        let cur_char = editor.buffer_view.lock().get_buffer().get_char(pos);
         if matches!(self.fill_type, FillType::Character) && self.use_fore && self.use_back {
             if cur_char != old_ch || cur_char == new_ch {
                 return;
@@ -102,7 +102,7 @@ impl FillTool {
             editor
                 .buffer_view
                 .lock()
-                .caret
+                .get_caret()
                 .get_attribute()
                 .get_font_page(),
         );
@@ -174,11 +174,11 @@ impl Tool for FillTool {
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
         if button == 1 {
-            if editor.cur_layer >= editor.buffer_view.lock().buf.layers.len() {
+            if editor.get_cur_layer() >= editor.buffer_view.lock().get_buffer().layers.len() {
                 return Event::None;
             }
-            let attr = editor.buffer_view.lock().caret.get_attribute();
-            let ch = editor.buffer_view.lock().buf.get_char(pos);
+            let attr = editor.buffer_view.lock().get_caret().get_attribute();
+            let ch = editor.buffer_view.lock().get_buffer().get_char(pos);
             if self.use_back || self.use_fore || matches!(self.fill_type, FillType::Character) {
                 editor.begin_atomic_undo();
                 let mut visited = HashSet::new();

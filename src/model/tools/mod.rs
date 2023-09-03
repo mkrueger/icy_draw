@@ -102,14 +102,14 @@ pub trait Tool {
 
         // ctrl+pgup  - upper left corner
         // ctrl+pgdn  - lower left corner
-        let pos = editor.buffer_view.lock().caret.get_position();
+        let pos = editor.buffer_view.lock().get_caret().get_position();
         match key {
             MKey::Down => {
                 if let MModifiers::Control = modifier {
                     let fg = (editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .get_foreground()
                         + 14)
@@ -117,7 +117,7 @@ pub trait Tool {
                     editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .set_foreground(fg);
                 } else {
@@ -129,7 +129,7 @@ pub trait Tool {
                     let fg = (editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .get_foreground()
                         + 1)
@@ -137,7 +137,7 @@ pub trait Tool {
                     editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .set_foreground(fg);
                 } else {
@@ -150,7 +150,7 @@ pub trait Tool {
                     let bg = (editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .get_background()
                         + 7)
@@ -158,7 +158,7 @@ pub trait Tool {
                     editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .set_background(bg);
                 } else {
@@ -171,7 +171,7 @@ pub trait Tool {
                     let bg = (editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .get_background()
                         + 1)
@@ -179,7 +179,7 @@ pub trait Tool {
                     editor
                         .buffer_view
                         .lock()
-                        .caret
+                        .get_caret()
                         .get_attribute()
                         .set_background(bg);
                 } else {
@@ -203,13 +203,13 @@ pub trait Tool {
                     editor.set_caret(next_tab, pos.y);
                 } else {
                     let tabs = 1 + pos.x / tab_size;
-                    let next_tab = min(editor.buf.width as i32 - 1, tabs * tab_size);
+                    let next_tab = min(editor.get_buffer().width as i32 - 1, tabs * tab_size);
                     editor.set_caret(next_tab, pos.y);
                 }
             }
             MKey::Home  => {
                 if let MModifiers::Control = modifier {
-                    for i in 0..editor.buf.width {
+                    for i in 0..editor.get_buffer().width {
                         if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
                             editor.set_caret(i as i32, pos.y);
                             return Event::None;
@@ -220,14 +220,14 @@ pub trait Tool {
             }
             MKey::End => {
                 if let MModifiers::Control = modifier {
-                    for i in (0..editor.buf.width).rev()  {
+                    for i in (0..editor.get_buffer().width).rev()  {
                         if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
                             editor.set_caret(i as i32, pos.y);
                             return Event::None;
                         }
                     }
                 }
-                let w = editor.buf.width as i32;
+                let w = editor.get_buffer().width as i32;
                 editor.set_caret(w - 1, pos.y);
             }*/
             MKey::Return => {
@@ -238,19 +238,21 @@ pub trait Tool {
                     editor.delete_selection();
                 } else {
                     let pos = editor.get_caret_position();
-                    let end = editor.buffer_view.lock().buf.get_width() as i32 - 1;
+                    let end = editor.buffer_view.lock().get_buffer().get_width() as i32 - 1;
                     for i in pos.x..end {
                         let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                         editor.set_char(Position::new(i, pos.y), next);
                     }
-                    let last_pos =
-                        Position::new(editor.buffer_view.lock().buf.get_width() as i32 - 1, pos.y);
+                    let last_pos = Position::new(
+                        editor.buffer_view.lock().get_buffer().get_width() as i32 - 1,
+                        pos.y,
+                    );
                     editor.set_char(last_pos, AttributedChar::invisible());
                 }
             }
             MKey::Insert => {
-                editor.buffer_view.lock().caret.insert_mode =
-                    !editor.buffer_view.lock().caret.insert_mode;
+                editor.buffer_view.lock().get_caret_mut().insert_mode =
+                    !editor.buffer_view.lock().get_caret().insert_mode;
             }
             MKey::Backspace => {
                 editor.buffer_view.lock().clear_selection();
@@ -266,14 +268,14 @@ pub trait Tool {
                         cpos--;
                     } else {*/
                     editor.set_caret_position(pos + Position::new(-1, 0));
-                    if editor.buffer_view.lock().caret.insert_mode {
-                        let end = editor.buffer_view.lock().buf.get_width() as i32 - 1;
+                    if editor.buffer_view.lock().get_caret().insert_mode {
+                        let end = editor.buffer_view.lock().get_buffer().get_width() as i32 - 1;
                         for i in pos.x..end {
                             let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(
-                            editor.buffer_view.lock().buf.get_width() as i32 - 1,
+                            editor.buffer_view.lock().get_buffer().get_width() as i32 - 1,
                             pos.y,
                         );
                         editor.set_char(last_pos, AttributedChar::invisible());
@@ -409,7 +411,7 @@ trait Plottable {
 
 fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
     let ch = editor.get_char_from_cur_layer(pos);
-    let editor_attr = editor.buffer_view.lock().caret.get_attribute();
+    let editor_attr = editor.buffer_view.lock().get_caret().get_attribute();
     let mut attribute = ch.attribute;
     if !ch.is_visible() {
         attribute = TextAttribute::default();
@@ -425,7 +427,12 @@ fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
 
     match tool.get_draw_mode() {
         DrawMode::Line => {
-            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+            if let Some(layer) = editor
+                .buffer_view
+                .lock()
+                .get_buffer_mut()
+                .get_overlay_layer()
+            {
                 layer.set_char(
                     pos,
                     AttributedChar::new(unsafe { char::from_u32_unchecked(219) }, attribute),
@@ -433,7 +440,12 @@ fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
             }
         }
         DrawMode::Char => {
-            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+            if let Some(layer) = editor
+                .buffer_view
+                .lock()
+                .get_buffer_mut()
+                .get_overlay_layer()
+            {
                 layer.set_char(pos, AttributedChar::new(tool.get_char_code(), attribute));
             }
         }
@@ -449,12 +461,22 @@ fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
                     }
                 }
             }
-            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+            if let Some(layer) = editor
+                .buffer_view
+                .lock()
+                .get_buffer_mut()
+                .get_overlay_layer()
+            {
                 layer.set_char(pos, AttributedChar::new(char_code, attribute));
             }
         }
         DrawMode::Colorize => {
-            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+            if let Some(layer) = editor
+                .buffer_view
+                .lock()
+                .get_buffer_mut()
+                .get_overlay_layer()
+            {
                 layer.set_char(pos, AttributedChar::new(ch.ch, attribute));
             }
         }

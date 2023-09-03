@@ -40,8 +40,8 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     let row_height = 24.0;
     let mut result = None;
 
-    let max = editor.buffer_view.lock().buf.layers.len();
-    let cur_layer = editor.cur_layer;
+    let max = editor.buffer_view.lock().get_buffer().layers.len();
+    let cur_layer = editor.get_cur_layer();
     let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
     ui.set_height(row_height * 6.0);
     egui::ScrollArea::vertical()
@@ -52,7 +52,8 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                 ui.horizontal(|ui| {
                     ui.add_space(4.0);
                     let (is_visible, title, color) = {
-                        let layer = &editor.buffer_view.lock().buf.layers[i];
+                        let lock = editor.buffer_view.lock();
+                        let layer = &lock.get_buffer().layers[i];
                         (layer.is_visible, layer.title.clone(), layer.color)
                     };
                     let width = ui.available_width();

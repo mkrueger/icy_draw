@@ -77,7 +77,7 @@ impl ModalDialog for SetCanvasSizeDialog {
         editor
             .buffer_view
             .lock()
-            .buf
+            .get_buffer_mut()
             .set_buffer_size(Size::new(self.width, self.height));
         Ok(true)
     }

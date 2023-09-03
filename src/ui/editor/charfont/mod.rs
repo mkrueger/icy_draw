@@ -133,7 +133,8 @@ impl CharFontEditor {
     }
 
     fn show_selected_char(&mut self) {
-        let buffer = &mut self.ansi_editor.buffer_view.lock().buf;
+        let lock = &mut self.ansi_editor.buffer_view.lock();
+        let buffer = &mut lock.get_buffer_mut();
         buffer.layers[0].clear();
 
         if let Some(ch) = self.selected_char_opt {

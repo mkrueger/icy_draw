@@ -94,7 +94,7 @@ impl MainWindow {
             Message::ExportFile => {
                 self.run_editor_command(0, |window, editor, _| {
                     let view = editor.buffer_view.clone();
-                    window.open_dialog(crate::ExportFileDialog::new(&view.lock().buf));
+                    window.open_dialog(crate::ExportFileDialog::new(&view.lock().get_buffer()));
                     None
                 });
                 if let Some(editor) = self
@@ -105,7 +105,7 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::ExportFileDialog::new(&view.lock().buf));
+                    self.open_dialog(crate::ExportFileDialog::new(&view.lock().get_buffer()));
                 }
             }
             Message::ShowOutlineDialog => {
@@ -145,8 +145,8 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let buf = &mut editor.buffer_view.lock();
-                    let w = buf.buf.get_width();
-                    let h = buf.buf.get_line_count();
+                    let w = buf.get_buffer().get_width();
+                    let h = buf.get_buffer().get_line_count();
 
                     buf.set_selection(Selection::from_rectangle(0.0, 0.0, w as f32, h as f32));
                 }
@@ -204,7 +204,7 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::EditSauceDialog::new(&view.lock().buf));
+                    self.open_dialog(crate::EditSauceDialog::new(&view.lock().get_buffer()));
                 }
             }
             Message::SetCanvasSize => {
@@ -216,7 +216,7 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::SetCanvasSizeDialog::new(&view.lock().buf));
+                    self.open_dialog(crate::SetCanvasSizeDialog::new(&view.lock().get_buffer()));
                 }
             }
 
@@ -229,7 +229,7 @@ impl MainWindow {
                     .get_ansi_editor()
                 {
                     let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::EditLayerDialog::new(&view.lock().buf, i));
+                    self.open_dialog(crate::EditLayerDialog::new(&view.lock().get_buffer(), i));
                 }
             }
             Message::NewLayer => {
@@ -240,7 +240,8 @@ impl MainWindow {
                     .unwrap()
                     .get_ansi_editor_mut()
                 {
-                    let buf = &mut editor.buffer_view.lock().buf;
+                    let mut lock = editor.buffer_view.lock();
+                    let buf = lock.get_buffer_mut();
                     let size = buf.get_buffer_size();
                     let mut new_layer = icy_engine::Layer::new("New Layer", size);
                     new_layer.has_alpha_channel = true;
@@ -262,10 +263,10 @@ impl MainWindow {
                     editor
                         .buffer_view
                         .lock()
-                        .buf
+                        .get_buffer_mut()
                         .layers
                         .swap(cur_layer, cur_layer - 1);
-                    editor.cur_layer -= 1;
+                    editor.set_cur_layer(editor.get_cur_layer() - 1);
                 }
             }
             Message::MoveLayerDown(cur_layer) => {
@@ -279,40 +280,62 @@ impl MainWindow {
                     editor
                         .buffer_view
                         .lock()
-                        .buf
+                        .get_buffer_mut()
                         .layers
                         .swap(cur_layer, cur_layer + 1);
-                    editor.cur_layer += 1;
+                    editor.set_cur_layer(editor.get_cur_layer() + 1);
                 }
             }
             Message::DeleteLayer(cur_layer) => {
                 self.run_editor_command(cur_layer, |_, editor, cur_layer| {
-                    editor.buffer_view.lock().buf.layers.remove(cur_layer);
-                    editor.cur_layer = editor.cur_layer.clamp(
-                        0,
-                        editor.buffer_view.lock().buf.layers.len().saturating_sub(1),
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .layers
+                        .remove(cur_layer);
+                    editor.set_cur_layer(
+                        editor.get_cur_layer().clamp(
+                            0,
+                            editor
+                                .buffer_view
+                                .lock()
+                                .get_buffer()
+                                .layers
+                                .len()
+                                .saturating_sub(1),
+                        ),
                     );
                     None
                 });
             }
             Message::DuplicateLayer(cur_layer) => {
                 self.run_editor_command(cur_layer, |_, editor, cur_layer| {
-                    let layer = editor.buffer_view.lock().buf.layers[cur_layer].clone();
+                    let layer = editor.buffer_view.lock().get_buffer().layers[cur_layer].clone();
                     editor
                         .buffer_view
                         .lock()
-                        .buf
+                        .get_buffer_mut()
                         .layers
                         .insert(cur_layer + 1, layer);
-                    editor.cur_layer += 1;
+                    editor.set_cur_layer(editor.get_cur_layer() + 1);
                     None
                 });
             }
             Message::MergeLayer(cur_layer) => {
                 self.run_editor_command(cur_layer, |_, editor, cur_layer| {
-                    let layer = editor.buffer_view.lock().buf.layers.remove(cur_layer);
-                    if let Some(layer_below) =
-                        editor.buffer_view.lock().buf.layers.get_mut(cur_layer)
+                    let layer = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .layers
+                        .remove(cur_layer);
+                    if let Some(layer_below) = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .layers
+                        .get_mut(cur_layer)
                     {
                         for y in 0..layer.get_height() {
                             for x in 0..layer.get_width() {
@@ -336,8 +359,10 @@ impl MainWindow {
                     .unwrap()
                     .get_ansi_editor_mut()
                 {
-                    let is_visible = editor.buffer_view.lock().buf.layers[cur_layer].is_visible;
-                    editor.buffer_view.lock().buf.layers[cur_layer].is_visible = !is_visible;
+                    let is_visible =
+                        editor.buffer_view.lock().get_buffer().layers[cur_layer].is_visible;
+                    editor.buffer_view.lock().get_buffer_mut().layers[cur_layer].is_visible =
+                        !is_visible;
                 }
             }
             Message::SelectLayer(cur_layer) => {
@@ -348,7 +373,7 @@ impl MainWindow {
                     .unwrap()
                     .get_ansi_editor_mut()
                 {
-                    editor.cur_layer = cur_layer;
+                    editor.set_cur_layer(cur_layer);
                 }
             }
 
@@ -360,9 +385,14 @@ impl MainWindow {
                     .unwrap()
                     .get_ansi_editor_mut()
                 {
-                    editor.buffer_view.lock().caret.set_font_page(page);
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_font_page(page);
 
-                    let buf = &mut editor.buffer_view.lock().buf;
+                    let lock = &mut editor.buffer_view.lock();
+                    let buf = &mut lock.get_buffer_mut();
                     if buf.get_font(page).is_none() {
                         if let Some(font_name) =
                             icy_engine::parsers::ansi::constants::ANSI_FONT_NAMES.get(page)

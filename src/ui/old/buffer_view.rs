@@ -472,7 +472,7 @@ void main() {
     }
 
     pub fn clear(&mut self) {
-        self.editor.caret.ff(&mut self.editor.buf);
+        self.editor.get_caret().ff(&mut self.editor.buf);
     }
 
     pub fn get_copy_text(&mut self, buffer_parser: &dyn BufferParser) -> Option<String> {
@@ -513,7 +513,7 @@ void main() {
         parser: &mut Box<dyn BufferParser>,
         c: char,
     ) -> EngineResult<CallbackAction> {
-        let res = parser.print_char(&mut self.editor.buf, &mut self.editor.caret, c);
+        let res = parser.print_char(&mut self.editor.buf, &mut self.editor.get_caret(), c);
         self.redraw_view();
         res
     }

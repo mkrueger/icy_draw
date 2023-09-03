@@ -41,7 +41,7 @@ impl BrushTool {
                     BrushType::Shade => {
                         let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
 
-                        let attribute = editor.buffer_view.lock().caret.get_attribute();
+                        let attribute = editor.buffer_view.lock().get_caret().get_attribute();
 
                         let mut char_code = gradient[0];
                         if ch.ch == gradient[gradient.len() - 1] {
@@ -60,7 +60,7 @@ impl BrushTool {
                         );
                     }
                     BrushType::Solid => {
-                        let attribute = editor.buffer_view.lock().caret.get_attribute();
+                        let attribute = editor.buffer_view.lock().get_caret().get_attribute();
                         editor.set_char(
                             center + Position::new(x, y),
                             AttributedChar::new(*self.char_code.borrow(), attribute),
@@ -74,7 +74,7 @@ impl BrushTool {
                                 editor
                                     .buffer_view
                                     .lock()
-                                    .caret
+                                    .get_caret()
                                     .get_attribute()
                                     .get_foreground(),
                             );
@@ -84,7 +84,7 @@ impl BrushTool {
                                 editor
                                     .buffer_view
                                     .lock()
-                                    .caret
+                                    .get_caret()
                                     .get_attribute()
                                     .get_background(),
                             );
@@ -191,8 +191,8 @@ pub fn draw_glyph(
     editor: &AnsiEditor,
     ch: &Rc<RefCell<char>>,
 ) -> Option<Message> {
-    let font_page = editor.buffer_view.lock().caret.get_font_page();
-    if let Some(font) = editor.buffer_view.lock().buf.get_font(font_page) {
+    let font_page = editor.buffer_view.lock().get_caret().get_font_page();
+    if let Some(font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
         let scale = 1.5;
         let (id, stroke_rect) = ui.allocate_space(Vec2::new(
             scale * font.size.width as f32,

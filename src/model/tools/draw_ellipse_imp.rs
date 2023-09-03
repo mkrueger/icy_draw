@@ -102,7 +102,12 @@ impl Tool for DrawEllipseTool {
         mut start: Position,
         mut cur: Position,
     ) -> Event {
-        if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+        if let Some(layer) = editor
+            .buffer_view
+            .lock()
+            .get_buffer_mut()
+            .get_overlay_layer()
+        {
             layer.clear();
         }
 
@@ -122,7 +127,7 @@ impl Tool for DrawEllipseTool {
         let col = editor
             .buffer_view
             .lock()
-            .caret
+            .get_caret()
             .get_attribute()
             .get_foreground();
         for rect in lines.outline() {
@@ -146,7 +151,7 @@ impl Tool for DrawEllipseTool {
         cur: Position,
     ) -> Event {
         if start == cur {
-            editor.buffer_view.lock().buf.remove_overlay();
+            editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {
             editor.join_overlay();
         }

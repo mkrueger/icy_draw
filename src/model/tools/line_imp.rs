@@ -245,7 +245,12 @@ impl Tool for LineTool {
     }
 
     fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
-        if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+        if let Some(layer) = editor
+            .buffer_view
+            .lock()
+            .get_buffer_mut()
+            .get_overlay_layer()
+        {
             layer.clear();
         }
 
@@ -258,7 +263,7 @@ impl Tool for LineTool {
             let col = editor
                 .buffer_view
                 .lock()
-                .caret
+                .get_caret()
                 .get_attribute()
                 .get_foreground();
             let draw = move |rect: Rectangle| {
@@ -299,7 +304,7 @@ impl Tool for LineTool {
         cur: Position,
     ) -> Event {
         if start == cur {
-            editor.buffer_view.lock().buf.remove_overlay();
+            editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {
             editor.join_overlay();
         }
@@ -390,8 +395,8 @@ fn get_half_block(
 }
 
 pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
-    let w = editor.buffer_view.lock().buf.get_width() as i32;
-    let h = editor.buffer_view.lock().buf.get_line_count() as i32;
+    let w = editor.buffer_view.lock().get_buffer().get_width() as i32;
+    let h = editor.buffer_view.lock().get_buffer().get_line_count() as i32;
 
     if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 {
         return;
@@ -414,33 +419,58 @@ pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
     let pos = Position::new(pos.x, text_y);
     if is_blocky {
         if (is_top && lower_block_color == col) || (!is_top && upper_block_color == col) {
-            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+            if let Some(layer) = editor
+                .buffer_view
+                .lock()
+                .get_buffer_mut()
+                .get_overlay_layer()
+            {
                 layer.set_char(
                     pos,
                     AttributedChar::new('\u{00DB}', TextAttribute::new(col, 0)),
                 );
             }
         } else if is_top {
-            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+            if let Some(layer) = editor
+                .buffer_view
+                .lock()
+                .get_buffer_mut()
+                .get_overlay_layer()
+            {
                 layer.set_char(
                     pos,
                     AttributedChar::new('\u{00DF}', TextAttribute::new(col, lower_block_color)),
                 );
             }
-        } else if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+        } else if let Some(layer) = editor
+            .buffer_view
+            .lock()
+            .get_buffer_mut()
+            .get_overlay_layer()
+        {
             layer.set_char(
                 pos,
                 AttributedChar::new('\u{00DC}', TextAttribute::new(col, upper_block_color)),
             );
         }
     } else if is_top {
-        if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+        if let Some(layer) = editor
+            .buffer_view
+            .lock()
+            .get_buffer_mut()
+            .get_overlay_layer()
+        {
             layer.set_char(
                 pos,
                 AttributedChar::new('\u{00DF}', TextAttribute::new(col, block_back)),
             );
         }
-    } else if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+    } else if let Some(layer) = editor
+        .buffer_view
+        .lock()
+        .get_buffer_mut()
+        .get_overlay_layer()
+    {
         layer.set_char(
             pos,
             AttributedChar::new('\u{00DC}', TextAttribute::new(col, block_back)),
@@ -450,7 +480,12 @@ pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
 }
 
 fn optimize_block(editor: &AnsiEditor, pos: Position) {
-    let block = if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+    let block = if let Some(layer) = editor
+        .buffer_view
+        .lock()
+        .get_buffer_mut()
+        .get_overlay_layer()
+    {
         layer.get_char(pos)
     } else {
         AttributedChar::default()
@@ -458,13 +493,23 @@ fn optimize_block(editor: &AnsiEditor, pos: Position) {
 
     if block.attribute.get_foreground() == 0 {
         if block.attribute.get_background() == 0 || block.ch == '\u{00DB}' {
-            if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+            if let Some(layer) = editor
+                .buffer_view
+                .lock()
+                .get_buffer_mut()
+                .get_overlay_layer()
+            {
                 layer.set_char(pos, AttributedChar::default());
             }
         } else {
             match block.ch as u8 {
                 220 => {
-                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+                    if let Some(layer) = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .get_overlay_layer()
+                    {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -478,7 +523,12 @@ fn optimize_block(editor: &AnsiEditor, pos: Position) {
                     }
                 }
                 223 => {
-                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+                    if let Some(layer) = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .get_overlay_layer()
+                    {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -501,7 +551,12 @@ fn optimize_block(editor: &AnsiEditor, pos: Position) {
         if is_blocky {
             match block.ch as u8 {
                 220 => {
-                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+                    if let Some(layer) = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .get_overlay_layer()
+                    {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -515,7 +570,12 @@ fn optimize_block(editor: &AnsiEditor, pos: Position) {
                     }
                 }
                 223 => {
-                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+                    if let Some(layer) = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .get_overlay_layer()
+                    {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -533,7 +593,12 @@ fn optimize_block(editor: &AnsiEditor, pos: Position) {
         } else if is_vertically_blocky {
             match block.ch as u8 {
                 221 => {
-                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+                    if let Some(layer) = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .get_overlay_layer()
+                    {
                         layer.set_char(
                             pos,
                             AttributedChar::new(
@@ -547,7 +612,12 @@ fn optimize_block(editor: &AnsiEditor, pos: Position) {
                     }
                 }
                 222 => {
-                    if let Some(layer) = editor.buffer_view.lock().buf.get_overlay_layer() {
+                    if let Some(layer) = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .get_overlay_layer()
+                    {
                         layer.set_char(
                             pos,
                             AttributedChar::new(

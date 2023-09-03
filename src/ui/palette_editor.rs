@@ -7,8 +7,8 @@ use std::cmp::min;
 
 pub fn palette_switcher(ctx: &egui::Context, editor: &AnsiEditor) -> impl egui::Widget {
     let tex_id = SWAP_SVG.texture_id(ctx);
-    let caret_attr = editor.buffer_view.lock().caret.get_attribute();
-    let palette = editor.buffer_view.lock().buf.palette.clone();
+    let caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
+    let palette = editor.buffer_view.lock().get_buffer().palette.clone();
 
     let buffer_view = editor.buffer_view.clone();
 
@@ -138,7 +138,9 @@ pub fn palette_switcher(ctx: &egui::Context, editor: &AnsiEditor) -> impl egui::
 
             if response.clicked() {
                 if pos.x > rect_height && pos.y < rect_height {
-                    let caret = &mut buffer_view.lock().caret;
+                    let mut bv: eframe::epaint::mutex::MutexGuard<'_, icy_engine_egui::BufferView> =
+                        buffer_view.lock();
+                    let caret = bv.get_caret_mut();
                     let fg = caret.get_attribute().get_foreground();
                     let bg = caret.get_attribute().get_background();
                     caret.set_foreground(bg);
@@ -147,7 +149,9 @@ pub fn palette_switcher(ctx: &egui::Context, editor: &AnsiEditor) -> impl egui::
                 }
 
                 if pos.x < rect_height && pos.y > rect_height {
-                    let caret = &mut buffer_view.lock().caret;
+                    let mut bv: eframe::epaint::mutex::MutexGuard<'_, icy_engine_egui::BufferView> =
+                        buffer_view.lock();
+                    let caret = bv.get_caret_mut();
                     caret.set_foreground(7);
                     caret.set_background(0);
                     response.mark_changed();
@@ -159,8 +163,8 @@ pub fn palette_switcher(ctx: &egui::Context, editor: &AnsiEditor) -> impl egui::
 }
 
 pub fn palette_editor_16(ui: &mut egui::Ui, editor: &AnsiEditor) {
-    let caret_attr = editor.buffer_view.lock().caret.get_attribute();
-    let palette = editor.buffer_view.lock().buf.palette.clone();
+    let caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
+    let palette = editor.buffer_view.lock().get_buffer().palette.clone();
     let buffer_view = editor.buffer_view.clone();
 
     ui.horizontal(|ui| {
@@ -248,11 +252,11 @@ pub fn palette_editor_16(ui: &mut egui::Ui, editor: &AnsiEditor) {
             let pos = (hp.to_vec2() - stroke_rect.left_top().to_vec2()) / Vec2::new(height, height);
             let color = min(palette.len() - 1, pos.x as u32 + pos.y as u32 * 8);
             if response.clicked() {
-                buffer_view.lock().caret.set_foreground(color);
+                buffer_view.lock().get_caret_mut().set_foreground(color);
                 response.mark_changed();
             }
             if response.secondary_clicked() {
-                buffer_view.lock().caret.set_background(color);
+                buffer_view.lock().get_caret_mut().set_background(color);
                 response.mark_changed();
             }
         }
@@ -331,14 +335,22 @@ pub fn show_extended_palette(ui: &mut Ui, editor: &AnsiEditor) {
 
                     let buffer_view = editor.buffer_view.clone();
                     if response.clicked() {
-                        let color = buffer_view.lock().buf.palette.insert_color_rgb(r, g, b);
-                        buffer_view.lock().caret.set_foreground(color);
+                        let color = buffer_view
+                            .lock()
+                            .get_buffer_mut()
+                            .palette
+                            .insert_color_rgb(r, g, b);
+                        buffer_view.lock().get_caret_mut().set_foreground(color);
                         response.mark_changed();
                     }
 
                     if response.secondary_clicked() {
-                        let color = buffer_view.lock().buf.palette.insert_color_rgb(r, g, b);
-                        buffer_view.lock().caret.set_background(color);
+                        let color = buffer_view
+                            .lock()
+                            .get_buffer_mut()
+                            .palette
+                            .insert_color_rgb(r, g, b);
+                        buffer_view.lock().get_caret_mut().set_background(color);
                         response.mark_changed();
                     }
                     response
