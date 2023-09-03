@@ -1,7 +1,9 @@
 use std::{fs, path::PathBuf, sync::Arc};
 
 use eframe::egui::{self, RichText};
-use icy_engine::{BitFont, Buffer, Layer, Size, TextAttribute, TheDrawFont, UPosition};
+use icy_engine::{
+    editor::UndoState, BitFont, Buffer, Layer, Size, TextAttribute, TheDrawFont, UPosition,
+};
 
 use crate::{
     model::Tool, AnsiEditor, BitFontEditor, Document, DocumentOptions, DrawGlyphStyle,
@@ -16,6 +18,32 @@ pub struct CharFontEditor {
     is_dirty: bool,
     selected_font: usize,
     fonts: Vec<TheDrawFont>,
+}
+
+impl UndoState for CharFontEditor {
+    fn undo_description(&self) -> Option<String> {
+        todo!()
+    }
+
+    fn can_undo(&self) -> bool {
+        false
+    }
+
+    fn undo(&mut self) {
+        todo!()
+    }
+
+    fn redo_description(&self) -> Option<String> {
+        todo!()
+    }
+
+    fn can_redo(&self) -> bool {
+        false
+    }
+
+    fn redo(&mut self) {
+        todo!()
+    }
 }
 
 impl Document for CharFontEditor {

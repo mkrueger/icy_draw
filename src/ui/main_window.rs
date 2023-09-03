@@ -198,7 +198,7 @@ impl MainWindow {
 
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap().to_ascii_lowercase();
-            if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext {
+            if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext || "fon" == ext {
                 if let Ok(data) = fs::read(path) {
                     let file_name = path.file_name();
                     if file_name.is_none() {

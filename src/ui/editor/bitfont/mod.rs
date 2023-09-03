@@ -6,7 +6,7 @@ use eframe::{
     epaint::{Color32, FontFamily, FontId, Pos2, Rect, Rounding, Vec2},
 };
 use i18n_embed_fl::fl;
-use icy_engine::BitFont;
+use icy_engine::{editor::UndoState, BitFont};
 
 use crate::{model::Tool, AnsiEditor, Document, DocumentOptions, TerminalResult};
 
@@ -342,6 +342,32 @@ impl BitFontEditor {
                 glyph.data = glyph.data.iter().rev().copied().collect();
             }
         }
+    }
+}
+
+impl UndoState for BitFontEditor {
+    fn undo_description(&self) -> Option<String> {
+        todo!()
+    }
+
+    fn can_undo(&self) -> bool {
+        false
+    }
+
+    fn undo(&mut self) {
+        todo!()
+    }
+
+    fn redo_description(&self) -> Option<String> {
+        todo!()
+    }
+
+    fn can_redo(&self) -> bool {
+        false
+    }
+
+    fn redo(&mut self) {
+        todo!()
     }
 }
 

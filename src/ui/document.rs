@@ -1,8 +1,9 @@
 use eframe::{egui, epaint::Vec2};
+use icy_engine::editor::UndoState;
 
 use crate::{model::Tool, AnsiEditor, TerminalResult};
 
-pub trait Document {
+pub trait Document: UndoState {
     fn get_title(&self) -> String;
     fn is_dirty(&self) -> bool;
 

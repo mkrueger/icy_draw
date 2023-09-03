@@ -338,7 +338,7 @@ impl Tool for FontTool {
                 editor.begin_atomic_undo();
                 let attr = editor.buffer_view.lock().get_caret().get_attribute();
                 let opt_size: Option<Size> = font.render(
-                    &mut editor.buffer_view.lock().get_buffer_mut(),
+                    editor.buffer_view.lock().get_buffer_mut(),
                     0,
                     c_pos.as_uposition(),
                     attr,

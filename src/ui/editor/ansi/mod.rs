@@ -13,8 +13,8 @@ use eframe::{
 };
 use i18n_embed_fl::fl;
 use icy_engine::{
-    ansi, AttributedChar, Buffer, BufferParser, Layer, Line, Position, Rectangle, SaveOptions,
-    Size, TextAttribute, UPosition,
+    editor::UndoState, AttributedChar, Buffer, Layer, Line, Position, Rectangle, SaveOptions, Size,
+    TextAttribute, UPosition,
 };
 pub mod undo_stack;
 use undo_stack::{AtomicUndo, UndoOperation, UndoSetChar, UndoSwapChar};
@@ -56,6 +56,32 @@ pub struct AnsiEditor {
     pub egui_id: Id,
     //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
     //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
+}
+
+impl UndoState for AnsiEditor {
+    fn undo_description(&self) -> Option<String> {
+        self.buffer_view.lock().get_edit_state().undo_description()
+    }
+
+    fn can_undo(&self) -> bool {
+        self.buffer_view.lock().get_edit_state().can_undo()
+    }
+
+    fn undo(&mut self) {
+        self.buffer_view.lock().get_edit_state_mut().undo()
+    }
+
+    fn redo_description(&self) -> Option<String> {
+        self.buffer_view.lock().get_edit_state().redo_description()
+    }
+
+    fn can_redo(&self) -> bool {
+        self.buffer_view.lock().get_edit_state().can_redo()
+    }
+
+    fn redo(&mut self) {
+        self.buffer_view.lock().get_edit_state_mut().redo()
+    }
 }
 
 impl Document for AnsiEditor {
@@ -121,6 +147,7 @@ impl Document for AnsiEditor {
     fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor> {
         Some(self)
     }
+
     fn get_ansi_editor(&self) -> Option<&AnsiEditor> {
         Some(self)
     }
@@ -382,14 +409,14 @@ impl AnsiEditor {
 
     pub fn undo(&mut self) {
         if let Some(op) = self.undo_stack.pop() {
-            op.undo(&mut self.buffer_view.lock().get_buffer_mut());
+            op.undo(self.buffer_view.lock().get_buffer_mut());
             self.redo_stack.push(op);
         }
     }
 
     pub fn redo(&mut self) {
         if let Some(op) = self.redo_stack.pop() {
-            op.redo(&mut self.buffer_view.lock().get_buffer_mut());
+            op.redo(self.buffer_view.lock().get_buffer_mut());
             self.undo_stack.push(op);
         }
     }

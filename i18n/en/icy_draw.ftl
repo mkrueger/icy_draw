@@ -14,6 +14,8 @@ menu-edit-font-outline=Font Outline…
 menu-edit=Edit
 menu-undo=Undo
 menu-redo=Redo
+menu-undo-op=Undo: { $op }
+menu-redo-op=Redo: { $op }
 
 menu-copy=Copy
 menu-paste=Paste

@@ -112,27 +112,13 @@ impl MainWindow {
                 self.open_dialog(SelectOutlineDialog::default());
             }
             Message::Undo => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
-                    editor.undo();
-                    editor.buffer_view.lock().redraw_view();
+                if let Some(editor) = self.get_active_document() {
+                    editor.lock().unwrap().undo();
                 }
             }
             Message::Redo => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
-                    editor.redo();
-                    editor.buffer_view.lock().redraw_view();
+                if let Some(editor) = self.get_active_document() {
+                    editor.lock().unwrap().redo();
                 }
             }
 
@@ -241,15 +227,7 @@ impl MainWindow {
                     .get_ansi_editor_mut()
                 {
                     let mut lock = editor.buffer_view.lock();
-                    let buf = lock.get_buffer_mut();
-                    let size = buf.get_buffer_size();
-                    let mut new_layer = icy_engine::Layer::new("New Layer", size);
-                    new_layer.has_alpha_channel = true;
-                    if buf.layers.is_empty() {
-                        new_layer.has_alpha_channel = false;
-                    }
-
-                    buf.layers.insert(0, new_layer);
+                    lock.get_edit_state_mut().create_new_layer();
                 }
             }
             Message::MoveLayerUp(cur_layer) => {

@@ -122,27 +122,58 @@ impl MainWindow {
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-undo"),
-                    "Ctrl+Z",
-                );
-                if button.clicked() {
-                    result = Some(Message::Undo);
-                    ui.close_menu();
+                if let Some(doc) = self.get_active_document() {
+                    if doc.lock().unwrap().can_undo() {
+                        let button = button_with_shortcut(
+                            ui,
+                            has_buffer,
+                            fl!(
+                                crate::LANGUAGE_LOADER,
+                                "menu-undo-op",
+                                op = doc.lock().unwrap().undo_description().unwrap()
+                            ),
+                            "Ctrl+Z",
+                        );
+                        if button.clicked() {
+                            result = Some(Message::Undo);
+                            ui.close_menu();
+                        }
+                    } else {
+                        button_with_shortcut(
+                            ui,
+                            false,
+                            fl!(crate::LANGUAGE_LOADER, "menu-undo"),
+                            "Ctrl+Z",
+                        );
+                    }
+
+                    if doc.lock().unwrap().can_redo() {
+                        let button = button_with_shortcut(
+                            ui,
+                            has_buffer,
+                            fl!(
+                                crate::LANGUAGE_LOADER,
+                                "menu-redo-op",
+                                op = doc.lock().unwrap().redo_description().unwrap()
+                            ),
+                            "Ctrl+Shift+Z",
+                        );
+                        if button.clicked() {
+                            result = Some(Message::Redo);
+                            ui.close_menu();
+                        }
+                    } else {
+                        button_with_shortcut(
+                            ui,
+                            false,
+                            fl!(crate::LANGUAGE_LOADER, "menu-redo"),
+                            "Ctrl+Shift+Z",
+                        );
+                    }
+                } else {
+                    add_default_undo_redo(ui);
                 }
 
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-redo"),
-                    "Ctrl+Shift+Z",
-                );
-                if button.clicked() {
-                    result = Some(Message::Redo);
-                    ui.close_menu();
-                }
                 ui.separator();
                 if ui
                     .add_enabled(
@@ -402,6 +433,21 @@ impl MainWindow {
             }
         });
     }
+}
+
+fn add_default_undo_redo(ui: &mut Ui) {
+    button_with_shortcut(
+        ui,
+        false,
+        fl!(crate::LANGUAGE_LOADER, "menu-undo"),
+        "Ctrl+Z",
+    );
+    button_with_shortcut(
+        ui,
+        false,
+        fl!(crate::LANGUAGE_LOADER, "menu-redo"),
+        "Ctrl+Shift+Z",
+    );
 }
 
 pub fn medium_toggle_button(
