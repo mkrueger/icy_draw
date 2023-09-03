@@ -48,7 +48,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
         .id_source("layer_view_scroll_area")
         .max_height(180.)
         .show_rows(ui, row_height, max, |ui, range| {
-            for i in range {
+            for i in range.rev() {
                 ui.horizontal(|ui| {
                     ui.add_space(4.0);
                     let (is_visible, title, color) = {
@@ -144,7 +144,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                             .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_new_layer"))
                             .clicked()
                         {
-                            result = Some(Message::NewLayer);
+                            result = Some(Message::AddLayer);
                             ui.close_menu();
                         }
                         if ui
@@ -168,7 +168,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                             .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_delete_layer"))
                             .clicked()
                         {
-                            result = Some(Message::DeleteLayer(i));
+                            result = Some(Message::RemoveLayer(i));
                             ui.close_menu();
                         }
                     });
@@ -193,7 +193,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
         });
 
         if r.clicked() {
-            result = Some(Message::NewLayer);
+            result = Some(Message::AddLayer);
         }
 
         let r = medium_hover_button(ui, &crate::MOVE_UP_SVG).on_hover_ui(|ui| {
@@ -217,7 +217,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
         });
 
         if r.clicked() && cur_layer < max {
-            result = Some(Message::DeleteLayer(cur_layer));
+            result = Some(Message::RemoveLayer(cur_layer));
         }
     });
     result

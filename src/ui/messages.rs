@@ -21,9 +21,9 @@ pub enum Message {
     ExportFile,
     ShowOutlineDialog,
 
-    NewLayer,
+    AddLayer,
     EditLayer(usize),
-    DeleteLayer(usize),
+    RemoveLayer(usize),
     MoveLayerUp(usize),
     MoveLayerDown(usize),
     ToggleVisibility(usize),
@@ -218,17 +218,12 @@ impl MainWindow {
                     self.open_dialog(crate::EditLayerDialog::new(&view.lock().get_buffer(), i));
                 }
             }
-            Message::NewLayer => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
+            Message::AddLayer => {
+                self.run_editor_command(0, |_, editor, _| {
                     let mut lock = editor.buffer_view.lock();
-                    lock.get_edit_state_mut().create_new_layer();
-                }
+                    lock.get_edit_state_mut().add_layer();
+                    None
+                });
             }
             Message::MoveLayerUp(cur_layer) => {
                 if let Some(editor) = self
@@ -264,28 +259,15 @@ impl MainWindow {
                     editor.set_cur_layer(editor.get_cur_layer() + 1);
                 }
             }
-            Message::DeleteLayer(cur_layer) => {
-                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .layers
-                        .remove(cur_layer);
-                    editor.set_cur_layer(
-                        editor.get_cur_layer().clamp(
-                            0,
-                            editor
-                                .buffer_view
-                                .lock()
-                                .get_buffer()
-                                .layers
-                                .len()
-                                .saturating_sub(1),
-                        ),
-                    );
+            Message::RemoveLayer(cur_layer) => {
+
+                self.run_editor_command(cur_layer, |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                    let mut lock = editor.buffer_view.lock();
+                    lock.get_edit_state_mut().remove_layer(cur_layer);
                     None
                 });
+
+                
             }
             Message::DuplicateLayer(cur_layer) => {
                 self.run_editor_command(cur_layer, |_, editor, cur_layer| {

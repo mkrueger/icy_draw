@@ -122,6 +122,7 @@ impl MainWindow {
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
+                ui.set_width(250.0);
                 if let Some(doc) = self.get_active_document() {
                     if doc.lock().unwrap().can_undo() {
                         let button = button_with_shortcut(
