@@ -31,12 +31,13 @@ impl Tool for MoveLayer {
         _start: Position,
         _cur: Position,
     ) -> Event {
+        let cur_layer = editor.get_cur_layer();
         if let Some(layer) = editor
             .buffer_view
             .lock()
             .get_buffer()
             .layers
-            .get(editor.get_cur_layer())
+            .get(cur_layer)
         {
             self.pos = layer.get_offset();
         }
@@ -44,12 +45,13 @@ impl Tool for MoveLayer {
     }
 
     fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
+        let cur_layer = editor.get_cur_layer();
         if let Some(layer) = editor
             .buffer_view
             .lock()
             .get_buffer_mut()
             .layers
-            .get_mut(editor.get_cur_layer())
+            .get_mut(cur_layer)
         {
             layer.set_offset(self.pos + cur - start);
         }

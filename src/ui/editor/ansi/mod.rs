@@ -15,7 +15,7 @@ use i18n_embed_fl::fl;
 use icy_engine::{
     editor::{AtomicUndoGuard, UndoState},
     AttributedChar, Buffer, Layer, Line, Position, Rectangle, SaveOptions, TextAttribute,
-    UPosition,
+    UPosition, util::{pop_data, push_data, BUFFER_DATA}, EngineResult,
 };
 
 use icy_engine_egui::{
@@ -76,7 +76,39 @@ impl UndoState for AnsiEditor {
     }
 }
 
-impl ClipboardHandler for AnsiEditor {}
+impl ClipboardHandler for AnsiEditor {
+    fn can_cut(&self) -> bool {
+        self.buffer_view.lock().get_selection().is_some()
+    }
+    fn cut(&mut self) -> EngineResult<()> {
+        let _cut = self.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-cut"));
+        self.copy()?;
+        self.buffer_view.lock().get_edit_state_mut().delete_selection();
+        Ok(())
+    } 
+
+    fn can_copy(&self) -> bool {
+        self.buffer_view.lock().get_selection().is_some()
+    }
+
+    fn copy(&mut self) -> EngineResult<()> {
+        if let Some(data) = self.buffer_view.lock().get_edit_state_mut().get_clipboard_data() {
+            push_data(BUFFER_DATA, &data)?;
+        }
+        Ok(())
+    }
+
+    fn can_paste(&self) -> bool {
+        pop_data(BUFFER_DATA).is_some()
+    }
+
+    fn paste(&mut self) -> EngineResult<()> {
+        if let Some(data) = pop_data(BUFFER_DATA) {
+            self.buffer_view.lock().get_edit_state_mut().paste_clipboard_data(&data)?;
+        }
+        Ok(())
+    }
+}
 
 impl Document for AnsiEditor {
     fn get_title(&self) -> String {
@@ -402,18 +434,7 @@ impl AnsiEditor {
     }
 
     pub fn delete_selection(&mut self) {
-        if let Some(selection) = &self.cur_selection() {
-            let _undo = self.begin_atomic_undo("Delete selection");
-            let min = selection.min().as_uposition();
-            let max = selection.max().as_uposition();
-            println!("delete selection! {} - {} ", min, max);
-            for y in min.y..=max.y {
-                for x in min.x..=max.x {
-                    self.set_char((x, y), AttributedChar::invisible());
-                }
-            }
-            self.clear_selection();
-        }
+        self.buffer_view.lock().get_edit_state_mut().delete_selection();
     }
 
     fn get_blockaction_rectangle(&self) -> (i32, i32, i32, i32) {

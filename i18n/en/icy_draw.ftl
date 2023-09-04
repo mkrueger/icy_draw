@@ -147,3 +147,4 @@ undo-paint-brush=Paintbrush
 undo-eraser=Eraser
 undo-bucket-fill=Bucket fill
 undo-line=Line
+undo-cut=Cut
