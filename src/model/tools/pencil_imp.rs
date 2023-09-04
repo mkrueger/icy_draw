@@ -4,9 +4,9 @@ use eframe::{
 };
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Rectangle};
+use icy_engine::{AttributedChar, Rectangle, editor::AtomicUndoGuard};
 
-use crate::{model::ScanLines, AnsiEditor, Message};
+use crate::{model::ScanLines, AnsiEditor, Message, Event};
 
 use super::{brush_imp::draw_glyph, line_imp::set_half_block, Position, Tool};
 
@@ -22,6 +22,7 @@ pub struct PencilTool {
     pub use_fore: bool,
     pub use_back: bool,
     pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
+    pub undo_op: Option<AtomicUndoGuard>,
 
     pub last_pos: Position,
     pub brush_type: PencilType,
@@ -171,13 +172,15 @@ impl Tool for PencilTool {
 
     fn handle_click(
         &mut self,
-        buffer_view: &mut AnsiEditor,
+        editor: &mut AnsiEditor,
         button: i32,
         pos: Position,
     ) -> super::Event {
         if button == 1 {
             self.last_pos = pos;
-            self.paint_brush(buffer_view, pos);
+            let _op: AtomicUndoGuard = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
+    
+            self.paint_brush(editor, pos);
         }
         super::Event::None
     }
@@ -190,10 +193,28 @@ impl Tool for PencilTool {
         _start: Position,
         cur: Position,
     ) -> egui::Response {
+     
         self.paint_brush(editor, cur);
         self.last_pos = cur;
 
         response
+    }
+
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
+        self.undo_op = Some(
+            editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil")),
+        );
+        Event::None
+    }
+
+    fn handle_drag_end(
+        &mut self,
+        _editor: &mut AnsiEditor,
+        _start: Position,
+        _cur: Position,
+    ) -> Event {
+        self.undo_op = None;
+        Event::None
     }
 }
 

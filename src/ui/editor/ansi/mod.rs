@@ -8,7 +8,7 @@ use std::{
 };
 
 use eframe::{
-    egui::{self, CursorIcon, Id, Key, Response, RichText},
+    egui::{self, Id, Key, Response, RichText},
     epaint::{mutex::Mutex, FontId, Vec2},
 };
 use i18n_embed_fl::fl;
@@ -918,7 +918,6 @@ impl AnsiEditor {
                     cur_tool.handle_drag_begin(self, self.last_pos);
                 }
             }
-            self.last_pos = Position::new(-1, -1);
             self.redraw_view();
         }
 
@@ -927,11 +926,12 @@ impl AnsiEditor {
                 let click_pos = calc.calc_click_pos(mouse_pos);
                 if let Some(ds) = self.drag_start {
                     let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
-
-                    if cur != self.last_pos {
-                        self.last_pos = cur;
-                        response = cur_tool.handle_drag(ui, response, self, ds, cur);
+                    let mut c = self.last_pos;
+                    while c != cur {
+                        response = cur_tool.handle_drag(ui, response, self, ds, c);
+                        c += (cur - c).signum();
                     }
+                    self.last_pos = cur;
                 }
             }
             self.redraw_view();

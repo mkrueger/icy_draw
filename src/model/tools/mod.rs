@@ -348,7 +348,7 @@ pub trait Tool {
         Event::None
     }
 
-    fn handle_drag_begin(&mut self, _buffer_view: &mut AnsiEditor, _start: Position) -> Event {
+    fn handle_drag_begin(&mut self, _editor: &mut AnsiEditor, _start: Position) -> Event {
         Event::None
     }
 
@@ -375,7 +375,7 @@ pub trait Tool {
 
     fn handle_drag_end(
         &mut self,
-        _buffer_view: &mut AnsiEditor,
+        _editor: &mut AnsiEditor,
         _start: Position,
         _cur: Position,
     ) -> Event {

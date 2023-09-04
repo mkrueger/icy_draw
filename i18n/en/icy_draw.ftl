@@ -144,6 +144,7 @@ no_document_selected=No document selected
 undo-draw-ellipse=Draw ellipse
 undo-draw-rectangle=Draw rectangle
 undo-paint-brush=Paintbrush
+undo-pencil=Pencil
 undo-eraser=Eraser
 undo-bucket-fill=Bucket fill
 undo-line=Line

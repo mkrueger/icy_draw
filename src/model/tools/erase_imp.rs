@@ -1,8 +1,8 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, TextAttribute};
+use icy_engine::{AttributedChar, TextAttribute, editor::AtomicUndoGuard};
 
-use crate::{AnsiEditor, Message};
+use crate::{AnsiEditor, Message, Event};
 
 use super::{Position, Tool};
 
@@ -15,6 +15,8 @@ pub enum EraseType {
 pub struct EraseTool {
     pub size: i32,
     pub brush_type: EraseType,
+    pub undo_op: Option<AtomicUndoGuard>,
+
 }
 
 impl EraseTool {
@@ -23,7 +25,6 @@ impl EraseTool {
 
         let center = pos + mid;
         let gradient = ['\u{00DB}', '\u{00B2}', '\u{00B1}', '\u{00B0}', ' '];
-        let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser"));
 
         for y in 0..self.size {
             for x in 0..self.size {
@@ -111,6 +112,8 @@ impl Tool for EraseTool {
         pos: Position,
     ) -> super::Event {
         if button == 1 {
+            let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser"));
+
             self.paint_brush(editor, pos);
         }
         super::Event::None
@@ -126,5 +129,22 @@ impl Tool for EraseTool {
     ) -> egui::Response {
         self.paint_brush(editor, cur);
         response
+    }
+
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
+        self.undo_op = Some(
+            editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser")),
+        );
+        Event::None
+    }
+
+    fn handle_drag_end(
+        &mut self,
+        _editor: &mut AnsiEditor,
+        _start: Position,
+        _cur: Position,
+    ) -> Event {
+        self.undo_op = None;
+        Event::None
     }
 }

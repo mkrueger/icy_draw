@@ -165,17 +165,13 @@ impl CharFontEditor {
 
     fn show_selected_char(&mut self) {
         let lock = &mut self.ansi_editor.buffer_view.lock();
-        let buffer = &mut lock.get_buffer_mut();
-        buffer.layers[0].clear();
-
+        let edit_state = &mut lock.get_edit_state_mut();
+        edit_state.get_buffer_mut().layers[0].clear();
+        edit_state.get_caret_mut().set_position((0, 0).into());
         if let Some(ch) = self.selected_char_opt {
             let font = &self.fonts[self.selected_font];
             font.render(
-                buffer,
-                0,
-                Position::default(),
-                TextAttribute::default(),
-                0,
+                edit_state,
                 ch as u8,
             );
         }

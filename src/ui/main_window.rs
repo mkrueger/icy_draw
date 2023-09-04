@@ -58,6 +58,7 @@ impl MainWindow {
             Box::new(crate::model::pencil_imp::PencilTool {
                 use_back: true,
                 use_fore: true,
+                undo_op: None,
                 brush_type: crate::model::pencil_imp::PencilType::Shade,
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
                 last_pos: Position::default(),
@@ -66,12 +67,14 @@ impl MainWindow {
                 size: 3,
                 use_back: true,
                 use_fore: true,
+                undo_op: None,
                 brush_type: crate::model::brush_imp::BrushType::Shade,
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
             }),
             Box::new(crate::model::erase_imp::EraseTool {
                 size: 3,
                 brush_type: crate::model::erase_imp::EraseType::Shade,
+                undo_op: None
             }),
             Box::new(crate::model::pipette_imp::PipetteTool {}),
             Box::new(crate::model::line_imp::LineTool {

@@ -4,10 +4,10 @@ use eframe::{
 };
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::AttributedChar;
+use icy_engine::{editor::AtomicUndoGuard, AttributedChar};
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{AnsiEditor, Message};
+use crate::{AnsiEditor, Event, Message};
 
 use super::{Position, Tool};
 
@@ -24,6 +24,8 @@ pub struct BrushTool {
     pub size: i32,
     pub char_code: Rc<RefCell<char>>,
 
+    pub undo_op: Option<AtomicUndoGuard>,
+
     pub brush_type: BrushType,
 }
 
@@ -33,15 +35,13 @@ impl BrushTool {
 
         let center = pos + mid;
         let gradient = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
-        let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush"));
+        let caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
+
         for y in 0..self.size {
             for x in 0..self.size {
                 match self.brush_type {
                     BrushType::Shade => {
                         let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
-
-                        let attribute = editor.buffer_view.lock().get_caret().get_attribute();
-
                         let mut char_code = gradient[0];
                         if ch.ch == gradient[gradient.len() - 1] {
                             char_code = gradient[gradient.len() - 1];
@@ -55,38 +55,23 @@ impl BrushTool {
                         }
                         editor.set_char(
                             center + Position::new(x, y),
-                            AttributedChar::new(char_code, attribute),
+                            AttributedChar::new(char_code, caret_attr),
                         );
                     }
                     BrushType::Solid => {
-                        let attribute = editor.buffer_view.lock().get_caret().get_attribute();
                         editor.set_char(
                             center + Position::new(x, y),
-                            AttributedChar::new(*self.char_code.borrow(), attribute),
+                            AttributedChar::new(*self.char_code.borrow(), caret_attr),
                         );
                     }
                     BrushType::Color => {
                         let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
                         let mut attribute = ch.attribute;
                         if self.use_fore {
-                            attribute.set_foreground(
-                                editor
-                                    .buffer_view
-                                    .lock()
-                                    .get_caret()
-                                    .get_attribute()
-                                    .get_foreground(),
-                            );
+                            attribute.set_foreground(caret_attr.get_foreground());
                         }
                         if self.use_back {
-                            attribute.set_background(
-                                editor
-                                    .buffer_view
-                                    .lock()
-                                    .get_caret()
-                                    .get_attribute()
-                                    .get_background(),
-                            );
+                            attribute.set_background(caret_attr.get_background());
                         }
                         editor.set_char(
                             center + Position::new(x, y),
@@ -168,6 +153,8 @@ impl Tool for BrushTool {
         pos: Position,
     ) -> super::Event {
         if button == 1 {
+            let _op: AtomicUndoGuard = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush"));
+
             self.paint_brush(editor, pos);
         }
         super::Event::None
@@ -183,6 +170,23 @@ impl Tool for BrushTool {
     ) -> egui::Response {
         self.paint_brush(editor, cur);
         response
+    }
+
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
+        self.undo_op = Some(
+            editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush")),
+        );
+        Event::None
+    }
+
+    fn handle_drag_end(
+        &mut self,
+        _editor: &mut AnsiEditor,
+        _start: Position,
+        _cur: Position,
+    ) -> Event {
+        self.undo_op = None;
+        Event::None
     }
 }
 

@@ -7,7 +7,7 @@ use eframe::{
 use egui_extras::RetainedImage;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{Buffer, Position, Rectangle, Size, TextAttribute, TheDrawFont};
+use icy_engine::{Buffer, Position, Rectangle, Size, TextAttribute, TheDrawFont, editor::EditState};
 
 use crate::MainWindow;
 
@@ -193,25 +193,21 @@ impl crate::ModalDialog for SelectFontDialog {
                                     if let Some(img) = self.image_cache.get(&filtered_fonts[row]) {
                                         img.show_scaled(ui, 0.5);
                                     } else {
-                                        let mut buffer = Buffer::new((100, 12));
-                                        let mut pos = Position::default();
-                                        let attr = TextAttribute::default();
-                                        let outline_style = 0;
+                                        let buffer = Buffer::new((100, 12));
+                                        let mut state = EditState::from_buffer(buffer);
 
                                         for ch in "HELLO".bytes() {
                                             let opt_size: Option<Size> = font.render(
-                                                &mut buffer,
-                                                0,
-                                                pos,
-                                                attr,
-                                                outline_style,
+                                                &mut state,
                                                 ch,
                                             );
                                             if let Some(size) = opt_size {
+                                                let mut pos = state.get_caret().get_position();
                                                 pos.x += size.width + font.spaces;
+                                                state.get_caret_mut().set_position(pos);
                                             }
                                         }
-                                        let img = create_retained_image(&buffer);
+                                        let img = create_retained_image(state.get_buffer());
                                         img.show_scaled(ui, 0.5);
                                         self.image_cache.insert(filtered_fonts[row], img);
                                     }
