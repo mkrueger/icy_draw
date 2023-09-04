@@ -47,7 +47,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     let mut paste_mode = false;
 
     if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.last() {
-        paste_mode = matches!(layer.role, icy_engine::Role::PastePreview);
+        paste_mode = layer.role.is_paste();
     }
 
     ui.set_height(row_height * 6.0);

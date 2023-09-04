@@ -14,7 +14,7 @@ use eframe::{
 use i18n_embed_fl::fl;
 use icy_engine::{
     editor::{AtomicUndoGuard, UndoState},
-    util::{pop_data, push_data, BUFFER_DATA},
+    util::{pop_data, pop_sixel_image, push_data, BUFFER_DATA},
     AttributedChar, Buffer, EngineResult, Layer, Line, Position, Rectangle, SaveOptions,
     TextAttribute,
 };
@@ -108,7 +108,7 @@ impl ClipboardHandler for AnsiEditor {
     }
 
     fn can_paste(&self) -> bool {
-        pop_data(BUFFER_DATA).is_some()
+        pop_data(BUFFER_DATA).is_some() || pop_sixel_image().is_some()
     }
 
     fn paste(&mut self) -> EngineResult<()> {
@@ -117,6 +117,11 @@ impl ClipboardHandler for AnsiEditor {
                 .lock()
                 .get_edit_state_mut()
                 .paste_clipboard_data(&data)?;
+        } else if let Some(sixel) = pop_sixel_image() {
+            self.buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .paste_sixel(sixel)?;
         }
         Ok(())
     }

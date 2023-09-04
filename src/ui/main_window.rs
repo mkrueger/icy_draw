@@ -536,7 +536,7 @@ impl eframe::App for MainWindow {
                         let lock = &mut editor.buffer_view.lock();
                         let last = lock.get_buffer().layers.len().saturating_sub(1);
                         if let Some(layer) = lock.get_buffer().layers.last() {
-                            if matches!(layer.role, icy_engine::Role::PastePreview)
+                            if layer.role.is_paste()
                                 && self.document_behavior.selected_tool != PASTE_TOOL
                             {
                                 self.document_behavior.tools.lock().unwrap()[PASTE_TOOL] =

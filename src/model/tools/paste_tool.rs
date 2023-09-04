@@ -15,7 +15,7 @@ pub struct PasteTool {
 impl PasteTool {
     fn is_paste_layer_selected(editor: &AnsiEditor, cur: Position) -> Option<bool> {
         if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.last() {
-            if matches!(layer.role, icy_engine::Role::PastePreview) {
+            if layer.role.is_paste() {
                 let pos = cur;
                 if pos.x >= 0
                     && pos.y >= 0
@@ -65,8 +65,7 @@ impl Tool for PasteTool {
         editor: &AnsiEditor,
     ) -> Option<Message> {
         if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
-            println!("layer role: {:?}", layer.role);
-            self.closed = !matches!(layer.role, icy_engine::Role::PastePreview);
+            self.closed = !layer.role.is_paste();
         }
 
         if self.closed {

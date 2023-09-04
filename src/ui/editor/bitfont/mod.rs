@@ -8,7 +8,7 @@ use eframe::{
 use i18n_embed_fl::fl;
 use icy_engine::{
     editor::UndoState,
-    util::{pop_data, push_data, BITFONT_GLYPH},
+    util::{pop_data, pop_sixel_image, push_data, BITFONT_GLYPH},
     BitFont, EngineResult, Glyph,
 };
 
