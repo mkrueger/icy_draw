@@ -39,6 +39,9 @@ pub struct MainWindow {
     pub bottom_panel: bool,
 }
 
+pub const PASTE_TOOL: usize = 0;
+pub const FIRST_TOOL: usize = 1;
+
 impl MainWindow {
     pub fn create_id(&mut self) -> usize {
         self.id += 1;
@@ -54,6 +57,7 @@ impl MainWindow {
         fnt.load_fonts();
 
         let tools: Vec<Box<dyn Tool>> = vec![
+            Box::new(crate::model::paste_tool::PasteTool::default()),
             Box::new(crate::model::click_imp::ClickTool {}),
             Box::new(crate::model::pencil_imp::PencilTool {
                 use_back: true,
@@ -125,7 +129,7 @@ impl MainWindow {
                 attr: icy_engine::TextAttribute::default(),
             }),
             Box::new(fnt),
-            Box::new(crate::model::move_layer_imp::MoveLayer {}),
+            Box::new(crate::model::move_layer_imp::MoveLayer::default()),
         ];
 
         let ctx: &egui::Context = &cc.egui_ctx;
@@ -172,7 +176,7 @@ impl MainWindow {
         MainWindow {
             document_behavior: DocumentBehavior {
                 tools: Arc::new(Mutex::new(tools)),
-                selected_tool: 0,
+                selected_tool: FIRST_TOOL,
                 document_options: DocumentOptions {
                     scale: eframe::egui::Vec2::new(1.0, 1.0),
                 },
@@ -240,6 +244,7 @@ impl MainWindow {
             Ok(mut buf) => {
                 let id = self.create_id();
                 buf.is_terminal_buffer = false;
+                buf.set_buffer_height(buf.get_line_count());
                 let editor = AnsiEditor::new(&self.gl, id, buf);
                 add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
             }
@@ -525,6 +530,26 @@ impl eframe::App for MainWindow {
             })
             .show(ctx, |ui| {
                 self.document_tree.ui(&mut self.document_behavior, ui);
+
+                if let Some(doc) = self.get_active_document() {
+                    if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                        let lock = &mut editor.buffer_view.lock();
+                        let last = lock.get_buffer().layers.len().saturating_sub(1);
+                        if let Some(layer) = lock.get_buffer().layers.last() {
+                            if matches!(layer.role, icy_engine::Role::PastePreview)
+                                && self.document_behavior.selected_tool != PASTE_TOOL
+                            {
+                                self.document_behavior.tools.lock().unwrap()[PASTE_TOOL] =
+                                    Box::new(crate::model::paste_tool::PasteTool::new(
+                                        self.document_behavior.selected_tool,
+                                    ));
+                                self.document_behavior.selected_tool = PASTE_TOOL;
+
+                                lock.get_edit_state_mut().set_current_layer(last);
+                            }
+                        }
+                    }
+                }
             });
 
         self.dialog_open = false;

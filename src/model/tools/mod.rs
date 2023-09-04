@@ -10,6 +10,7 @@ pub mod flip_imp;
 pub mod font_imp;
 pub mod line_imp;
 pub mod move_layer_imp;
+pub mod paste_tool;
 pub mod pencil_imp;
 pub mod pipette_imp;
 
@@ -18,6 +19,7 @@ mod icons;
 use eframe::egui::{self, Response};
 use egui_extras::RetainedImage;
 use icy_engine::{AttributedChar, Position, TextAttribute};
+use icy_engine_egui::TerminalCalc;
 pub use scan_lines::*;
 
 use crate::{AnsiEditor, Event, Message};
@@ -81,6 +83,14 @@ pub trait Tool {
 
     fn use_caret(&self) -> bool {
         true
+    }
+
+    fn is_visible(&self) -> bool {
+        true
+    }
+
+    fn is_exclusive(&self) -> bool {
+        false
     }
 
     fn use_selection(&self) -> bool {
@@ -357,6 +367,7 @@ pub trait Tool {
         _ui: &egui::Ui,
         response: Response,
         _editor: &mut AnsiEditor,
+        _calc: &TerminalCalc,
         _start: Position,
         _cur: Position,
     ) -> Response {

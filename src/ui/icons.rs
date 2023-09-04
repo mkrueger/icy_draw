@@ -36,5 +36,5 @@ lazy_static::lazy_static! {
 
     pub static ref VISIBLE_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("visible.svg", include_bytes!("../../data/icons/visible.svg")).unwrap();
     pub static ref INVISIBLE_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("invisible.svg", include_bytes!("../../data/icons/invisible.svg")).unwrap();
-
+    pub static ref ANCHOR_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("anchor.svg", include_bytes!("../../data/icons/anchor.svg")).unwrap();
 }

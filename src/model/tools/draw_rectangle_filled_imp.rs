@@ -1,6 +1,7 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{Position, Rectangle, TextAttribute};
+use icy_engine_egui::TerminalCalc;
 
 use crate::{AnsiEditor, Message};
 
@@ -99,6 +100,7 @@ impl Tool for DrawRectangleFilledTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
+        _calc: &TerminalCalc,
         start: Position,
         cur: Position,
     ) -> egui::Response {

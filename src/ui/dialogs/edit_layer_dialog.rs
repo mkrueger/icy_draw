@@ -1,7 +1,7 @@
 use eframe::egui::{self, color_picker, Layout, RichText};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{Color, Mode, Position};
+use icy_engine::{Color, Mode};
 
 use crate::{AnsiEditor, ModalDialog, TerminalResult};
 
@@ -39,8 +39,8 @@ impl EditLayerDialog {
             has_alpha_channel: l.has_alpha_channel,
             is_alpha_channel_locked: l.is_alpha_channel_locked,
             mode: l.mode,
-            x_offset: l.offset.x,
-            y_offset: l.offset.y,
+            x_offset: l.get_offset().x,
+            y_offset: l.get_offset().y,
         }
     }
 }
@@ -210,7 +210,7 @@ impl ModalDialog for EditLayerDialog {
         layer.is_visible = self.is_visible;
         layer.is_locked = self.is_locked;
         layer.is_position_locked = self.is_position_locked;
-        layer.offset = Position::new(self.x_offset, self.y_offset);
+        layer.set_offset((self.x_offset, self.y_offset));
         layer.has_alpha_channel = self.has_alpha_channel;
         layer.is_alpha_channel_locked = self.is_alpha_channel_locked;
         layer.mode = self.mode;

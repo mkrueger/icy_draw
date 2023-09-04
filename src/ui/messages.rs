@@ -45,6 +45,10 @@ pub enum Message {
     ShowError(String),
     SetFontPage(usize),
     CharTable(char),
+    ResizeLayer(usize),
+    SelectTool(usize),
+    AnchorLayer,
+    AddFloatingLayer,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -136,7 +140,6 @@ impl MainWindow {
                     buf.set_selection(Selection::from_rectangle(0.0, 0.0, w as f32, h as f32));
                 }
             }
-
             Message::Deselect => {
                 if let Some(editor) = self
                     .get_active_document()
@@ -178,7 +181,6 @@ impl MainWindow {
             Message::SelectFontDialog(fonts, selected_font) => {
                 self.open_dialog(crate::SelectFontDialog::new(fonts, selected_font));
             }
-
             Message::EditSauce => {
                 if let Some(editor) = self
                     .get_active_document()
@@ -217,9 +219,22 @@ impl MainWindow {
                     self.open_dialog(crate::EditLayerDialog::new(view.lock().get_buffer(), i));
                 }
             }
+            Message::ResizeLayer(i) => {
+                if let Some(editor) = self
+                    .get_active_document()
+                    .unwrap()
+                    .lock()
+                    .unwrap()
+                    .get_ansi_editor_mut()
+                {
+                    let view = editor.buffer_view.clone();
+                    self.open_dialog(crate::ResizeLayerDialog::new(view.lock().get_buffer(), i));
+                }
+            }
             Message::AddNewLayer(cur_layer) => {
                 self.run_editor_command(cur_layer, |_, editor, cur_layer| {
                     let mut lock = editor.buffer_view.lock();
+                    println!("buffer size: {}", lock.get_buffer().get_buffer_size());
                     to_message(lock.get_edit_state_mut().add_new_layer(cur_layer))
                 });
             }
@@ -285,6 +300,30 @@ impl MainWindow {
                 }
             }
 
+            Message::AnchorLayer => {
+                self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .anchor_layer(),
+                    )
+                });
+            }
+
+            Message::AddFloatingLayer => {
+                self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .add_floating_layer(),
+                    )
+                });
+            }
+
             Message::SetFontPage(page) => {
                 if let Some(editor) = self
                     .get_active_document()
@@ -326,6 +365,10 @@ impl MainWindow {
                     }
                     None
                 });
+            }
+
+            Message::SelectTool(tool) => {
+                self.document_behavior.selected_tool = tool;
             }
 
             Message::ShowAboutDialog => {

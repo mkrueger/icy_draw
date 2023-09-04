@@ -651,7 +651,7 @@ impl AnsiEditor {
             let mut new_layer = Layer::default();
             new_layer.title = old_layer.title.clone();
             new_layer.is_visible = old_layer.is_visible;
-            new_layer.offset = Position::new(0, 0);
+            new_layer.set_offset(Position::new(0, 0));
             new_layer.lines = Vec::new();
             for y in y1..=y2 {
                 for x in x1..=x2 {
@@ -897,7 +897,8 @@ impl AnsiEditor {
                             .get_edit_state()
                             .get_cur_layer()
                             .unwrap()
-                            .offset;
+                            .get_offset();
+
                     /*
                     let b: i32 = match responsee.b {
                                      PointerButton::Primary => 1,
@@ -918,13 +919,7 @@ impl AnsiEditor {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
-                        - self
-                            .buffer_view
-                            .lock()
-                            .get_edit_state()
-                            .get_cur_layer()
-                            .unwrap()
-                            .offset;
+                        - self.get_cur_click_offset();
 
                     self.last_pos = cp;
                     self.drag_start = Some(self.last_pos);
@@ -939,18 +934,12 @@ impl AnsiEditor {
                 let click_pos = calc.calc_click_pos(mouse_pos);
                 if let Some(ds) = self.drag_start {
                     let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
-                        - self
-                            .buffer_view
-                            .lock()
-                            .get_edit_state()
-                            .get_cur_layer()
-                            .unwrap()
-                            .offset;
+                        - self.get_cur_click_offset();
                     let mut c = self.last_pos;
                     while c != cp {
                         c += (cp - c).signum();
 
-                        response = cur_tool.handle_drag(ui, response, self, ds, c);
+                        response = cur_tool.handle_drag(ui, response, self, &calc, ds, c);
                     }
                     self.last_pos = cp;
                 }
@@ -963,14 +952,7 @@ impl AnsiEditor {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp = Position::new(click_pos.x as i32, click_pos.y as i32)
-                        + self
-                            .buffer_view
-                            .lock()
-                            .get_edit_state()
-                            .get_cur_layer()
-                            .unwrap()
-                            .offset;
-
+                        - self.get_cur_click_offset();
                     response = cur_tool.handle_hover(ui, response, self, cp);
                 }
             }
@@ -988,6 +970,13 @@ impl AnsiEditor {
         }
 
         response
+    }
+
+    fn get_cur_click_offset(&mut self) -> Position {
+        if let Some(layer) = self.buffer_view.lock().get_edit_state().get_cur_layer() {
+            return layer.get_offset();
+        }
+        Position::default()
     }
 
     pub(crate) fn set_file_name(&self, file_name: impl Into<PathBuf>) {

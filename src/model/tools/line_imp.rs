@@ -1,6 +1,7 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Rectangle, TextAttribute};
+use icy_engine_egui::TerminalCalc;
 
 use crate::{model::ScanLines, AnsiEditor, Message};
 
@@ -249,6 +250,7 @@ impl Tool for LineTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
+        _calc: &TerminalCalc,
         start: Position,
         cur: Position,
     ) -> egui::Response {

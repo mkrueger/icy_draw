@@ -5,6 +5,7 @@ use eframe::{
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AttributedChar};
+use icy_engine_egui::TerminalCalc;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{AnsiEditor, Event, Message};
@@ -166,6 +167,7 @@ impl Tool for BrushTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
+        _calc: &TerminalCalc,
         _start: Position,
         cur: Position,
     ) -> egui::Response {

@@ -43,6 +43,13 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     let max = editor.buffer_view.lock().get_buffer().layers.len();
     let cur_layer = editor.get_cur_layer();
     let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
+
+    let mut paste_mode = false;
+
+    if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.last() {
+        paste_mode = matches!(layer.role, icy_engine::Role::PastePreview);
+    }
+
     ui.set_height(row_height * 6.0);
     egui::ScrollArea::vertical()
         .id_source("layer_view_scroll_area")
@@ -128,56 +135,65 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                         result = Some(Message::ToggleLayerVisibility(i));
                     }
 
-                    response = response.context_menu(|ui| {
-                        if ui
-                            .button(fl!(
-                                crate::LANGUAGE_LOADER,
-                                "layer_tool_menu_layer_properties"
-                            ))
-                            .clicked()
-                        {
-                            result = Some(Message::EditLayer(i));
-                            ui.close_menu();
-                        }
-                        ui.separator();
-                        if ui
-                            .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_new_layer"))
-                            .clicked()
-                        {
-                            result = Some(Message::AddNewLayer(i));
-                            ui.close_menu();
-                        }
-                        if ui
-                            .button(fl!(
-                                crate::LANGUAGE_LOADER,
-                                "layer_tool_menu_duplicate_layer"
-                            ))
-                            .clicked()
-                        {
-                            result = Some(Message::DuplicateLayer(i));
-                            ui.close_menu();
-                        }
-                        if ui
-                            .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_merge_layer"))
-                            .clicked()
-                        {
-                            result = Some(Message::MergeLayerDown(i));
-                            ui.close_menu();
-                        }
-                        if ui
-                            .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_delete_layer"))
-                            .clicked()
-                        {
-                            result = Some(Message::RemoveLayer(i));
-                            ui.close_menu();
-                        }
-                    });
+                    if !paste_mode {
+                        response = response.context_menu(|ui| {
+                            if ui
+                                .button(fl!(
+                                    crate::LANGUAGE_LOADER,
+                                    "layer_tool_menu_layer_properties"
+                                ))
+                                .clicked()
+                            {
+                                result = Some(Message::EditLayer(i));
+                                ui.close_menu();
+                            }
+                            if ui
+                                .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_resize_layer"))
+                                .clicked()
+                            {
+                                result = Some(Message::ResizeLayer(i));
+                                ui.close_menu();
+                            }
+                            ui.separator();
+                            if ui
+                                .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_new_layer"))
+                                .clicked()
+                            {
+                                result = Some(Message::AddNewLayer(i));
+                                ui.close_menu();
+                            }
+                            if ui
+                                .button(fl!(
+                                    crate::LANGUAGE_LOADER,
+                                    "layer_tool_menu_duplicate_layer"
+                                ))
+                                .clicked()
+                            {
+                                result = Some(Message::DuplicateLayer(i));
+                                ui.close_menu();
+                            }
+                            if ui
+                                .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_merge_layer"))
+                                .clicked()
+                            {
+                                result = Some(Message::MergeLayerDown(i));
+                                ui.close_menu();
+                            }
+                            if ui
+                                .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_delete_layer"))
+                                .clicked()
+                            {
+                                result = Some(Message::RemoveLayer(i));
+                                ui.close_menu();
+                            }
+                        });
+                    }
 
-                    if response.clicked() {
+                    if !paste_mode && response.clicked() {
                         result = Some(Message::SelectLayer(i));
                     }
 
-                    if response.double_clicked() {
+                    if !paste_mode && response.double_clicked() {
                         result = Some(Message::EditLayer(i));
                     }
                 });
@@ -188,36 +204,73 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     ui.horizontal(|ui| {
         ui.add_space(4.0);
         ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
-        let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
-            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
-        });
 
-        if r.clicked() {
-            result = Some(Message::AddNewLayer(cur_layer));
-        }
+        if paste_mode {
+            let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
+                ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
+            });
 
-        let r = medium_hover_button(ui, &crate::MOVE_UP_SVG).on_hover_ui(|ui| {
-            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_up_tooltip")).small());
-        });
+            if r.clicked() {
+                result = Some(Message::AddFloatingLayer);
+            }
 
-        if r.clicked() {
-            result = Some(Message::RaiseLayer(cur_layer));
-        }
+            let r = medium_hover_button(ui, &crate::ANCHOR_SVG).on_hover_ui(|ui| {
+                ui.label(
+                    RichText::new(fl!(crate::LANGUAGE_LOADER, "anchor_layer_tooltip")).small(),
+                );
+            });
 
-        let r = medium_hover_button(ui, &crate::MOVE_DOWN_SVG).on_hover_ui(|ui| {
-            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_down_tooltip")).small());
-        });
+            if r.clicked() && cur_layer < max {
+                result = Some(Message::AnchorLayer);
+            }
 
-        if r.clicked() {
-            result = Some(Message::LowerLayer(cur_layer));
-        }
+            let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
+                ui.label(
+                    RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small(),
+                );
+            });
 
-        let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
-            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small());
-        });
+            if r.clicked() && cur_layer < max {
+                result = Some(Message::RemoveLayer(cur_layer));
+            }
+        } else {
+            let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
+                ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
+            });
 
-        if r.clicked() && cur_layer < max {
-            result = Some(Message::RemoveLayer(cur_layer));
+            if r.clicked() {
+                result = Some(Message::AddNewLayer(cur_layer));
+            }
+
+            let r = medium_hover_button(ui, &crate::MOVE_UP_SVG).on_hover_ui(|ui| {
+                ui.label(
+                    RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_up_tooltip")).small(),
+                );
+            });
+
+            if r.clicked() {
+                result = Some(Message::RaiseLayer(cur_layer));
+            }
+
+            let r = medium_hover_button(ui, &crate::MOVE_DOWN_SVG).on_hover_ui(|ui| {
+                ui.label(
+                    RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_down_tooltip")).small(),
+                );
+            });
+
+            if r.clicked() {
+                result = Some(Message::LowerLayer(cur_layer));
+            }
+
+            let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
+                ui.label(
+                    RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small(),
+                );
+            });
+
+            if r.clicked() && cur_layer < max {
+                result = Some(Message::RemoveLayer(cur_layer));
+            }
         }
     });
     result

@@ -78,6 +78,7 @@ add_layer_tooltip = Add new layer
 move_layer_up_tooltip = Move layer up
 move_layer_down_tooltip = Move layer down
 delete_layer_tooltip = Delete layer
+anchor_layer_tooltip = Anchor layer
 
 glyph-char-label=Char
 glyph-font-label=Font
@@ -131,6 +132,7 @@ select-font-dialog-no-fonts-installed=No fonts installed
 
 layer_tool_title=Layer
 layer_tool_menu_layer_properties=Layer properties
+layer_tool_menu_resize_layer=Resize layer
 layer_tool_menu_new_layer=New layer
 layer_tool_menu_duplicate_layer=Duplicate layer
 layer_tool_menu_merge_layer=Merge layer

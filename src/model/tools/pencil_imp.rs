@@ -5,6 +5,7 @@ use eframe::{
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Rectangle};
+use icy_engine_egui::TerminalCalc;
 
 use crate::{model::ScanLines, AnsiEditor, Event, Message};
 
@@ -191,6 +192,7 @@ impl Tool for PencilTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
+        _calc: &TerminalCalc,
         _start: Position,
         cur: Position,
     ) -> egui::Response {

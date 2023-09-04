@@ -1,6 +1,7 @@
 use eframe::egui;
 use egui_extras::RetainedImage;
 use icy_engine::Selection;
+use icy_engine_egui::TerminalCalc;
 
 use crate::{AnsiEditor, Message};
 
@@ -35,6 +36,7 @@ impl Tool for ClickTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
+        _calc: &TerminalCalc,
         start: Position,
         cur: Position,
     ) -> egui::Response {

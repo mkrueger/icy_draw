@@ -13,9 +13,14 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
     if let Ok(tools) = arg.document_behavior.tools.lock() {
         let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
         let mut pos = back_rect.min + Vec2::new(spacing, spacing);
-
+        if tools[arg.document_behavior.selected_tool].is_exclusive() {
+            return;
+        }
         for i in 0..tools.len() {
             let t = &tools[i];
+            if !t.is_visible() {
+                continue;
+            }
             let image = t.get_icon_name();
 
             let rect = Rect::from_min_size(pos.floor(), Vec2::new(icon_size, icon_size));
