@@ -3,7 +3,6 @@ use crate::{AnsiEditor, Message};
 use eframe::egui;
 
 pub struct MoveLayer {
-    pub initial_offset: Position,
     pub pos: Position,
 }
 
@@ -26,14 +25,6 @@ impl Tool for MoveLayer {
         None
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
-        let cur_layer = editor.get_cur_layer();
-        if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.get(cur_layer) {
-            self.initial_offset = layer.get_offset();
-        }
-        Event::None
-    }
-
     fn handle_drag(
         &mut self,
         _ui: &egui::Ui,
@@ -50,7 +41,7 @@ impl Tool for MoveLayer {
             .layers
             .get_mut(cur_layer)
         {
-            layer.set_offset(self.pos + cur - start);
+            layer.set_preview_offset(Some(self.pos + cur - start));
         }
         response.on_hover_cursor(egui::CursorIcon::Grabbing)
     }
@@ -75,7 +66,7 @@ impl Tool for MoveLayer {
             .buffer_view
             .lock()
             .get_edit_state_mut()
-            .move_layer(self.initial_offset, self.pos + cur - start);
+            .move_layer(self.pos + cur - start).unwrap();
         Event::None
     }
 }

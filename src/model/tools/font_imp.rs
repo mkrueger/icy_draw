@@ -336,7 +336,6 @@ impl Tool for FontTool {
             MKey::Character(ch) => {
                 let c_pos = editor.get_caret_position();
                 let _undo = editor.begin_atomic_undo("Typing");
-                let attr = editor.buffer_view.lock().get_caret().get_attribute();
                 editor.buffer_view.lock().get_edit_state_mut().set_outline_style(unsafe { SETTINGS.font_outline_style });
                 let opt_size: Option<Size> = font.render(
                     editor.buffer_view.lock().get_edit_state_mut(),

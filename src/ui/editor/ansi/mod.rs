@@ -890,6 +890,8 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
+                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32) - 
+                    self.buffer_view.lock().get_edit_state().get_cur_layer().offset; 
                     /*
                     let b: i32 = match responsee.b {
                                      PointerButton::Primary => 1,
@@ -901,7 +903,7 @@ impl AnsiEditor {
                     cur_tool.handle_click(
                         self,
                         1,
-                        Position::new(click_pos.x as i32, click_pos.y as i32),
+                        cp,
                     );
                     self.is_dirty = true;
                     self.redraw_view();
@@ -913,7 +915,10 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    self.last_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
+                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32) - 
+                    self.buffer_view.lock().get_edit_state().get_cur_layer().offset; 
+
+                    self.last_pos = cp;
                     self.drag_start = Some(self.last_pos);
                     cur_tool.handle_drag_begin(self, self.last_pos);
                 }
@@ -925,13 +930,15 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 let click_pos = calc.calc_click_pos(mouse_pos);
                 if let Some(ds) = self.drag_start {
-                    let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
+                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32) - 
+                    self.buffer_view.lock().get_edit_state().get_cur_layer().offset; 
                     let mut c = self.last_pos;
-                    while c != cur {
+                    while c != cp {
+                        c += (cp - c).signum();
+
                         response = cur_tool.handle_drag(ui, response, self, ds, c);
-                        c += (cur - c).signum();
                     }
-                    self.last_pos = cur;
+                    self.last_pos = cp;
                 }
             }
             self.redraw_view();
@@ -941,22 +948,18 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.hover_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
+                    let cp = Position::new(click_pos.x as i32, click_pos.y as i32) + 
+                    self.buffer_view.lock().get_edit_state().get_cur_layer().offset; 
 
-                    response = cur_tool.handle_hover(ui, response, self, cur);
+                    response = cur_tool.handle_hover(ui, response, self, cp);
                 }
             }
         }
 
         if response.drag_released() {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
-                let click_pos = calc.calc_click_pos(mouse_pos);
-                if let Some(ds) = self.drag_start {
-                    let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
-                    self.is_dirty = true;
-
-                    cur_tool.handle_drag_end(self, ds, cur);
-                }
+            if let Some(ds) = self.drag_start {
+                self.is_dirty = true;
+                cur_tool.handle_drag_end(self, ds, self.last_pos);
             }
             self.last_pos = Position::new(-1, -1);
 

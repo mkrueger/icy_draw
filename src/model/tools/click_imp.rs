@@ -73,7 +73,7 @@ impl Tool for ClickTool {
     ) -> Event {
         let mut cur = cur;
         if start < cur {
-            cur = cur + Position::new(1, 1);
+            cur += Position::new(1, 1);
         }
 
         if start == cur {

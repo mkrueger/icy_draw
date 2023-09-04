@@ -126,7 +126,6 @@ impl MainWindow {
             }),
             Box::new(fnt),
             Box::new(crate::model::move_layer_imp::MoveLayer {
-                initial_offset: Position { x: 0, y: 0 },
                 pos: icy_engine::Position { x: 0, y: 0 },
             }),
         ];
@@ -240,8 +239,9 @@ impl MainWindow {
             }
         }
         match Buffer::load_buffer(path, true) {
-            Ok(buf) => {
+            Ok(mut buf) => {
                 let id = self.create_id();
+                buf.is_terminal_buffer = false;
                 let editor = AnsiEditor::new(&self.gl, id, buf);
                 add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
             }
