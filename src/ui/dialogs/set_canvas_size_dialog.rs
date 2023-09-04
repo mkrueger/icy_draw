@@ -16,7 +16,7 @@ impl SetCanvasSizeDialog {
         SetCanvasSizeDialog {
             should_commit: false,
             width: buf.get_width(),
-            height: buf.get_line_count(),
+            height: buf.get_height(),
         }
     }
 }
