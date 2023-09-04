@@ -67,7 +67,7 @@ impl BitFontEditor {
         if let Some(glyph) = font.get_glyph(ch) {
             for y in 0..s.height {
                 for x in 0..s.width {
-                    if glyph.data[y] & (128 >> x) != 0 {
+                    if glyph.data[y as usize] & (128 >> x) != 0 {
                         painter.rect_filled(
                             Rect::from_min_size(
                                 Pos2::new(
@@ -183,9 +183,8 @@ impl BitFontEditor {
                             2. + top_ruler / 2. + stroke_rect.top(),
                         );
                         let col = if let Some(pos) = response.hover_pos() {
-                            if x as i32
-                                == ((pos.x - (2. + left_ruler + stroke_rect.left()))
-                                    / (border + scale)) as i32
+                            if x == ((pos.x - (2. + left_ruler + stroke_rect.left()))
+                                / (border + scale)) as i32
                             {
                                 ui.style().visuals.strong_text_color()
                             } else {
@@ -211,9 +210,8 @@ impl BitFontEditor {
                                 + (y as f32 + 0.5) * (border + scale),
                         );
                         let col = if let Some(pos) = response.hover_pos() {
-                            if y as i32
-                                == ((pos.y - (2. + top_ruler + stroke_rect.top()))
-                                    / (border + scale)) as i32
+                            if y == ((pos.y - (2. + top_ruler + stroke_rect.top()))
+                                / (border + scale)) as i32
                             {
                                 ui.style().visuals.strong_text_color()
                             } else {
@@ -245,7 +243,7 @@ impl BitFontEditor {
                                 ),
                                 Vec2::new(scale, scale),
                             );
-                            let col = if glyph.data[y] & (128 >> x) != 0 {
+                            let col = if glyph.data[y as usize] & (128 >> x) != 0 {
                                 if let Some(pos) = response.hover_pos() {
                                     if rect.contains(pos) {
                                         Color32::WHITE
@@ -374,7 +372,7 @@ impl ClipboardHandler for BitFontEditor {
     fn paste(&mut self) -> EngineResult<()> {
         if let Some(data) = pop_data(BITFONT_GLYPH) {
             let (_, g) = Glyph::from_clipbard_data(&data);
-            let len = self.font.size.height;
+            let len = self.font.size.height as usize;
             if let Some(ch) = self.selected_char_opt {
                 if let Some(glyph) = self.font.get_glyph_mut(ch) {
                     glyph.data = g.data;

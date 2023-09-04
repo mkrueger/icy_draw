@@ -267,8 +267,8 @@ impl Tool for LineTool {
                 .get_attribute()
                 .get_foreground();
             let draw = move |rect: Rectangle| {
-                for y in 0..(rect.size.height as i32) {
-                    for x in 0..(rect.size.width as i32) {
+                for y in 0..rect.size.height {
+                    for x in 0..rect.size.width {
                         set_half_block(
                             editor,
                             Position::new(rect.start.x + x, rect.start.y + y),
@@ -281,8 +281,8 @@ impl Tool for LineTool {
         } else {
             lines.add_line(start, cur);
             let draw = move |rect: Rectangle| {
-                for y in 0..(rect.size.height as i32) {
-                    for x in 0..(rect.size.width as i32) {
+                for y in 0..rect.size.height {
+                    for x in 0..rect.size.width {
                         plot_point(
                             editor,
                             self,
@@ -395,8 +395,8 @@ fn get_half_block(
 }
 
 pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
-    let w = editor.buffer_view.lock().get_buffer().get_width() as i32;
-    let h = editor.buffer_view.lock().get_buffer().get_line_count() as i32;
+    let w = editor.buffer_view.lock().get_buffer().get_width();
+    let h = editor.buffer_view.lock().get_buffer().get_line_count();
 
     if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 {
         return;

@@ -14,8 +14,9 @@ use eframe::{
 use i18n_embed_fl::fl;
 use icy_engine::{
     editor::{AtomicUndoGuard, UndoState},
-    AttributedChar, Buffer, Layer, Line, Position, Rectangle, SaveOptions, TextAttribute,
-    UPosition, util::{pop_data, push_data, BUFFER_DATA}, EngineResult,
+    util::{pop_data, push_data, BUFFER_DATA},
+    AttributedChar, Buffer, EngineResult, Layer, Line, Position, Rectangle, SaveOptions,
+    TextAttribute,
 };
 
 use icy_engine_egui::{
@@ -83,16 +84,24 @@ impl ClipboardHandler for AnsiEditor {
     fn cut(&mut self) -> EngineResult<()> {
         let _cut = self.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-cut"));
         self.copy()?;
-        self.buffer_view.lock().get_edit_state_mut().delete_selection();
+        self.buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .delete_selection();
         Ok(())
-    } 
+    }
 
     fn can_copy(&self) -> bool {
         self.buffer_view.lock().get_selection().is_some()
     }
 
     fn copy(&mut self) -> EngineResult<()> {
-        if let Some(data) = self.buffer_view.lock().get_edit_state_mut().get_clipboard_data() {
+        if let Some(data) = self
+            .buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .get_clipboard_data()
+        {
             push_data(BUFFER_DATA, &data)?;
         }
         Ok(())
@@ -104,7 +113,10 @@ impl ClipboardHandler for AnsiEditor {
 
     fn paste(&mut self) -> EngineResult<()> {
         if let Some(data) = pop_data(BUFFER_DATA) {
-            self.buffer_view.lock().get_edit_state_mut().paste_clipboard_data(&data)?;
+            self.buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .paste_clipboard_data(&data)?;
         }
         Ok(())
     }
@@ -247,14 +259,8 @@ impl AnsiEditor {
     pub fn set_caret_position(&mut self, pos: Position) {
         let buffer_view = &mut self.buffer_view.lock();
         let pos = Position::new(
-            min(
-                buffer_view.get_buffer().get_width() as i32 - 1,
-                max(0, pos.x),
-            ),
-            min(
-                buffer_view.get_buffer().get_line_count() as i32 - 1,
-                max(0, pos.y),
-            ),
+            min(buffer_view.get_buffer().get_width() - 1, max(0, pos.x)),
+            min(buffer_view.get_buffer().get_line_count() - 1, max(0, pos.y)),
         );
         buffer_view.get_caret_mut().set_position(pos);
         //(self.pos_changed)(self, pos);
@@ -316,8 +322,8 @@ impl AnsiEditor {
 
     pub fn set_caret(&mut self, x: i32, y: i32) -> Event {
         let old = self.buffer_view.lock().get_caret().get_position();
-        let w = self.buffer_view.lock().get_buffer().get_width() as i32 - 1;
-        let h = self.buffer_view.lock().get_buffer().get_line_count() as i32 - 1;
+        let w = self.buffer_view.lock().get_buffer().get_width() - 1;
+        let h = self.buffer_view.lock().get_buffer().get_line_count() - 1;
         self.set_caret_position(Position::new(min(max(0, x), w), min(max(0, y), h)));
         Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())
     }
@@ -383,7 +389,7 @@ impl AnsiEditor {
         self.buffer_view.lock().get_buffer().layers[cur_layer].get_char(pos)
     }
 
-    pub fn set_char(&mut self, pos: impl Into<UPosition>, attributed_char: AttributedChar) {
+    pub fn set_char(&mut self, pos: impl Into<Position>, attributed_char: AttributedChar) {
         let _ = self
             .buffer_view
             .lock()
@@ -415,14 +421,14 @@ impl AnsiEditor {
     fn cur_selection(&self) -> Option<icy_engine::Selection> {
         self.buffer_view.lock().get_selection()
     }
-    fn clear_selection(&self) {
+    fn _clear_selection(&self) {
         self.buffer_view.lock().clear_selection();
     }
 
     pub fn type_key(&mut self, char_code: char) {
         let pos = self.buffer_view.lock().get_caret().get_position();
         if self.buffer_view.lock().get_caret().insert_mode {
-            let start = self.buffer_view.lock().get_buffer().get_width() as i32 - 1;
+            let start = self.buffer_view.lock().get_buffer().get_width() - 1;
             for i in start..=pos.x {
                 let next = self.get_char_from_cur_layer(Position::new(i - 1, pos.y));
                 self.set_char(Position::new(i, pos.y), next);
@@ -434,7 +440,10 @@ impl AnsiEditor {
     }
 
     pub fn delete_selection(&mut self) {
-        self.buffer_view.lock().get_edit_state_mut().delete_selection();
+        self.buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .delete_selection();
     }
 
     fn get_blockaction_rectangle(&self) -> (i32, i32, i32, i32) {
@@ -444,7 +453,7 @@ impl AnsiEditor {
             (min.x, min.y, max.x, max.y)
         } else {
             let size = self.buffer_view.lock().get_buffer().get_buffer_size();
-            (0, 0, size.width as i32 - 1, size.height as i32 - 1)
+            (0, 0, size.width - 1, size.height - 1)
         }
     }
 
@@ -479,7 +488,7 @@ impl AnsiEditor {
                         AttributedChar::invisible()
                     };
 
-                    let pos = UPosition::new(x as usize, y as usize);
+                    let pos = Position::new(x, y);
                     self.buffer_view
                         .lock()
                         .get_edit_state_mut()
@@ -526,7 +535,7 @@ impl AnsiEditor {
                         AttributedChar::invisible()
                     };
 
-                    let pos = UPosition::new((x2 - x) as usize, y as usize);
+                    let pos = Position::new(x2 - x, y);
                     let _ = self
                         .buffer_view
                         .lock()
@@ -570,7 +579,7 @@ impl AnsiEditor {
                         AttributedChar::invisible()
                     };
 
-                    let pos = UPosition::new((x2 - x) as usize, y as usize);
+                    let pos = Position::new(x2 - x, y);
                     let _ = self
                         .buffer_view
                         .lock()
@@ -628,8 +637,8 @@ impl AnsiEditor {
         let new_height = y2 - y1;
         let new_width = x2 - x1;
 
-        if new_height == self.buffer_view.lock().get_buffer().get_line_count() as i32
-            && new_width == self.buffer_view.lock().get_buffer().get_width() as i32
+        if new_height == self.buffer_view.lock().get_buffer().get_line_count()
+            && new_width == self.buffer_view.lock().get_buffer().get_width()
         {
             return;
         }
@@ -674,11 +683,11 @@ impl AnsiEditor {
         self.buffer_view
             .lock()
             .get_buffer_mut()
-            .set_buffer_width(new_width as usize);
+            .set_buffer_width(new_width);
         self.buffer_view
             .lock()
             .get_buffer_mut()
-            .set_buffer_height(new_height as usize);
+            .set_buffer_height(new_height);
     }
 
     pub fn switch_fg_bg_color(&mut self) {

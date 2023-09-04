@@ -32,13 +32,7 @@ impl Tool for MoveLayer {
         _cur: Position,
     ) -> Event {
         let cur_layer = editor.get_cur_layer();
-        if let Some(layer) = editor
-            .buffer_view
-            .lock()
-            .get_buffer()
-            .layers
-            .get(cur_layer)
-        {
+        if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.get(cur_layer) {
             self.pos = layer.get_offset();
         }
         Event::None

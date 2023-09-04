@@ -250,7 +250,7 @@ impl Tool for FontTool {
 
             MKey::Home => {
                 if let MModifiers::Control = modifier {
-                    let end = editor.buffer_view.lock().get_buffer().get_width() as i32;
+                    let end = editor.buffer_view.lock().get_buffer().get_width();
                     for i in 0..end {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
@@ -266,7 +266,7 @@ impl Tool for FontTool {
 
             MKey::End => {
                 if let MModifiers::Control = modifier {
-                    let end = editor.buffer_view.lock().get_buffer().get_width() as i32;
+                    let end = editor.buffer_view.lock().get_buffer().get_width();
                     for i in (0..end).rev() {
                         if !editor
                             .get_char_from_cur_layer(pos.with_x(i))
@@ -277,12 +277,12 @@ impl Tool for FontTool {
                         }
                     }
                 }
-                let w = editor.buffer_view.lock().get_buffer().get_width() as i32;
+                let w = editor.buffer_view.lock().get_buffer().get_width();
                 editor.set_caret(w - 1, pos.y);
             }
 
             MKey::Return => {
-                editor.set_caret(0, pos.y + font.get_font_height() as i32);
+                editor.set_caret(0, pos.y + font.get_font_height());
                 /*
                 if let Some(size) = self.sizes.last() {
                     editor.set_caret(0,pos.y + size.height as i32);
@@ -297,20 +297,20 @@ impl Tool for FontTool {
                 editor.buffer_view.lock().clear_selection();
                 let pos = editor.get_caret_position();
                 if pos.x > 0 {
-                    editor.set_caret_position(pos + Position::new(-(letter_size.width as i32), 0));
+                    editor.set_caret_position(pos + Position::new(-(letter_size.width), 0));
                     if editor.buffer_view.lock().get_caret().insert_mode {
-                        let end = (editor.buffer_view.lock().get_buffer().get_width()
-                            - (letter_size.width)) as i32;
+                        let end = editor.buffer_view.lock().get_buffer().get_width()
+                            - (letter_size.width);
                         for i in pos.x..end {
                             let next = editor.get_char_from_cur_layer(Position::new(
-                                i + letter_size.width as i32,
+                                i + letter_size.width,
                                 pos.y,
                             ));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(
-                            (editor.buffer_view.lock().get_buffer().get_width()
-                                - (letter_size.width)) as i32,
+                            editor.buffer_view.lock().get_buffer().get_width()
+                                - (letter_size.width),
                             pos.y,
                         );
                         editor.fill(
@@ -340,16 +340,16 @@ impl Tool for FontTool {
                 let opt_size: Option<Size> = font.render(
                     editor.buffer_view.lock().get_buffer_mut(),
                     0,
-                    c_pos.as_uposition(),
+                    c_pos,
                     attr,
                     unsafe { SETTINGS.font_outline_style },
                     ch as u8,
                 );
                 if let Some(size) = opt_size {
-                    editor.set_caret(c_pos.x + size.width as i32 + font.spaces, c_pos.y);
+                    editor.set_caret(c_pos.x + size.width + font.spaces, c_pos.y);
                     let new_pos = editor.get_caret_position();
                     self.sizes.push(Size {
-                        width: (new_pos.x - c_pos.x) as usize,
+                        width: (new_pos.x - c_pos.x),
                         height: size.height,
                     });
                 } else {

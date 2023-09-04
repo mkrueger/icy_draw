@@ -31,8 +31,8 @@ impl ScanLines {
     }
 
     pub fn add_ellipse(&mut self, rectangle: Rectangle) {
-        let mut rw = rectangle.size.width as i32;
-        let mut rh = rectangle.size.height as i32;
+        let mut rw = rectangle.size.width;
+        let mut rh = rectangle.size.height;
 
         if rw < 2 {
             rw = 2;
@@ -219,11 +219,11 @@ impl ScanLines {
     }
 
     pub fn add_rectangle(&mut self, rectangle: Rectangle) {
-        for i in 0..(rectangle.size.height as i32) {
+        for i in 0..rectangle.size.height {
             self.add_horizontal(
                 rectangle.start.x,
                 rectangle.start.y + i,
-                rectangle.size.width as i32,
+                rectangle.size.width,
             );
         }
     }

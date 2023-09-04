@@ -131,8 +131,8 @@ impl Tool for DrawEllipseTool {
             .get_attribute()
             .get_foreground();
         for rect in lines.outline() {
-            for y in 0..(rect.size.height as i32) {
-                for x in 0..(rect.size.width as i32) {
+            for y in 0..rect.size.height {
+                for x in 0..rect.size.width {
                     set_half_block(
                         editor,
                         Position::new(rect.start.x + x, rect.start.y + y),

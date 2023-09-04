@@ -2,8 +2,8 @@ use std::{fs, path::PathBuf, sync::Arc};
 
 use eframe::egui::{self, RichText};
 use icy_engine::{
-    editor::UndoState, BitFont, Buffer, EngineResult, Layer, Size, TextAttribute, TheDrawFont,
-    UPosition,
+    editor::UndoState, BitFont, Buffer, EngineResult, Layer, Position, Size, TextAttribute,
+    TheDrawFont,
 };
 
 use crate::{
@@ -173,7 +173,7 @@ impl CharFontEditor {
             font.render(
                 buffer,
                 0,
-                UPosition::default(),
+                Position::default(),
                 TextAttribute::default(),
                 0,
                 ch as u8,

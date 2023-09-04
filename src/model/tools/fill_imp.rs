@@ -32,8 +32,10 @@ impl FillTool {
         old_ch: AttributedChar,
         new_ch: AttributedChar,
     ) {
-        if pos.x >= editor.buffer_view.lock().get_buffer().get_width() as i32
-            || pos.y >= editor.buffer_view.lock().get_buffer().get_height() as i32
+        if pos.x < 0
+            || pos.y < 0
+            || pos.x >= editor.buffer_view.lock().get_buffer().get_width()
+            || pos.y >= editor.buffer_view.lock().get_buffer().get_height()
             || !visited.insert(pos)
         {
             return;

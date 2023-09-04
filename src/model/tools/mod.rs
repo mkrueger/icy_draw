@@ -238,13 +238,13 @@ pub trait Tool {
                     editor.delete_selection();
                 } else {
                     let pos = editor.get_caret_position();
-                    let end = editor.buffer_view.lock().get_buffer().get_width() as i32 - 1;
+                    let end = editor.buffer_view.lock().get_buffer().get_width() - 1;
                     for i in pos.x..end {
                         let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                         editor.set_char(Position::new(i, pos.y), next);
                     }
                     let last_pos = Position::new(
-                        editor.buffer_view.lock().get_buffer().get_width() as i32 - 1,
+                        editor.buffer_view.lock().get_buffer().get_width() - 1,
                         pos.y,
                     );
                     editor.set_char(last_pos, AttributedChar::invisible());
@@ -269,13 +269,13 @@ pub trait Tool {
                     } else {*/
                     editor.set_caret_position(pos + Position::new(-1, 0));
                     if editor.buffer_view.lock().get_caret().insert_mode {
-                        let end = editor.buffer_view.lock().get_buffer().get_width() as i32 - 1;
+                        let end = editor.buffer_view.lock().get_buffer().get_width() - 1;
                         for i in pos.x..end {
                             let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
                             editor.set_char(Position::new(i, pos.y), next);
                         }
                         let last_pos = Position::new(
-                            editor.buffer_view.lock().get_buffer().get_width() as i32 - 1,
+                            editor.buffer_view.lock().get_buffer().get_width() - 1,
                             pos.y,
                         );
                         editor.set_char(last_pos, AttributedChar::invisible());

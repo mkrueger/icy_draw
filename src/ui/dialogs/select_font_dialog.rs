@@ -7,7 +7,7 @@ use eframe::{
 use egui_extras::RetainedImage;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{Buffer, Size, TextAttribute, TheDrawFont, UPosition};
+use icy_engine::{Buffer, Position, Rectangle, Size, TextAttribute, TheDrawFont};
 
 use crate::MainWindow;
 
@@ -194,7 +194,7 @@ impl crate::ModalDialog for SelectFontDialog {
                                         img.show_scaled(ui, 0.5);
                                     } else {
                                         let mut buffer = Buffer::new((100, 12));
-                                        let mut pos = UPosition::default();
+                                        let mut pos = Position::default();
                                         let attr = TextAttribute::default();
                                         let outline_style = 0;
 
@@ -208,7 +208,7 @@ impl crate::ModalDialog for SelectFontDialog {
                                                 ch,
                                             );
                                             if let Some(size) = opt_size {
-                                                pos.x += size.width + font.spaces as usize;
+                                                pos.x += size.width + font.spaces;
                                             }
                                         }
                                         let img = create_retained_image(&buffer);
@@ -253,49 +253,10 @@ impl crate::ModalDialog for SelectFontDialog {
 }
 
 pub fn create_retained_image(buf: &Buffer) -> RetainedImage {
-    let font_size = buf.get_font(0).unwrap().size;
-
-    let px_width = buf.get_width() * font_size.width;
-    let px_height = buf.get_height() * font_size.height;
-    let line_bytes = px_width * 3;
-    let mut pixels = vec![0; line_bytes * px_height];
-
-    for y in 0..buf.get_height() {
-        for x in 0..buf.get_width() {
-            let ch = buf.get_char((x, y));
-            let font = buf.get_font(ch.get_font_page()).unwrap();
-
-            let fg = if ch.attribute.is_bold() && ch.attribute.get_foreground() < 8 {
-                ch.attribute.get_foreground() + 8
-            } else {
-                ch.attribute.get_foreground()
-            };
-
-            let (fg_r, fg_g, fg_b) = buf.palette.colors[fg as usize].get_rgb();
-            let (bg_r, bg_g, bg_b) =
-                buf.palette.colors[ch.attribute.get_background() as usize].get_rgb();
-
-            if let Some(glyph) = font.get_glyph(ch.ch) {
-                for cy in 0..font_size.height {
-                    for cx in 0..font_size.width {
-                        let offset = (x * font_size.width + cx) * 3
-                            + (y * font_size.height + cy) * line_bytes;
-                        if glyph.data[cy] & (128 >> cx) != 0 {
-                            pixels[offset] = fg_r;
-                            pixels[offset + 1] = fg_g;
-                            pixels[offset + 2] = fg_b;
-                        } else {
-                            pixels[offset] = bg_r;
-                            pixels[offset + 1] = bg_g;
-                            pixels[offset + 2] = bg_b;
-                        }
-                    }
-                }
-            }
-        }
-    }
+    let (size, pixels) =
+        buf.render_to_rgba(Rectangle::from(0, 0, buf.get_width(), buf.get_height()));
     RetainedImage::from_color_image(
         "buf_img",
-        ColorImage::from_rgb([px_width, px_height], &pixels),
+        ColorImage::from_rgba_premultiplied([size.width as usize, size.height as usize], &pixels),
     )
 }

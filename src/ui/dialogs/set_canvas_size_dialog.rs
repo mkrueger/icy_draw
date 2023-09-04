@@ -7,8 +7,8 @@ use crate::{AnsiEditor, ModalDialog, TerminalResult};
 
 pub struct SetCanvasSizeDialog {
     pub should_commit: bool,
-    pub width: usize,
-    pub height: usize,
+    pub width: i32,
+    pub height: i32,
 }
 
 impl SetCanvasSizeDialog {

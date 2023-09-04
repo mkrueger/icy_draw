@@ -56,7 +56,7 @@ impl ModalDialog for SelectCharacterDialog {
                 if let Some(glyph) = font.get_glyph(ch) {
                     for y in 0..s.height {
                         for x in 0..s.width {
-                            if glyph.data[y] & (128 >> x) != 0 {
+                            if glyph.data[y as usize] & (128 >> x) != 0 {
                                 painter.rect_filled(
                                     Rect::from_min_size(
                                         egui::Pos2::new(
@@ -114,8 +114,8 @@ impl ModalDialog for SelectCharacterDialog {
                 }
 
                 for i in 0..font.length {
-                    let is_selected = i == self.selected_ch as usize;
-                    let col = if hovered_char >= 0 && i == hovered_char as usize {
+                    let is_selected = i == self.selected_ch as i32;
+                    let col = if hovered_char >= 0 && i == hovered_char {
                         Color32::WHITE
                     } else if is_selected {
                         Color32::GRAY
@@ -129,7 +129,7 @@ impl ModalDialog for SelectCharacterDialog {
                     if let Some(glyph) = font.get_glyph(ch) {
                         for y in 0..s.height {
                             for x in 0..s.width {
-                                if glyph.data[y] & (128 >> x) != 0 {
+                                if glyph.data[y as usize] & (128 >> x) != 0 {
                                     painter.rect_filled(
                                         Rect::from_min_size(
                                             egui::Pos2::new(
