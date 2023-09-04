@@ -1,8 +1,8 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, TextAttribute, editor::AtomicUndoGuard};
+use icy_engine::{editor::AtomicUndoGuard, AttributedChar, TextAttribute};
 
-use crate::{AnsiEditor, Message, Event};
+use crate::{AnsiEditor, Event, Message};
 
 use super::{Position, Tool};
 
@@ -16,7 +16,6 @@ pub struct EraseTool {
     pub size: i32,
     pub brush_type: EraseType,
     pub undo_op: Option<AtomicUndoGuard>,
-
 }
 
 impl EraseTool {
@@ -132,9 +131,7 @@ impl Tool for EraseTool {
     }
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
-        self.undo_op = Some(
-            editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser")),
-        );
+        self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser")));
         Event::None
     }
 

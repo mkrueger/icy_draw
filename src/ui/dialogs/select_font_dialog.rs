@@ -7,7 +7,7 @@ use eframe::{
 use egui_extras::RetainedImage;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{Buffer, Position, Rectangle, Size, TextAttribute, TheDrawFont, editor::EditState};
+use icy_engine::{editor::EditState, Buffer, Rectangle, Size, TheDrawFont};
 
 use crate::MainWindow;
 
@@ -197,10 +197,8 @@ impl crate::ModalDialog for SelectFontDialog {
                                         let mut state = EditState::from_buffer(buffer);
 
                                         for ch in "HELLO".bytes() {
-                                            let opt_size: Option<Size> = font.render(
-                                                &mut state,
-                                                ch,
-                                            );
+                                            let opt_size: Option<Size> =
+                                                font.render(&mut state, ch);
                                             if let Some(size) = opt_size {
                                                 let mut pos = state.get_caret().get_position();
                                                 pos.x += size.width + font.spaces;

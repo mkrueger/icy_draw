@@ -890,8 +890,14 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32) - 
-                    self.buffer_view.lock().get_edit_state().get_cur_layer().offset; 
+                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
+                        - self
+                            .buffer_view
+                            .lock()
+                            .get_edit_state()
+                            .get_cur_layer()
+                            .unwrap()
+                            .offset;
                     /*
                     let b: i32 = match responsee.b {
                                      PointerButton::Primary => 1,
@@ -900,11 +906,7 @@ impl AnsiEditor {
                                      PointerButton::Extra1 => 4,
                                      PointerButton::Extra2 => 5,
                                  }; */
-                    cur_tool.handle_click(
-                        self,
-                        1,
-                        cp,
-                    );
+                    cur_tool.handle_click(self, 1, cp);
                     self.is_dirty = true;
                     self.redraw_view();
                 }
@@ -915,8 +917,14 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32) - 
-                    self.buffer_view.lock().get_edit_state().get_cur_layer().offset; 
+                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
+                        - self
+                            .buffer_view
+                            .lock()
+                            .get_edit_state()
+                            .get_cur_layer()
+                            .unwrap()
+                            .offset;
 
                     self.last_pos = cp;
                     self.drag_start = Some(self.last_pos);
@@ -930,8 +938,14 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 let click_pos = calc.calc_click_pos(mouse_pos);
                 if let Some(ds) = self.drag_start {
-                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32) - 
-                    self.buffer_view.lock().get_edit_state().get_cur_layer().offset; 
+                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
+                        - self
+                            .buffer_view
+                            .lock()
+                            .get_edit_state()
+                            .get_cur_layer()
+                            .unwrap()
+                            .offset;
                     let mut c = self.last_pos;
                     while c != cp {
                         c += (cp - c).signum();
@@ -948,8 +962,14 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.hover_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    let cp = Position::new(click_pos.x as i32, click_pos.y as i32) + 
-                    self.buffer_view.lock().get_edit_state().get_cur_layer().offset; 
+                    let cp = Position::new(click_pos.x as i32, click_pos.y as i32)
+                        + self
+                            .buffer_view
+                            .lock()
+                            .get_edit_state()
+                            .get_cur_layer()
+                            .unwrap()
+                            .offset;
 
                     response = cur_tool.handle_hover(ui, response, self, cp);
                 }

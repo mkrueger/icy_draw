@@ -1,10 +1,7 @@
 use std::{fs, path::PathBuf, sync::Arc};
 
 use eframe::egui::{self, RichText};
-use icy_engine::{
-    editor::UndoState, BitFont, Buffer, EngineResult, Layer, Position, Size, TextAttribute,
-    TheDrawFont,
-};
+use icy_engine::{editor::UndoState, BitFont, Buffer, EngineResult, Layer, Size, TheDrawFont};
 
 use crate::{
     model::Tool, AnsiEditor, BitFontEditor, ClipboardHandler, Document, DocumentOptions,
@@ -170,10 +167,7 @@ impl CharFontEditor {
         edit_state.get_caret_mut().set_position((0, 0).into());
         if let Some(ch) = self.selected_char_opt {
             let font = &self.fonts[self.selected_font];
-            font.render(
-                edit_state,
-                ch as u8,
-            );
+            font.render(edit_state, ch as u8);
         }
     }
 }

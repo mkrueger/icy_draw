@@ -153,7 +153,8 @@ impl Tool for BrushTool {
         pos: Position,
     ) -> super::Event {
         if button == 1 {
-            let _op: AtomicUndoGuard = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush"));
+            let _op: AtomicUndoGuard =
+                editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush"));
 
             self.paint_brush(editor, pos);
         }
@@ -173,9 +174,8 @@ impl Tool for BrushTool {
     }
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
-        self.undo_op = Some(
-            editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush")),
-        );
+        self.undo_op =
+            Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush")));
         Event::None
     }
 

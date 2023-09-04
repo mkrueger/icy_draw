@@ -74,7 +74,7 @@ impl MainWindow {
             Box::new(crate::model::erase_imp::EraseTool {
                 size: 3,
                 brush_type: crate::model::erase_imp::EraseType::Shade,
-                undo_op: None
+                undo_op: None,
             }),
             Box::new(crate::model::pipette_imp::PipetteTool {}),
             Box::new(crate::model::line_imp::LineTool {
@@ -125,9 +125,7 @@ impl MainWindow {
                 attr: icy_engine::TextAttribute::default(),
             }),
             Box::new(fnt),
-            Box::new(crate::model::move_layer_imp::MoveLayer {
-                pos: icy_engine::Position { x: 0, y: 0 },
-            }),
+            Box::new(crate::model::move_layer_imp::MoveLayer {}),
         ];
 
         let ctx: &egui::Context = &cc.egui_ctx;

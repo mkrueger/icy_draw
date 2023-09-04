@@ -4,9 +4,9 @@ use eframe::{
 };
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Rectangle, editor::AtomicUndoGuard};
+use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Rectangle};
 
-use crate::{model::ScanLines, AnsiEditor, Message, Event};
+use crate::{model::ScanLines, AnsiEditor, Event, Message};
 
 use super::{brush_imp::draw_glyph, line_imp::set_half_block, Position, Tool};
 
@@ -178,8 +178,9 @@ impl Tool for PencilTool {
     ) -> super::Event {
         if button == 1 {
             self.last_pos = pos;
-            let _op: AtomicUndoGuard = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
-    
+            let _op: AtomicUndoGuard =
+                editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
+
             self.paint_brush(editor, pos);
         }
         super::Event::None
@@ -193,7 +194,6 @@ impl Tool for PencilTool {
         _start: Position,
         cur: Position,
     ) -> egui::Response {
-     
         self.paint_brush(editor, cur);
         self.last_pos = cur;
 
@@ -201,9 +201,7 @@ impl Tool for PencilTool {
     }
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
-        self.undo_op = Some(
-            editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil")),
-        );
+        self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil")));
         Event::None
     }
 

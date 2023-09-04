@@ -2,9 +2,7 @@ use super::{Event, Position, Tool};
 use crate::{AnsiEditor, Message};
 use eframe::egui;
 
-pub struct MoveLayer {
-    pub pos: Position,
-}
+pub struct MoveLayer {}
 
 impl Tool for MoveLayer {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
@@ -33,15 +31,14 @@ impl Tool for MoveLayer {
         start: Position,
         cur: Position,
     ) -> egui::Response {
-        let cur_layer = editor.get_cur_layer();
         if let Some(layer) = editor
             .buffer_view
             .lock()
-            .get_buffer_mut()
-            .layers
-            .get_mut(cur_layer)
+            .get_edit_state_mut()
+            .get_cur_layer_mut()
         {
-            layer.set_preview_offset(Some(self.pos + cur - start));
+            let offset: Position = layer.offset;
+            layer.set_preview_offset(Some(offset + cur - start));
         }
         response.on_hover_cursor(egui::CursorIcon::Grabbing)
     }
@@ -62,11 +59,23 @@ impl Tool for MoveLayer {
         start: Position,
         cur: Position,
     ) -> Event {
+        let offset: Position = if let Some(layer) = editor
+            .buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .get_cur_layer_mut()
+        {
+            layer.offset
+        } else {
+            return Event::None;
+        };
+
         editor
             .buffer_view
             .lock()
             .get_edit_state_mut()
-            .move_layer(self.pos + cur - start).unwrap();
+            .move_layer(offset + cur - start)
+            .unwrap();
         Event::None
     }
 }
