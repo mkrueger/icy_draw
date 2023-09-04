@@ -343,14 +343,6 @@ impl Document for AnsiEditor {
                         }
                     }
                 }
-                if response.hovered() {
-                    let hover_pos_opt = ui.input(|i| i.pointer.hover_pos());
-                    if let Some(hover_pos) = hover_pos_opt {
-                        if rect.contains(hover_pos) {
-                            ui.output_mut(|o| o.cursor_icon = CursorIcon::Text);
-                        }
-                    }
-                }
 
                 response.dragged = false;
                 response.drag_released = true;

@@ -98,10 +98,12 @@ impl Tool for DrawRectangleTool {
 
     fn handle_drag(
         &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
         editor: &mut AnsiEditor,
         mut start: Position,
         mut cur: Position,
-    ) -> Event {
+    ) -> egui::Response {
         if let Some(layer) = editor
             .buffer_view
             .lock()
@@ -137,7 +139,7 @@ impl Tool for DrawRectangleTool {
             }
         }
 
-        Event::None
+        response
     }
 
     fn handle_drag_end(

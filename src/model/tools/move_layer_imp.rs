@@ -3,6 +3,7 @@ use crate::{AnsiEditor, Message};
 use eframe::egui;
 
 pub struct MoveLayer {
+    pub initial_offset: Position,
     pub pos: Position,
 }
 
@@ -25,20 +26,22 @@ impl Tool for MoveLayer {
         None
     }
 
-    fn handle_drag_begin(
-        &mut self,
-        editor: &mut AnsiEditor,
-        _start: Position,
-        _cur: Position,
-    ) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
         let cur_layer = editor.get_cur_layer();
         if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.get(cur_layer) {
-            self.pos = layer.get_offset();
+            self.initial_offset = layer.get_offset();
         }
         Event::None
     }
 
-    fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
+    fn handle_drag(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        editor: &mut AnsiEditor,
+        start: Position,
+        cur: Position,
+    ) -> egui::Response {
         let cur_layer = editor.get_cur_layer();
         if let Some(layer) = editor
             .buffer_view
@@ -49,6 +52,30 @@ impl Tool for MoveLayer {
         {
             layer.set_offset(self.pos + cur - start);
         }
+        response.on_hover_cursor(egui::CursorIcon::Grabbing)
+    }
+
+    fn handle_hover(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
+    ) -> egui::Response {
+        response.on_hover_cursor(egui::CursorIcon::Move)
+    }
+
+    fn handle_drag_end(
+        &mut self,
+        editor: &mut AnsiEditor,
+        start: Position,
+        cur: Position,
+    ) -> Event {
+        editor
+            .buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .move_layer(self.initial_offset, self.pos + cur - start);
         Event::None
     }
 }

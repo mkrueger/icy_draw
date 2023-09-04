@@ -30,7 +30,14 @@ impl Tool for ClickTool {
         Event::None
     }
 
-    fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
+    fn handle_drag(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        editor: &mut AnsiEditor,
+        start: Position,
+        cur: Position,
+    ) -> egui::Response {
         if start == cur {
             editor.buffer_view.lock().clear_selection();
         } else {
@@ -44,7 +51,18 @@ impl Tool for ClickTool {
                     (cur.y - start.y).abs() as f32,
                 ));
         }
-        Event::None
+        response
+    }
+
+    fn handle_hover(
+        &mut self,
+        ui: &egui::Ui,
+        response: egui::Response,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
+    ) -> egui::Response {
+        ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Text);
+        response
     }
 
     fn handle_drag_end(

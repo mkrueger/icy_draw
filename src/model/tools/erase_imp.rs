@@ -118,11 +118,13 @@ impl Tool for EraseTool {
 
     fn handle_drag(
         &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
         editor: &mut AnsiEditor,
         _start: Position,
         cur: Position,
-    ) -> super::Event {
+    ) -> egui::Response {
         self.paint_brush(editor, cur);
-        super::Event::None
+        response
     }
 }

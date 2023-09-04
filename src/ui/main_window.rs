@@ -123,6 +123,7 @@ impl MainWindow {
             }),
             Box::new(fnt),
             Box::new(crate::model::move_layer_imp::MoveLayer {
+                initial_offset: Position { x: 0, y: 0 },
                 pos: icy_engine::Position { x: 0, y: 0 },
             }),
         ];

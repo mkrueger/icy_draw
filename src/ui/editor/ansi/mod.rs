@@ -36,7 +36,7 @@ pub enum Event {
 pub struct AnsiEditor {
     pub id: usize,
     is_dirty: bool,
-    drag_start: Option<Vec2>,
+    drag_start: Option<Position>,
     last_pos: Position,
 
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
@@ -818,7 +818,7 @@ impl AnsiEditor {
     fn handle_response(
         &mut self,
         ui: &egui::Ui,
-        response: Response,
+        mut response: Response,
         calc: TerminalCalc,
         cur_tool: &mut Box<dyn Tool>,
     ) -> Response {
@@ -914,7 +914,8 @@ impl AnsiEditor {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     self.last_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
-                    self.drag_start = Some(click_pos);
+                    self.drag_start = Some(self.last_pos);
+                    cur_tool.handle_drag_begin(self, self.last_pos);
                 }
             }
             self.last_pos = Position::new(-1, -1);
@@ -929,11 +930,22 @@ impl AnsiEditor {
 
                     if cur != self.last_pos {
                         self.last_pos = cur;
-                        cur_tool.handle_drag(self, Position::new(ds.x as i32, ds.y as i32), cur);
+                        response = cur_tool.handle_drag(ui, response, self, ds, cur);
                     }
                 }
             }
             self.redraw_view();
+        }
+
+        if response.hovered() {
+            if let Some(mouse_pos) = response.hover_pos() {
+                if calc.buffer_rect.contains(mouse_pos) {
+                    let click_pos = calc.calc_click_pos(mouse_pos);
+                    let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
+
+                    response = cur_tool.handle_hover(ui, response, self, cur);
+                }
+            }
         }
 
         if response.drag_released() {
@@ -943,7 +955,7 @@ impl AnsiEditor {
                     let cur = Position::new(click_pos.x as i32, click_pos.y as i32);
                     self.is_dirty = true;
 
-                    cur_tool.handle_drag_end(self, Position::new(ds.x as i32, ds.y as i32), cur);
+                    cur_tool.handle_drag_end(self, ds, cur);
                 }
             }
             self.last_pos = Position::new(-1, -1);
@@ -952,14 +964,6 @@ impl AnsiEditor {
             self.redraw_view();
         }
 
-        if response.hovered() {
-            let hover_pos_opt = ui.input(|i| i.pointer.hover_pos());
-            if let Some(hover_pos) = hover_pos_opt {
-                if calc.terminal_rect.contains(hover_pos) {
-                    ui.output_mut(|o| o.cursor_icon = CursorIcon::Text);
-                }
-            }
-        }
         response
     }
 

@@ -15,7 +15,7 @@ pub mod pipette_imp;
 
 mod icons;
 
-use eframe::egui;
+use eframe::egui::{self, Response};
 use egui_extras::RetainedImage;
 use icy_engine::{AttributedChar, Position, TextAttribute};
 pub use scan_lines::*;
@@ -348,22 +348,31 @@ pub trait Tool {
         Event::None
     }
 
-    fn handle_drag_begin(
-        &mut self,
-        _buffer_view: &mut AnsiEditor,
-        _start: Position,
-        _cur: Position,
-    ) -> Event {
+    fn handle_drag_begin(&mut self, _buffer_view: &mut AnsiEditor, _start: Position) -> Event {
         Event::None
     }
+
     fn handle_drag(
         &mut self,
-        _buffer_view: &mut AnsiEditor,
+        _ui: &egui::Ui,
+        response: Response,
+        _editor: &mut AnsiEditor,
         _start: Position,
         _cur: Position,
-    ) -> Event {
-        Event::None
+    ) -> Response {
+        response
     }
+
+    fn handle_hover(
+        &mut self,
+        _ui: &egui::Ui,
+        response: Response,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
+    ) -> Response {
+        response
+    }
+
     fn handle_drag_end(
         &mut self,
         _buffer_view: &mut AnsiEditor,

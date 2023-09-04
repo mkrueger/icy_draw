@@ -94,7 +94,14 @@ impl Tool for DrawRectangleFilledTool {
         result
     }
 
-    fn handle_drag(&mut self, editor: &mut AnsiEditor, start: Position, cur: Position) -> Event {
+    fn handle_drag(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        editor: &mut AnsiEditor,
+        start: Position,
+        cur: Position,
+    ) -> egui::Response {
         if let Some(layer) = editor
             .buffer_view
             .lock()
@@ -120,7 +127,7 @@ impl Tool for DrawRectangleFilledTool {
         };
         lines.fill(draw);
 
-        Event::None
+        response
     }
 
     fn handle_drag_end(

@@ -184,14 +184,16 @@ impl Tool for PencilTool {
 
     fn handle_drag(
         &mut self,
-        buffer_view: &mut AnsiEditor,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        editor: &mut AnsiEditor,
         _start: Position,
         cur: Position,
-    ) -> super::Event {
-        self.paint_brush(buffer_view, cur);
+    ) -> egui::Response {
+        self.paint_brush(editor, cur);
         self.last_pos = cur;
 
-        super::Event::None
+        response
     }
 }
 
