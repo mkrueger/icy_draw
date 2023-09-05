@@ -101,6 +101,8 @@ export-compression-level-label=Compression level
 export-compression-level-off=Off
 export-compression-level-medium=Medium
 export-compression-level-high=High
+export-limit-output-line-length-label=Limit output line length
+export-maximum_line_length=Maximum line length
 
 select-character-title=Select Character
 
