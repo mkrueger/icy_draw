@@ -55,6 +55,7 @@ pub enum Message {
     FlipX,
     FlipY,
     Crop,
+    Paste,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -383,6 +384,13 @@ impl MainWindow {
             Message::ShowError(msg) => {
                 log::error!("{msg}");
                 self.toasts.error(msg);
+            }
+
+            Message::Paste => {
+                if let Some(doc) = self.get_active_document() {
+                    println!("handle paste!");
+                    self.handle_result(doc.lock().unwrap().paste());
+                }
             }
 
             Message::JustifyLeft => {

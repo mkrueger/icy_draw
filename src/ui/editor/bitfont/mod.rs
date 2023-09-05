@@ -12,7 +12,9 @@ use icy_engine::{
     BitFont, EngineResult, Glyph,
 };
 
-use crate::{model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, TerminalResult};
+use crate::{
+    model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
+};
 
 pub struct BitFontEditor {
     font: BitFont,
@@ -424,7 +426,7 @@ impl Document for BitFontEditor {
         ui: &mut eframe::egui::Ui,
         _cur_tool: &mut Box<dyn Tool>,
         _options: &DocumentOptions,
-    ) {
+    ) -> Option<Message> {
         ui.add_space(16.);
 
         ui.vertical_centered(|ui| {
@@ -526,6 +528,7 @@ impl Document for BitFontEditor {
                 }
             })
         });
+        None
     }
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {

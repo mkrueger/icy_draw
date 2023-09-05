@@ -181,6 +181,7 @@ impl MainWindow {
                     scale: eframe::egui::Vec2::new(1.0, 1.0),
                 },
                 request_close: None,
+                message: None,
             },
             tool_behavior: ToolBehavior::default(),
             toasts: egui_notify::Toasts::default(),
@@ -492,35 +493,6 @@ impl eframe::App for MainWindow {
                 self.tool_behavior.active_document = None;
                 let msg = self.tool_behavior.message.take();
                 self.handle_message(msg);
-
-                /*
-                let message = if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(editor) = doc {
-                        crate::ui::layer_view::show_layer_view(ctx, ui, editor)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                };
-                self.handle_message(message);
-                let sel = self.bitfont_selector.take().unwrap();
-                let message = if let Some(doc) = self.get_active_document_mut() {
-                    let doc = doc.get_ansi_editor_mut();
-                    if let Some(editor) = doc {
-                        sel.show_ui(ctx, ui, editor)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                };
-
-                self.bitfont_selector = Some(sel);
-
-                // ui.add(crate::show_char_table(buffer_opt.clone()));
-                */
             });
 
         egui::CentralPanel::default()
@@ -573,6 +545,9 @@ impl eframe::App for MainWindow {
             self.document_tree.tiles.remove(close);
             self.document_behavior.request_close = None;
         }
+
+        let msg = self.document_behavior.message.take();
+        self.handle_message(msg);
 
         ctx.request_repaint_after(Duration::from_millis(150));
     }

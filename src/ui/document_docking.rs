@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use crate::{model::Tool, Document, DocumentOptions};
+use crate::{model::Tool, Document, DocumentOptions, Message};
 use eframe::egui::{self, Response};
 use egui_tiles::{TileId, Tiles};
 
@@ -15,6 +15,7 @@ pub struct DocumentBehavior {
     pub document_options: DocumentOptions,
 
     pub request_close: Option<TileId>,
+    pub message: Option<Message>,
 }
 
 impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
@@ -33,7 +34,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         _tile_id: egui_tiles::TileId,
         pane: &mut DocumentTab,
     ) -> egui_tiles::UiResponse {
-        pane.doc.lock().unwrap().show_ui(
+        self.message = pane.doc.lock().unwrap().show_ui(
             ui,
             &mut self.tools.lock().unwrap()[self.selected_tool],
             &self.document_options,

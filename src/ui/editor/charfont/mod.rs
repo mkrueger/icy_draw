@@ -5,7 +5,7 @@ use icy_engine::{editor::UndoState, BitFont, Buffer, EngineResult, Layer, Size, 
 
 use crate::{
     model::Tool, AnsiEditor, BitFontEditor, ClipboardHandler, Document, DocumentOptions,
-    DrawGlyphStyle, TerminalResult,
+    DrawGlyphStyle, Message, TerminalResult,
 };
 
 pub struct CharFontEditor {
@@ -73,7 +73,7 @@ impl Document for CharFontEditor {
         ui: &mut egui::Ui,
         cur_tool: &mut Box<dyn Tool>,
         options: &DocumentOptions,
-    ) {
+    ) -> Option<Message> {
         egui::ComboBox::from_id_source("combobox1")
             .selected_text(RichText::new(
                 self.fonts[self.selected_font].name.to_string(),
@@ -96,6 +96,7 @@ impl Document for CharFontEditor {
 
         self.show_char_selector(ui);
         self.ansi_editor.show_ui(ui, cur_tool, options);
+        None
     }
 
     fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor> {

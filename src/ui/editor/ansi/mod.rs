@@ -24,7 +24,7 @@ use icy_engine_egui::{
 
 use crate::{
     model::{MKey, MModifiers, Tool},
-    ClipboardHandler, Document, DocumentOptions, TerminalResult,
+    ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
 };
 
 pub enum Event {
@@ -157,7 +157,9 @@ impl Document for AnsiEditor {
         ui: &mut egui::Ui,
         cur_tool: &mut Box<dyn Tool>,
         options: &DocumentOptions,
-    ) {
+    ) -> Option<Message> {
+        let mut message = None;
+
         let mut scale = options.scale;
         if self.buffer_view.lock().get_buffer().use_aspect_ratio {
             scale.y *= 1.35;
@@ -177,12 +179,15 @@ impl Document for AnsiEditor {
                     ..Default::default()
                 };
                 let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
-                let response = response.context_menu(|ui| terminal_context_menu(self, ui));
 
+                let response = response.context_menu(|ui| {
+                    message = terminal_context_menu(self, ui);
+                });
                 self.handle_response(ui, response, calc, cur_tool)
             },
         );
         self.show_toolbar(ui);
+        message
     }
 
     fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor> {
@@ -758,7 +763,8 @@ pub const DEFAULT_OUTLINE_TABLE: [[u8; 10]; 15] = [
     [147, 148, 149, 162, 167, 150, 129, 151, 163, 154],
 ];
 
-pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) {
+pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) -> Option<Message> {
+    let mut result = None;
     ui.input_mut(|i| i.events.clear());
 
     if ui
@@ -773,11 +779,8 @@ pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) {
         .button(fl!(crate::LANGUAGE_LOADER, "menu-paste"))
         .clicked()
     {
-        /* let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-        if let Ok(text) = ctx.get_contents() {
-            ui.input_mut().events.push(egui::Event::Paste(text));
-        }
-        ui.close_menu();*/
+        result = Some(Message::Paste);
+        ui.close_menu();
     }
 
     let sel = editor.buffer_view.lock().get_selection();
@@ -794,14 +797,14 @@ pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) {
             .button(fl!(crate::LANGUAGE_LOADER, "menu-flipx"))
             .clicked()
         {
-            let _ = editor.buffer_view.lock().get_edit_state_mut().flip_x();
+            result = Some(Message::FlipX);
             ui.close_menu();
         }
         if ui
             .button(fl!(crate::LANGUAGE_LOADER, "menu-flipy"))
             .clicked()
         {
-            let _ = editor.buffer_view.lock().get_edit_state_mut().flip_y();
+            result = Some(Message::FlipY);
             ui.close_menu();
         }
 
@@ -809,37 +812,25 @@ pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) {
             .button(fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"))
             .clicked()
         {
-            let _ = editor
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .justify_left();
+            result = Some(Message::JustifyLeft);
             ui.close_menu();
         }
         if ui
             .button(fl!(crate::LANGUAGE_LOADER, "menu-justifyright"))
             .clicked()
         {
-            let _ = editor
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .justify_right();
+            result = Some(Message::JustifyRight);
             ui.close_menu();
         }
         if ui
             .button(fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"))
             .clicked()
         {
-            editor
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .center()
-                .unwrap();
+            result = Some(Message::Center);
             ui.close_menu();
         }
     }
+    result
 }
 
 pub const CTRL_MOD: u32 = 0b1000_0000_0000_0000_0000;
