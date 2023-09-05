@@ -57,8 +57,8 @@ impl MainWindow {
         fnt.load_fonts();
 
         let tools: Vec<Box<dyn Tool>> = vec![
-            Box::new(crate::model::paste_tool::PasteTool::default()),
-            Box::new(crate::model::click_imp::ClickTool {}),
+            Box::<crate::model::paste_tool::PasteTool>::default(),
+            Box::<crate::model::click_imp::ClickTool>::default(),
             Box::new(crate::model::pencil_imp::PencilTool {
                 use_back: true,
                 use_fore: true,
@@ -129,7 +129,7 @@ impl MainWindow {
                 attr: icy_engine::TextAttribute::default(),
             }),
             Box::new(fnt),
-            Box::new(crate::model::move_layer_imp::MoveLayer::default()),
+            Box::<crate::model::move_layer_imp::MoveLayer>::default(),
         ];
 
         let ctx: &egui::Context = &cc.egui_ctx;

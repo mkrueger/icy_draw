@@ -31,7 +31,7 @@ impl Tool for MoveLayer {
         None
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, pos: Position) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _pos: Position) -> Event {
         self.drag_started = false;
 
         if let Some(layer) = editor
@@ -42,7 +42,6 @@ impl Tool for MoveLayer {
         {
             self.start_offset = layer.get_offset();
             self.drag_started = true;
-            println!("drag begin!")
         }
         Event::None
     }

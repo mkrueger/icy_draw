@@ -7,6 +7,7 @@ use crate::{AnsiEditor, Message};
 
 use super::{Event, Position, Tool};
 
+#[derive(Default)]
 pub struct ClickTool {}
 
 impl Tool for ClickTool {
