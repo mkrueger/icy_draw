@@ -478,6 +478,7 @@ impl Document for BitFontEditor {
         &mut self,
         ui: &mut eframe::egui::Ui,
         _cur_tool: &mut Box<dyn Tool>,
+        _selected_tool: usize,
         _options: &DocumentOptions,
     ) -> Option<Message> {
         let mut message = None;

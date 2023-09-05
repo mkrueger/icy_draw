@@ -18,7 +18,7 @@ use eframe::{
 };
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, EngineResult, Position, TheDrawFont};
+use icy_engine::{BitFont, Buffer, EngineResult, Position, TextPane, TheDrawFont};
 
 pub struct MainWindow {
     pub document_tree: egui_tiles::Tree<DocumentTab>,
@@ -41,6 +41,7 @@ pub struct MainWindow {
 
 pub const PASTE_TOOL: usize = 0;
 pub const FIRST_TOOL: usize = 1;
+pub const BRUSH_TOOL: usize = 3;
 
 impl MainWindow {
     pub fn create_id(&mut self) -> usize {
@@ -72,6 +73,8 @@ impl MainWindow {
                 use_back: true,
                 use_fore: true,
                 undo_op: None,
+                custom_brush: None,
+                image: None,
                 brush_type: crate::model::brush_imp::BrushType::Shade,
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
             }),
@@ -245,7 +248,7 @@ impl MainWindow {
             Ok(mut buf) => {
                 let id = self.create_id();
                 buf.is_terminal_buffer = false;
-                buf.set_buffer_height(buf.get_line_count());
+                buf.set_height(buf.get_line_count());
                 let editor = AnsiEditor::new(&self.gl, id, buf);
                 add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
             }
@@ -467,12 +470,17 @@ impl eframe::App for MainWindow {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
                         ui.vertical(|ui| {
-                            if let Some(doc) = self.get_active_document() {
+                            let tool_result = if let Some(doc) = self.get_active_document() {
                                 if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
-                                    let tool_result = tool.show_ui(ctx, ui, editor);
-                                    self.handle_message(tool_result);
+                                    tool.show_ui(ctx, ui, editor)
+                                } else {
+                                    None
                                 }
-                            }
+                            } else {
+                                None
+                            };
+                            // can't handle message inside the lock
+                            self.handle_message(tool_result);
                         });
                     });
                 }

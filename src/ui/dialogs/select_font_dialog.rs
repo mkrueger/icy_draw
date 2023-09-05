@@ -7,7 +7,7 @@ use eframe::{
 use egui_extras::RetainedImage;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{editor::EditState, Buffer, Rectangle, Size, TheDrawFont};
+use icy_engine::{editor::EditState, Buffer, Rectangle, Size, TextPane, TheDrawFont};
 
 use crate::{MainWindow, Message};
 

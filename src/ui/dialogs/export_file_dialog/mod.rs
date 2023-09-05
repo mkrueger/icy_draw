@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use eframe::egui::{self, Layout, TextEdit, Ui};
+use eframe::egui::{self, TextEdit, Ui};
 use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;

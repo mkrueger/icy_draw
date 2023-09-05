@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, TextAttribute};
+use icy_engine::{AttributedChar, TextAttribute, TextPane};
 
 use crate::{AnsiEditor, Message};
 

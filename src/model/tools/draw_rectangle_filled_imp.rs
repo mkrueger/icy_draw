@@ -104,6 +104,7 @@ impl Tool for DrawRectangleFilledTool {
         start: Position,
         cur: Position,
     ) -> egui::Response {
+        editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         editor.clear_overlay_layer();
 
         let mut lines = ScanLines::new(1);

@@ -36,6 +36,7 @@ pub trait Document: UndoState + ClipboardHandler {
         &mut self,
         ui: &mut egui::Ui,
         cur_tool: &mut Box<dyn Tool>,
+        selected_tool: usize,
         options: &DocumentOptions,
     ) -> Option<Message>;
 

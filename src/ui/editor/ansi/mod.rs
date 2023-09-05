@@ -16,6 +16,7 @@ use icy_engine::{
     editor::{AtomicUndoGuard, UndoState},
     util::{pop_data, pop_sixel_image, push_data, BUFFER_DATA},
     AttributedChar, Buffer, EngineResult, Line, Position, Rectangle, SaveOptions, TextAttribute,
+    TextPane,
 };
 
 use icy_engine_egui::{
@@ -24,7 +25,7 @@ use icy_engine_egui::{
 
 use crate::{
     model::{MKey, MModifiers, Tool},
-    ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
+    ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, FIRST_TOOL,
 };
 
 pub enum Event {
@@ -156,6 +157,7 @@ impl Document for AnsiEditor {
         &mut self,
         ui: &mut egui::Ui,
         cur_tool: &mut Box<dyn Tool>,
+        selected_tool: usize,
         options: &DocumentOptions,
     ) -> Option<Message> {
         let mut message = None;
@@ -164,6 +166,10 @@ impl Document for AnsiEditor {
         if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
             scale.y *= 1.35;
         }
+        if selected_tool != FIRST_TOOL {
+            self.buffer_view.lock().clear_selection();
+        }
+
         ui.allocate_ui(
             Vec2::new(ui.available_width(), ui.available_height() - 35.0),
             |ui| {
@@ -267,7 +273,7 @@ impl AnsiEditor {
     pub fn set_caret_position(&mut self, pos: Position) {
         let buffer_view = &mut self.buffer_view.lock();
         let pos = Position::new(
-            min(buffer_view.get_buffer().get_width() - 1, max(0, pos.x)),
+            min(buffer_view.get_width() - 1, max(0, pos.x)),
             min(buffer_view.get_buffer().get_line_count() - 1, max(0, pos.y)),
         );
         buffer_view.get_caret_mut().set_position(pos);
@@ -345,7 +351,7 @@ impl AnsiEditor {
         //(self.outline_changed)(self);
     }
 
-    pub fn save_content(&self, file_name: &Path, options: &SaveOptions) -> io::Result<bool> {
+    pub fn save_content(&self, file_name: &Path, options: &SaveOptions) -> EngineResult<bool> {
         let mut f = File::create(file_name)?;
 
         let content = if let Some(ext) = file_name.extension() {

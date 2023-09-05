@@ -1,6 +1,7 @@
 use eframe::egui::{self, Layout};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
+use icy_engine::TextPane;
 
 use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 

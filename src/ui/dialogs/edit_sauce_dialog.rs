@@ -1,13 +1,13 @@
 use eframe::egui::{self, Layout};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{SauceString, SauceData};
+use icy_engine::{SauceData, SauceString};
 
 use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 
 pub struct EditSauceDialog {
     pub should_commit: bool,
-    pub sauce_data: SauceData
+    pub sauce_data: SauceData,
 }
 
 impl EditSauceDialog {

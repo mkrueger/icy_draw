@@ -1,4 +1,5 @@
 use std::{
+    backtrace::Backtrace,
     cell::RefCell,
     path::PathBuf,
     rc::Rc,
@@ -6,10 +7,13 @@ use std::{
 };
 
 use eframe::egui;
-use icy_engine::{BitFont, EngineResult, Selection, Size, TheDrawFont};
+use glow::Buffer;
+use icy_engine::{
+    util::pop_data, BitFont, EngineResult, Layer, Selection, Size, TextPane, TheDrawFont,
+};
 
 use crate::{
-    MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
+    AnsiEditor, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
     SelectOutlineDialog,
 };
 
@@ -57,6 +61,8 @@ pub enum Message {
     Crop,
     Paste,
     ResizeBuffer(i32, i32),
+    PasteAsNewImage,
+    PasteAsBrush,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -175,16 +181,11 @@ impl MainWindow {
                 }
             }
             Message::ShowCharacterSelectionDialog(ch) => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor()
-                {
+                self.run_editor_command(ch, |window, editor: &mut AnsiEditor, ch| {
                     let buf = editor.buffer_view.clone();
-                    self.open_dialog(SelectCharacterDialog::new(buf, ch));
-                }
+                    window.open_dialog(SelectCharacterDialog::new(buf, ch));
+                    None
+                });
             }
             Message::SelectFontDialog(fonts, selected_font) => {
                 self.open_dialog(crate::SelectFontDialog::new(fonts, selected_font));
@@ -440,6 +441,35 @@ impl MainWindow {
                     let mut lock = editor.buffer_view.lock();
                     to_message(lock.get_edit_state_mut().resize_buffer(Size::new(w, h)))
                 });
+            }
+
+            Message::PasteAsNewImage => {
+                if let Some(data) = pop_data(icy_engine::util::BUFFER_DATA) {
+                    if let Some(mut layer) = Layer::from_clipboard_data(&data) {
+                        layer.set_offset((0, 0));
+                        layer.role = icy_engine::Role::Normal;
+                        let mut buf = icy_engine::Buffer::new(layer.get_size());
+                        layer.title = buf.layers[0].title.clone();
+                        buf.layers.clear();
+                        buf.layers.push(layer);
+                        let id = self.create_id();
+                        buf.is_terminal_buffer = false;
+                        buf.set_height(buf.get_line_count());
+                        let editor = AnsiEditor::new(&self.gl, id, buf);
+                        crate::add_child(&mut self.document_tree, None, Box::new(editor));
+                    }
+                }
+            }
+
+            Message::PasteAsBrush => {
+                if let Some(data) = pop_data(icy_engine::util::BUFFER_DATA) {
+                    if let Some(mut layer) = Layer::from_clipboard_data(&data) {
+                        unsafe {
+                            crate::model::brush_imp::CUSTOM_BRUSH = Some(layer);
+                            self.document_behavior.selected_tool = crate::BRUSH_TOOL;
+                        }
+                    }
+                }
             }
         }
     }

@@ -11,7 +11,7 @@ use eframe::{
     egui::{self, RichText},
     epaint::{FontFamily, FontId},
 };
-use icy_engine::{Rectangle, Size, TextAttribute, TheDrawFont};
+use icy_engine::{Rectangle, Size, TextAttribute, TextPane, TheDrawFont};
 use walkdir::{DirEntry, WalkDir};
 pub struct FontTool {
     pub selected_font: Arc<Mutex<i32>>,

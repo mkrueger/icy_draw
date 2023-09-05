@@ -37,6 +37,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         self.message = pane.doc.lock().unwrap().show_ui(
             ui,
             &mut self.tools.lock().unwrap()[self.selected_tool],
+            self.selected_tool,
             &self.document_options,
         );
         egui_tiles::UiResponse::None

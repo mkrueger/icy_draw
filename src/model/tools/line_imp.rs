@@ -1,6 +1,6 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Rectangle, TextAttribute};
+use icy_engine::{AttributedChar, Rectangle, TextAttribute, TextPane};
 use icy_engine_egui::TerminalCalc;
 
 use crate::{model::ScanLines, AnsiEditor, Message};

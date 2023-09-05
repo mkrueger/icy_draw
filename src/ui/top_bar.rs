@@ -4,6 +4,7 @@ use eframe::{
 };
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
+use icy_engine::util::{pop_data, BUFFER_DATA};
 
 use crate::{button_with_shortcut, MainWindow, Message};
 
@@ -212,6 +213,31 @@ impl MainWindow {
                         ui.close_menu();
                     }
                 }
+
+                ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-paste-as"), |ui| {
+                    let button = button_with_shortcut(
+                        ui,
+                        pop_data(BUFFER_DATA).is_some(),
+                        fl!(crate::LANGUAGE_LOADER, "menu-paste-as-new-image"),
+                        "",
+                    );
+                    if button.clicked() {
+                        result = Some(Message::PasteAsNewImage);
+                        ui.close_menu();
+                    }
+
+                    let button = button_with_shortcut(
+                        ui,
+                        pop_data(BUFFER_DATA).is_some(),
+                        fl!(crate::LANGUAGE_LOADER, "menu-paste-as-brush"),
+                        "",
+                    );
+                    if button.clicked() {
+                        result = Some(Message::PasteAsBrush);
+                        ui.close_menu();
+                    }
+                });
+
                 ui.separator();
                 if ui
                     .add_enabled(

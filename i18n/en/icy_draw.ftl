@@ -20,6 +20,9 @@ menu-redo-op=Redo: { $op }
 menu-cut=Cut
 menu-copy=Copy
 menu-paste=Paste
+menu-paste-as=Paste as
+menu-paste-as-new-image=New image
+menu-paste-as-brush=Brush
 menu-erase=Erase
 menu-flipx=Flip X
 menu-flipy=Flip Y
@@ -46,6 +49,8 @@ tool-shade=Shade
 tool-colorize=Colorize
 tool-size-label=Size:
 tool-half-block=Half block
+tool-custom-brush=Custom brush
+
 toolbar-new=New
 
 new-file-title=New File

@@ -72,6 +72,7 @@ impl Document for CharFontEditor {
         &mut self,
         ui: &mut egui::Ui,
         cur_tool: &mut Box<dyn Tool>,
+        selected_tool: usize,
         options: &DocumentOptions,
     ) -> Option<Message> {
         egui::ComboBox::from_id_source("combobox1")
@@ -95,7 +96,8 @@ impl Document for CharFontEditor {
             });
 
         self.show_char_selector(ui);
-        self.ansi_editor.show_ui(ui, cur_tool, options);
+        self.ansi_editor
+            .show_ui(ui, cur_tool, selected_tool, options);
         None
     }
 

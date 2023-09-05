@@ -1,4 +1,4 @@
-use eframe::egui::{self, Layout, Ui};
+use eframe::egui::{self, Ui};
 use i18n_embed_fl::fl;
 use icy_engine::SaveOptions;
 

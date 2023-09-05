@@ -4,11 +4,11 @@ use eframe::{
 };
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::{editor::AtomicUndoGuard, AttributedChar};
+use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Layer, Size, TextPane};
 use icy_engine_egui::TerminalCalc;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{AnsiEditor, Event, Message};
+use crate::{create_retained_image, AnsiEditor, Event, Message};
 
 use super::{Position, Tool};
 
@@ -17,7 +17,10 @@ pub enum BrushType {
     Shade,
     Solid,
     Color,
+    Custom,
 }
+
+pub static mut CUSTOM_BRUSH: Option<Layer> = None;
 
 pub struct BrushTool {
     pub use_fore: bool,
@@ -27,6 +30,8 @@ pub struct BrushTool {
 
     pub undo_op: Option<AtomicUndoGuard>,
 
+    pub custom_brush: Option<Layer>,
+    pub image: Option<RetainedImage>,
     pub brush_type: BrushType,
 }
 
@@ -37,6 +42,10 @@ impl BrushTool {
         let center = pos + mid;
         let gradient = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
         let caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
+        if matches!(self.brush_type, BrushType::Custom) {
+            editor.join_overlay("brush");
+            return;
+        }
 
         for y in 0..self.size {
             for x in 0..self.size {
@@ -79,6 +88,7 @@ impl BrushTool {
                             AttributedChar::new(ch.ch, attribute),
                         );
                     }
+                    _ => {}
                 }
             }
         }
@@ -144,7 +154,74 @@ impl Tool for BrushTool {
             BrushType::Color,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+
+        unsafe {
+            if CUSTOM_BRUSH.is_some() {
+                self.custom_brush = CUSTOM_BRUSH.take();
+
+                let mut layer = self.custom_brush.as_ref().unwrap().clone();
+                layer.set_offset((0, 0));
+                layer.role = icy_engine::Role::Normal;
+                let mut buf = icy_engine::Buffer::new(layer.get_size());
+                layer.title = buf.layers[0].title.clone();
+                buf.layers.clear();
+                buf.layers.push(layer);
+                self.image = Some(create_retained_image(&buf));
+            }
+        }
+
+        if self.custom_brush.is_some() {
+            ui.radio_value(
+                &mut self.brush_type,
+                BrushType::Custom,
+                fl!(crate::LANGUAGE_LOADER, "tool-custom-brush"),
+            );
+            if let Some(image) = &self.image {
+                let w = ui.available_width() - 16.0;
+                let scale = w / image.width() as f32;
+                ui.image(
+                    image.texture_id(ui.ctx()),
+                    Vec2::new(image.width() as f32 * scale, image.height() as f32 * scale),
+                );
+            }
+        }
         result
+    }
+
+    fn handle_hover(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        editor: &mut AnsiEditor,
+        cur: Position,
+    ) -> egui::Response {
+        if matches!(self.brush_type, BrushType::Custom) {
+            editor.clear_overlay_layer();
+            if let Some(layer) = editor
+                .buffer_view
+                .lock()
+                .get_buffer_mut()
+                .get_overlay_layer()
+            {
+                if let Some(brush) = &self.custom_brush {
+                    let mid = Position::new(-(brush.get_width() / 2), -(brush.get_height() / 2));
+                    for y in 0..brush.get_height() {
+                        for x in 0..brush.get_width() {
+                            let pos = Position::new(x, y);
+                            let ch = brush.get_char(pos);
+                            layer.set_char(
+                                cur + pos + mid,
+                                AttributedChar::new(ch.ch, ch.attribute),
+                            );
+                        }
+                    }
+                }
+            }
+        } else {
+            editor.buffer_view.lock().get_buffer_mut().remove_overlay();
+        }
+
+        response
     }
 
     fn handle_click(

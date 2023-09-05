@@ -1,6 +1,7 @@
 use super::{Event, Position, Tool};
 use crate::{AnsiEditor, Message};
 use eframe::egui;
+use icy_engine::TextPane;
 use icy_engine_egui::TerminalCalc;
 
 #[derive(Default)]
