@@ -41,7 +41,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     let mut result = None;
 
     let max = editor.buffer_view.lock().get_buffer().layers.len();
-    let cur_layer = editor.get_cur_layer();
+    let cur_layer = editor.get_cur_layer_index();
     let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
 
     let mut paste_mode = false;

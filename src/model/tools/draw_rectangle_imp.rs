@@ -106,14 +106,7 @@ impl Tool for DrawRectangleTool {
         mut start: Position,
         mut cur: Position,
     ) -> egui::Response {
-        if let Some(layer) = editor
-            .buffer_view
-            .lock()
-            .get_buffer_mut()
-            .get_overlay_layer()
-        {
-            layer.clear();
-        }
+        editor.clear_overlay_layer();
 
         if self.draw_mode == DrawMode::Line {
             start.y *= 2;

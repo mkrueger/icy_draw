@@ -303,7 +303,7 @@ impl MainWindow {
                     .unwrap()
                     .get_ansi_editor_mut()
                 {
-                    editor.set_cur_layer(cur_layer);
+                    editor.set_cur_layer_index(cur_layer);
                 }
             }
 

@@ -79,7 +79,7 @@ impl Tool for PasteTool {
         self.drag_started = false;
         if let Some(selected) = PasteTool::is_paste_layer_selected(editor, pos) {
             if !selected {
-                let layer = editor.get_cur_layer();
+                let layer = editor.get_cur_layer_index();
                 editor
                     .buffer_view
                     .lock()

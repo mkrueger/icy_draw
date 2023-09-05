@@ -254,14 +254,7 @@ impl Tool for LineTool {
         start: Position,
         cur: Position,
     ) -> egui::Response {
-        if let Some(layer) = editor
-            .buffer_view
-            .lock()
-            .get_buffer_mut()
-            .get_overlay_layer()
-        {
-            layer.clear();
-        }
+        editor.clear_overlay_layer();
 
         let mut lines = ScanLines::new(1);
         if self.draw_mode == DrawMode::Line {

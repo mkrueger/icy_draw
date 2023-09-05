@@ -225,14 +225,14 @@ impl AnsiEditor {
         }
     }
 
-    pub fn get_cur_layer(&self) -> usize {
+    pub fn get_cur_layer_index(&self) -> usize {
         self.buffer_view
             .lock()
             .get_edit_state_mut()
             .get_current_layer()
     }
 
-    pub fn set_cur_layer(&self, layer: usize) {
+    pub fn set_cur_layer_index(&self, layer: usize) {
         self.buffer_view
             .lock()
             .get_edit_state_mut()
@@ -303,7 +303,7 @@ impl AnsiEditor {
     pub fn delete_line(&mut self, line: i32) {
         // TODO: Undo
         let mut lock = self.buffer_view.lock();
-        let cur_layer = self.get_cur_layer();
+        let cur_layer = self.get_cur_layer_index();
 
         let layer = &mut lock.get_buffer_mut().layers[cur_layer];
         layer.remove_line(line);
@@ -312,7 +312,7 @@ impl AnsiEditor {
     pub fn insert_line(&mut self, line: i32) {
         // TODO: Undo
         let mut binding = self.buffer_view.lock();
-        let cur_layer = self.get_cur_layer();
+        let cur_layer = self.get_cur_layer_index();
 
         let layer = &mut binding.get_buffer_mut().layers[cur_layer];
         layer.insert_line(line, Line::new());
@@ -390,10 +390,10 @@ impl AnsiEditor {
     }
 
     pub fn get_char_from_cur_layer(&self, pos: Position) -> AttributedChar {
-        if self.get_cur_layer() >= self.buffer_view.lock().get_buffer().layers.len() {
+        if self.get_cur_layer_index() >= self.buffer_view.lock().get_buffer().layers.len() {
             return AttributedChar::invisible();
         }
-        let cur_layer = self.get_cur_layer();
+        let cur_layer = self.get_cur_layer_index();
         self.buffer_view.lock().get_buffer().layers[cur_layer].get_char(pos)
     }
 
@@ -742,6 +742,21 @@ impl AnsiEditor {
 
     pub(crate) fn set_file_name(&self, file_name: impl Into<PathBuf>) {
         self.buffer_view.lock().get_buffer_mut().file_name = Some(file_name.into());
+    }
+
+    pub(crate) fn clear_overlay_layer(&self) {
+        let cur_offset = self
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .get_cur_layer()
+            .unwrap()
+            .get_offset();
+
+        if let Some(layer) = self.buffer_view.lock().get_buffer_mut().get_overlay_layer() {
+            layer.set_offset(cur_offset);
+            layer.clear();
+        }
     }
 }
 
