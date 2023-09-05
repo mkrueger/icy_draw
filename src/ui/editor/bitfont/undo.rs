@@ -21,7 +21,7 @@ pub trait UndoOperation: Send {
 }
 
 pub struct Paste {
-    ch: char, 
+    ch: char,
     glyph: Glyph,
     old_data: Vec<u8>,
 }
@@ -29,7 +29,7 @@ pub struct Paste {
 impl Paste {
     pub(crate) fn new(ch: char, glyph: Glyph) -> Self {
         Self {
-            ch, 
+            ch,
             glyph,
             old_data: Vec::new(),
         }
@@ -56,18 +56,16 @@ impl UndoOperation for Paste {
             glyph.data.resize(len, 0);
         }
         Ok(())
-    }        
+    }
 }
 
 pub struct FlipY {
-    ch: char, 
+    ch: char,
 }
 
 impl FlipY {
     pub(crate) fn new(ch: char) -> Self {
-        Self {
-            ch
-        }
+        Self { ch }
     }
 }
 
@@ -88,18 +86,16 @@ impl UndoOperation for FlipY {
             glyph.data = glyph.data.iter().rev().copied().collect();
         }
         Ok(())
-    }        
+    }
 }
 
 pub struct FlipX {
-    ch: char, 
+    ch: char,
 }
 
 impl FlipX {
     pub(crate) fn new(ch: char) -> Self {
-        Self {
-            ch
-        }
+        Self { ch }
     }
 }
 
@@ -126,18 +122,18 @@ impl UndoOperation for FlipX {
             }
         }
         Ok(())
-    }        
+    }
 }
 
 pub struct DownGlyph {
-    ch: char, 
+    ch: char,
     old_data: Vec<u8>,
 }
 
 impl DownGlyph {
     pub(crate) fn new(ch: char) -> Self {
         Self {
-            ch, 
+            ch,
             old_data: Vec::new(),
         }
     }
@@ -162,18 +158,18 @@ impl UndoOperation for DownGlyph {
             glyph.data.pop();
         }
         Ok(())
-    }        
+    }
 }
 
 pub struct UpGlyph {
-    ch: char, 
+    ch: char,
     old_data: Vec<u8>,
 }
 
 impl UpGlyph {
     pub(crate) fn new(ch: char) -> Self {
         Self {
-            ch, 
+            ch,
             old_data: Vec::new(),
         }
     }
@@ -196,20 +192,20 @@ impl UndoOperation for UpGlyph {
             self.old_data = glyph.data.clone();
             glyph.data.remove(0);
             glyph.data.push(0);
-    }
+        }
         Ok(())
-    }        
+    }
 }
 
 pub struct RightGlyph {
-    ch: char, 
+    ch: char,
     old_data: Vec<u8>,
 }
 
 impl RightGlyph {
     pub(crate) fn new(ch: char) -> Self {
         Self {
-            ch, 
+            ch,
             old_data: Vec::new(),
         }
     }
@@ -233,21 +229,20 @@ impl UndoOperation for RightGlyph {
             for i in 0..glyph.data.len() {
                 glyph.data[i] >>= 1;
             }
-         }
+        }
         Ok(())
-    }        
+    }
 }
 
-
 pub struct LeftGlyph {
-    ch: char, 
+    ch: char,
     old_data: Vec<u8>,
 }
 
 impl LeftGlyph {
     pub(crate) fn new(ch: char) -> Self {
         Self {
-            ch, 
+            ch,
             old_data: Vec::new(),
         }
     }
@@ -271,20 +266,20 @@ impl UndoOperation for LeftGlyph {
             for i in 0..glyph.data.len() {
                 glyph.data[i] <<= 1;
             }
-     }
+        }
         Ok(())
-    }        
+    }
 }
 
 pub struct ClearGlyph {
-    ch: char, 
+    ch: char,
     old_data: Vec<u8>,
 }
 
 impl ClearGlyph {
     pub(crate) fn new(ch: char) -> Self {
         Self {
-            ch, 
+            ch,
             old_data: Vec::new(),
         }
     }
@@ -306,20 +301,18 @@ impl UndoOperation for ClearGlyph {
         if let Some(glyph) = edit_state.font.get_glyph_mut(self.ch) {
             self.old_data = glyph.data.clone();
             glyph.data.fill(0);
-     }
+        }
         Ok(())
-    }        
+    }
 }
 
 pub struct InverseGlyph {
-    ch: char, 
+    ch: char,
 }
 
 impl InverseGlyph {
     pub(crate) fn new(ch: char) -> Self {
-        Self {
-            ch, 
-        }
+        Self { ch }
     }
 }
 
@@ -344,23 +337,18 @@ impl UndoOperation for InverseGlyph {
             }
         }
         Ok(())
-    }        
+    }
 }
 
 pub struct Edit {
-    ch: char, 
+    ch: char,
     old_data: Vec<u8>,
-    data:Vec<u8>
-
+    data: Vec<u8>,
 }
 
 impl Edit {
-    pub(crate) fn new(ch: char, data:Vec<u8>, old_data:Vec<u8>) -> Self {
-        Self {
-            ch, 
-            data,
-            old_data,
-        }
+    pub(crate) fn new(ch: char, data: Vec<u8>, old_data: Vec<u8>) -> Self {
+        Self { ch, data, old_data }
     }
 }
 
@@ -381,6 +369,5 @@ impl UndoOperation for Edit {
             glyph.data = self.data.clone();
         }
         Ok(())
-    }        
+    }
 }
-

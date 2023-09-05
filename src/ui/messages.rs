@@ -86,7 +86,7 @@ impl MainWindow {
                     if let Some(str) = &doc.full_path {
                         let path = PathBuf::from(str);
                         if let Some(ext) = path.extension() {
-                            if ext == "icd" {
+                            if ext == "icd" || ext == "psf" {
                                 doc.doc.lock().unwrap().save(str).unwrap();
                                 save_as = false;
                             }

@@ -43,8 +43,10 @@ impl MainWindow {
         let mut result = None;
         menu::bar(ui, |ui| {
             let mut has_buffer = false;
+            let mut is_dirty = false;
             if let Some(doc) = self.get_active_document() {
                 has_buffer = doc.lock().unwrap().get_ansi_editor().is_some();
+                is_dirty = doc.lock().unwrap().is_dirty();
             }
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
@@ -66,7 +68,7 @@ impl MainWindow {
                 ui.separator();
                 if ui
                     .add_enabled(
-                        has_buffer,
+                        is_dirty,
                         egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false),
                     )
                     .clicked()
@@ -76,7 +78,7 @@ impl MainWindow {
                 }
                 if ui
                     .add_enabled(
-                        has_buffer,
+                        true,
                         egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save-as")).wrap(false),
                     )
                     .clicked()

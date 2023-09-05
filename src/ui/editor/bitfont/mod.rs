@@ -1,7 +1,9 @@
-
 mod undo;
 
-use std::{fs, sync::{Arc, Mutex}};
+use std::{
+    fs,
+    sync::{Arc, Mutex},
+};
 
 use eframe::{
     egui::{self, RichText, Sense},
@@ -16,7 +18,8 @@ use icy_engine::{
 };
 
 use crate::{
-    model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, to_message,
+    model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message,
+    TerminalResult,
 };
 
 use self::undo::UndoOperation;
@@ -24,7 +27,7 @@ use self::undo::UndoOperation;
 pub struct BitFontEditor {
     font: BitFont,
     selected_char_opt: Option<char>,
-    is_dirty: bool,
+    dirty_pos: usize,
     undo_stack: Arc<Mutex<Vec<Box<dyn UndoOperation>>>>,
     redo_stack: Vec<Box<dyn UndoOperation>>,
     old_data: Option<Vec<u8>>,
@@ -41,7 +44,7 @@ impl BitFontEditor {
         Self {
             font,
             selected_char_opt: None,
-            is_dirty: false,
+            dirty_pos: 0,
             undo_stack: Arc::new(Mutex::new(Vec::new())),
             redo_stack: Vec::new(),
             old_data: None,
@@ -138,16 +141,20 @@ impl BitFontEditor {
                     }
                 }
             } else { */
-            if response.drag_started_by(egui::PointerButton::Primary) || response.drag_started_by(egui::PointerButton::Secondary) {
+            if response.drag_started_by(egui::PointerButton::Primary)
+                || response.drag_started_by(egui::PointerButton::Secondary)
+            {
                 self.start_edit();
             }
-    
-            if response.drag_released_by(egui::PointerButton::Primary) || response.drag_released_by(egui::PointerButton::Secondary) {
+
+            if response.drag_released_by(egui::PointerButton::Primary)
+                || response.drag_released_by(egui::PointerButton::Secondary)
+            {
                 self.end_edit();
             }
-    
+
             if response.dragged_by(egui::PointerButton::Primary) {
-                    if let Some(pos) = response.interact_pointer_pos() {
+                if let Some(pos) = response.interact_pointer_pos() {
                     if let Some(number) = self.selected_char_opt {
                         if let Some(glyph) = self.font.get_glyph_mut(number) {
                             let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border))
@@ -156,7 +163,6 @@ impl BitFontEditor {
                                 as usize;
                             if y < glyph.data.len() && x < 8 {
                                 glyph.data[y] |= 128 >> x;
-                                self.is_dirty = true;
                                 response.mark_changed();
                             }
                         }
@@ -174,7 +180,6 @@ impl BitFontEditor {
                                 as usize;
                             if y < glyph.data.len() && x < 8 {
                                 glyph.data[y] &= !(128 >> x);
-                                self.is_dirty = true;
                                 response.mark_changed();
                             }
                         }
@@ -291,15 +296,14 @@ impl BitFontEditor {
         }
     }
 
-
-    fn push_undo(&mut self, mut op: Box<dyn UndoOperation>) ->EngineResult<()> {
+    fn push_undo(&mut self, mut op: Box<dyn UndoOperation>) -> EngineResult<()> {
         op.redo(self)?;
         self.undo_stack.lock().unwrap().push(op);
         self.redo_stack.clear();
         Ok(())
     }
 
-    fn clear_selected_glyph(&mut self)-> EngineResult<()>  {
+    fn clear_selected_glyph(&mut self) -> EngineResult<()> {
         if let Some(number) = self.selected_char_opt {
             let op = undo::ClearGlyph::new(number);
             self.push_undo(Box::new(op))?;
@@ -307,7 +311,7 @@ impl BitFontEditor {
         Ok(())
     }
 
-    fn inverse_selected_glyph(&mut self)-> EngineResult<()>  {
+    fn inverse_selected_glyph(&mut self) -> EngineResult<()> {
         if let Some(number) = self.selected_char_opt {
             let op = undo::InverseGlyph::new(number);
             self.push_undo(Box::new(op))?;
@@ -315,7 +319,7 @@ impl BitFontEditor {
         Ok(())
     }
 
-    fn left_selected_glyph(&mut self) -> EngineResult<()>  {
+    fn left_selected_glyph(&mut self) -> EngineResult<()> {
         if let Some(number) = self.selected_char_opt {
             let op = undo::LeftGlyph::new(number);
             self.push_undo(Box::new(op))?;
@@ -323,7 +327,7 @@ impl BitFontEditor {
         Ok(())
     }
 
-    fn right_selected_glyph(&mut self)-> EngineResult<()>  {
+    fn right_selected_glyph(&mut self) -> EngineResult<()> {
         if let Some(number) = self.selected_char_opt {
             let op = undo::RightGlyph::new(number);
             self.push_undo(Box::new(op))?;
@@ -339,7 +343,7 @@ impl BitFontEditor {
         Ok(())
     }
 
-    fn down_selected_glyph(&mut self) -> EngineResult<()>  {
+    fn down_selected_glyph(&mut self) -> EngineResult<()> {
         if let Some(number) = self.selected_char_opt {
             let op = undo::DownGlyph::new(number);
             self.push_undo(Box::new(op))?;
@@ -367,7 +371,7 @@ impl BitFontEditor {
         if let Some(number) = self.selected_char_opt {
             if let Some(glyph) = self.font.get_glyph_mut(number) {
                 self.old_data = Some(glyph.data.clone());
-            }    
+            }
         }
     }
 
@@ -417,7 +421,6 @@ impl ClipboardHandler for BitFontEditor {
         }
         Ok(())
     }
-
 }
 
 impl UndoState for BitFontEditor {
@@ -462,15 +465,15 @@ impl UndoState for BitFontEditor {
     }
 }
 
-
 impl Document for BitFontEditor {
     fn get_title(&self) -> String {
         self.font.name.to_string()
     }
 
     fn is_dirty(&self) -> bool {
-        self.is_dirty
+        self.dirty_pos != self.undo_stack.lock().unwrap().len()
     }
+
     fn show_ui(
         &mut self,
         ui: &mut eframe::egui::Ui,
@@ -584,7 +587,7 @@ impl Document for BitFontEditor {
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
         fs::write(file_name, self.font.to_psf2_bytes()?)?;
-        self.is_dirty = false;
+        self.dirty_pos = self.undo_stack.lock().unwrap().len();
         Ok(())
     }
 
@@ -598,4 +601,3 @@ impl Document for BitFontEditor {
 
     fn destroy(&self, _gl: &glow::Context) {}
 }
-
