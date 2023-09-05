@@ -3,7 +3,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{Color, Mode};
 
-use crate::{AnsiEditor, ModalDialog, TerminalResult};
+use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 
 pub struct EditLayerDialog {
     pub should_commit: bool,
@@ -202,7 +202,7 @@ impl ModalDialog for EditLayerDialog {
         self.should_commit
     }
 
-    fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool> {
+    fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
         let mut bv = editor.buffer_view.lock();
         let layer = &mut bv.get_buffer_mut().layers[self.layer];
         layer.title = self.title.clone();
@@ -215,6 +215,6 @@ impl ModalDialog for EditLayerDialog {
         layer.is_alpha_channel_locked = self.is_alpha_channel_locked;
         layer.mode = self.mode;
 
-        Ok(true)
+        Ok(None)
     }
 }

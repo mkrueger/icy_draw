@@ -9,7 +9,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::EditState, Buffer, Rectangle, Size, TheDrawFont};
 
-use crate::MainWindow;
+use crate::{MainWindow, Message};
 
 pub struct SelectFontDialog {
     fonts: Arc<Mutex<Vec<TheDrawFont>>>,
@@ -240,9 +240,9 @@ impl crate::ModalDialog for SelectFontDialog {
         self.do_select
     }
 
-    fn commit_self(&self, _window: &mut MainWindow) -> crate::TerminalResult<bool> {
+    fn commit_self(&self, _window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         *self.selected_font_arc.lock().unwrap() = self.selected_font;
-        Ok(true)
+        Ok(None)
     }
 }
 

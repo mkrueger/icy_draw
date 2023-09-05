@@ -6,7 +6,7 @@ use std::{
 };
 
 use eframe::egui;
-use icy_engine::{BitFont, EngineResult, Selection, TheDrawFont};
+use icy_engine::{BitFont, EngineResult, Selection, Size, TheDrawFont};
 
 use crate::{
     MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
@@ -56,6 +56,7 @@ pub enum Message {
     FlipY,
     Crop,
     Paste,
+    ResizeBuffer(i32, i32),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -432,6 +433,12 @@ impl MainWindow {
                 self.run_editor_command(0, |_, editor, _| {
                     let mut lock = editor.buffer_view.lock();
                     to_message(lock.get_edit_state_mut().crop())
+                });
+            }
+            Message::ResizeBuffer(w, h) => {
+                self.run_editor_command((w, h), |_, editor, (w, h)| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().resize_buffer(Size::new(w, h)))
                 });
             }
         }

@@ -3,7 +3,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::Buffer;
 
-use crate::{add_child, AnsiEditor, MainWindow};
+use crate::{add_child, AnsiEditor, MainWindow, Message};
 
 pub struct NewFileDialog {
     pub width: i32,
@@ -70,12 +70,12 @@ impl crate::ModalDialog for NewFileDialog {
         self.create
     }
 
-    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<bool> {
+    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         let buf = Buffer::create((self.width, self.height));
         let id = window.create_id();
         let editor = AnsiEditor::new(&window.gl, id, buf);
 
         add_child(&mut window.document_tree, None, Box::new(editor));
-        Ok(true)
+        Ok(None)
     }
 }

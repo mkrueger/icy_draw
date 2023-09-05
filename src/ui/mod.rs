@@ -46,11 +46,11 @@ pub trait ModalDialog {
 
     fn should_commit(&self) -> bool;
 
-    fn commit(&self, _editor: &mut AnsiEditor) -> TerminalResult<bool> {
-        Ok(true)
+    fn commit(&self, _editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
+        Ok(None)
     }
 
-    fn commit_self(&self, _window: &mut MainWindow) -> TerminalResult<bool> {
-        Ok(true)
+    fn commit_self(&self, _window: &mut MainWindow) -> TerminalResult<Option<Message>> {
+        Ok(None)
     }
 }

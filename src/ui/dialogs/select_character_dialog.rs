@@ -8,7 +8,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine_egui::BufferView;
 
-use crate::{AnsiEditor, ModalDialog, TerminalResult};
+use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 
 pub struct SelectCharacterDialog {
     should_commit: bool,
@@ -205,8 +205,8 @@ impl ModalDialog for SelectCharacterDialog {
         self.should_commit
     }
 
-    fn commit(&self, _editor: &mut AnsiEditor) -> TerminalResult<bool> {
+    fn commit(&self, _editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
         self.ch.swap(&RefCell::new(self.selected_ch));
-        Ok(true)
+        Ok(None)
     }
 }

@@ -3,7 +3,7 @@ use egui_file::FileDialog;
 use icy_engine::SaveOptions;
 use std::path::PathBuf;
 
-use crate::MainWindow;
+use crate::{MainWindow, Message};
 
 pub struct SaveFileDialog {
     open_file: bool,
@@ -43,7 +43,7 @@ impl crate::ModalDialog for SaveFileDialog {
         self.open_file
     }
 
-    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<bool> {
+    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         if let Some(file) = &self.opened_file.clone() {
             let file = file.with_extension("icd");
             if let Some(editor) = window
@@ -60,6 +60,6 @@ impl crate::ModalDialog for SaveFileDialog {
                 editor.set_file_name(file);
             }
         }
-        Ok(true)
+        Ok(None)
     }
 }

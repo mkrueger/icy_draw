@@ -143,9 +143,9 @@ impl ModalDialog for ExportFileDialog {
         self.should_commit
     }
 
-    fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<bool> {
+    fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<Option<crate::Message>> {
         editor.save_content(self.file_name.as_path(), &self.save_options)?;
-        Ok(true)
+        Ok(None)
     }
 }
 

@@ -2,7 +2,7 @@ use eframe::egui;
 use egui_file::FileDialog;
 use std::path::PathBuf;
 
-use crate::MainWindow;
+use crate::{MainWindow, Message};
 
 pub struct OpenFileDialog {
     open_file: bool,
@@ -41,10 +41,10 @@ impl crate::ModalDialog for OpenFileDialog {
         self.open_file
     }
 
-    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<bool> {
+    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         if let Some(file) = &self.opened_file.clone() {
             window.open_file(file);
         }
-        Ok(true)
+        Ok(None)
     }
 }
