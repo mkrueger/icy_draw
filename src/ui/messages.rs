@@ -396,8 +396,12 @@ impl MainWindow {
             }
 
             Message::JustifyLeft => {
+                println!("justify left !");
+                println!("{}", Backtrace::force_capture());
                 self.run_editor_command(0, |_, editor, _| {
+                    println!("lock");
                     let mut lock = editor.buffer_view.lock();
+                    println!("justify left  22");
                     to_message(lock.get_edit_state_mut().justify_left())
                 });
             }

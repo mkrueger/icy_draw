@@ -326,16 +326,7 @@ impl MainWindow {
                     "Y",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self
-                        .get_active_document()
-                        .unwrap()
-                        .lock()
-                        .unwrap()
-                        .get_ansi_editor_mut()
-                    {
-                        self.handle_message(Some(Message::FlipY));
-                        editor.redraw_view();
-                    }
+                    result = Some(Message::FlipY);
                     ui.close_menu();
                 }
 
@@ -346,16 +337,7 @@ impl MainWindow {
                     "Y",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self
-                        .get_active_document()
-                        .unwrap()
-                        .lock()
-                        .unwrap()
-                        .get_ansi_editor_mut()
-                    {
-                        self.handle_message(Some(Message::Center));
-                        editor.redraw_view();
-                    }
+                    result = Some(Message::Center);
                     ui.close_menu();
                 }
 
@@ -367,18 +349,6 @@ impl MainWindow {
                 );
                 if button.clicked() {
                     result = Some(Message::JustifyLeft);
-
-                    if let Some(editor) = self
-                        .get_active_document()
-                        .unwrap()
-                        .lock()
-                        .unwrap()
-                        .get_ansi_editor_mut()
-                    {
-                        self.handle_message(Some(Message::JustifyLeft));
-                        editor.redraw_view();
-                    }
-
                     ui.close_menu();
                 }
 
@@ -389,17 +359,7 @@ impl MainWindow {
                     "R",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self
-                        .get_active_document()
-                        .unwrap()
-                        .lock()
-                        .unwrap()
-                        .get_ansi_editor_mut()
-                    {
-                        self.handle_message(Some(Message::JustifyRight));
-                        editor.redraw_view();
-                    }
-
+                    result = Some(Message::JustifyRight);
                     ui.close_menu();
                 }
                 ui.separator();
@@ -411,17 +371,7 @@ impl MainWindow {
                     "",
                 );
                 if button.clicked() {
-                    if let Some(editor) = self
-                        .get_active_document()
-                        .unwrap()
-                        .lock()
-                        .unwrap()
-                        .get_ansi_editor_mut()
-                    {
-                        self.handle_message(Some(Message::Crop));
-                        editor.redraw_view();
-                    }
-
+                    result = Some(Message::Crop);
                     ui.close_menu();
                 }
             });

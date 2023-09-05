@@ -658,13 +658,7 @@ impl AnsiEditor {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
-                        - self
-                            .buffer_view
-                            .lock()
-                            .get_edit_state()
-                            .get_cur_layer()
-                            .unwrap()
-                            .get_offset();
+                        - self.get_cur_click_offset();
 
                     /*
                     let b: i32 = match responsee.b {
@@ -686,7 +680,7 @@ impl AnsiEditor {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
-                        - self.get_cur_click_offset();
+                    - self.get_cur_click_offset();
 
                     self.last_pos = cp;
                     self.drag_start = Some(self.last_pos);
