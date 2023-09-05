@@ -284,7 +284,7 @@ impl MainWindow {
                         .unwrap()
                         .get_ansi_editor_mut()
                     {
-                        editor.flip_x();
+                        self.handle_message(Some(Message::FlipX));
                         editor.redraw_view();
                     }
                     ui.close_menu();
@@ -304,7 +304,7 @@ impl MainWindow {
                         .unwrap()
                         .get_ansi_editor_mut()
                     {
-                        editor.flip_y();
+                        self.handle_message(Some(Message::FlipY));
                         editor.redraw_view();
                     }
                     ui.close_menu();
@@ -324,7 +324,7 @@ impl MainWindow {
                         .unwrap()
                         .get_ansi_editor_mut()
                     {
-                        editor.justify_center();
+                        self.handle_message(Some(Message::Center));
                         editor.redraw_view();
                     }
                     ui.close_menu();
@@ -337,6 +337,8 @@ impl MainWindow {
                     "L",
                 );
                 if button.clicked() {
+                    result = Some(Message::JustifyLeft);
+
                     if let Some(editor) = self
                         .get_active_document()
                         .unwrap()
@@ -344,9 +346,10 @@ impl MainWindow {
                         .unwrap()
                         .get_ansi_editor_mut()
                     {
-                        editor.justify_left();
+                        self.handle_message(Some(Message::JustifyLeft));
                         editor.redraw_view();
                     }
+
                     ui.close_menu();
                 }
 
@@ -364,9 +367,10 @@ impl MainWindow {
                         .unwrap()
                         .get_ansi_editor_mut()
                     {
-                        editor.justify_right();
+                        self.handle_message(Some(Message::JustifyRight));
                         editor.redraw_view();
                     }
+
                     ui.close_menu();
                 }
                 ui.separator();
@@ -385,9 +389,10 @@ impl MainWindow {
                         .unwrap()
                         .get_ansi_editor_mut()
                     {
-                        editor.crop();
+                        self.handle_message(Some(Message::Crop));
                         editor.redraw_view();
                     }
+
                     ui.close_menu();
                 }
             });

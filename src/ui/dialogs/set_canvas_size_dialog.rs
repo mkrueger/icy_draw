@@ -1,7 +1,6 @@
 use eframe::egui::{self, Layout};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::Size;
 
 use crate::{AnsiEditor, ModalDialog, TerminalResult};
 
@@ -77,8 +76,9 @@ impl ModalDialog for SetCanvasSizeDialog {
         editor
             .buffer_view
             .lock()
-            .get_buffer_mut()
-            .set_buffer_size(Size::new(self.width, self.height));
+            .get_edit_state_mut()
+            .resize_buffer((self.width, self.height))
+            .unwrap();
         Ok(true)
     }
 }

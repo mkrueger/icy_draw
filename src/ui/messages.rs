@@ -49,6 +49,12 @@ pub enum Message {
     SelectTool(usize),
     AnchorLayer,
     AddFloatingLayer,
+    JustifyLeft,
+    JustifyRight,
+    Center,
+    FlipX,
+    FlipY,
+    Crop,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -234,7 +240,6 @@ impl MainWindow {
             Message::AddNewLayer(cur_layer) => {
                 self.run_editor_command(cur_layer, |_, editor, cur_layer| {
                     let mut lock = editor.buffer_view.lock();
-                    println!("buffer size: {}", lock.get_buffer().get_buffer_size());
                     to_message(lock.get_edit_state_mut().add_new_layer(cur_layer))
                 });
             }
@@ -378,6 +383,48 @@ impl MainWindow {
             Message::ShowError(msg) => {
                 log::error!("{msg}");
                 self.toasts.error(msg);
+            }
+
+            Message::JustifyLeft => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().justify_left())
+                });
+            }
+
+            Message::JustifyRight => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().justify_right())
+                });
+            }
+
+            Message::Center => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().center())
+                });
+            }
+
+            Message::FlipX => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().flip_x())
+                });
+            }
+
+            Message::FlipY => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().flip_y())
+                });
+            }
+
+            Message::Crop => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().crop())
+                });
             }
         }
     }
