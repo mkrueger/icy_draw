@@ -161,7 +161,7 @@ impl Document for AnsiEditor {
         let mut message = None;
 
         let mut scale = options.scale;
-        if self.buffer_view.lock().get_buffer().use_aspect_ratio {
+        if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
             scale.y *= 1.35;
         }
         ui.allocate_ui(

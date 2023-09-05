@@ -23,7 +23,6 @@ mod xbin;
 pub struct ExportFileDialog {
     pub should_commit: bool,
     pub file_name: PathBuf,
-    save_file_dialog: Option<FileDialog>,
     save_options: SaveOptions,
 }
 
@@ -31,7 +30,6 @@ impl ExportFileDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
         ExportFileDialog {
             should_commit: false,
-            save_file_dialog: None,
             file_name: match &buf.file_name {
                 Some(path) => path.clone(),
                 _ => PathBuf::from("Untitled.ans"),
@@ -45,78 +43,69 @@ impl ModalDialog for ExportFileDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
 
-        if let Some(dialog) = &mut self.save_file_dialog {
-            if dialog.show(ctx).selected() {
-                if let Some(file) = dialog.path() {
-                    self.file_name = file.to_path_buf();
-                }
-                self.save_file_dialog = None;
-            }
-            return false;
-        }
-
-        let modal = Modal::new(ctx, "my_modal");
+        let modal = Modal::new(ctx, "export_file-dialog");
 
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "export-title"));
 
             modal.frame(ui, |ui| {
-                egui::Grid::new("some_unique_id")
-                    .num_columns(2)
-                    .spacing([4.0, 8.0])
-                    .show(ui, |ui| {
-                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.label(fl!(crate::LANGUAGE_LOADER, "export-file-label"));
-                        });
+                let mut format_type = 0;
 
-                        let mut path_edit = self.file_name.to_str().unwrap().to_string();
-                        let response = ui.add(
-                            //    ui.available_size(),
-                            TextEdit::singleline(&mut path_edit),
-                        );
-                        if response.changed() {
-                            self.file_name = path_edit.into();
+                ui.horizontal(|ui| {
+                    ui.label(fl!(crate::LANGUAGE_LOADER, "export-file-label"));
+
+                    let mut path_edit = self.file_name.to_str().unwrap().to_string();
+                    let response = ui.add(
+                        //    ui.available_size(),
+                        TextEdit::singleline(&mut path_edit),
+                    );
+                    if response.changed() {
+                        self.file_name = path_edit.into();
+                    }
+
+                    if ui.add(egui::Button::new("…").wrap(false)).clicked() {
+                        let mut dialog = rfd::FileDialog::new();
+                        if let Some(parent) = self.file_name.parent() {
+                            dialog = dialog.set_directory(parent);
                         }
+                        let res = dialog.pick_file();
 
-                        if ui.add(egui::Button::new("…").wrap(false)).clicked() {
-                            let mut dialog = FileDialog::save_file(Some(self.file_name.clone()));
-                            dialog.open();
-                            self.save_file_dialog = Some(dialog);
-                            ui.close_menu();
+                        if let Some(file) = res {
+                            self.file_name = file;
                         }
-
-                        let mut format_type = 0;
-                        if let Some(ext) = self.file_name.extension() {
-                            if let Some(ext) = ext.to_str() {
-                                let ext = ext.to_lowercase();
-                                for i in 0..TYPE_DESCRIPTIONS.len() {
-                                    let td = TYPE_DESCRIPTIONS[i];
-                                    if ext == td.2 {
-                                        format_type = i;
-                                        break;
-                                    }
+                    }
+                    if let Some(ext) = self.file_name.extension() {
+                        if let Some(ext) = ext.to_str() {
+                            let ext = ext.to_lowercase();
+                            for i in 0..TYPE_DESCRIPTIONS.len() {
+                                let td = TYPE_DESCRIPTIONS[i];
+                                if ext == td.2 {
+                                    format_type = i;
+                                    break;
                                 }
                             }
                         }
-                        let old_format = format_type;
+                    }
+                    let old_format = format_type;
+                    // ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
 
-                        egui::ComboBox::from_id_source("format_combo")
-                            .selected_text(TYPE_DESCRIPTIONS[format_type].0)
-                            .show_ui(ui, |ui| {
-                                (0..TYPE_DESCRIPTIONS.len()).for_each(|i| {
-                                    let td = TYPE_DESCRIPTIONS[i];
-                                    ui.selectable_value(&mut format_type, i, td.0);
-                                });
+                    egui::ComboBox::from_id_source("format_combo")
+                        .selected_text(TYPE_DESCRIPTIONS[format_type].0)
+                        .width(190.)
+                        .show_ui(ui, |ui| {
+                            (0..TYPE_DESCRIPTIONS.len()).for_each(|i| {
+                                let td = TYPE_DESCRIPTIONS[i];
+                                ui.selectable_value(&mut format_type, i, td.0);
                             });
-                        if old_format != format_type {
-                            self.file_name
-                                .set_extension(TYPE_DESCRIPTIONS[format_type].2);
-                        }
-                        ui.end_row();
+                        });
+                    if old_format != format_type {
+                        self.file_name
+                            .set_extension(TYPE_DESCRIPTIONS[format_type].2);
+                    }
+                    //    });
+                });
 
-                        TYPE_DESCRIPTIONS[format_type].1(ui, &mut self.save_options);
-                    });
-                ui.add_space(4.0);
+                TYPE_DESCRIPTIONS[format_type].1(ui, &mut self.save_options);
             });
 
             modal.buttons(ui, |ui| {

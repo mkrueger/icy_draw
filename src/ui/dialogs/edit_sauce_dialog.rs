@@ -1,30 +1,20 @@
 use eframe::egui::{self, Layout};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::SauceString;
+use icy_engine::{SauceString, SauceData};
 
 use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 
 pub struct EditSauceDialog {
     pub should_commit: bool,
-    pub title: SauceString<35, b' '>,
-    pub author: SauceString<20, b' '>,
-    pub group: SauceString<20, b' '>,
-    pub comments: Vec<SauceString<64, 0>>,
-    pub use_letter_spacing: bool,
-    pub use_aspect_ratio: bool,
+    pub sauce_data: SauceData
 }
 
 impl EditSauceDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
         EditSauceDialog {
             should_commit: false,
-            title: buf.title.clone(),
-            author: buf.author.clone(),
-            group: buf.group.clone(),
-            comments: buf.comments.clone(),
-            use_letter_spacing: buf.use_letter_spacing,
-            use_aspect_ratio: buf.use_aspect_ratio,
+            sauce_data: buf.sauce_data.clone().unwrap_or_default(),
         }
     }
 }
@@ -46,9 +36,9 @@ impl ModalDialog for EditSauceDialog {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-title-label"));
                         });
                         ui.horizontal(|ui| {
-                            let mut tmp_str = self.title.to_string();
+                            let mut tmp_str = self.sauce_data.title.to_string();
                             ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
-                            self.title = SauceString::from(&tmp_str);
+                            self.sauce_data.title = SauceString::from(&tmp_str);
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-title-label-length"));
                         });
                         ui.end_row();
@@ -58,9 +48,9 @@ impl ModalDialog for EditSauceDialog {
                         });
 
                         ui.horizontal(|ui| {
-                            let mut tmp_str = self.author.to_string();
+                            let mut tmp_str = self.sauce_data.author.to_string();
                             ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(20));
-                            self.author = SauceString::from(&tmp_str);
+                            self.sauce_data.author = SauceString::from(&tmp_str);
                             ui.label(fl!(
                                 crate::LANGUAGE_LOADER,
                                 "edit-sauce-author-label-length"
@@ -72,9 +62,9 @@ impl ModalDialog for EditSauceDialog {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-group-label"));
                         });
                         ui.horizontal(|ui| {
-                            let mut tmp_str = self.group.to_string();
+                            let mut tmp_str = self.sauce_data.group.to_string();
                             ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(20));
-                            self.group = SauceString::from(&tmp_str);
+                            self.sauce_data.group = SauceString::from(&tmp_str);
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-group-label-length"));
                         });
                         ui.end_row();
@@ -83,7 +73,7 @@ impl ModalDialog for EditSauceDialog {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-letter-spacing"));
                         });
                         ui.horizontal(|ui| {
-                            ui.checkbox(&mut self.use_letter_spacing, "");
+                            ui.checkbox(&mut self.sauce_data.use_letter_spacing, "");
                         });
                         ui.end_row();
 
@@ -91,7 +81,7 @@ impl ModalDialog for EditSauceDialog {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-aspect-ratio"));
                         });
                         ui.horizontal(|ui| {
-                            ui.checkbox(&mut self.use_aspect_ratio, "");
+                            ui.checkbox(&mut self.sauce_data.use_aspect_ratio, "");
                         });
                         ui.end_row();
                     });
@@ -99,11 +89,11 @@ impl ModalDialog for EditSauceDialog {
                 ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-comments-label"));
                 ui.add_space(4.0);
                 let mut tmp_str = String::new();
-                for s in &self.comments {
+                for s in &self.sauce_data.comments {
                     tmp_str.push_str(&s.to_string());
                     tmp_str.push('\n');
                 }
-                self.comments.clear();
+                self.sauce_data.comments.clear();
                 egui::ScrollArea::vertical()
                     .max_height(180.0)
                     .show(ui, |ui| {
@@ -116,7 +106,7 @@ impl ModalDialog for EditSauceDialog {
 
                 let mut number = 0;
                 for line in tmp_str.lines() {
-                    self.comments.push(SauceString::from(line));
+                    self.sauce_data.comments.push(SauceString::from(line));
                     number += 1;
                     // limit to 255 chars which is the maximum for sauce comment lines.
                     if number > 255 {
@@ -152,12 +142,7 @@ impl ModalDialog for EditSauceDialog {
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
         let bv = &mut editor.buffer_view.lock();
         let buf = bv.get_buffer_mut();
-        buf.title = self.title.clone();
-        buf.author = self.author.clone();
-        buf.group = self.group.clone();
-        buf.comments = self.comments.clone();
-        buf.use_letter_spacing = self.use_letter_spacing;
-        buf.use_aspect_ratio = self.use_aspect_ratio;
+        buf.sauce_data = Some(self.sauce_data.clone());
         Ok(None)
     }
 }
