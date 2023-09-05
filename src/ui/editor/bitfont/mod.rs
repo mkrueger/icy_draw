@@ -1,4 +1,7 @@
-use std::fs;
+
+mod undo;
+
+use std::{fs, sync::{Arc, Mutex}};
 
 use eframe::{
     egui::{self, RichText, Sense},
@@ -13,13 +16,18 @@ use icy_engine::{
 };
 
 use crate::{
-    model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
+    model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, to_message,
 };
+
+use self::undo::UndoOperation;
 
 pub struct BitFontEditor {
     font: BitFont,
     selected_char_opt: Option<char>,
     is_dirty: bool,
+    undo_stack: Arc<Mutex<Vec<Box<dyn UndoOperation>>>>,
+    redo_stack: Vec<Box<dyn UndoOperation>>,
+    old_data: Option<Vec<u8>>,
 }
 
 pub enum DrawGlyphStyle {
@@ -34,6 +42,9 @@ impl BitFontEditor {
             font,
             selected_char_opt: None,
             is_dirty: false,
+            undo_stack: Arc::new(Mutex::new(Vec::new())),
+            redo_stack: Vec::new(),
+            old_data: None,
         }
     }
 
@@ -127,9 +138,16 @@ impl BitFontEditor {
                     }
                 }
             } else { */
-
+            if response.drag_started_by(egui::PointerButton::Primary) || response.drag_started_by(egui::PointerButton::Secondary) {
+                self.start_edit();
+            }
+    
+            if response.drag_released_by(egui::PointerButton::Primary) || response.drag_released_by(egui::PointerButton::Secondary) {
+                self.end_edit();
+            }
+    
             if response.dragged_by(egui::PointerButton::Primary) {
-                if let Some(pos) = response.interact_pointer_pos() {
+                    if let Some(pos) = response.interact_pointer_pos() {
                     if let Some(number) = self.selected_char_opt {
                         if let Some(glyph) = self.font.get_glyph_mut(number) {
                             let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border))
@@ -273,77 +291,95 @@ impl BitFontEditor {
         }
     }
 
-    fn clear_selected_glyph(&mut self) {
+
+    fn push_undo(&mut self, mut op: Box<dyn UndoOperation>) ->EngineResult<()> {
+        op.redo(self)?;
+        self.undo_stack.lock().unwrap().push(op);
+        self.redo_stack.clear();
+        Ok(())
+    }
+
+    fn clear_selected_glyph(&mut self)-> EngineResult<()>  {
+        if let Some(number) = self.selected_char_opt {
+            let op = undo::ClearGlyph::new(number);
+            self.push_undo(Box::new(op))?;
+        }
+        Ok(())
+    }
+
+    fn inverse_selected_glyph(&mut self)-> EngineResult<()>  {
+        if let Some(number) = self.selected_char_opt {
+            let op = undo::InverseGlyph::new(number);
+            self.push_undo(Box::new(op))?;
+        }
+        Ok(())
+    }
+
+    fn left_selected_glyph(&mut self) -> EngineResult<()>  {
+        if let Some(number) = self.selected_char_opt {
+            let op = undo::LeftGlyph::new(number);
+            self.push_undo(Box::new(op))?;
+        }
+        Ok(())
+    }
+
+    fn right_selected_glyph(&mut self)-> EngineResult<()>  {
+        if let Some(number) = self.selected_char_opt {
+            let op = undo::RightGlyph::new(number);
+            self.push_undo(Box::new(op))?;
+        }
+        Ok(())
+    }
+
+    fn up_selected_glyph(&mut self) -> EngineResult<()> {
+        if let Some(number) = self.selected_char_opt {
+            let op = undo::UpGlyph::new(number);
+            self.push_undo(Box::new(op))?;
+        }
+        Ok(())
+    }
+
+    fn down_selected_glyph(&mut self) -> EngineResult<()>  {
+        if let Some(number) = self.selected_char_opt {
+            let op = undo::DownGlyph::new(number);
+            self.push_undo(Box::new(op))?;
+        }
+        Ok(())
+    }
+
+    fn flip_x_selected_glyph(&mut self) -> EngineResult<()> {
+        if let Some(number) = self.selected_char_opt {
+            let op = undo::FlipX::new(number);
+            self.push_undo(Box::new(op))?;
+        }
+        Ok(())
+    }
+
+    fn flip_y_selected_glyph(&mut self) -> EngineResult<()> {
+        if let Some(number) = self.selected_char_opt {
+            let op = undo::FlipY::new(number);
+            self.push_undo(Box::new(op))?;
+        }
+        Ok(())
+    }
+
+    fn start_edit(&mut self) {
         if let Some(number) = self.selected_char_opt {
             if let Some(glyph) = self.font.get_glyph_mut(number) {
-                glyph.data.fill(0);
-            }
+                self.old_data = Some(glyph.data.clone());
+            }    
         }
     }
 
-    fn inverse_selected_glyph(&mut self) {
-        if let Some(number) = self.selected_char_opt {
-            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                for i in 0..glyph.data.len() {
-                    glyph.data[i] ^= 0xFF;
-                }
-            }
+    fn end_edit(&mut self) {
+        if self.old_data.is_none() {
+            return;
         }
-    }
-
-    fn left_selected_glyph(&mut self) {
         if let Some(number) = self.selected_char_opt {
-            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                for i in 0..glyph.data.len() {
-                    glyph.data[i] <<= 1;
-                }
-            }
-        }
-    }
-
-    fn right_selected_glyph(&mut self) {
-        if let Some(number) = self.selected_char_opt {
-            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                for i in 0..glyph.data.len() {
-                    glyph.data[i] >>= 1;
-                }
-            }
-        }
-    }
-
-    fn up_selected_glyph(&mut self) {
-        if let Some(number) = self.selected_char_opt {
-            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                glyph.data.remove(0);
-                glyph.data.push(0);
-            }
-        }
-    }
-
-    fn down_selected_glyph(&mut self) {
-        if let Some(number) = self.selected_char_opt {
-            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                glyph.data.insert(0, 0);
-                glyph.data.pop();
-            }
-        }
-    }
-
-    fn flip_x_selected_glyph(&mut self) {
-        if let Some(number) = self.selected_char_opt {
-            let w = 8 - self.font.size.width;
-            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                for i in 0..glyph.data.len() {
-                    glyph.data[i] = glyph.data[i].reverse_bits() << w;
-                }
-            }
-        }
-    }
-
-    fn flip_y_selected_glyph(&mut self) {
-        if let Some(number) = self.selected_char_opt {
-            if let Some(glyph) = self.font.get_glyph_mut(number) {
-                glyph.data = glyph.data.iter().rev().copied().collect();
+            if let Some(glyph) = self.font.get_glyph(number) {
+                let op = undo::Edit::new(number, glyph.data.clone(), self.old_data.take().unwrap());
+                self.undo_stack.lock().unwrap().push(Box::new(op));
+                self.redo_stack.clear();
             }
         }
     }
@@ -374,44 +410,58 @@ impl ClipboardHandler for BitFontEditor {
     fn paste(&mut self) -> EngineResult<()> {
         if let Some(data) = pop_data(BITFONT_GLYPH) {
             let (_, g) = Glyph::from_clipbard_data(&data);
-            let len = self.font.size.height as usize;
             if let Some(ch) = self.selected_char_opt {
-                if let Some(glyph) = self.font.get_glyph_mut(ch) {
-                    glyph.data = g.data;
-                    glyph.data.resize(len, 0);
-                    self.is_dirty = true;
-                }
+                let op = undo::Paste::new(ch, g);
+                self.push_undo(Box::new(op))?;
             }
+        }
+        Ok(())
+    }
+
+}
+
+impl UndoState for BitFontEditor {
+    fn undo_description(&self) -> Option<String> {
+        self.undo_stack
+            .lock()
+            .unwrap()
+            .last()
+            .map(|op| op.get_description())
+    }
+
+    fn can_undo(&self) -> bool {
+        !self.undo_stack.lock().unwrap().is_empty()
+    }
+
+    fn undo(&mut self) -> EngineResult<()> {
+        let Some(mut op) = self.undo_stack.lock().unwrap().pop() else {
+            return Ok(());
+        };
+
+        let res = op.undo(self);
+        self.redo_stack.push(op);
+
+        res
+    }
+
+    fn redo_description(&self) -> Option<String> {
+        self.redo_stack.last().map(|op| op.get_description())
+    }
+
+    fn can_redo(&self) -> bool {
+        !self.redo_stack.is_empty()
+    }
+
+    fn redo(&mut self) -> EngineResult<()> {
+        if let Some(mut op) = self.redo_stack.pop() {
+            let res = op.redo(self);
+            self.undo_stack.lock().unwrap().push(op);
+            return res;
         }
         Ok(())
     }
 }
 
-impl UndoState for BitFontEditor {
-    fn undo_description(&self) -> Option<String> {
-        todo!()
-    }
-
-    fn can_undo(&self) -> bool {
-        false
-    }
-
-    fn undo(&mut self) -> EngineResult<()> {
-        todo!()
-    }
-
-    fn redo_description(&self) -> Option<String> {
-        todo!()
-    }
-
-    fn can_redo(&self) -> bool {
-        false
-    }
-
-    fn redo(&mut self) -> EngineResult<()> {
-        todo!()
-    }
-}
 
 impl Document for BitFontEditor {
     fn get_title(&self) -> String {
@@ -427,6 +477,7 @@ impl Document for BitFontEditor {
         _cur_tool: &mut Box<dyn Tool>,
         _options: &DocumentOptions,
     ) -> Option<Message> {
+        let mut message = None;
         ui.add_space(16.);
 
         ui.vertical_centered(|ui| {
@@ -438,10 +489,10 @@ impl Document for BitFontEditor {
                     ui.add_space(20.);
                     ui.horizontal(|ui| {
                         if ui.button("Clear").clicked() {
-                            self.clear_selected_glyph();
+                            message = to_message(self.clear_selected_glyph());
                         }
                         if ui.button("Inverse").clicked() {
-                            self.inverse_selected_glyph();
+                            message = to_message(self.inverse_selected_glyph());
                         }
                     });
                     ui.add_space(8.);
@@ -449,17 +500,17 @@ impl Document for BitFontEditor {
                         ui.add_space(14.);
 
                         if ui.button("⬆").clicked() {
-                            self.up_selected_glyph();
+                            message = to_message(self.up_selected_glyph());
                         }
                     });
 
                     ui.horizontal(|ui| {
                         if ui.button("⬅").clicked() {
-                            self.left_selected_glyph();
+                            message = to_message(self.left_selected_glyph());
                         }
 
                         if ui.button("➡").clicked() {
-                            self.right_selected_glyph();
+                            message = to_message(self.right_selected_glyph());
                         }
                     });
 
@@ -467,18 +518,18 @@ impl Document for BitFontEditor {
                         ui.add_space(14.);
 
                         if ui.button("⬇").clicked() {
-                            self.down_selected_glyph();
+                            message = to_message(self.down_selected_glyph());
                         }
                     });
                     ui.add_space(8.);
 
                     ui.horizontal(|ui| {
                         if ui.button("Flip X").clicked() {
-                            self.flip_x_selected_glyph();
+                            message = to_message(self.flip_x_selected_glyph());
                         }
 
                         if ui.button("Flip Y").clicked() {
-                            self.flip_y_selected_glyph();
+                            message = to_message(self.flip_y_selected_glyph());
                         }
                     });
                 });
@@ -528,7 +579,7 @@ impl Document for BitFontEditor {
                 }
             })
         });
-        None
+        message
     }
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
@@ -547,3 +598,4 @@ impl Document for BitFontEditor {
 
     fn destroy(&self, _gl: &glow::Context) {}
 }
+

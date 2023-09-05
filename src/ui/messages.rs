@@ -445,7 +445,7 @@ impl MainWindow {
     }
 }
 
-fn to_message<T>(result: EngineResult<T>) -> Option<Message> {
+pub fn to_message<T>(result: EngineResult<T>) -> Option<Message> {
     if let Err(result) = result {
         Some(Message::ShowError(format!("{result}")))
     } else {

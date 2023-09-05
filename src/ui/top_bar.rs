@@ -125,9 +125,10 @@ impl MainWindow {
                 ui.set_width(250.0);
                 if let Some(doc) = self.get_active_document() {
                     if doc.lock().unwrap().can_undo() {
+                        let enabled = doc.lock().unwrap().can_undo();
                         let button = button_with_shortcut(
                             ui,
-                            has_buffer,
+                            enabled,
                             fl!(
                                 crate::LANGUAGE_LOADER,
                                 "menu-undo-op",
@@ -151,7 +152,7 @@ impl MainWindow {
                     if doc.lock().unwrap().can_redo() {
                         let button = button_with_shortcut(
                             ui,
-                            has_buffer,
+                            true,
                             fl!(
                                 crate::LANGUAGE_LOADER,
                                 "menu-redo-op",
