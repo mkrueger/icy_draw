@@ -32,16 +32,30 @@ impl FillTool {
         old_ch: AttributedChar,
         new_ch: AttributedChar,
     ) {
+        let size = editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .get_cur_layer()
+            .unwrap()
+            .get_size();
+
         if pos.x < 0
             || pos.y < 0
-            || pos.x >= editor.buffer_view.lock().get_buffer().get_width()
-            || pos.y >= editor.buffer_view.lock().get_buffer().get_height()
+            || pos.x >= size.width
+            || pos.y >= size.height
             || !visited.insert(pos)
         {
             return;
         }
 
-        let cur_char = editor.buffer_view.lock().get_buffer().get_char(pos);
+        let cur_char = editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .get_cur_layer()
+            .unwrap()
+            .get_char(pos);
         if matches!(self.fill_type, FillType::Character) && self.use_fore && self.use_back {
             if cur_char != old_ch || cur_char == new_ch {
                 return;
@@ -180,7 +194,14 @@ impl Tool for FillTool {
                 return Event::None;
             }
             let attr = editor.buffer_view.lock().get_caret().get_attribute();
-            let ch = editor.buffer_view.lock().get_buffer().get_char(pos);
+            let ch = editor
+                .buffer_view
+                .lock()
+                .get_edit_state()
+                .get_cur_layer()
+                .unwrap()
+                .get_char(pos);
+
             if self.use_back || self.use_fore || matches!(self.fill_type, FillType::Character) {
                 let _undo =
                     editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-bucket-fill"));

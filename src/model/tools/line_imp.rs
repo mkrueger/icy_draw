@@ -332,7 +332,16 @@ fn get_half_block(
 ) {
     let text_y = pos.y / 2;
     let is_top = pos.y % 2 == 0;
-    let block = editor.get_char(Position::new(pos.x, text_y));
+
+    let offset = editor
+        .buffer_view
+        .lock()
+        .get_edit_state()
+        .get_cur_layer()
+        .unwrap()
+        .get_offset();
+    let pos = Position::new(pos.x, text_y) + offset;
+    let block = editor.get_char(pos);
 
     let mut upper_block_color = 0;
     let mut lower_block_color = 0;
