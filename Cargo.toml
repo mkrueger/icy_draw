@@ -22,6 +22,7 @@ egui-notify = "0.8.0"
 log = "0.4.20"
 open = "5.0.0"
 dark-light = "1.0.0"
+rfd = "0.11.4"
 
 icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
 icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }

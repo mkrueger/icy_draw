@@ -26,7 +26,7 @@ impl Default for SaveFileDialog {
 
 impl crate::ModalDialog for SaveFileDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
-        let mut result = false;
+        /*let mut result = false;
 
         if self.dialog.show(ctx).selected() {
             if let Some(file) = self.dialog.path() {
@@ -36,7 +36,16 @@ impl crate::ModalDialog for SaveFileDialog {
             result = true;
         }
 
-        result
+        result*/
+
+        let dialog = rfd::FileDialog::new();
+        let res = dialog.save_file();
+        if let Some(res) = res {
+            self.opened_file = Some(res);
+            self.open_file = true;
+        }
+
+        true
     }
 
     fn should_commit(&self) -> bool {

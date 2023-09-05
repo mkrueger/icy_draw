@@ -13,7 +13,7 @@ pub struct OpenFileDialog {
 impl Default for OpenFileDialog {
     fn default() -> Self {
         let mut dialog = FileDialog::open_file(None);
-        dialog.open();
+        //dialog.open();
         Self {
             open_file: false,
             dialog,
@@ -24,6 +24,8 @@ impl Default for OpenFileDialog {
 
 impl crate::ModalDialog for OpenFileDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
+        
+        /* 
         let mut result = false;
 
         if self.dialog.show(ctx).selected() {
@@ -35,6 +37,16 @@ impl crate::ModalDialog for OpenFileDialog {
         }
 
         result
+        */
+
+        let dialog = rfd::FileDialog::new();
+        let res = dialog.pick_file();
+        if let Some(res) = res {
+            self.opened_file = Some(res);
+            self.open_file = true;
+        }
+
+        true 
     }
 
     fn should_commit(&self) -> bool {

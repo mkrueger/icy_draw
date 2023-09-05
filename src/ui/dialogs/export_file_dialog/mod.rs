@@ -23,6 +23,7 @@ mod xbin;
 pub struct ExportFileDialog {
     pub should_commit: bool,
     pub file_name: PathBuf,
+    save_file_dialog: Option<FileDialog>,
     save_options: SaveOptions,
 }
 
@@ -30,6 +31,7 @@ impl ExportFileDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
         ExportFileDialog {
             should_commit: false,
+            save_file_dialog: None,
             file_name: match &buf.file_name {
                 Some(path) => path.clone(),
                 _ => PathBuf::from("Untitled.ans"),
@@ -42,9 +44,17 @@ impl ExportFileDialog {
 impl ModalDialog for ExportFileDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
+        if let Some(dialog) = &mut self.save_file_dialog {
+            if dialog.show(ctx).selected() {
+                if let Some(file) = dialog.path() {
+                    self.file_name = file.to_path_buf();
+                }
+                self.save_file_dialog = None;
+            }
+            return false;
+        }
 
         let modal = Modal::new(ctx, "export_file-dialog");
-
         modal.show(|ui| {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "export-title"));
 
@@ -64,16 +74,11 @@ impl ModalDialog for ExportFileDialog {
                     }
 
                     if ui.add(egui::Button::new("…").wrap(false)).clicked() {
-                        let mut dialog = rfd::FileDialog::new();
-                        if let Some(parent) = self.file_name.parent() {
-                            dialog = dialog.set_directory(parent);
-                        }
-                        let res = dialog.pick_file();
-
-                        if let Some(file) = res {
-                            self.file_name = file;
-                        }
-                    }
+                        let mut dialog = FileDialog::save_file(Some(self.file_name.clone()));
+                        dialog.open();
+                        self.save_file_dialog = Some(dialog);
+                        ui.close_menu();
+                      }
                     if let Some(ext) = self.file_name.extension() {
                         if let Some(ext) = ext.to_str() {
                             let ext = ext.to_lowercase();
