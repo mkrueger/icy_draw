@@ -20,7 +20,7 @@ pub struct EraseTool {
 }
 
 impl EraseTool {
-    fn paint_brush(&self, editor: &mut AnsiEditor, pos: Position) {
+    fn eraser(&self, editor: &mut AnsiEditor, pos: Position) {
         let mid = Position::new(-(self.size / 2), -(self.size / 2));
 
         let center = pos + mid;
@@ -114,7 +114,7 @@ impl Tool for EraseTool {
         if button == 1 {
             let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser"));
 
-            self.paint_brush(editor, pos);
+            self.eraser(editor, pos);
         }
         super::Event::None
     }
@@ -125,14 +125,12 @@ impl Tool for EraseTool {
         response: egui::Response,
         editor: &mut AnsiEditor,
         _calc: &TerminalCalc,
-        _start: Position,
-        cur: Position,
     ) -> egui::Response {
-        self.paint_brush(editor, cur);
+        self.eraser(editor, editor.drag_pos.cur);
         response
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
         self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser")));
         Event::None
     }
@@ -140,8 +138,6 @@ impl Tool for EraseTool {
     fn handle_drag_end(
         &mut self,
         _editor: &mut AnsiEditor,
-        _start: Position,
-        _cur: Position,
     ) -> Event {
         self.undo_op = None;
         Event::None

@@ -24,7 +24,7 @@ use icy_engine_egui::{
 };
 
 use crate::{
-    model::{MKey, MModifiers, Tool},
+    model::{MKey, MModifiers, Tool, DragPos},
     ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, FIRST_TOOL,
 };
 
@@ -36,8 +36,7 @@ pub enum Event {
 pub struct AnsiEditor {
     pub id: usize,
     dirty_pos: usize,
-    drag_start: Option<Position>,
-    last_pos: Position,
+    pub drag_pos: DragPos,
 
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
     pub cur_outline: usize,
@@ -225,8 +224,7 @@ impl AnsiEditor {
             reference_image: None,
 
             dirty_pos: 0,
-            drag_start: None,
-            last_pos: Position::default(),
+            drag_pos: DragPos::default(),
             egui_id: Id::new(id),
         }
     }
@@ -674,12 +672,17 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
+                    let click_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
+                    
+                    let cp: Position = click_pos 
                         - self.get_cur_click_offset();
+                    self.drag_pos.start_abs = click_pos;
+                    self.drag_pos.start = cp;
 
-                    self.last_pos = cp;
-                    self.drag_start = Some(self.last_pos);
-                    cur_tool.handle_drag_begin(self, self.last_pos);
+                    self.drag_pos.cur_abs = click_pos;
+                    self.drag_pos.cur = cp;
+    
+                    cur_tool.handle_drag_begin(self);
                 }
             }
             self.redraw_view();
@@ -688,16 +691,18 @@ impl AnsiEditor {
         if response.dragged_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 let click_pos = calc.calc_click_pos(mouse_pos);
-                if let Some(ds) = self.drag_start {
-                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
-                        - self.get_cur_click_offset();
-                    let mut c = self.last_pos;
-                    while c != cp {
-                        c += (cp - c).signum();
+                let click_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
 
-                        response = cur_tool.handle_drag(ui, response, self, &calc, ds, c);
-                    }
-                    self.last_pos = cp;
+                let mut c = self.drag_pos.cur;
+                let mut c_abs = self.drag_pos.cur_abs;
+                while c_abs != click_pos {
+                    let s = (click_pos - c_abs).signum();
+                    c += s;
+                    c_abs += s;
+                    self.drag_pos.cur_abs = c_abs;
+                    self.drag_pos.cur = c;
+
+                    response = cur_tool.handle_drag(ui, response, self, &calc);
                 }
             }
             self.redraw_view();
@@ -715,12 +720,7 @@ impl AnsiEditor {
         }
 
         if response.drag_released_by(egui::PointerButton::Primary) {
-            if let Some(ds) = self.drag_start {
-                cur_tool.handle_drag_end(self, ds, self.last_pos);
-            }
-            self.last_pos = Position::new(-1, -1);
-
-            self.drag_start = None;
+            cur_tool.handle_drag_end(self);
             self.redraw_view();
         }
 

@@ -37,18 +37,17 @@ impl Tool for ClickTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-        start: Position,
-        cur: Position,
+        _calc: &TerminalCalc
     ) -> egui::Response {
-        if start == cur {
+
+        if editor.drag_pos.start == editor.drag_pos.cur {
             editor.buffer_view.lock().clear_selection();
         } else {
             editor.buffer_view.lock().set_selection(Rectangle::from(
-                start.x.min(cur.x),
-                start.y.min(cur.y),
-                (cur.x - start.x).abs(),
-                (cur.y - start.y).abs(),
+                editor.drag_pos.start_abs.x.min(editor.drag_pos.cur_abs.x),
+                editor.drag_pos.start_abs.y.min(editor.drag_pos.cur_abs.y),
+                (editor.drag_pos.cur_abs.x - editor.drag_pos.start_abs.x).abs(),
+                (editor.drag_pos.cur_abs.y - editor.drag_pos.start_abs.y).abs(),
             ));
         }
         response
@@ -68,15 +67,13 @@ impl Tool for ClickTool {
     fn handle_drag_end(
         &mut self,
         editor: &mut AnsiEditor,
-        start: Position,
-        cur: Position,
     ) -> Event {
-        let mut cur = cur;
-        if start < cur {
+        let mut cur = editor.drag_pos.cur;
+        if editor.drag_pos.start < cur {
             cur += Position::new(1, 1);
         }
 
-        if start == cur {
+        if editor.drag_pos.start == cur {
             editor.buffer_view.lock().clear_selection();
         }
 

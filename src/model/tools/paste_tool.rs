@@ -76,9 +76,9 @@ impl Tool for PasteTool {
         None
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, pos: Position) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
         self.drag_started = false;
-        if let Some(selected) = PasteTool::is_paste_layer_selected(editor, pos) {
+        if let Some(selected) = PasteTool::is_paste_layer_selected(editor, editor.drag_pos.cur) {
             if !selected {
                 let layer = editor.get_cur_layer_index();
                 editor
@@ -109,9 +109,7 @@ impl Tool for PasteTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        calc: &TerminalCalc,
-        start: Position,
-        _cur: Position,
+        _calc: &TerminalCalc
     ) -> egui::Response {
         if !self.drag_started {
             return response;
@@ -122,10 +120,7 @@ impl Tool for PasteTool {
             .get_edit_state_mut()
             .get_cur_layer_mut()
         {
-            let mouse_pos = response.interact_pointer_pos().unwrap();
-            let click_pos = calc.calc_click_pos(mouse_pos);
-            let cp = Position::new(click_pos.x as i32, click_pos.y as i32) - self.start_offset;
-            self.drag_offset = self.start_offset + cp - start;
+            self.drag_offset = self.start_offset + editor.drag_pos.cur_abs - editor.drag_pos.start_abs;
             layer.set_preview_offset(Some(self.drag_offset));
         }
         response.on_hover_cursor(egui::CursorIcon::Grabbing)
@@ -149,9 +144,7 @@ impl Tool for PasteTool {
 
     fn handle_drag_end(
         &mut self,
-        editor: &mut AnsiEditor,
-        _start: Position,
-        _cur: Position,
+        editor: &mut AnsiEditor
     ) -> Event {
         if !self.drag_started {
             return Event::None;

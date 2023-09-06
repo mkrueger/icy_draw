@@ -245,14 +245,12 @@ impl Tool for BrushTool {
         response: egui::Response,
         editor: &mut AnsiEditor,
         _calc: &TerminalCalc,
-        _start: Position,
-        cur: Position,
     ) -> egui::Response {
-        self.paint_brush(editor, cur);
+        self.paint_brush(editor, editor.drag_pos.cur);
         response
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _start: Position) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
         self.undo_op =
             Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush")));
         Event::None
@@ -260,9 +258,7 @@ impl Tool for BrushTool {
 
     fn handle_drag_end(
         &mut self,
-        _editor: &mut AnsiEditor,
-        _start: Position,
-        _cur: Position,
+        _editor: &mut AnsiEditor
     ) -> Event {
         self.undo_op = None;
         Event::None

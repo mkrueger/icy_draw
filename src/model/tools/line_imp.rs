@@ -250,16 +250,14 @@ impl Tool for LineTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-        start: Position,
-        cur: Position,
+        _calc: &TerminalCalc
     ) -> egui::Response {
         editor.clear_overlay_layer();
         let mut lines = ScanLines::new(1);
         if self.draw_mode == DrawMode::Line {
             lines.add_line(
-                Position::new(start.x, start.y * 2),
-                Position::new(cur.x, cur.y * 2),
+                Position::new(editor.drag_pos.start.x, editor.drag_pos.start.y * 2),
+                Position::new(editor.drag_pos.cur.x, editor.drag_pos.cur.y * 2),
             );
             let col = editor
                 .buffer_view
@@ -280,7 +278,7 @@ impl Tool for LineTool {
             };
             lines.fill(draw);
         } else {
-            lines.add_line(start, cur);
+            lines.add_line(editor.drag_pos.start, editor.drag_pos.cur);
             let draw = move |rect: Rectangle| {
                 for y in 0..rect.size.height {
                     for x in 0..rect.size.width {
@@ -300,11 +298,9 @@ impl Tool for LineTool {
 
     fn handle_drag_end(
         &mut self,
-        editor: &mut AnsiEditor,
-        start: Position,
-        cur: Position,
+        editor: &mut AnsiEditor
     ) -> Event {
-        if start == cur {
+        if editor.drag_pos.start == editor.drag_pos.cur {
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {
             editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-line"));

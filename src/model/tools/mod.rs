@@ -78,6 +78,14 @@ impl MModifiers {
     }
 }
 
+#[derive(Default, Clone, Copy)]
+pub struct DragPos {
+    pub start_abs: Position,
+    pub cur_abs: Position,
+    pub start: Position,
+    pub cur: Position
+} 
+
 pub trait Tool {
     fn get_icon_name(&self) -> &'static RetainedImage;
 
@@ -353,7 +361,7 @@ pub trait Tool {
         Event::None
     }
 
-    fn handle_drag_begin(&mut self, _editor: &mut AnsiEditor, _start: Position) -> Event {
+    fn handle_drag_begin(&mut self, _editor: &mut AnsiEditor) -> Event {
         Event::None
     }
 
@@ -362,9 +370,7 @@ pub trait Tool {
         _ui: &egui::Ui,
         response: Response,
         _editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-        _start: Position,
-        _cur: Position,
+        _calc: &TerminalCalc
     ) -> Response {
         response
     }
@@ -382,8 +388,6 @@ pub trait Tool {
     fn handle_drag_end(
         &mut self,
         _editor: &mut AnsiEditor,
-        _start: Position,
-        _cur: Position,
     ) -> Event {
         Event::None
     }

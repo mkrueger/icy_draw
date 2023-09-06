@@ -102,12 +102,11 @@ impl Tool for DrawRectangleTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-        mut start: Position,
-        mut cur: Position,
+        _calc: &TerminalCalc
     ) -> egui::Response {
         editor.clear_overlay_layer();
-
+        let mut start = editor.drag_pos.start;
+        let mut cur = editor.drag_pos.cur;
         if self.draw_mode == DrawMode::Line {
             start.y *= 2;
             cur.y *= 2;
@@ -140,10 +139,8 @@ impl Tool for DrawRectangleTool {
     fn handle_drag_end(
         &mut self,
         editor: &mut AnsiEditor,
-        start: Position,
-        cur: Position,
     ) -> Event {
-        if start == cur {
+        if editor.drag_pos.start == editor.drag_pos.cur {
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {
             editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-draw-rectangle"));
