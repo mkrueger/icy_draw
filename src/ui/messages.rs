@@ -1,5 +1,4 @@
 use std::{
-    backtrace::Backtrace,
     cell::RefCell,
     path::PathBuf,
     rc::Rc,
@@ -7,10 +6,7 @@ use std::{
 };
 
 use eframe::egui;
-use glow::Buffer;
-use icy_engine::{
-    util::pop_data, BitFont, EngineResult, Layer, Selection, Size, TextPane, TheDrawFont,
-};
+use icy_engine::{util::pop_data, BitFont, EngineResult, Layer, Size, TextPane, TheDrawFont};
 
 use crate::{
     AnsiEditor, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
@@ -63,6 +59,8 @@ pub enum Message {
     ResizeBuffer(i32, i32),
     PasteAsNewImage,
     PasteAsBrush,
+    Copy,
+    Cut,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -151,7 +149,7 @@ impl MainWindow {
                     let w = buf.get_buffer().get_width();
                     let h = buf.get_buffer().get_line_count();
 
-                    buf.set_selection(Selection::from_rectangle(0.0, 0.0, w as f32, h as f32));
+                    buf.set_selection(icy_engine::Rectangle::from(0, 0, w, h));
                 }
             }
             Message::Deselect => {
@@ -390,18 +388,24 @@ impl MainWindow {
 
             Message::Paste => {
                 if let Some(doc) = self.get_active_document() {
-                    println!("handle paste!");
                     self.handle_result(doc.lock().unwrap().paste());
                 }
             }
 
+            Message::Cut => {
+                if let Some(doc) = self.get_active_document() {
+                    self.handle_result(doc.lock().unwrap().cut());
+                }
+            }
+            Message::Copy => {
+                if let Some(doc) = self.get_active_document() {
+                    self.handle_result(doc.lock().unwrap().copy());
+                }
+            }
+
             Message::JustifyLeft => {
-                println!("justify left !");
-                println!("{}", Backtrace::force_capture());
                 self.run_editor_command(0, |_, editor, _| {
-                    println!("lock");
                     let mut lock = editor.buffer_view.lock();
-                    println!("justify left  22");
                     to_message(lock.get_edit_state_mut().justify_left())
                 });
             }
@@ -467,7 +471,7 @@ impl MainWindow {
 
             Message::PasteAsBrush => {
                 if let Some(data) = pop_data(icy_engine::util::BUFFER_DATA) {
-                    if let Some(mut layer) = Layer::from_clipboard_data(&data) {
+                    if let Some(layer) = Layer::from_clipboard_data(&data) {
                         unsafe {
                             crate::model::brush_imp::CUSTOM_BRUSH = Some(layer);
                             self.document_behavior.selected_tool = crate::BRUSH_TOOL;

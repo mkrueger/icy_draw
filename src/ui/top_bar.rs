@@ -187,7 +187,7 @@ impl MainWindow {
                         "Ctrl+X",
                     );
                     if button.clicked() {
-                        self.handle_result(doc.lock().unwrap().cut());
+                        result = Some(Message::Cut);
                         ui.close_menu();
                     }
 
@@ -198,7 +198,7 @@ impl MainWindow {
                         "Ctrl+C",
                     );
                     if button.clicked() {
-                        self.handle_result(doc.lock().unwrap().copy());
+                        result = Some(Message::Copy);
                         ui.close_menu();
                     }
 
@@ -209,7 +209,7 @@ impl MainWindow {
                         "Ctrl+V",
                     );
                     if button.clicked() {
-                        self.handle_result(doc.lock().unwrap().paste());
+                        result = Some(Message::Paste);
                         ui.close_menu();
                     }
                 }

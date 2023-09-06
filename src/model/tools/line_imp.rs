@@ -255,7 +255,6 @@ impl Tool for LineTool {
         cur: Position,
     ) -> egui::Response {
         editor.clear_overlay_layer();
-
         let mut lines = ScanLines::new(1);
         if self.draw_mode == DrawMode::Line {
             lines.add_line(
@@ -412,7 +411,6 @@ pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
     if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 {
         return;
     }
-
     let (
         _,
         text_y,

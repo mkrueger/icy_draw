@@ -1,6 +1,6 @@
 use eframe::egui;
 use egui_extras::RetainedImage;
-use icy_engine::Selection;
+use icy_engine::Rectangle;
 use icy_engine_egui::TerminalCalc;
 
 use crate::{AnsiEditor, Message};
@@ -44,15 +44,12 @@ impl Tool for ClickTool {
         if start == cur {
             editor.buffer_view.lock().clear_selection();
         } else {
-            editor
-                .buffer_view
-                .lock()
-                .set_selection(Selection::from_rectangle(
-                    start.x.min(cur.x) as f32,
-                    start.y.min(cur.y) as f32,
-                    (cur.x - start.x).abs() as f32,
-                    (cur.y - start.y).abs() as f32,
-                ));
+            editor.buffer_view.lock().set_selection(Rectangle::from(
+                start.x.min(cur.x),
+                start.y.min(cur.y),
+                (cur.x - start.x).abs(),
+                (cur.y - start.y).abs(),
+            ));
         }
         response
     }

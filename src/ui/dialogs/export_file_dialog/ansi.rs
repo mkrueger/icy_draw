@@ -60,7 +60,10 @@ pub fn create_settings_page(ui: &mut Ui, options: &mut SaveOptions) {
             let mut use_max_lines = options.output_line_length.is_some();
             ui.add(egui::Checkbox::new(
                 &mut use_max_lines,
-                fl!(crate::LANGUAGE_LOADER, "export-limit-output-line-length-label"),
+                fl!(
+                    crate::LANGUAGE_LOADER,
+                    "export-limit-output-line-length-label"
+                ),
             ));
             if use_max_lines != options.output_line_length.is_some() {
                 if use_max_lines {
@@ -70,7 +73,10 @@ pub fn create_settings_page(ui: &mut Ui, options: &mut SaveOptions) {
                 }
             }
             if let Some(mut len) = options.output_line_length {
-                ui.add(egui::Slider::new(&mut len, 32..=255).text(fl!(crate::LANGUAGE_LOADER, "export-maximum_line_length")));
+                ui.add(
+                    egui::Slider::new(&mut len, 32..=255)
+                        .text(fl!(crate::LANGUAGE_LOADER, "export-maximum_line_length")),
+                );
                 options.output_line_length = Some(len);
             }
         });

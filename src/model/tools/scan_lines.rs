@@ -169,7 +169,8 @@ impl ScanLines {
     {
         for row in &self.rows {
             let (min, max) = row.1.get_min_max();
-            draw(Rectangle::from_coords(min, *row.0, max, *row.0));
+            let r = Rectangle::from_coords(min, *row.0, max + 1, *row.0 + 1);
+            draw(r);
         }
     }
 
@@ -267,7 +268,7 @@ impl ScanLines {
             if !first && !last {
                 let nextx = rows[i + 1].1;
                 if cur_x < lastx {
-                    result.push(Rectangle::from_coords(cur_x, cur_y, lastx - 1, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, lastx, cur_y + 1));
                 } else if cur_x > lastx + 1 {
                     result.push(Rectangle::from_coords(
                         lastx + 1,
@@ -275,12 +276,12 @@ impl ScanLines {
                         cur_x - 1,
                         cur_y - 1,
                     ));
-                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x + 1, cur_y + 1));
                 } else {
-                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x + 1, cur_y + 1));
                 }
                 if nextx > cur_x {
-                    result.push(Rectangle::from_coords(cur_x, cur_y, nextx - 1, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, nextx, cur_y + 1));
                 }
             }
             lastx = cur_x;
@@ -297,20 +298,25 @@ impl ScanLines {
             if !first && !last {
                 let nextx = rows[i + 1].2;
                 if cur_x > lastx {
-                    result.push(Rectangle::from_coords(lastx + 1, cur_y, cur_x, cur_y));
-                } else if cur_x < lastx - 1 {
                     result.push(Rectangle::from_coords(
+                        lastx + 1,
+                        cur_y,
                         cur_x + 1,
-                        cur_y - 1,
-                        lastx - 1,
-                        cur_y - 1,
+                        cur_y + 1,
                     ));
-                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
+                } else if cur_x < lastx - 1 {
+                    result.push(Rectangle::from_coords(cur_x + 1, cur_y - 1, lastx, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x + 1, cur_y + 1));
                 } else {
-                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(cur_x, cur_y, cur_x + 1, cur_y + 1));
                 }
                 if nextx < cur_x {
-                    result.push(Rectangle::from_coords(nextx + 1, cur_y, cur_x, cur_y));
+                    result.push(Rectangle::from_coords(
+                        nextx + 1,
+                        cur_y,
+                        cur_x + 1,
+                        cur_y + 1,
+                    ));
                 }
             }
             lastx = cur_x;
@@ -321,9 +327,9 @@ impl ScanLines {
             return result;
         }
         let row = rows[0];
-        result.push(Rectangle::from_coords(row.1, row.0, row.2, row.0));
+        result.push(Rectangle::from_coords(row.1, row.0, row.2 + 1, row.0 + 1));
         let row = rows[rows.len() - 1];
-        result.push(Rectangle::from_coords(row.1, row.0, row.2, row.0));
+        result.push(Rectangle::from_coords(row.1, row.0, row.2 + 1, row.0 + 1));
 
         result
     }

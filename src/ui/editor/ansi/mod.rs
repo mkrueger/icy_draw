@@ -2,7 +2,7 @@ use std::{
     cmp::{max, min},
     ffi::OsStr,
     fs::{self, File},
-    io::{self, Write},
+    io::Write,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -35,7 +35,7 @@ pub enum Event {
 
 pub struct AnsiEditor {
     pub id: usize,
-    is_dirty: bool,
+    dirty_pos: usize,
     drag_start: Option<Position>,
     last_pos: Position,
 
@@ -137,7 +137,7 @@ impl Document for AnsiEditor {
     }
 
     fn is_dirty(&self) -> bool {
-        self.is_dirty
+        self.dirty_pos != self.buffer_view.lock().get_edit_state().undo_stack_len()
     }
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
@@ -149,7 +149,7 @@ impl Document for AnsiEditor {
             .get_buffer()
             .to_bytes(file.extension().unwrap().to_str().unwrap(), &options)?;
         fs::write(file_name, bytes)?;
-        self.is_dirty = false;
+        self.dirty_pos = self.buffer_view.lock().get_edit_state().undo_stack_len();
         Ok(())
     }
 
@@ -224,7 +224,7 @@ impl AnsiEditor {
             is_inactive: false,
             reference_image: None,
 
-            is_dirty: false,
+            dirty_pos: 0,
             drag_start: None,
             last_pos: Position::default(),
             egui_id: Id::new(id),
@@ -604,14 +604,12 @@ impl AnsiEditor {
                     egui::Event::Paste(text) => {
                         self.output_string(text);
                         self.buffer_view.lock().redraw_view();
-                        self.is_dirty = true;
                     }
 
                     egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
                         for c in text.chars() {
                             cur_tool.handle_key(self, MKey::Character(c as u16), MModifiers::None);
                         }
-                        self.is_dirty = true;
                         self.redraw_view();
                     }
 
@@ -642,7 +640,6 @@ impl AnsiEditor {
                                 cur_tool.handle_key(self, *m, modifier);
                                 self.buffer_view.lock().redraw_view();
                                 ui.input_mut(|i| i.consume_key(*modifiers, *key));
-                                self.is_dirty = true;
                                 self.redraw_view();
                                 break;
                             }
@@ -653,13 +650,12 @@ impl AnsiEditor {
             }
         }
 
-        if response.clicked() {
+        if response.clicked_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
                         - self.get_cur_click_offset();
-
                     /*
                     let b: i32 = match responsee.b {
                                      PointerButton::Primary => 1,
@@ -669,18 +665,17 @@ impl AnsiEditor {
                                      PointerButton::Extra2 => 5,
                                  }; */
                     cur_tool.handle_click(self, 1, cp);
-                    self.is_dirty = true;
                     self.redraw_view();
                 }
             }
         }
 
-        if response.drag_started() {
+        if response.drag_started_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 if calc.buffer_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
-                    - self.get_cur_click_offset();
+                        - self.get_cur_click_offset();
 
                     self.last_pos = cp;
                     self.drag_start = Some(self.last_pos);
@@ -690,7 +685,7 @@ impl AnsiEditor {
             self.redraw_view();
         }
 
-        if response.dragged() {
+        if response.dragged_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 let click_pos = calc.calc_click_pos(mouse_pos);
                 if let Some(ds) = self.drag_start {
@@ -719,9 +714,8 @@ impl AnsiEditor {
             }
         }
 
-        if response.drag_released() {
+        if response.drag_released_by(egui::PointerButton::Primary) {
             if let Some(ds) = self.drag_start {
-                self.is_dirty = true;
                 cur_tool.handle_drag_end(self, ds, self.last_pos);
             }
             self.last_pos = Position::new(-1, -1);
@@ -782,11 +776,16 @@ pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) -> Opti
     let mut result = None;
     ui.input_mut(|i| i.events.clear());
 
+    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-cut")).clicked() {
+        result = Some(Message::Cut);
+        ui.close_menu();
+    }
+
     if ui
         .button(fl!(crate::LANGUAGE_LOADER, "menu-copy"))
         .clicked()
     {
-        ui.input_mut(|i| i.events.push(egui::Event::Copy));
+        result = Some(Message::Copy);
         ui.close_menu();
     }
 

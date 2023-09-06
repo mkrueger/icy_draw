@@ -4,7 +4,7 @@ use eframe::{
 };
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Layer, Size, TextPane};
+use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Layer, TextPane};
 use icy_engine_egui::TerminalCalc;
 use std::{cell::RefCell, rc::Rc};
 
@@ -88,7 +88,7 @@ impl BrushTool {
                             AttributedChar::new(ch.ch, attribute),
                         );
                     }
-                    _ => {}
+                    BrushType::Custom => {}
                 }
             }
         }

@@ -3,7 +3,6 @@
 use std::path::PathBuf;
 
 use eframe::egui::{self, TextEdit, Ui};
-use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::SaveOptions;
@@ -73,7 +72,7 @@ impl ModalDialog for ExportFileDialog {
                             self.file_name = file;
                         }
                         ui.close_menu();
-                      }
+                    }
                     if let Some(ext) = self.file_name.extension() {
                         if let Some(ext) = ext.to_str() {
                             let ext = ext.to_lowercase();

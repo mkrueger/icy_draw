@@ -1,16 +1,17 @@
 use eframe::egui;
-use egui_file::FileDialog;
+//use egui_file::FileDialog;
 use icy_engine::SaveOptions;
 use std::path::PathBuf;
 
 use crate::{MainWindow, Message};
 
+#[derive(Default)]
 pub struct SaveFileDialog {
     open_file: bool,
-    dialog: FileDialog,
+    //dialog: FileDialog,
     opened_file: Option<PathBuf>,
 }
-
+/*
 impl Default for SaveFileDialog {
     fn default() -> Self {
         let mut dialog = FileDialog::save_file(None);
@@ -22,10 +23,10 @@ impl Default for SaveFileDialog {
             opened_file: None,
         }
     }
-}
+}*/
 
 impl crate::ModalDialog for SaveFileDialog {
-    fn show(&mut self, ctx: &egui::Context) -> bool {
+    fn show(&mut self, _ctx: &egui::Context) -> bool {
         /*let mut result = false;
 
         if self.dialog.show(ctx).selected() {
