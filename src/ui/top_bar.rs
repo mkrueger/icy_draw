@@ -149,28 +149,62 @@ impl MainWindow {
                 });
                 ui.separator();
 
-                self.commands.justify_line_left.ui_enabled(ui, false, &mut result);
-                self.commands.justify_line_right.ui_enabled(ui, false, &mut result);
-                self.commands.justify_line_center.ui_enabled(ui, false, &mut result);
+                self.commands
+                    .justify_line_left
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .justify_line_right
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .justify_line_center
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
-                self.commands.insert_row.ui_enabled(ui, false, &mut result);
-                self.commands.delete_row.ui_enabled(ui, false, &mut result);
+                self.commands
+                    .insert_row
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .delete_row
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
-                self.commands.insert_column.ui_enabled(ui, false, &mut result);
-                self.commands.delete_column.ui_enabled(ui, false, &mut result);
+                self.commands
+                    .insert_column
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .delete_column
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
-                self.commands.erase_row.ui_enabled(ui, false, &mut result);
-                self.commands.erase_row_to_start.ui_enabled(ui, false, &mut result);
-                self.commands.erase_row_to_end.ui_enabled(ui, false, &mut result);
+                self.commands
+                    .erase_row
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .erase_row_to_start
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .erase_row_to_end
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
-                self.commands.erase_column.ui_enabled(ui, false, &mut result);
-                self.commands.erase_column_to_end.ui_enabled(ui, false, &mut result);
-                self.commands.erase_column_to_start.ui_enabled(ui, false, &mut result);
+                self.commands
+                    .erase_column
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .erase_column_to_end
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .erase_column_to_start
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
-                self.commands.scroll_area_up.ui_enabled(ui, false, &mut result);
-                self.commands.scroll_area_down.ui_enabled(ui, false, &mut result);
-                self.commands.scroll_area_left.ui_enabled(ui, false, &mut result);
-                self.commands.scroll_area_right.ui_enabled(ui, false, &mut result);
+                self.commands
+                    .scroll_area_up
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .scroll_area_down
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .scroll_area_left
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .scroll_area_right
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
                 if ui
                     .add_enabled(

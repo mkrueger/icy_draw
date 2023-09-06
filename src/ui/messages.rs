@@ -163,31 +163,20 @@ impl MainWindow {
             }
 
             Message::SelectAll => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor()
-                {
+                self.run_editor_command(0, |_, editor, _| {
                     let buf = &mut editor.buffer_view.lock();
                     let w = buf.get_buffer().get_width();
-                    let h = buf.get_buffer().get_line_count();
+                    let h = buf.get_buffer().get_height();
 
                     buf.set_selection(icy_engine::Rectangle::from(0, 0, w, h));
-                }
+                    None
+                });
             }
             Message::Deselect => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor()
-                {
+                self.run_editor_command(0, |_, editor, _| {
                     editor.buffer_view.lock().clear_selection();
-                    editor.redraw_view();
-                }
+                    None
+                });
             }
             Message::DeleteSelection => {
                 self.run_editor_command(0, |_, editor: &mut AnsiEditor, _| {
@@ -324,15 +313,10 @@ impl MainWindow {
             }
 
             Message::SelectLayer(cur_layer) => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
+                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
                     editor.set_cur_layer_index(cur_layer);
-                }
+                    None
+                });
             }
 
             Message::AnchorLayer => {
@@ -360,13 +344,7 @@ impl MainWindow {
             }
 
             Message::SetFontPage(page) => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
+                self.run_editor_command(page, |_, editor, page| {
                     editor
                         .buffer_view
                         .lock()
@@ -389,7 +367,8 @@ impl MainWindow {
                             }
                         }
                     }
-                }
+                    None
+                });
             }
 
             Message::CharTable(ch) => {

@@ -620,7 +620,7 @@ impl AnsiEditor {
                         ..
                     } => {
                         let mut key_code = *key as u32;
-                        if !(modifiers.ctrl || modifiers.command) {
+                        if !(modifiers.ctrl || modifiers.command || modifiers.alt) {
                             if modifiers.shift {
                                 key_code |= SHIFT_MOD;
                             }

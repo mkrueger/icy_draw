@@ -195,21 +195,21 @@ keys![
         R,
         ALT
     ),
-    (insert_row, "menu-insert_row", InsertRow, ArrowUp, ALT),
-    (delete_row, "menu-delete_row", DeleteRow, ArrowDown, ALT),
+    (insert_row, "menu-insert_row", InsertRow, ArrowUp, CTRL),
+    (delete_row, "menu-delete_row", DeleteRow, ArrowDown, CTRL),
     (
         insert_column,
         "menu-insert_colum",
         InsertColumn,
         ArrowRight,
-        ALT
+        CTRL
     ),
     (
         delete_column,
         "menu-delete_colum",
         DeleteColumn,
         ArrowLeft,
-        ALT
+        CTRL
     ),
     (erase_row, "menu-erase_row", EraseRow, E, ALT),
     (
