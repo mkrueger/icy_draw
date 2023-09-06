@@ -96,6 +96,10 @@ pub enum Message {
     PickAttributeUnderCaret,
     SwitchToDefaultColor,
     ToggleColor,
+
+    StampLayerDown,
+    RotateLayer,
+    MakeLayerTransparent,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -602,6 +606,28 @@ impl MainWindow {
                     to_message(lock.get_edit_state_mut().scroll_area_right())
                 });
             }
+
+            Message::StampLayerDown => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().stamp_layer_down())
+                });
+            }
+
+            Message::RotateLayer => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().rotate_layer())
+                });
+            }
+
+            Message::MakeLayerTransparent => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().make_layer_transparent())
+                });
+            }
+
             Message::SetReferenceImage => {
                 let dialog = rfd::FileDialog::new();
                 let res = dialog.pick_file();

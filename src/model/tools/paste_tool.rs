@@ -65,6 +65,7 @@ impl Tool for PasteTool {
         ui: &mut egui::Ui,
         editor: &AnsiEditor,
     ) -> Option<Message> {
+        let mut result = None;
         if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
             self.closed = !layer.role.is_paste();
         }
@@ -72,12 +73,29 @@ impl Tool for PasteTool {
         if self.closed {
             return Some(Message::SelectTool(self.last_tool));
         }
-        ui.label("Show fancy paste ui");
+
+        ui.vertical(|ui| {
+            if ui.button("Stamp - S").clicked() || ui.input(|i| i.key_pressed(Key::S)) {
+                result = Some(Message::StampLayerDown);
+            }
+            if ui.button("Rotate - R").clicked() {
+                result = Some(Message::RotateLayer);
+            }
+            if ui.button("FlipX - X").clicked() || ui.input(|i| i.key_pressed(Key::X)) {
+                result = Some(Message::FlipX);
+            }
+            if ui.button("FlipY - Y").clicked() || ui.input(|i| i.key_pressed(Key::Y)) {
+                result = Some(Message::FlipY);
+            }
+            if ui.button("Transparent - T").clicked() || ui.input(|i| i.key_pressed(Key::T)) {
+                result = Some(Message::MakeLayerTransparent);
+            }
+        });
 
         if ctx.input(|i| i.key_pressed(Key::Escape)) {
             return Some(Message::RemoveFloatingLayer);
         }
-        None
+        result
     }
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
