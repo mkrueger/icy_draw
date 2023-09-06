@@ -231,7 +231,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
             });
 
             if r.clicked() && cur_layer < max {
-                result = Some(Message::RemoveLayer(cur_layer));
+                result = Some(Message::RemoveFloatingLayer);
             }
         } else {
             let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {

@@ -39,6 +39,9 @@ pub use messages::*;
 mod tools;
 pub use tools::*;
 
+mod commands;
+pub use commands::*;
+
 pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
 
 pub trait ModalDialog {

@@ -25,7 +25,7 @@ use icy_engine_egui::{
 
 use crate::{
     model::{MKey, MModifiers, Tool, DragPos},
-    ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, FIRST_TOOL,
+    ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, FIRST_TOOL, Commands,
 };
 
 pub enum Event {
@@ -37,7 +37,7 @@ pub struct AnsiEditor {
     pub id: usize,
     dirty_pos: usize,
     pub drag_pos: DragPos,
-
+    drag_started: bool,
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
     pub cur_outline: usize,
     pub is_inactive: bool,
@@ -86,7 +86,7 @@ impl ClipboardHandler for AnsiEditor {
         self.buffer_view
             .lock()
             .get_edit_state_mut()
-            .delete_selection();
+            .delete_selection()?;
         Ok(())
     }
 
@@ -111,6 +111,13 @@ impl ClipboardHandler for AnsiEditor {
     }
 
     fn paste(&mut self) -> EngineResult<()> {
+        if self.buffer_view
+        .lock()
+        .get_edit_state_mut().has_floating_layer() {
+            return Ok(());
+        }
+
+
         if let Some(data) = pop_data(BUFFER_DATA) {
             self.buffer_view
                 .lock()
@@ -186,7 +193,7 @@ impl Document for AnsiEditor {
                 let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
 
                 let response = response.context_menu(|ui| {
-                    message = terminal_context_menu(self, ui);
+                    message = terminal_context_menu(self, &options.commands, ui);
                 });
                 self.handle_response(ui, response, calc, cur_tool)
             },
@@ -222,7 +229,7 @@ impl AnsiEditor {
             cur_outline: 0,
             is_inactive: false,
             reference_image: None,
-
+            drag_started: false,
             dirty_pos: 0,
             drag_pos: DragPos::default(),
             egui_id: Id::new(id),
@@ -444,13 +451,6 @@ impl AnsiEditor {
         self.set_caret(pos.x + 1, pos.y);
     }
 
-    pub fn delete_selection(&mut self) {
-        self.buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .delete_selection();
-    }
-
     pub fn redraw_view(&self) {
         self.buffer_view.lock().redraw_view();
     }
@@ -637,7 +637,6 @@ impl AnsiEditor {
                             if *k == key_code {
                                 cur_tool.handle_key(self, *m, modifier);
                                 self.buffer_view.lock().redraw_view();
-                                ui.input_mut(|i| i.consume_key(*modifiers, *key));
                                 self.redraw_view();
                                 break;
                             }
@@ -649,8 +648,8 @@ impl AnsiEditor {
         }
 
         if response.clicked_by(egui::PointerButton::Primary) {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos) {
+            if let Some(mouse_pos) = response.interact_pointer_pos()  {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
                         - self.get_cur_click_offset();
@@ -670,7 +669,7 @@ impl AnsiEditor {
 
         if response.drag_started_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos) {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let click_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
                     
@@ -681,6 +680,7 @@ impl AnsiEditor {
 
                     self.drag_pos.cur_abs = click_pos;
                     self.drag_pos.cur = cp;
+                    self.drag_started = true;
     
                     cur_tool.handle_drag_begin(self);
                 }
@@ -688,7 +688,7 @@ impl AnsiEditor {
             self.redraw_view();
         }
 
-        if response.dragged_by(egui::PointerButton::Primary) {
+        if response.dragged_by(egui::PointerButton::Primary) && self.drag_started {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 let click_pos = calc.calc_click_pos(mouse_pos);
                 let click_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
@@ -710,7 +710,7 @@ impl AnsiEditor {
 
         if response.hovered() {
             if let Some(mouse_pos) = response.hover_pos() {
-                if calc.buffer_rect.contains(mouse_pos) {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp = Position::new(click_pos.x as i32, click_pos.y as i32)
                         - self.get_cur_click_offset();
@@ -721,6 +721,7 @@ impl AnsiEditor {
 
         if response.drag_released_by(egui::PointerButton::Primary) {
             cur_tool.handle_drag_end(self);
+            self.drag_started = false;
             self.redraw_view();
         }
 
@@ -772,7 +773,7 @@ pub const DEFAULT_OUTLINE_TABLE: [[u8; 10]; 15] = [
     [147, 148, 149, 162, 167, 150, 129, 151, 163, 154],
 ];
 
-pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) -> Option<Message> {
+pub fn terminal_context_menu(editor: &AnsiEditor, commands: &Commands, ui: &mut egui::Ui) -> Option<Message> {
     let mut result = None;
     ui.input_mut(|i| i.events.clear());
 
@@ -800,49 +801,13 @@ pub fn terminal_context_menu(editor: &mut AnsiEditor, ui: &mut egui::Ui) -> Opti
     let sel = editor.buffer_view.lock().get_selection();
 
     if let Some(_sel) = sel {
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-erase"))
-            .clicked()
-        {
-            editor.delete_selection();
-            ui.close_menu();
-        }
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-flipx"))
-            .clicked()
-        {
-            result = Some(Message::FlipX);
-            ui.close_menu();
-        }
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-flipy"))
-            .clicked()
-        {
-            result = Some(Message::FlipY);
-            ui.close_menu();
-        }
-
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"))
-            .clicked()
-        {
-            result = Some(Message::JustifyLeft);
-            ui.close_menu();
-        }
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifyright"))
-            .clicked()
-        {
-            result = Some(Message::JustifyRight);
-            ui.close_menu();
-        }
-        if ui
-            .button(fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"))
-            .clicked()
-        {
-            result = Some(Message::Center);
-            ui.close_menu();
-        }
+        commands.erase_selection.ui_enabled(ui, true, &mut result);
+        commands.flip_x.ui_enabled(ui, true, &mut result);
+        commands.flip_y.ui_enabled(ui, true, &mut result);
+        commands.justifycenter.ui_enabled(ui, true, &mut result);
+        commands.justifyleft.ui_enabled(ui, true, &mut result);
+        commands.justifyright.ui_enabled(ui, true, &mut result);
+        commands.crop.ui_enabled(ui, true, &mut result);
     }
     result
 }

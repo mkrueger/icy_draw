@@ -251,20 +251,6 @@ pub trait Tool {
             MKey::Return => {
                 editor.set_caret(0, pos.y + 1);
             }
-            MKey::Delete => {
-                if editor.buffer_view.lock().get_selection().is_some() {
-                    editor.delete_selection();
-                } else {
-                    let pos = editor.get_caret_position();
-                    let end = editor.buffer_view.lock().get_width() - 1;
-                    for i in pos.x..end {
-                        let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
-                        editor.set_char(Position::new(i, pos.y), next);
-                    }
-                    let last_pos = Position::new(editor.buffer_view.lock().get_width() - 1, pos.y);
-                    editor.set_char(last_pos, AttributedChar::invisible());
-                }
-            }
             MKey::Insert => {
                 editor.buffer_view.lock().get_caret_mut().insert_mode =
                     !editor.buffer_view.lock().get_caret().insert_mode;
@@ -343,9 +329,6 @@ pub trait Tool {
             }
             MKey::F10 => {
                 handle_outline_insertion(editor, modifier, 9);
-            }
-            MKey::Escape => {
-                editor.buffer_view.lock().clear_selection();
             }
             _ => {}
         }

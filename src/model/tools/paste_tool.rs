@@ -1,6 +1,6 @@
 use super::{Event, Position, Tool};
 use crate::{AnsiEditor, Message};
-use eframe::egui;
+use eframe::egui::{self, Key};
 use icy_engine::TextPane;
 use icy_engine_egui::TerminalCalc;
 
@@ -61,7 +61,7 @@ impl Tool for PasteTool {
 
     fn show_ui(
         &mut self,
-        _ctx: &egui::Context,
+        ctx: &egui::Context,
         ui: &mut egui::Ui,
         editor: &AnsiEditor,
     ) -> Option<Message> {
@@ -73,6 +73,11 @@ impl Tool for PasteTool {
             return Some(Message::SelectTool(self.last_tool));
         }
         ui.label("Show fancy paste ui");
+
+
+        if ctx.input(|i| i.key_pressed(Key::Escape)) {
+            return Some(Message::RemoveFloatingLayer);
+        }
         None
     }
 

@@ -10,10 +10,10 @@ use std::{
 use crate::{
     add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
     CharTableToolWindow, Document, DocumentBehavior, DocumentOptions, DocumentTab, LayerToolWindow,
-    Message, ModalDialog, ToolBehavior, ToolTab, TopBar,
+    Message, ModalDialog, ToolBehavior, ToolTab, TopBar, Commands,
 };
 use eframe::{
-    egui::{self, Response, SidePanel, TextStyle, Ui},
+    egui::{self, Response, SidePanel, TextStyle, Ui, Key},
     epaint::{pos2, FontId},
 };
 use glow::Context;
@@ -33,10 +33,13 @@ pub struct MainWindow {
     modal_dialog: Option<Box<dyn ModalDialog>>,
     id: usize,
     palette_mode: usize,
+    pub is_closed: bool,
     pub top_bar: TopBar,
     pub left_panel: bool,
     pub right_panel: bool,
     pub bottom_panel: bool,
+
+    pub commands: Commands
 }
 
 pub const PASTE_TOOL: usize = 0;
@@ -182,6 +185,7 @@ impl MainWindow {
                 selected_tool: FIRST_TOOL,
                 document_options: DocumentOptions {
                     scale: eframe::egui::Vec2::new(1.0, 1.0),
+                    commands: Commands::default()
                 },
                 request_close: None,
                 message: None,
@@ -199,6 +203,8 @@ impl MainWindow {
             bottom_panel: false,
             palette_mode: 0,
             top_bar: TopBar::new(&cc.egui_ctx),
+            commands: Commands::default(),
+            is_closed: false
         }
     }
 
@@ -410,7 +416,9 @@ impl eframe::App for MainWindow {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let msg = self.show_top_bar(ctx, frame);
         self.handle_message(msg);
-
+        if self.is_closed {
+            frame.close();
+        }
         SidePanel::left("left_panel")
             .exact_width(240.0)
             .resizable(false)
@@ -493,7 +501,7 @@ impl eframe::App for MainWindow {
 
         egui::SidePanel::right("right_panel")
             .frame(panel_frame)
-            .exact_width(200.0)
+            .exact_width(250.0)
             .resizable(false)
             .show_animated(ctx, self.right_panel, |ui| {
                 self.tool_behavior.active_document = self.get_active_document();
@@ -547,6 +555,10 @@ impl eframe::App for MainWindow {
                     modal_dialog.commit_self(self).unwrap();
                 }
             }
+
+            if ctx.input(|i| i.key_pressed(Key::Escape)) {
+                self.modal_dialog = None;
+            }
         }
         self.toasts.show(ctx);
         if let Some(close) = self.document_behavior.request_close {
@@ -554,8 +566,10 @@ impl eframe::App for MainWindow {
             self.document_behavior.request_close = None;
         }
 
-        let msg = self.document_behavior.message.take();
+        let mut msg = self.document_behavior.message.take();
+        self.commands.check(ctx, &mut msg);
         self.handle_message(msg);
+
 
         ctx.request_repaint_after(Duration::from_millis(150));
     }

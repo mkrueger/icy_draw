@@ -1,5 +1,5 @@
 use eframe::{
-    egui::{self, menu, ImageButton, Modifiers, TopBottomPanel, Ui},
+    egui::{self, menu, ImageButton, TopBottomPanel, Ui},
     epaint::Vec2,
 };
 use egui_extras::RetainedImage;
@@ -51,77 +51,16 @@ impl MainWindow {
             }
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
-                if ui
-                    .add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-new")).wrap(false))
-                    .clicked()
-                {
-                    result = Some(Message::NewFile);
-                    ui.close_menu();
-                }
-
-                if ui
-                    .add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-open")).wrap(false))
-                    .clicked()
-                {
-                    result = Some(Message::OpenFile);
-                    ui.close_menu();
-                }
+                self.commands.new_file.ui(ui, &mut result);
+                self.commands.open_file.ui(ui, &mut result);
                 ui.separator();
-                if ui
-                    .add_enabled(
-                        is_dirty,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save")).wrap(false),
-                    )
-                    .clicked()
-                {
-                    result = Some(Message::SaveFile);
-                    ui.close_menu();
-                }
-                if ui
-                    .add_enabled(
-                        true,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-save-as")).wrap(false),
-                    )
-                    .clicked()
-                {
-                    result = Some(Message::SaveFileAs);
-                    ui.close_menu();
-                }
-
-                if ui
-                    .add_enabled(
-                        has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-export")).wrap(false),
-                    )
-                    .clicked()
-                {
-                    result = Some(Message::ExportFile);
-                    ui.close_menu();
-                }
+                self.commands.save.ui_enabled(ui, is_dirty, &mut result);
+                self.commands.save_as.ui_enabled(ui, is_dirty, &mut result);
+                self.commands.export.ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
-
-                if ui
-                    .add(
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-font-outline"))
-                            .wrap(false),
-                    )
-                    .clicked()
-                {
-                    result = Some(Message::ShowOutlineDialog);
-                    ui.close_menu();
-                }
-
+                self.commands.edit_font_outline.ui(ui, &mut result);
                 ui.separator();
-                let button = button_with_shortcut(
-                    ui,
-                    true,
-                    fl!(crate::LANGUAGE_LOADER, "menu-close"),
-                    "Ctrl+Q",
-                );
-                if button.clicked() {
-                    frame.close();
-                    ui.close_menu();
-                }
+                self.commands.close_window.ui(ui, &mut result);
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
@@ -129,6 +68,7 @@ impl MainWindow {
                 if let Some(doc) = self.get_active_document() {
                     if doc.lock().unwrap().can_undo() {
                         let enabled = doc.lock().unwrap().can_undo();
+
                         let button = button_with_shortcut(
                             ui,
                             enabled,
@@ -144,12 +84,7 @@ impl MainWindow {
                             ui.close_menu();
                         }
                     } else {
-                        button_with_shortcut(
-                            ui,
-                            false,
-                            fl!(crate::LANGUAGE_LOADER, "menu-undo"),
-                            "Ctrl+Z",
-                        );
+                        self.commands.undo.ui_enabled(ui, false, &mut result);
                     }
 
                     if doc.lock().unwrap().can_redo() {
@@ -168,50 +103,17 @@ impl MainWindow {
                             ui.close_menu();
                         }
                     } else {
-                        button_with_shortcut(
-                            ui,
-                            false,
-                            fl!(crate::LANGUAGE_LOADER, "menu-redo"),
-                            "Ctrl+Shift+Z",
-                        );
+                        self.commands.redo.ui_enabled(ui, false, &mut result);
                     }
                 } else {
-                    add_default_undo_redo(ui);
+                    self.commands.undo.ui_enabled(ui, false, &mut result);
+                    self.commands.redo.ui_enabled(ui, false, &mut result);
                 }
                 ui.separator();
                 if let Some(doc) = self.get_active_document() {
-                    let button = button_with_shortcut(
-                        ui,
-                        doc.lock().unwrap().can_cut(),
-                        fl!(crate::LANGUAGE_LOADER, "menu-cut"),
-                        "Ctrl+X",
-                    );
-                    if button.clicked() {
-                        result = Some(Message::Cut);
-                        ui.close_menu();
-                    }
-
-                    let button = button_with_shortcut(
-                        ui,
-                        doc.lock().unwrap().can_copy(),
-                        fl!(crate::LANGUAGE_LOADER, "menu-copy"),
-                        "Ctrl+C",
-                    );
-                    if button.clicked() {
-                        result = Some(Message::Copy);
-                        ui.close_menu();
-                    }
-
-                    let button = button_with_shortcut(
-                        ui,
-                        doc.lock().unwrap().can_paste(),
-                        fl!(crate::LANGUAGE_LOADER, "menu-paste"),
-                        "Ctrl+V",
-                    );
-                    if button.clicked() {
-                        result = Some(Message::Paste);
-                        ui.close_menu();
-                    }
+                    self.commands.cut.ui_enabled(ui, doc.lock().unwrap().can_cut(), &mut result);
+                    self.commands.copy.ui_enabled(ui, doc.lock().unwrap().can_copy(), &mut result);
+                    self.commands.paste.ui_enabled(ui, doc.lock().unwrap().can_paste(), &mut result);
                 }
 
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-paste-as"), |ui| {
@@ -265,115 +167,16 @@ impl MainWindow {
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-selection"), |ui| {
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-select-all"),
-                    "Ctrl+A",
-                );
-                if button.clicked() {
-                    result = Some(Message::SelectAll);
-                    ui.close_menu();
-                }
-
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-deselect"),
-                    "Esc",
-                );
-                if button.clicked() {
-                    result = Some(Message::Deselect);
-                    ui.close_menu();
-                }
+                self.commands.select_all.ui_enabled(ui, has_buffer, &mut result);
+                self.commands.deselect.ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
-
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-erase"),
-                    "Del",
-                );
-                if button.clicked() {
-                    result = Some(Message::DeleteSelection);
-                    ui.close_menu();
-                }
-
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-flipx"),
-                    "X",
-                );
-                if button.clicked() {
-                    if let Some(editor) = self
-                        .get_active_document()
-                        .unwrap()
-                        .lock()
-                        .unwrap()
-                        .get_ansi_editor_mut()
-                    {
-                        self.handle_message(Some(Message::FlipX));
-                        editor.redraw_view();
-                    }
-                    ui.close_menu();
-                }
-
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-flipy"),
-                    "Y",
-                );
-                if button.clicked() {
-                    result = Some(Message::FlipY);
-                    ui.close_menu();
-                }
-
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-justifycenter"),
-                    "Y",
-                );
-                if button.clicked() {
-                    result = Some(Message::Center);
-                    ui.close_menu();
-                }
-
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-justifyleft"),
-                    "L",
-                );
-                if button.clicked() {
-                    result = Some(Message::JustifyLeft);
-                    ui.close_menu();
-                }
-
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-justifyright"),
-                    "R",
-                );
-                if button.clicked() {
-                    result = Some(Message::JustifyRight);
-                    ui.close_menu();
-                }
-                ui.separator();
-
-                let button = button_with_shortcut(
-                    ui,
-                    has_buffer,
-                    fl!(crate::LANGUAGE_LOADER, "menu-crop"),
-                    "",
-                );
-                if button.clicked() {
-                    result = Some(Message::Crop);
-                    ui.close_menu();
-                }
+                self.commands.erase_selection.ui_enabled(ui, has_buffer, &mut result);
+                self.commands.flip_x.ui_enabled(ui, has_buffer, &mut result);
+                self.commands.flip_y.ui_enabled(ui, has_buffer, &mut result);
+                self.commands.justifycenter.ui_enabled(ui, has_buffer, &mut result);
+                self.commands.justifyleft.ui_enabled(ui, has_buffer, &mut result);
+                self.commands.justifyright.ui_enabled(ui, has_buffer, &mut result);
+                self.commands.crop.ui_enabled(ui, has_buffer, &mut result);
             });
 
             ui.menu_button("View", |ui| {
@@ -407,35 +210,11 @@ impl MainWindow {
                     ui.close_menu();
                 }
                 ui.separator();
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "menu-about"))
-                    .clicked()
-                {
-                    result = Some(Message::ShowAboutDialog);
-                    ui.close_menu();
-                }
+                self.commands.about.ui(ui, &mut result);
             });
             self.top_bar_ui(ui, frame);
         });
 
-        if ui.input(|i| i.key_pressed(egui::Key::Q) && i.modifiers.ctrl) {
-            frame.close();
-        }
-
-        if ui.input(|i| i.key_pressed(egui::Key::A) && i.modifiers.ctrl) {
-            ui.input_mut(|i| i.consume_key(Modifiers::CTRL, egui::Key::A));
-            result = Some(Message::SelectAll);
-        }
-
-        if ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.ctrl && !i.modifiers.shift) {
-            ui.input_mut(|i| i.consume_key(Modifiers::CTRL, egui::Key::Z));
-            result = Some(Message::Undo);
-        }
-
-        if ui.input(|i| i.key_pressed(egui::Key::Z) && i.modifiers.shift && i.modifiers.ctrl) {
-            ui.input_mut(|i| i.consume_key(crate::CTRL_SHIFT, egui::Key::Z));
-            result = Some(Message::Redo);
-        }
         result
     }
 
@@ -452,21 +231,6 @@ impl MainWindow {
             }
         });
     }
-}
-
-fn add_default_undo_redo(ui: &mut Ui) {
-    button_with_shortcut(
-        ui,
-        false,
-        fl!(crate::LANGUAGE_LOADER, "menu-undo"),
-        "Ctrl+Z",
-    );
-    button_with_shortcut(
-        ui,
-        false,
-        fl!(crate::LANGUAGE_LOADER, "menu-redo"),
-        "Ctrl+Shift+Z",
-    );
 }
 
 pub fn medium_toggle_button(

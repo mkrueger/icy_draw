@@ -13,6 +13,7 @@ use crate::{
     SelectOutlineDialog,
 };
 
+#[derive(Clone)]
 pub enum Message {
     NewFile,
     OpenFile,
@@ -20,6 +21,7 @@ pub enum Message {
     SaveFileAs,
     ExportFile,
     ShowOutlineDialog,
+    CloseWindow,
 
     AddNewLayer(usize),
     EditLayer(usize),
@@ -61,6 +63,7 @@ pub enum Message {
     PasteAsBrush,
     Copy,
     Cut,
+    RemoveFloatingLayer,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -165,18 +168,9 @@ impl MainWindow {
                 }
             }
             Message::DeleteSelection => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
-                    if editor.buffer_view.lock().get_selection().is_some() {
-                        editor.delete_selection();
-                        editor.redraw_view();
-                    }
-                }
+                self.run_editor_command(0, |window, editor: &mut AnsiEditor, _| {
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().delete_selection())
+                });
             }
             Message::ShowCharacterSelectionDialog(ch) => {
                 self.run_editor_command(ch, |window, editor: &mut AnsiEditor, ch| {
@@ -262,6 +256,16 @@ impl MainWindow {
                     |_, editor: &mut crate::AnsiEditor, cur_layer| {
                         let mut lock = editor.buffer_view.lock();
                         to_message(lock.get_edit_state_mut().remove_layer(cur_layer))
+                    },
+                );
+            }
+            Message::RemoveFloatingLayer => {
+                self.run_editor_command(
+                    0,
+                    |_, editor: &mut crate::AnsiEditor, _| {
+                        let mut lock = editor.buffer_view.lock();
+                        let layer = lock.get_edit_state().get_current_layer();
+                        to_message(lock.get_edit_state_mut().remove_layer(layer))
                     },
                 );
             }
@@ -478,6 +482,9 @@ impl MainWindow {
                         }
                     }
                 }
+            }
+            Message::CloseWindow => {
+                self.is_closed = true;
             }
         }
     }
