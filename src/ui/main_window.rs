@@ -10,7 +10,7 @@ use std::{
 use crate::{
     add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
     CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentOptions, DocumentTab,
-    LayerToolWindow, Message, ModalDialog, ToolBehavior, ToolTab, TopBar,
+    LayerToolWindow, Message, MinimapToolWindow, ModalDialog, ToolBehavior, ToolTab, TopBar,
 };
 use eframe::{
     egui::{self, Key, Response, SidePanel, TextStyle, Ui},
@@ -161,10 +161,15 @@ impl MainWindow {
         .into();
         ctx.set_style(style);
 
+        let gl = cc.gl.clone().unwrap();
+
         let mut tool_tree = egui_tiles::Tree::<ToolTab>::empty("tool_tree");
         let layers = tool_tree
             .tiles
             .insert_pane(ToolTab::new(LayerToolWindow::default()));
+        let minimap = tool_tree
+            .tiles
+            .insert_pane(ToolTab::new(MinimapToolWindow::new(gl.clone())));
         let char_table = tool_tree
             .tiles
             .insert_pane(ToolTab::new(CharTableToolWindow::default()));
@@ -174,7 +179,7 @@ impl MainWindow {
 
         let tab = tool_tree
             .tiles
-            .insert_tab_tile(vec![char_table, bitfont_selector]);
+            .insert_tab_tile(vec![minimap, char_table, bitfont_selector]);
         let v = tool_tree.tiles.insert_vertical_tile(vec![tab, layers]);
 
         tool_tree.root = Some(v);
@@ -194,7 +199,7 @@ impl MainWindow {
             toasts: egui_notify::Toasts::default(),
             document_tree: egui_tiles::Tree::<DocumentTab>::empty("document_tree"),
             tool_tree,
-            gl: cc.gl.clone().unwrap(),
+            gl,
             dialog_open: false,
             modal_dialog: None,
             id: 0,

@@ -58,6 +58,7 @@ copyright = "Copyright (c) Mike Krüger 2022. All rights reserved."
 [package.metadata.deb]
 section="Network"
 copyright = "Copyright (c) Mike Krüger 2022. All rights reserved."
+metadata.deb.revision=""
 license-file="build/license.rtf"
 assets = [
     ["target/release/icy_draw", "/usr/bin/", "755"],
