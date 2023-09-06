@@ -1,9 +1,8 @@
-use eframe::egui::{Modifiers, self};
-use egui_bind::{KeyOrPointer, BindTarget};
+use eframe::egui::{self, Modifiers};
+use egui_bind::{BindTarget, KeyOrPointer};
 use i18n_embed_fl::fl;
 
-
-use crate::{Message, button_with_shortcut};
+use crate::{button_with_shortcut, Message};
 
 pub struct Command {
     key: Option<(KeyOrPointer, Modifiers)>,
@@ -30,6 +29,22 @@ mod modifier_keys {
         command: false,
     };
 
+    pub const ALT: Modifiers = Modifiers {
+        alt: true,
+        ctrl: false,
+        shift: false,
+        mac_cmd: false,
+        command: false,
+    };
+
+    pub const ALT_CTRL: Modifiers = Modifiers {
+        alt: true,
+        ctrl: true,
+        shift: false,
+        mac_cmd: false,
+        command: false,
+    };
+
     pub const CTRL_SHIFT: Modifiers = Modifiers {
         alt: false,
         ctrl: true,
@@ -37,15 +52,15 @@ mod modifier_keys {
         mac_cmd: false,
         command: false,
     };
-    
 }
 
-
 macro_rules! key {
-    () => { None };
+    () => {
+        None
+    };
     ($key:ident, $modifier: ident) => {
         Some((KeyOrPointer::Key(egui::Key::$key), modifier_keys::$modifier))
-    }
+    };
 }
 
 macro_rules! keys {
@@ -74,41 +89,17 @@ macro_rules! keys {
                         return;
                     }
                 )*
-            } 
+            }
         }
     };
 }
 
-keys![
-    (new_file, "menu-new", NewFile, N, CTRL),
-    (save, "menu-save", SaveFile, S, CTRL),
-    (save_as, "menu-save-as", SaveFileAs, S, CTRL_SHIFT),
-    (open_file, "menu-open", OpenFile, O, CTRL),
-    (export, "menu-export", ExportFile),
-    (edit_font_outline, "menu-edit-font-outline", ShowOutlineDialog),
-    (close_window, "menu-close", CloseWindow, Q, CTRL),
-    (undo, "menu-undo", Undo, Z, CTRL),
-    (redo, "menu-redo", Redo, Z, CTRL_SHIFT),
-    (cut, "menu-cut", Cut, X, CTRL),
-    (copy, "menu-copy", Copy, C, CTRL),
-    (paste, "menu-paste", Paste, V, CTRL),
-    (select_all, "menu-select-all", SelectAll, A, CTRL),
-    (deselect, "menu-deselect", Deselect, Escape, NONE),
-    (erase_selection, "menu-erase", DeleteSelection, Delete, NONE),
-
-    (flip_x, "menu-flipx", FlipX),
-    (flip_y, "menu-flipy", FlipY),
-    (justifycenter, "menu-justifycenter", Center),
-    (justifyleft, "menu-justifyleft", JustifyLeft),
-    (justifyright, "menu-justifyright", JustifyRight),
-    (crop, "menu-crop", Crop),
-    (about, "menu-about", ShowAboutDialog),
-];
-
-
-
 impl Command {
-    pub fn new(key: Option<(KeyOrPointer, Modifiers)>, message: Message, description: String) -> Self {
+    pub fn new(
+        key: Option<(KeyOrPointer, Modifiers)>,
+        message: Message,
+        description: String,
+    ) -> Self {
         Self {
             key,
             message,
@@ -120,59 +111,162 @@ impl Command {
         self.key.pressed(ctx)
     }
 
-    pub fn ui_enabled(&self, ui: &mut egui::Ui, enabled: bool, message: &mut Option<Message>)  {
+    pub fn ui_enabled(&self, ui: &mut egui::Ui, enabled: bool, message: &mut Option<Message>) {
         let response = ui.with_layout(ui.layout().with_cross_justify(true), |ui| {
-                ui.set_enabled(enabled);
+            ui.set_enabled(enabled);
 
-                if let Some((KeyOrPointer::Key(k), modifier)) = self.key {
-                    let mut shortcut = k.name().to_string();
+            if let Some((KeyOrPointer::Key(k), modifier)) = self.key {
+                let mut shortcut = k.name().to_string();
 
-                    if modifier.ctrl {
-                        shortcut.insert_str(0, "Ctrl+");
-                    }
-
-                    if modifier.alt {
-                        shortcut.insert_str(0, "Alt+");
-                    }
-
-                    if modifier.shift {
-                        shortcut.insert_str(0, "Shift+");
-                    }
-
-                    button_with_shortcut(
-                        ui,
-                        true,
-                        &self.description,
-                        shortcut,
-                    )
-                } else {
-                    ui.add(egui::Button::new(&self.description).wrap(false))
+                if modifier.ctrl {
+                    shortcut.insert_str(0, "Ctrl+");
                 }
-            });
 
+                if modifier.alt {
+                    shortcut.insert_str(0, "Alt+");
+                }
 
-        if response.inner.clicked()
-        {
+                if modifier.shift {
+                    shortcut.insert_str(0, "Shift+");
+                }
+
+                button_with_shortcut(ui, true, &self.description, shortcut)
+            } else {
+                ui.add(egui::Button::new(&self.description).wrap(false))
+            }
+        });
+
+        if response.inner.clicked() {
             *message = Some(self.message.clone());
             ui.close_menu();
         }
     }
 
-    pub fn ui(&self, ui: &mut egui::Ui, message: &mut Option<Message>)  {
+    pub fn ui(&self, ui: &mut egui::Ui, message: &mut Option<Message>) {
         self.ui_enabled(ui, true, message)
     }
-/*
-
-                let button = button_with_shortcut(
-                    ui,
-                    true,
-                    fl!(crate::LANGUAGE_LOADER, "menu-close"),
-                    "Ctrl+Q",
-                );
-                if button.clicked() {
-                    frame.close();
-                    ui.close_menu();
-                }
-*/
-    
 }
+
+keys![
+    (new_file, "menu-new", NewFile, N, CTRL),
+    (save, "menu-save", SaveFile, S, CTRL),
+    (save_as, "menu-save-as", SaveFileAs, S, CTRL_SHIFT),
+    (open_file, "menu-open", OpenFile, O, CTRL),
+    (export, "menu-export", ExportFile),
+    (
+        edit_font_outline,
+        "menu-edit-font-outline",
+        ShowOutlineDialog
+    ),
+    (close_window, "menu-close", CloseWindow, Q, CTRL),
+    (undo, "menu-undo", Undo, Z, CTRL),
+    (redo, "menu-redo", Redo, Z, CTRL_SHIFT),
+    (cut, "menu-cut", Cut, X, CTRL),
+    (copy, "menu-copy", Copy, C, CTRL),
+    (paste, "menu-paste", Paste, V, CTRL),
+    (select_all, "menu-select-all", SelectAll, A, CTRL),
+    (deselect, "menu-deselect", Deselect, Escape, NONE),
+    (erase_selection, "menu-erase", DeleteSelection, Delete, NONE),
+    (flip_x, "menu-flipx", FlipX),
+    (flip_y, "menu-flipy", FlipY),
+    (justifycenter, "menu-justifycenter", Center),
+    (justifyleft, "menu-justifyleft", JustifyLeft),
+    (justifyright, "menu-justifyright", JustifyRight),
+    (crop, "menu-crop", Crop),
+    (about, "menu-about", ShowAboutDialog),
+    (
+        justify_line_center,
+        "menu-justify_line_center",
+        CenterLine,
+        C,
+        ALT
+    ),
+    (
+        justify_line_left,
+        "menu-justify_line_left",
+        JustifyLineLeft,
+        L,
+        ALT
+    ),
+    (
+        justify_line_right,
+        "menu-justify_line_right",
+        JustifyLineRight,
+        R,
+        ALT
+    ),
+    (insert_row, "menu-insert_row", InsertRow, ArrowUp, ALT),
+    (delete_row, "menu-delete_row", DeleteRow, ArrowDown, ALT),
+    (
+        insert_column,
+        "menu-insert_colum",
+        InsertColumn,
+        ArrowRight,
+        ALT
+    ),
+    (
+        delete_column,
+        "menu-delete_colum",
+        DeleteColumn,
+        ArrowLeft,
+        ALT
+    ),
+    (erase_row, "menu-erase_row", EraseRow, E, ALT),
+    (
+        erase_row_to_start,
+        "menu-erase_row_to_start",
+        EraseRowToStart,
+        Home,
+        ALT
+    ),
+    (
+        erase_row_to_end,
+        "menu-erase_row_to_end",
+        EraseRowToEnd,
+        End,
+        ALT
+    ),
+    (erase_column, "menu-erase_column", EraseColumn, E, ALT),
+    (
+        erase_column_to_start,
+        "menu-erase_column_to_start",
+        EraseColumnToStart,
+        Home,
+        ALT
+    ),
+    (
+        erase_column_to_end,
+        "menu-erase_column_to_end",
+        EraseColumnToEnd,
+        End,
+        ALT
+    ),
+    (
+        scroll_area_up,
+        "menu-scroll_area_up",
+        ScrollAreaUp,
+        ArrowUp,
+        ALT_CTRL
+    ),
+    (
+        scroll_area_down,
+        "menu-scroll_area_down",
+        ScrollAreaDown,
+        ArrowDown,
+        ALT_CTRL
+    ),
+    (
+        scroll_area_left,
+        "menu-scroll_area_left",
+        ScrollAreaLeft,
+        ArrowLeft,
+        ALT_CTRL
+    ),
+    (
+        scroll_area_right,
+        "menu-scroll_area_right",
+        ScrollAreaRight,
+        ArrowRight,
+        ALT_CTRL
+    ),
+];

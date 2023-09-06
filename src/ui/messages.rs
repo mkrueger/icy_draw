@@ -64,6 +64,28 @@ pub enum Message {
     Copy,
     Cut,
     RemoveFloatingLayer,
+
+    CenterLine,
+    JustifyLineLeft,
+    JustifyLineRight,
+
+    InsertRow,
+    DeleteRow,
+    InsertColumn,
+    DeleteColumn,
+
+    EraseRow,
+    EraseRowToStart,
+    EraseRowToEnd,
+
+    EraseColumn,
+    EraseColumnToStart,
+    EraseColumnToEnd,
+
+    ScrollAreaUp,
+    ScrollAreaDown,
+    ScrollAreaLeft,
+    ScrollAreaRight,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -169,7 +191,13 @@ impl MainWindow {
             }
             Message::DeleteSelection => {
                 self.run_editor_command(0, |_, editor: &mut AnsiEditor, _| {
-                    to_message(editor.buffer_view.lock().get_edit_state_mut().delete_selection())
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .delete_selection(),
+                    )
                 });
             }
             Message::ShowCharacterSelectionDialog(ch) => {
@@ -260,14 +288,11 @@ impl MainWindow {
                 );
             }
             Message::RemoveFloatingLayer => {
-                self.run_editor_command(
-                    0,
-                    |_, editor: &mut crate::AnsiEditor, _| {
-                        let mut lock = editor.buffer_view.lock();
-                        let layer = lock.get_edit_state().get_current_layer();
-                        to_message(lock.get_edit_state_mut().remove_layer(layer))
-                    },
-                );
+                self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    let layer = lock.get_edit_state().get_current_layer();
+                    to_message(lock.get_edit_state_mut().remove_layer(layer))
+                });
             }
             Message::DuplicateLayer(cur_layer) => {
                 self.run_editor_command(
@@ -485,6 +510,108 @@ impl MainWindow {
             }
             Message::CloseWindow => {
                 self.is_closed = true;
+            }
+            Message::CenterLine => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().center_line())
+                });
+            }
+            Message::JustifyLineLeft => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().justify_line_left())
+                });
+            }
+            Message::JustifyLineRight => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().justify_line_right())
+                });
+            }
+            Message::InsertRow => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().insert_row())
+                });
+            }
+            Message::DeleteRow => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().delete_row())
+                });
+            }
+            Message::InsertColumn => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().insert_column())
+                });
+            }
+            Message::DeleteColumn => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().delete_column())
+                });
+            }
+            Message::EraseRow => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().erase_row())
+                });
+            }
+            Message::EraseRowToStart => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().erase_row_to_start())
+                });
+            }
+            Message::EraseRowToEnd => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().erase_row_to_end())
+                });
+            }
+            Message::EraseColumn => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().erase_column())
+                });
+            }
+            Message::EraseColumnToStart => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().erase_column_to_start())
+                });
+            }
+            Message::EraseColumnToEnd => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().erase_column_to_end())
+                });
+            }
+            Message::ScrollAreaUp => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().scroll_area_up())
+                });
+            }
+            Message::ScrollAreaDown => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().scroll_area_down())
+                });
+            }
+            Message::ScrollAreaLeft => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().scroll_area_left())
+                });
+            }
+            Message::ScrollAreaRight => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().scroll_area_right())
+                });
             }
         }
     }

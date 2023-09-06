@@ -111,9 +111,17 @@ impl MainWindow {
                 }
                 ui.separator();
                 if let Some(doc) = self.get_active_document() {
-                    self.commands.cut.ui_enabled(ui, doc.lock().unwrap().can_cut(), &mut result);
-                    self.commands.copy.ui_enabled(ui, doc.lock().unwrap().can_copy(), &mut result);
-                    self.commands.paste.ui_enabled(ui, doc.lock().unwrap().can_paste(), &mut result);
+                    self.commands
+                        .cut
+                        .ui_enabled(ui, doc.lock().unwrap().can_cut(), &mut result);
+                    self.commands
+                        .copy
+                        .ui_enabled(ui, doc.lock().unwrap().can_copy(), &mut result);
+                    self.commands.paste.ui_enabled(
+                        ui,
+                        doc.lock().unwrap().can_paste(),
+                        &mut result,
+                    );
                 }
 
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-paste-as"), |ui| {
@@ -139,7 +147,30 @@ impl MainWindow {
                         ui.close_menu();
                     }
                 });
+                ui.separator();
 
+                self.commands.justify_line_left.ui_enabled(ui, false, &mut result);
+                self.commands.justify_line_right.ui_enabled(ui, false, &mut result);
+                self.commands.justify_line_center.ui_enabled(ui, false, &mut result);
+                ui.separator();
+                self.commands.insert_row.ui_enabled(ui, false, &mut result);
+                self.commands.delete_row.ui_enabled(ui, false, &mut result);
+                ui.separator();
+                self.commands.insert_column.ui_enabled(ui, false, &mut result);
+                self.commands.delete_column.ui_enabled(ui, false, &mut result);
+                ui.separator();
+                self.commands.erase_row.ui_enabled(ui, false, &mut result);
+                self.commands.erase_row_to_start.ui_enabled(ui, false, &mut result);
+                self.commands.erase_row_to_end.ui_enabled(ui, false, &mut result);
+                ui.separator();
+                self.commands.erase_column.ui_enabled(ui, false, &mut result);
+                self.commands.erase_column_to_end.ui_enabled(ui, false, &mut result);
+                self.commands.erase_column_to_start.ui_enabled(ui, false, &mut result);
+                ui.separator();
+                self.commands.scroll_area_up.ui_enabled(ui, false, &mut result);
+                self.commands.scroll_area_down.ui_enabled(ui, false, &mut result);
+                self.commands.scroll_area_left.ui_enabled(ui, false, &mut result);
+                self.commands.scroll_area_right.ui_enabled(ui, false, &mut result);
                 ui.separator();
                 if ui
                     .add_enabled(
@@ -167,15 +198,27 @@ impl MainWindow {
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-selection"), |ui| {
-                self.commands.select_all.ui_enabled(ui, has_buffer, &mut result);
-                self.commands.deselect.ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .select_all
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .deselect
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
-                self.commands.erase_selection.ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .erase_selection
+                    .ui_enabled(ui, has_buffer, &mut result);
                 self.commands.flip_x.ui_enabled(ui, has_buffer, &mut result);
                 self.commands.flip_y.ui_enabled(ui, has_buffer, &mut result);
-                self.commands.justifycenter.ui_enabled(ui, has_buffer, &mut result);
-                self.commands.justifyleft.ui_enabled(ui, has_buffer, &mut result);
-                self.commands.justifyright.ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .justifycenter
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .justifyleft
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .justifyright
+                    .ui_enabled(ui, has_buffer, &mut result);
                 self.commands.crop.ui_enabled(ui, has_buffer, &mut result);
             });
 

@@ -256,10 +256,7 @@ impl Tool for BrushTool {
         Event::None
     }
 
-    fn handle_drag_end(
-        &mut self,
-        _editor: &mut AnsiEditor
-    ) -> Event {
+    fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         self.undo_op = None;
         Event::None
     }

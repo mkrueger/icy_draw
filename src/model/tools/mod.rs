@@ -83,8 +83,8 @@ pub struct DragPos {
     pub start_abs: Position,
     pub cur_abs: Position,
     pub start: Position,
-    pub cur: Position
-} 
+    pub cur: Position,
+}
 
 pub trait Tool {
     fn get_icon_name(&self) -> &'static RetainedImage;
@@ -353,7 +353,7 @@ pub trait Tool {
         _ui: &egui::Ui,
         response: Response,
         _editor: &mut AnsiEditor,
-        _calc: &TerminalCalc
+        _calc: &TerminalCalc,
     ) -> Response {
         response
     }
@@ -368,10 +368,7 @@ pub trait Tool {
         response
     }
 
-    fn handle_drag_end(
-        &mut self,
-        _editor: &mut AnsiEditor,
-    ) -> Event {
+    fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         Event::None
     }
 }

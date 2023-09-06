@@ -37,9 +37,8 @@ impl Tool for ClickTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        _calc: &TerminalCalc
+        _calc: &TerminalCalc,
     ) -> egui::Response {
-
         if editor.drag_pos.start == editor.drag_pos.cur {
             editor.buffer_view.lock().clear_selection();
         } else {
@@ -64,10 +63,7 @@ impl Tool for ClickTool {
         response
     }
 
-    fn handle_drag_end(
-        &mut self,
-        editor: &mut AnsiEditor,
-    ) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
         let mut cur = editor.drag_pos.cur;
         if editor.drag_pos.start < cur {
             cur += Position::new(1, 1);

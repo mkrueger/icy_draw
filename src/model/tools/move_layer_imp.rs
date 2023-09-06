@@ -51,7 +51,7 @@ impl Tool for MoveLayer {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        _calc: &TerminalCalc
+        _calc: &TerminalCalc,
     ) -> egui::Response {
         if !self.drag_started {
             return response;
@@ -62,7 +62,8 @@ impl Tool for MoveLayer {
             .get_edit_state_mut()
             .get_cur_layer_mut()
         {
-            self.drag_offset = self.start_offset + editor.drag_pos.cur_abs - editor.drag_pos.start_abs;
+            self.drag_offset =
+                self.start_offset + editor.drag_pos.cur_abs - editor.drag_pos.start_abs;
             layer.set_preview_offset(Some(self.drag_offset));
         }
         response.on_hover_cursor(egui::CursorIcon::Grabbing)
@@ -78,10 +79,7 @@ impl Tool for MoveLayer {
         response.on_hover_cursor(egui::CursorIcon::Move)
     }
 
-    fn handle_drag_end(
-        &mut self,
-        editor: &mut AnsiEditor
-    ) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
         if !self.drag_started {
             return Event::None;
         }

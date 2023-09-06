@@ -101,16 +101,22 @@ impl Tool for DrawEllipseFilledTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        _calc: &TerminalCalc
+        _calc: &TerminalCalc,
     ) -> egui::Response {
         editor.clear_overlay_layer();
 
         let mut lines = ScanLines::new(1);
 
         if editor.drag_pos.start < editor.drag_pos.cur {
-            lines.add_ellipse(Rectangle::from_pt(editor.drag_pos.start, editor.drag_pos.cur));
+            lines.add_ellipse(Rectangle::from_pt(
+                editor.drag_pos.start,
+                editor.drag_pos.cur,
+            ));
         } else {
-            lines.add_ellipse(Rectangle::from_pt(editor.drag_pos.cur, editor.drag_pos.start));
+            lines.add_ellipse(Rectangle::from_pt(
+                editor.drag_pos.cur,
+                editor.drag_pos.start,
+            ));
         }
 
         let draw = move |rect: Rectangle| {
@@ -128,10 +134,7 @@ impl Tool for DrawEllipseFilledTool {
         response
     }
 
-    fn handle_drag_end(
-        &mut self,
-        editor: &mut AnsiEditor,
-    ) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
         if editor.drag_pos.start == editor.drag_pos.cur {
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {

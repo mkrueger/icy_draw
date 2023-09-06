@@ -9,11 +9,11 @@ use std::{
 
 use crate::{
     add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
-    CharTableToolWindow, Document, DocumentBehavior, DocumentOptions, DocumentTab, LayerToolWindow,
-    Message, ModalDialog, ToolBehavior, ToolTab, TopBar, Commands,
+    CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentOptions, DocumentTab,
+    LayerToolWindow, Message, ModalDialog, ToolBehavior, ToolTab, TopBar,
 };
 use eframe::{
-    egui::{self, Response, SidePanel, TextStyle, Ui, Key},
+    egui::{self, Key, Response, SidePanel, TextStyle, Ui},
     epaint::{pos2, FontId},
 };
 use glow::Context;
@@ -39,7 +39,7 @@ pub struct MainWindow {
     pub right_panel: bool,
     pub bottom_panel: bool,
 
-    pub commands: Commands
+    pub commands: Commands,
 }
 
 pub const PASTE_TOOL: usize = 0;
@@ -185,7 +185,7 @@ impl MainWindow {
                 selected_tool: FIRST_TOOL,
                 document_options: DocumentOptions {
                     scale: eframe::egui::Vec2::new(1.0, 1.0),
-                    commands: Commands::default()
+                    commands: Commands::default(),
                 },
                 request_close: None,
                 message: None,
@@ -204,7 +204,7 @@ impl MainWindow {
             palette_mode: 0,
             top_bar: TopBar::new(&cc.egui_ctx),
             commands: Commands::default(),
-            is_closed: false
+            is_closed: false,
         }
     }
 
@@ -391,7 +391,7 @@ pub fn button_with_shortcut(
     label: impl Into<String>,
     shortcut: impl Into<String>,
 ) -> Response {
-    ui.set_width(250.0);
+    ui.set_width(280.0);
     let btn_re = ui.add_enabled(enabled, egui::Button::new(label.into()));
     let font_id = TextStyle::Body.resolve(ui.style());
     let color = ui.style().visuals.noninteractive().fg_stroke.color;
@@ -572,7 +572,6 @@ impl eframe::App for MainWindow {
         let mut msg = self.document_behavior.message.take();
         self.commands.check(ctx, &mut msg);
         self.handle_message(msg);
-
 
         ctx.request_repaint_after(Duration::from_millis(150));
     }

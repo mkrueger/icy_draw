@@ -17,6 +17,7 @@ egui-modal = "0.2.4"
 glow = "0.12.1"
 egui_file = "0.10.0"
 egui_tiles = { git ="https://github.com/mkrueger/egui_tiles"}
+egui-bind = "0.7.0"
 #egui_tiles = { path = "../egui_tiles"  }
 egui-notify = "0.8.0"
 log = "0.4.20"
@@ -24,10 +25,10 @@ open = "5.0.0"
 dark-light = "1.0.0"
 rfd = "0.11.4"
 
-icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
-icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
-#icy_engine = { path = "../icy_engine" }
-#icy_engine_egui = { path = "../icy_engine_egui" }
+#icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
+#icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
+icy_engine = { path = "../icy_engine" }
+icy_engine_egui = { path = "../icy_engine_egui" }
 walkdir = "2"
 serde = { version = "1", features = ["derive"], optional = true }
 lazy_static = "1.4.0"

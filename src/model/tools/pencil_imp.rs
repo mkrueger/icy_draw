@@ -192,7 +192,7 @@ impl Tool for PencilTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        _calc: &TerminalCalc
+        _calc: &TerminalCalc,
     ) -> egui::Response {
         self.paint_brush(editor, editor.drag_pos.cur);
         self.last_pos = editor.drag_pos.cur;
@@ -205,10 +205,7 @@ impl Tool for PencilTool {
         Event::None
     }
 
-    fn handle_drag_end(
-        &mut self,
-        _editor: &mut AnsiEditor
-    ) -> Event {
+    fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         self.undo_op = None;
         Event::None
     }

@@ -1,7 +1,7 @@
 use eframe::{egui, epaint::Vec2};
 use icy_engine::{editor::UndoState, EngineResult};
 
-use crate::{model::Tool, AnsiEditor, Message, TerminalResult, Commands};
+use crate::{model::Tool, AnsiEditor, Commands, Message, TerminalResult};
 
 pub trait ClipboardHandler {
     fn can_cut(&self) -> bool {
@@ -48,5 +48,5 @@ pub trait Document: UndoState + ClipboardHandler {
 
 pub struct DocumentOptions {
     pub scale: Vec2,
-    pub commands: Commands
+    pub commands: Commands,
 }

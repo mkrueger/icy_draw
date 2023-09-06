@@ -24,8 +24,8 @@ use icy_engine_egui::{
 };
 
 use crate::{
-    model::{MKey, MModifiers, Tool, DragPos},
-    ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, FIRST_TOOL, Commands,
+    model::{DragPos, MKey, MModifiers, Tool},
+    ClipboardHandler, Commands, Document, DocumentOptions, Message, TerminalResult, FIRST_TOOL,
 };
 
 pub enum Event {
@@ -111,12 +111,14 @@ impl ClipboardHandler for AnsiEditor {
     }
 
     fn paste(&mut self) -> EngineResult<()> {
-        if self.buffer_view
-        .lock()
-        .get_edit_state_mut().has_floating_layer() {
+        if self
+            .buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .has_floating_layer()
+        {
             return Ok(());
         }
-
 
         if let Some(data) = pop_data(BUFFER_DATA) {
             self.buffer_view
@@ -639,7 +641,7 @@ impl AnsiEditor {
                                     break;
                                 }
                             }
-                        } 
+                        }
                     }
                     _ => {}
                 }
@@ -647,8 +649,9 @@ impl AnsiEditor {
         }
 
         if response.clicked_by(egui::PointerButton::Primary) {
-            if let Some(mouse_pos) = response.interact_pointer_pos()  {
-                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos) {
+            if let Some(mouse_pos) = response.interact_pointer_pos() {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
+                {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
                         - self.get_cur_click_offset();
@@ -668,19 +671,19 @@ impl AnsiEditor {
 
         if response.drag_started_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos) {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
+                {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let click_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
-                    
-                    let cp: Position = click_pos 
-                        - self.get_cur_click_offset();
+
+                    let cp: Position = click_pos - self.get_cur_click_offset();
                     self.drag_pos.start_abs = click_pos;
                     self.drag_pos.start = cp;
 
                     self.drag_pos.cur_abs = click_pos;
                     self.drag_pos.cur = cp;
                     self.drag_started = true;
-    
+
                     cur_tool.handle_drag_begin(self);
                 }
             }
@@ -709,7 +712,8 @@ impl AnsiEditor {
 
         if response.hovered() {
             if let Some(mouse_pos) = response.hover_pos() {
-                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos) {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
+                {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp = Position::new(click_pos.x as i32, click_pos.y as i32)
                         - self.get_cur_click_offset();
@@ -772,7 +776,11 @@ pub const DEFAULT_OUTLINE_TABLE: [[u8; 10]; 15] = [
     [147, 148, 149, 162, 167, 150, 129, 151, 163, 154],
 ];
 
-pub fn terminal_context_menu(editor: &AnsiEditor, commands: &Commands, ui: &mut egui::Ui) -> Option<Message> {
+pub fn terminal_context_menu(
+    editor: &AnsiEditor,
+    commands: &Commands,
+    ui: &mut egui::Ui,
+) -> Option<Message> {
     let mut result = None;
     ui.input_mut(|i| i.events.clear());
 
