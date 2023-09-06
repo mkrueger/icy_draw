@@ -269,6 +269,16 @@ impl MainWindow {
                     self.document_behavior.document_options.scale = Vec2::new(3.0, 3.0);
                     ui.close_menu();
                 }
+                ui.separator();
+                self.commands
+                    .set_reference_image
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .toggle_reference_image
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .clear_reference_image
+                    .ui_enabled(ui, has_buffer, &mut result);
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-help"), |ui| {

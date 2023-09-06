@@ -86,6 +86,10 @@ pub enum Message {
     ScrollAreaDown,
     ScrollAreaLeft,
     ScrollAreaRight,
+
+    SetReferenceImage,
+    ToggleReferenceImage,
+    ClearReferenceImage,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -590,6 +594,34 @@ impl MainWindow {
                 self.run_editor_command(0, |_, editor, _| {
                     let mut lock = editor.buffer_view.lock();
                     to_message(lock.get_edit_state_mut().scroll_area_right())
+                });
+            }
+            Message::SetReferenceImage => {
+                let dialog = rfd::FileDialog::new();
+                let res = dialog.pick_file();
+                if let Some(res) = res {
+                    self.run_editor_command(res, |_, editor, res| {
+                        let mut lock = editor.buffer_view.lock();
+                        lock.load_reference_image(res.as_path());
+                        None
+                    });
+                }
+            }
+            Message::ToggleReferenceImage => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    lock.toggle_reference_image();
+                    None
+                });
+            }
+            Message::ClearReferenceImage => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mut lock: eframe::epaint::mutex::MutexGuard<
+                        '_,
+                        icy_engine_egui::BufferView,
+                    > = editor.buffer_view.lock();
+                    lock.clear_reference_image();
+                    None
                 });
             }
         }

@@ -51,6 +51,9 @@ menu-scroll_area_right=Scroll Area Right
 menu-selection=Selection
 menu-select-all=Select All
 menu-deselect=Deselect
+menu-reference-image=Open Reference Image…
+menu-toggle-reference-image=Toggle Reference Image
+menu-clear-reference-image=Clear
 
 menu-help=Help
 menu-discuss=Discuss

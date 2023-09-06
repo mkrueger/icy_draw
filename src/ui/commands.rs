@@ -269,4 +269,23 @@ keys![
         ArrowRight,
         ALT_CTRL
     ),
+    (
+        set_reference_image,
+        "menu-reference-image",
+        SetReferenceImage,
+        O,
+        CTRL_SHIFT
+    ),
+    (
+        toggle_reference_image,
+        "menu-toggle-reference-image",
+        ToggleReferenceImage,
+        Tab,
+        CTRL
+    ),
+    (
+        clear_reference_image,
+        "menu-clear-reference-image",
+        ClearReferenceImage
+    ),
 ];
