@@ -168,7 +168,7 @@ impl MainWindow {
                 }
             }
             Message::DeleteSelection => {
-                self.run_editor_command(0, |window, editor: &mut AnsiEditor, _| {
+                self.run_editor_command(0, |_, editor: &mut AnsiEditor, _| {
                     to_message(editor.buffer_view.lock().get_edit_state_mut().delete_selection())
                 });
             }

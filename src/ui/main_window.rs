@@ -391,6 +391,7 @@ pub fn button_with_shortcut(
     label: impl Into<String>,
     shortcut: impl Into<String>,
 ) -> Response {
+    ui.set_width(250.0);
     let btn_re = ui.add_enabled(enabled, egui::Button::new(label.into()));
     let font_id = TextStyle::Body.resolve(ui.style());
     let color = ui.style().visuals.noninteractive().fg_stroke.color;
@@ -402,6 +403,7 @@ pub fn button_with_shortcut(
             color,
         ))
     });
+
     ui.painter().galley(
         pos2(
             btn_re.rect.right() - galley.size().x - 2.0,
@@ -409,6 +411,7 @@ pub fn button_with_shortcut(
         ),
         galley,
     );
+
     btn_re
 }
 

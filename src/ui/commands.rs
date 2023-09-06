@@ -3,7 +3,7 @@ use egui_bind::{KeyOrPointer, BindTarget};
 use i18n_embed_fl::fl;
 
 
-use crate::Message;
+use crate::{Message, button_with_shortcut};
 
 pub struct Command {
     key: Option<(KeyOrPointer, Modifiers)>,
@@ -121,28 +121,45 @@ impl Command {
     }
 
     pub fn ui_enabled(&self, ui: &mut egui::Ui, enabled: bool, message: &mut Option<Message>)  {
-        if ui
-            .add_enabled(
-                enabled,
-                egui::Button::new(&self.description).wrap(false),
-            )
-            .clicked()
+        let response = ui.with_layout(ui.layout().with_cross_justify(true), |ui| {
+                ui.set_enabled(enabled);
+
+                if let Some((KeyOrPointer::Key(k), modifier)) = self.key {
+                    let mut shortcut = k.name().to_string();
+
+                    if modifier.ctrl {
+                        shortcut.insert_str(0, "Ctrl+");
+                    }
+
+                    if modifier.alt {
+                        shortcut.insert_str(0, "Alt+");
+                    }
+
+                    if modifier.shift {
+                        shortcut.insert_str(0, "Shift+");
+                    }
+
+                    button_with_shortcut(
+                        ui,
+                        true,
+                        &self.description,
+                        shortcut,
+                    )
+                } else {
+                    ui.add(egui::Button::new(&self.description).wrap(false))
+                }
+            });
+
+
+        if response.inner.clicked()
         {
-        *message = Some(self.message.clone());
+            *message = Some(self.message.clone());
             ui.close_menu();
         }
     }
 
     pub fn ui(&self, ui: &mut egui::Ui, message: &mut Option<Message>)  {
-        if ui
-            .add(
-                egui::Button::new(&self.description).wrap(false),
-            )
-            .clicked()
-        {
-        *message = Some(self.message.clone());
-            ui.close_menu();
-        }
+        self.ui_enabled(ui, true, message)
     }
 /*
 

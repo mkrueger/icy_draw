@@ -618,29 +618,28 @@ impl AnsiEditor {
                         ..
                     } => {
                         let mut key_code = *key as u32;
-                        if modifiers.ctrl || modifiers.command {
-                            key_code |= CTRL_MOD;
-                        }
-                        if modifiers.shift {
-                            key_code |= SHIFT_MOD;
-                        }
-
-                        let mut modifier: MModifiers = MModifiers::None;
-                        if modifiers.ctrl || modifiers.command {
-                            modifier = MModifiers::Control;
-                        }
-
-                        if modifiers.shift {
-                            modifier = MModifiers::Shift;
-                        }
-                        for (k, m) in ANSI_KEY_MAP {
-                            if *k == key_code {
-                                cur_tool.handle_key(self, *m, modifier);
-                                self.buffer_view.lock().redraw_view();
-                                self.redraw_view();
-                                break;
+                        if !(modifiers.ctrl || modifiers.command) {
+                            if modifiers.shift {
+                                key_code |= SHIFT_MOD;
                             }
-                        }
+
+                            let mut modifier: MModifiers = MModifiers::None;
+                            if modifiers.ctrl || modifiers.command {
+                                modifier = MModifiers::Control;
+                            }
+
+                            if modifiers.shift {
+                                modifier = MModifiers::Shift;
+                            }
+                            for (k, m) in ANSI_KEY_MAP {
+                                if *k == key_code {
+                                    cur_tool.handle_key(self, *m, modifier);
+                                    self.buffer_view.lock().redraw_view();
+                                    self.redraw_view();
+                                    break;
+                                }
+                            }
+                        } 
                     }
                     _ => {}
                 }
