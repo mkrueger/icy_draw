@@ -6,7 +6,9 @@ use std::{
 };
 
 use eframe::egui;
-use icy_engine::{util::pop_data, BitFont, EngineResult, Layer, Size, TextPane, TheDrawFont};
+use icy_engine::{
+    util::pop_data, BitFont, EngineResult, Layer, Size, TextAttribute, TextPane, TheDrawFont,
+};
 
 use crate::{
     AnsiEditor, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
@@ -90,6 +92,10 @@ pub enum Message {
     SetReferenceImage,
     ToggleReferenceImage,
     ClearReferenceImage,
+
+    PickAttributeUnderCaret,
+    SwitchToDefaultColor,
+    ToggleColor,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -621,6 +627,50 @@ impl MainWindow {
                         icy_engine_egui::BufferView,
                     > = editor.buffer_view.lock();
                     lock.clear_reference_image();
+                    None
+                });
+            }
+
+            Message::PickAttributeUnderCaret => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let bv = &mut editor.buffer_view.lock();
+                    let pos = bv.get_caret().get_position();
+
+                    let attr = if let Some(layer) = bv.get_edit_state().get_cur_layer() {
+                        let ch = layer.get_char(pos);
+                        ch.attribute
+                    } else {
+                        TextAttribute::default()
+                    };
+
+                    let fg = attr.get_foreground();
+                    let bg = attr.get_background();
+                    let caret = bv.get_caret_mut();
+                    caret.set_foreground(bg);
+                    caret.set_background(fg);
+
+                    None
+                });
+            }
+
+            Message::SwitchToDefaultColor => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let bv = &mut editor.buffer_view.lock();
+                    let caret = bv.get_caret_mut();
+                    caret.set_foreground(7);
+                    caret.set_background(0);
+                    None
+                });
+            }
+
+            Message::ToggleColor => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let bv = &mut editor.buffer_view.lock();
+                    let caret = bv.get_caret_mut();
+                    let fg = caret.get_attribute().get_foreground();
+                    let bg = caret.get_attribute().get_background();
+                    caret.set_foreground(bg);
+                    caret.set_background(fg);
                     None
                 });
             }

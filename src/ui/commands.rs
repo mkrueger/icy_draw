@@ -288,4 +288,19 @@ keys![
         "menu-clear-reference-image",
         ClearReferenceImage
     ),
+    (
+        pick_attribute_under_caret,
+        "menu-pick_attribute_under_caret",
+        PickAttributeUnderCaret,
+        U,
+        ALT
+    ),
+    (
+        switch_to_default_color,
+        "menu-default_color",
+        SwitchToDefaultColor,
+        D,
+        CTRL
+    ),
+    (toggle_color, "menu-toggle_color", ToggleColor, X, ALT),
 ];

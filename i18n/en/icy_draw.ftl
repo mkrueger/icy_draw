@@ -54,6 +54,9 @@ menu-deselect=Deselect
 menu-reference-image=Open Reference Image…
 menu-toggle-reference-image=Toggle Reference Image
 menu-clear-reference-image=Clear
+menu-pick_attribute_under_caret=Use Attribute Under Caret
+menu-default_color=Default Color
+menu-toggle_color=Switch Foreground/Background
 
 menu-help=Help
 menu-discuss=Discuss

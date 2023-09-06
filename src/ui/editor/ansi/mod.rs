@@ -607,10 +607,17 @@ impl AnsiEditor {
                     }
 
                     egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
-                        for c in text.chars() {
-                            cur_tool.handle_key(self, MKey::Character(c as u16), MModifiers::None);
+                        if !ui.input(|i| i.modifiers.ctrl || i.modifiers.command || i.modifiers.alt)
+                        {
+                            for c in text.chars() {
+                                cur_tool.handle_key(
+                                    self,
+                                    MKey::Character(c as u16),
+                                    MModifiers::None,
+                                );
+                            }
+                            self.redraw_view();
                         }
-                        self.redraw_view();
                     }
 
                     egui::Event::Key {
