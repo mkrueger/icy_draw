@@ -367,14 +367,15 @@ impl MainWindow {
         param: T,
         func: fn(&mut MainWindow, &mut AnsiEditor, T) -> Option<Message>,
     ) {
+        let mut msg = None;
         if let Some(doc) = self.get_active_document() {
             if let Ok(mut doc) = doc.lock() {
                 if let Some(editor) = doc.get_ansi_editor_mut() {
-                    let msg = func(self, editor, param);
-                    self.handle_message(msg);
+                    msg = func(self, editor, param);
                 }
             }
         }
+        self.handle_message(msg);
     }
 
     pub(crate) fn handle_result<T>(&mut self, result: EngineResult<T>) {
@@ -447,7 +448,6 @@ impl eframe::App for MainWindow {
                         ui.add_space(8.0);
                         ui.horizontal(|ui| {
                             ui.add_space(8.0);
-
                             if ui.selectable_label(palette == 0, "DOS").clicked() {
                                 palette = 0;
                             }
@@ -477,6 +477,7 @@ impl eframe::App for MainWindow {
                 self.handle_message(msg);
 
                 crate::add_tool_switcher(ctx, ui, self);
+                let mut tool_result = None;
                 if let Some(tool) = self
                     .document_behavior
                     .tools
@@ -488,20 +489,16 @@ impl eframe::App for MainWindow {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
                         ui.vertical(|ui| {
-                            let tool_result = if let Some(doc) = self.get_active_document() {
+                            if let Some(doc) = self.get_active_document() {
                                 if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
-                                    tool.show_ui(ctx, ui, editor)
-                                } else {
-                                    None
+                                    tool_result = tool.show_ui(ctx, ui, editor)
                                 }
-                            } else {
-                                None
-                            };
-                            // can't handle message inside the lock
-                            self.handle_message(tool_result);
+                            }
                         });
                     });
                 }
+                // can't handle message inside the lock
+                self.handle_message(tool_result);
             });
 
         let panel_frame = egui::Frame {
