@@ -579,8 +579,15 @@ impl eframe::App for MainWindow {
         let mut msg = self.document_behavior.message.take();
         self.commands.check(ctx, &mut msg);
         self.handle_message(msg);
-
         self.handle_message(read_outline_keys(ctx));
+
+        ctx.input(|i| {
+            for f in &i.raw.dropped_files {
+                if let Some(path) = &f.path {
+                    self.open_file(path);
+                }
+            }
+        });
 
         ctx.request_repaint_after(Duration::from_millis(150));
     }
