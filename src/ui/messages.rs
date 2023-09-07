@@ -66,6 +66,7 @@ pub enum Message {
     Copy,
     Cut,
     RemoveFloatingLayer,
+    SelectOutline(usize),
 
     CenterLine,
     JustifyLineLeft,
@@ -697,6 +698,13 @@ impl MainWindow {
                     let bg = caret.get_attribute().get_background();
                     caret.set_foreground(bg);
                     caret.set_background(fg);
+                    None
+                });
+            }
+
+            Message::SelectOutline(outline) => {
+                self.run_editor_command(outline, |_, editor, outline| {
+                    editor.cur_outline = outline;
                     None
                 });
             }

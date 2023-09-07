@@ -579,6 +579,8 @@ impl eframe::App for MainWindow {
         self.commands.check(ctx, &mut msg);
         self.handle_message(msg);
 
+        self.handle_message(read_outline_keys(ctx));
+
         ctx.request_repaint_after(Duration::from_millis(150));
     }
 
@@ -589,4 +591,57 @@ impl eframe::App for MainWindow {
             doc.destroy(gl);
         });*/
     }
+}
+
+fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
+    let mut result = None;
+
+    if ctx.input(|i| { i.key_pressed(Key::F1) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(0));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F2) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(1));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F3) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(2));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F4) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(3));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F5) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(4));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F6) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(5));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F7) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(6));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F8) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(7));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F9) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(8));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F10) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(9));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F11) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(10));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F12) && i.modifiers.ctrl }) {
+        result = Some(Message::SelectOutline(11));
+    }
+
+    if ctx.input(|i| { i.key_pressed(Key::F1) && i.modifiers.ctrl && i.modifiers.shift }) {
+        result = Some(Message::SelectOutline(12));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F2) && i.modifiers.ctrl && i.modifiers.shift }) {
+        result = Some(Message::SelectOutline(13));
+    }
+    if ctx.input(|i| { i.key_pressed(Key::F3) && i.modifiers.ctrl && i.modifiers.shift }) {
+        result = Some(Message::SelectOutline(14));
+    }
+
+    result
 }
