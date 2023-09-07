@@ -188,7 +188,13 @@ impl Tool for FillTool {
         result
     }
 
-    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
+    fn handle_click(
+        &mut self,
+        editor: &mut AnsiEditor,
+        button: i32,
+        pos: Position,
+        _pos_abs: Position,
+    ) -> Event {
         if button == 1 {
             if editor.get_cur_layer_index() >= editor.buffer_view.lock().get_buffer().layers.len() {
                 return Event::None;

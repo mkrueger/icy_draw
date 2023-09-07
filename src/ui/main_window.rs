@@ -59,6 +59,7 @@ impl MainWindow {
             sizes: Vec::new(),
         };
         fnt.load_fonts();
+        fnt.install_watcher();
 
         let tools: Vec<Box<dyn Tool>> = vec![
             Box::<crate::model::paste_tool::PasteTool>::default(),
@@ -526,6 +527,7 @@ impl eframe::App for MainWindow {
                 ..Default::default()
             })
             .show(ctx, |ui| {
+                ui.set_width(ui.available_width() - 250.0);
                 self.document_tree.ui(&mut self.document_behavior, ui);
 
                 if let Some(doc) = self.get_active_document() {
@@ -548,7 +550,6 @@ impl eframe::App for MainWindow {
                     }
                 }
             });
-
         self.dialog_open = false;
 
         if self.modal_dialog.is_some() {
@@ -596,50 +597,50 @@ impl eframe::App for MainWindow {
 fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
     let mut result = None;
 
-    if ctx.input(|i| { i.key_pressed(Key::F1) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F1) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(0));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F2) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F2) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(1));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F3) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F3) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(2));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F4) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F4) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(3));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F5) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F5) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(4));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F6) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F6) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(5));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F7) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F7) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(6));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F8) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F8) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(7));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F9) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F9) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(8));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F10) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F10) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(9));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F11) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F11) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(10));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F12) && i.modifiers.ctrl }) {
+    if ctx.input(|i| i.key_pressed(Key::F12) && i.modifiers.ctrl) {
         result = Some(Message::SelectOutline(11));
     }
 
-    if ctx.input(|i| { i.key_pressed(Key::F1) && i.modifiers.ctrl && i.modifiers.shift }) {
+    if ctx.input(|i| i.key_pressed(Key::F1) && i.modifiers.ctrl && i.modifiers.shift) {
         result = Some(Message::SelectOutline(12));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F2) && i.modifiers.ctrl && i.modifiers.shift }) {
+    if ctx.input(|i| i.key_pressed(Key::F2) && i.modifiers.ctrl && i.modifiers.shift) {
         result = Some(Message::SelectOutline(13));
     }
-    if ctx.input(|i| { i.key_pressed(Key::F3) && i.modifiers.ctrl && i.modifiers.shift }) {
+    if ctx.input(|i| i.key_pressed(Key::F3) && i.modifiers.ctrl && i.modifiers.shift) {
         result = Some(Message::SelectOutline(14));
     }
 

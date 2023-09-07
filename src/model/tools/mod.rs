@@ -256,33 +256,7 @@ pub trait Tool {
                     !editor.buffer_view.lock().get_caret().insert_mode;
             }
             MKey::Backspace => {
-                editor.buffer_view.lock().clear_selection();
-                let pos = editor.get_caret_position();
-                if pos.x > 0 {
-                    /* if (caret.fontMode() && FontTyped && cpos > 0)  {
-                        caret.getX() -= CursorPos[cpos] - 1;
-                        for (a=0;a<=CursorPos[cpos];a++)
-                        for (b=0;b<=FontLibrary::getInstance().maxY;b++) {
-                            getCurrentBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a);
-                            getCurrentBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a);
-                        }
-                        cpos--;
-                    } else {*/
-                    editor.set_caret_position(pos + Position::new(-1, 0));
-                    if editor.buffer_view.lock().get_caret().insert_mode {
-                        let end = editor.buffer_view.lock().get_width() - 1;
-                        for i in pos.x..end {
-                            let next = editor.get_char_from_cur_layer(Position::new(i + 1, pos.y));
-                            editor.set_char(Position::new(i, pos.y), next);
-                        }
-                        let last_pos =
-                            Position::new(editor.buffer_view.lock().get_width() - 1, pos.y);
-                        editor.set_char(last_pos, AttributedChar::invisible());
-                    } else {
-                        let pos = editor.get_caret_position();
-                        editor.set_char(pos, AttributedChar::invisible());
-                    }
-                }
+                editor.backspace();
             }
 
             MKey::Character(ch) => {
@@ -296,7 +270,6 @@ pub trait Tool {
                     }
                     return Event::None;
                 }*/
-
                 editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
             }
 
@@ -337,9 +310,10 @@ pub trait Tool {
 
     fn handle_click(
         &mut self,
-        _buffer_view: &mut AnsiEditor,
+        _editor: &mut AnsiEditor,
         _button: i32,
         _pos: Position,
+        _pos_abs: Position,
     ) -> Event {
         Event::None
     }
@@ -364,6 +338,7 @@ pub trait Tool {
         response: Response,
         _editor: &mut AnsiEditor,
         _cur: Position,
+        _cur_abs: Position,
     ) -> Response {
         response
     }

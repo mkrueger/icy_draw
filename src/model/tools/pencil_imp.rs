@@ -176,6 +176,7 @@ impl Tool for PencilTool {
         editor: &mut AnsiEditor,
         button: i32,
         pos: Position,
+        _pos_abs: Position,
     ) -> super::Event {
         if button == 1 {
             self.last_pos = pos;

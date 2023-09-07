@@ -660,8 +660,8 @@ impl AnsiEditor {
                 if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
                 {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    let cp: Position = Position::new(click_pos.x as i32, click_pos.y as i32)
-                        - self.get_cur_click_offset();
+                    let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
+                    let cp = cp_abs - self.get_cur_click_offset();
                     /*
                     let b: i32 = match responsee.b {
                                      PointerButton::Primary => 1,
@@ -670,7 +670,7 @@ impl AnsiEditor {
                                      PointerButton::Extra1 => 4,
                                      PointerButton::Extra2 => 5,
                                  }; */
-                    cur_tool.handle_click(self, 1, cp);
+                    cur_tool.handle_click(self, 1, cp, cp_abs);
                     self.redraw_view();
                 }
             }
@@ -722,9 +722,9 @@ impl AnsiEditor {
                 if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
                 {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    let cp = Position::new(click_pos.x as i32, click_pos.y as i32)
-                        - self.get_cur_click_offset();
-                    response = cur_tool.handle_hover(ui, response, self, cp);
+                    let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
+                    let cp = cp_abs - self.get_cur_click_offset();
+                    response = cur_tool.handle_hover(ui, response, self, cp, cp_abs);
                 }
             }
         }
@@ -761,6 +761,35 @@ impl AnsiEditor {
         if let Some(layer) = self.buffer_view.lock().get_buffer_mut().get_overlay_layer() {
             layer.set_offset(cur_offset);
             layer.clear();
+        }
+    }
+
+    pub(crate) fn backspace(&mut self) {
+        self.buffer_view.lock().clear_selection();
+        let pos = self.get_caret_position();
+        if pos.x > 0 {
+            /* if (caret.fontMode() && FontTyped && cpos > 0)  {
+                caret.getX() -= CursorPos[cpos] - 1;
+                for (a=0;a<=CursorPos[cpos];a++)
+                for (b=0;b<=FontLibrary::getInstance().maxY;b++) {
+                    getCurrentBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a);
+                    getCurrentBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a);
+                }
+                cpos--;
+            } else {*/
+            self.set_caret_position(pos + Position::new(-1, 0));
+            if self.buffer_view.lock().get_caret().insert_mode {
+                let end = self.buffer_view.lock().get_width() - 1;
+                for i in pos.x..end {
+                    let next = self.get_char_from_cur_layer(Position::new(i + 1, pos.y));
+                    self.set_char(Position::new(i, pos.y), next);
+                }
+                let last_pos = Position::new(self.buffer_view.lock().get_width() - 1, pos.y);
+                self.set_char(last_pos, AttributedChar::invisible());
+            } else {
+                let pos = self.get_caret_position();
+                self.set_char(pos, AttributedChar::invisible());
+            }
         }
     }
 }

@@ -155,6 +155,7 @@ impl Tool for PasteTool {
         response: egui::Response,
         editor: &mut AnsiEditor,
         cur: Position,
+        _cur_abs: Position,
     ) -> egui::Response {
         if let Some(selected) = PasteTool::is_paste_layer_selected(editor, cur) {
             if selected {

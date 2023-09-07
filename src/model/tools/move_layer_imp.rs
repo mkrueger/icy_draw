@@ -75,6 +75,7 @@ impl Tool for MoveLayer {
         response: egui::Response,
         _editor: &mut AnsiEditor,
         _cur: Position,
+        _cur_abs: Position,
     ) -> egui::Response {
         response.on_hover_cursor(egui::CursorIcon::Move)
     }

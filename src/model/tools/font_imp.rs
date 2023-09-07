@@ -1,6 +1,9 @@
 use std::{
     fs,
+    io::Read,
+    path::Path,
     sync::{Arc, Mutex},
+    thread,
 };
 
 use crate::{AnsiEditor, Message, SETTINGS};
@@ -11,7 +14,9 @@ use eframe::{
     egui::{self, RichText},
     epaint::{FontFamily, FontId},
 };
-use icy_engine::{Rectangle, Size, TextAttribute, TextPane, TheDrawFont};
+use i18n_embed_fl::fl;
+use icy_engine::{editor::OperationType, Size, TextPane, TheDrawFont};
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 use walkdir::{DirEntry, WalkDir};
 pub struct FontTool {
     pub selected_font: Arc<Mutex<i32>>,
@@ -31,6 +36,18 @@ impl FontTool {
             .map_or(false, |s| s.starts_with('.'))
     }
 
+    pub fn install_watcher(&self) {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+            let tdf_dir = proj_dirs.config_dir().join("tdf");
+            let fonts = self.fonts.clone();
+            thread::spawn(move || loop {
+                if watch(tdf_dir.as_path(), &fonts).is_err() {
+                    return;
+                }
+            });
+        }
+    }
+
     pub fn load_fonts(&mut self) {
         if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
             let tdf_dir = proj_dirs.config_dir().join("tdf");
@@ -42,37 +59,96 @@ impl FontTool {
                     )
                 });
             }
-            let mut fonts = Vec::new();
-            let walker = WalkDir::new(tdf_dir).into_iter();
-            for entry in walker.filter_entry(|e| !FontTool::is_hidden(e)) {
-                if let Err(e) = entry {
-                    eprintln!("Can't load tdf font library: {e}");
-                    break;
-                }
-                let entry = entry.unwrap();
-                let path = entry.path();
+            self.fonts = Arc::new(Mutex::new(load_fonts(tdf_dir.as_path())));
+        }
+    }
+}
 
-                if path.is_dir() {
-                    continue;
-                }
-                let extension = path.extension();
-                if extension.is_none() {
-                    continue;
-                }
-                let extension = extension.unwrap().to_str();
-                if extension.is_none() {
-                    continue;
-                }
-                let extension = extension.unwrap().to_lowercase();
+fn load_fonts(tdf_dir: &Path) -> Vec<TheDrawFont> {
+    let mut fonts = Vec::new();
+    let walker = WalkDir::new(tdf_dir).into_iter();
+    for entry in walker.filter_entry(|e| !FontTool::is_hidden(e)) {
+        if let Err(e) = entry {
+            eprintln!("Can't load tdf font library: {e}");
+            break;
+        }
+        let entry = entry.unwrap();
+        let path = entry.path();
 
-                if extension == "tdf" {
-                    if let Ok(loaded_fonts) = TheDrawFont::load(path) {
-                        fonts.extend(loaded_fonts);
+        if path.is_dir() {
+            continue;
+        }
+        let extension = path.extension();
+        if extension.is_none() {
+            continue;
+        }
+        let extension = extension.unwrap().to_str();
+        if extension.is_none() {
+            continue;
+        }
+        let extension = extension.unwrap().to_lowercase();
+
+        if extension == "tdf" {
+            if let Ok(loaded_fonts) = TheDrawFont::load(path) {
+                fonts.extend(loaded_fonts);
+            }
+        }
+
+        if extension == "zip" {
+            match fs::File::open(path) {
+                Ok(mut file) => {
+                    let mut data = Vec::new();
+                    file.read_to_end(&mut data).unwrap_or_default();
+                    read_zip_archive(data, &mut fonts);
+                }
+
+                Err(err) => {
+                    log::error!("Failed to open zip file: {}", err);
+                }
+            }
+        }
+    }
+    fonts
+}
+
+fn read_zip_archive(data: Vec<u8>, fonts: &mut Vec<TheDrawFont>) {
+    let file = std::io::Cursor::new(data);
+    match zip::ZipArchive::new(file) {
+        Ok(mut archive) => {
+            for i in 0..archive.len() {
+                match archive.by_index(i) {
+                    Ok(mut file) => {
+                        if let Some(name) = file.enclosed_name() {
+                            if name
+                                .to_string_lossy()
+                                .to_ascii_lowercase()
+                                .ends_with(".tdf")
+                            {
+                                let mut data = Vec::new();
+                                file.read_to_end(&mut data).unwrap_or_default();
+
+                                if let Ok(loaded_fonts) = TheDrawFont::from_tdf_bytes(&data) {
+                                    fonts.extend(loaded_fonts);
+                                }
+                            } else if name
+                                .to_string_lossy()
+                                .to_ascii_lowercase()
+                                .ends_with(".zip")
+                            {
+                                let mut data = Vec::new();
+                                file.read_to_end(&mut data).unwrap_or_default();
+                                read_zip_archive(data, fonts);
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        log::error!("Error reading zip file: {}", err);
                     }
                 }
             }
-
-            self.fonts = Arc::new(Mutex::new(fonts));
+        }
+        Err(err) => {
+            log::error!("Error reading zip archive: {}", err);
         }
     }
 }
@@ -217,7 +293,13 @@ impl Tool for FontTool {
         }
     }
 
-    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
+    fn handle_click(
+        &mut self,
+        editor: &mut AnsiEditor,
+        button: i32,
+        pos: Position,
+        _pos_abs: Position,
+    ) -> Event {
         if button == 1 {
             editor.set_caret_position(pos);
             editor.buffer_view.lock().clear_selection();
@@ -293,54 +375,83 @@ impl Tool for FontTool {
             }
 
             MKey::Backspace => {
-                let letter_size = self.sizes.pop().unwrap_or_else(|| Size::new(1, 1));
-                editor.buffer_view.lock().clear_selection();
-                let pos = editor.get_caret_position();
-                if pos.x > 0 {
-                    editor.set_caret_position(pos + Position::new(-(letter_size.width), 0));
-                    if editor.buffer_view.lock().get_caret().insert_mode {
-                        let end = editor.buffer_view.lock().get_buffer().get_width()
-                            - (letter_size.width);
-                        for i in pos.x..end {
-                            let next = editor.get_char_from_cur_layer(Position::new(
-                                i + letter_size.width,
-                                pos.y,
-                            ));
-                            editor.set_char(Position::new(i, pos.y), next);
+                let mut use_backspace = true;
+                {
+                    let mut render = false;
+                    let mut reverse_count = 0;
+
+                    let op = if let Ok(stack) = editor
+                        .buffer_view
+                        .lock()
+                        .get_edit_state()
+                        .get_undo_stack()
+                        .lock()
+                    {
+                        for i in (0..stack.len()).rev() {
+                            match stack[i].get_operation_type() {
+                                OperationType::RenderCharacter => {
+                                    if reverse_count == 0 {
+                                        render = true;
+                                        reverse_count = i;
+                                        break;
+                                    }
+                                    reverse_count -= 1;
+                                }
+                                OperationType::ReversedRenderCharacter => {
+                                    reverse_count += 1;
+                                }
+                                _ => {
+                                    render = false;
+                                }
+                            }
                         }
-                        let last_pos = Position::new(
-                            editor.buffer_view.lock().get_buffer().get_width()
-                                - (letter_size.width),
-                            pos.y,
-                        );
-                        editor.fill(
-                            Rectangle {
-                                start: last_pos,
-                                size: letter_size,
-                            },
-                            super::AttributedChar::new(' ', TextAttribute::default()),
-                        );
+                        stack[reverse_count].try_clone()
                     } else {
-                        let pos = editor.get_caret_position();
-                        editor.fill(
-                            Rectangle {
-                                start: pos,
-                                size: letter_size,
-                            },
-                            super::AttributedChar::new(' ', TextAttribute::default()),
-                        );
+                        None
+                    };
+
+                    if render {
+                        if let Some(op) = op {
+                            let _ = editor
+                                .buffer_view
+                                .lock()
+                                .get_edit_state_mut()
+                                .push_reverse_undo(
+                                    fl!("undo-delete_character"),
+                                    op,
+                                    OperationType::ReversedRenderCharacter,
+                                );
+                            use_backspace = false;
+                        }
                     }
                 }
-            }
 
+                if use_backspace {
+                    editor.backspace();
+                }
+            }
             MKey::Character(ch) => {
                 let c_pos = editor.get_caret_position();
-                let _undo = editor.begin_atomic_undo("Typing");
+                let _undo = editor
+                    .buffer_view
+                    .lock()
+                    .get_edit_state_mut()
+                    .begin_typed_atomic_undo(
+                        fl!("undo-render_character"),
+                        OperationType::RenderCharacter,
+                    );
                 editor
                     .buffer_view
                     .lock()
                     .get_edit_state_mut()
                     .set_outline_style(unsafe { SETTINGS.font_outline_style });
+
+                let _ = editor
+                    .buffer_view
+                    .lock()
+                    .get_edit_state_mut()
+                    .undo_caret_position();
+
                 let opt_size: Option<Size> =
                     font.render(editor.buffer_view.lock().get_edit_state_mut(), ch as u8);
                 if let Some(size) = opt_size {
@@ -359,4 +470,30 @@ impl Tool for FontTool {
         }
         Event::None
     }
+}
+
+fn watch(path: &Path, fonts: &Arc<Mutex<Vec<TheDrawFont>>>) -> notify::Result<()> {
+    let (tx, rx) = std::sync::mpsc::channel();
+
+    // Automatically select the best implementation for your platform.
+    // You can also access each implementation directly e.g. INotifyWatcher.
+    let mut watcher = RecommendedWatcher::new(tx, Config::default())?;
+
+    // Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+    watcher.watch(path.as_ref(), RecursiveMode::Recursive)?;
+
+    for res in rx {
+        match res {
+            Ok(_) => {
+                fonts.lock().unwrap().clear();
+                fonts.lock().unwrap().extend(load_fonts(path));
+
+                break;
+            }
+            Err(e) => println!("watch error: {e:}"),
+        }
+    }
+
+    Ok(())
 }

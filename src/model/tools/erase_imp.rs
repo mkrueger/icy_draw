@@ -110,6 +110,7 @@ impl Tool for EraseTool {
         editor: &mut AnsiEditor,
         button: i32,
         pos: Position,
+        _pos_abs: Position,
     ) -> super::Event {
         if button == 1 {
             let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser"));

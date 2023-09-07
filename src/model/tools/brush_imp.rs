@@ -194,6 +194,7 @@ impl Tool for BrushTool {
         response: egui::Response,
         editor: &mut AnsiEditor,
         cur: Position,
+        _cur_abs: Position,
     ) -> egui::Response {
         if matches!(self.brush_type, BrushType::Custom) {
             editor.clear_overlay_layer();
@@ -229,6 +230,7 @@ impl Tool for BrushTool {
         editor: &mut AnsiEditor,
         button: i32,
         pos: Position,
+        _pos_abs: Position,
     ) -> super::Event {
         if button == 1 {
             let _op: AtomicUndoGuard =

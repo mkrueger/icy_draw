@@ -238,7 +238,13 @@ impl Tool for LineTool {
         result
     }
 
-    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position) -> Event {
+    fn handle_click(
+        &mut self,
+        editor: &mut AnsiEditor,
+        button: i32,
+        pos: Position,
+        _pos_abs: Position,
+    ) -> Event {
         if button == 1 {
             editor.set_caret_position(pos);
         }
