@@ -369,16 +369,12 @@ impl MainWindow {
                     let lock = &mut editor.buffer_view.lock();
                     let buf = &mut lock.get_buffer_mut();
                     if buf.get_font(page).is_none() {
-                        if let Some(font_name) =
-                            icy_engine::parsers::ansi::constants::ANSI_FONT_NAMES.get(page)
-                        {
-                            match BitFont::from_name(font_name) {
-                                Ok(font) => {
-                                    buf.set_font(page, font);
-                                }
-                                Err(err) => {
-                                    log::error!("Failed to load font: {err}");
-                                }
+                        match BitFont::from_ansi_font_page(page) {
+                            Ok(font) => {
+                                buf.set_font(page, font);
+                            }
+                            Err(err) => {
+                                log::error!("Failed to load font: {err}");
                             }
                         }
                     }

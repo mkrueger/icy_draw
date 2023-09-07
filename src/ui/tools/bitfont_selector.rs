@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use eframe::egui::{self, RichText};
 use i18n_embed_fl::fl;
+use icy_engine::{ANSI_FONTS, FONT_NAMES, FONT_NAME_LEN};
 
 use crate::{AnsiEditor, Document, Message, ToolWindow};
 
@@ -48,28 +49,17 @@ fn show_font_list(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     egui::ScrollArea::vertical()
         .id_source("bitfont_scroll_area")
         .max_height(300.)
-        .show_rows(
-            ui,
-            row_height,
-            icy_engine::parsers::ansi::constants::ANSI_FONT_NAMES.len(),
-            |ui, range| {
-                for r in range {
-                    ui.horizontal(|ui| {
-                        if ui
-                            .selectable_label(
-                                cur_font_page == r,
-                                format!(
-                                    "{r}. {}",
-                                    icy_engine::parsers::ansi::constants::ANSI_FONT_NAMES[r]
-                                ),
-                            )
-                            .clicked()
-                        {
-                            result = Some(Message::SetFontPage(r));
-                        }
-                    });
-                }
-            },
-        );
+        .show_rows(ui, row_height, ANSI_FONTS, |ui, range| {
+            for r in range {
+                ui.horizontal(|ui| {
+                    if ui
+                        .selectable_label(cur_font_page == r, format!("{r}. {}", FONT_NAMES[r]))
+                        .clicked()
+                    {
+                        result = Some(Message::SetFontPage(r));
+                    }
+                });
+            }
+        });
     result
 }
