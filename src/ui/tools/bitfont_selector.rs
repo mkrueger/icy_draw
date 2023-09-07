@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use eframe::egui::{self, RichText};
 use i18n_embed_fl::fl;
-use icy_engine::{ANSI_FONTS, FONT_NAMES, FONT_NAME_LEN};
+use icy_engine::{ANSI_FONTS, FONT_NAMES};
 
 use crate::{AnsiEditor, Document, Message, ToolWindow};
 

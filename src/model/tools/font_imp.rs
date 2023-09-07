@@ -400,7 +400,7 @@ impl Tool for FontTool {
                                 OperationType::ReversedRenderCharacter => {
                                     reverse_count += 1;
                                 }
-                                _ => {
+                                OperationType::Unknown => {
                                     render = false;
                                 }
                             }

@@ -7,7 +7,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{Rectangle, SaveOptions, TextPane};
 
-use crate::{create_retained_image, AnsiEditor, ModalDialog, TerminalResult};
+use crate::{AnsiEditor, ModalDialog, TerminalResult, Message};
 
 mod ansi;
 mod artworx;
@@ -147,7 +147,20 @@ impl ModalDialog for ExportFileDialog {
                     ));
                     let image_buffer =
                         image::RgbaImage::from_raw(size.width as u32, size.height as u32, pixels);
-                    image_buffer.unwrap().save(&self.file_name);
+                    match image_buffer {
+                        Some(img) => {
+                            if let Err(err) = img.save(&self.file_name) {
+                                return Ok(Some(Message::ShowError(format!(
+                                    "Failed to save image: {}",
+                                    err
+                                ))));
+                            }
+                        },
+                        None => {
+                            return Ok(Some(Message::ShowError("Failed to save image".to_string())));
+                        }
+                    }
+                        
                     return Ok(None);
                 }
             }
