@@ -437,13 +437,12 @@ impl eframe::App for MainWindow {
             })
             .show_animated(ctx, self.left_panel, |ui| {
                 ui.add_space(8.0);
-
+                let mut msg = None;
                 let mut palette: usize = self.palette_mode;
                 if let Some(doc) = self.get_active_document() {
                     if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
                         ui.vertical_centered(|ui| {
-                            let msg = crate::palette_switcher(ctx, ui, editor);
-                            self.handle_message(msg);
+                            msg = crate::palette_switcher(ctx, ui, editor);
                         });
                         ui.add_space(8.0);
                         ui.horizontal(|ui| {
@@ -475,6 +474,7 @@ impl eframe::App for MainWindow {
                     }
                 }
                 self.palette_mode = palette;
+                self.handle_message(msg);
 
                 crate::add_tool_switcher(ctx, ui, self);
                 if let Some(tool) = self

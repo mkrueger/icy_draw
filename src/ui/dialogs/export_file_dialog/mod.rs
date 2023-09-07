@@ -7,7 +7,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{Rectangle, SaveOptions, TextPane};
 
-use crate::{AnsiEditor, ModalDialog, TerminalResult, Message};
+use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 
 mod ansi;
 mod artworx;
@@ -155,12 +155,14 @@ impl ModalDialog for ExportFileDialog {
                                     err
                                 ))));
                             }
-                        },
+                        }
                         None => {
-                            return Ok(Some(Message::ShowError("Failed to save image".to_string())));
+                            return Ok(Some(Message::ShowError(
+                                "Failed to save image".to_string(),
+                            )));
                         }
                     }
-                        
+
                     return Ok(None);
                 }
             }

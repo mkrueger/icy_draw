@@ -671,7 +671,6 @@ impl MainWindow {
                     let caret = bv.get_caret_mut();
                     caret.set_foreground(bg);
                     caret.set_background(fg);
-
                     None
                 });
             }
@@ -688,12 +687,12 @@ impl MainWindow {
 
             Message::ToggleColor => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let bv = &mut editor.buffer_view.lock();
-                    let caret = bv.get_caret_mut();
-                    let fg = caret.get_attribute().get_foreground();
-                    let bg = caret.get_attribute().get_background();
-                    caret.set_foreground(bg);
-                    caret.set_background(fg);
+                    let mut attr = editor.buffer_view.lock().get_caret().get_attribute();
+                    let fg = attr.get_foreground();
+                    let bg = attr.get_background();
+                    attr.set_foreground(bg);
+                    attr.set_background(fg);
+                    editor.buffer_view.lock().get_caret_mut().set_attr(attr);
                     None
                 });
             }
