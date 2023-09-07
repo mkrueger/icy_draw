@@ -5,9 +5,9 @@ use std::path::PathBuf;
 use eframe::egui::{self, TextEdit, Ui};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::SaveOptions;
+use icy_engine::{Rectangle, SaveOptions, TextPane};
 
-use crate::{AnsiEditor, ModalDialog, TerminalResult};
+use crate::{create_retained_image, AnsiEditor, ModalDialog, TerminalResult};
 
 mod ansi;
 mod artworx;
@@ -16,6 +16,7 @@ mod avatar;
 mod bin;
 mod ice_draw;
 mod pcboard;
+mod png;
 mod tundra_draw;
 mod xbin;
 
@@ -132,6 +133,26 @@ impl ModalDialog for ExportFileDialog {
     }
 
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<Option<crate::Message>> {
+        if let Some(ext) = self.file_name.extension() {
+            if let Some(ext) = ext.to_str() {
+                let ext = ext.to_lowercase();
+                if ext == "png" {
+                    let lock = &editor.buffer_view.lock();
+                    let buf = lock.get_buffer();
+                    let (size, pixels) = buf.render_to_rgba(Rectangle::from(
+                        0,
+                        0,
+                        buf.get_width(),
+                        buf.get_height(),
+                    ));
+                    let image_buffer =
+                        image::RgbaImage::from_raw(size.width as u32, size.height as u32, pixels);
+                    image_buffer.unwrap().save(&self.file_name);
+                    return Ok(None);
+                }
+            }
+        }
+
         editor.save_content(self.file_name.as_path(), &self.save_options)?;
         Ok(None)
     }
@@ -139,7 +160,7 @@ impl ModalDialog for ExportFileDialog {
 
 type CreateSettingsFunction = fn(&mut Ui, &mut SaveOptions);
 
-const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 9] = [
+const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 10] = [
     ("Ansi (.ans)", ansi::create_settings_page, "ans"),
     ("Avatar (.avt)", avatar::create_settings_page, "avt"),
     ("PCBoard (.pcb)", pcboard::create_settings_page, "pcb"),
@@ -153,4 +174,5 @@ const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 9] = [
     ),
     ("Bin (.bin)", bin::create_settings_page, "bin"),
     ("XBin (.xb)", xbin::create_settings_page, "xb"),
+    ("PNG (.png)", png::create_settings_page, "png"),
 ];

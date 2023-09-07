@@ -24,6 +24,8 @@ log = "0.4.20"
 open = "5.0.0"
 dark-light = "1.0.0"
 rfd = "0.11.4"
+zip = "0.6.6"
+notify = "6.1.1"
 
 icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
 icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
@@ -33,6 +35,7 @@ walkdir = "2"
 serde = { version = "1", features = ["derive"], optional = true }
 lazy_static = "1.4.0"
 directories = "5.0.1"
+image = { version = "0.24", features = ["gif", "jpeg", "ico", "png", "pnm", "tga", "tiff", "webp", "bmp", "hdr", "dxt", "dds", "farbfeld", "jpeg_rayon", "openexr", "qoi"] }
 
 i18n-embed = { version = "0.13.4", features = ["fluent-system", "desktop-requester"]} 
 i18n-embed-fl = "0.6.4"

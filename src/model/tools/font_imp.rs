@@ -417,7 +417,7 @@ impl Tool for FontTool {
                                 .lock()
                                 .get_edit_state_mut()
                                 .push_reverse_undo(
-                                    fl!("undo-delete_character"),
+                                    fl!(crate::LANGUAGE_LOADER, "undo-delete_character"),
                                     op,
                                     OperationType::ReversedRenderCharacter,
                                 );
@@ -437,7 +437,7 @@ impl Tool for FontTool {
                     .lock()
                     .get_edit_state_mut()
                     .begin_typed_atomic_undo(
-                        fl!("undo-render_character"),
+                        fl!(crate::LANGUAGE_LOADER, "undo-render_character"),
                         OperationType::RenderCharacter,
                     );
                 editor
