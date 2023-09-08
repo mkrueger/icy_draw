@@ -5,7 +5,7 @@ use icy_engine::{editor::UndoState, BitFont, Buffer, EngineResult, Layer, Size, 
 
 use crate::{
     model::Tool, AnsiEditor, BitFontEditor, ClipboardHandler, Document, DocumentOptions,
-    DrawGlyphStyle, Message, TerminalResult,
+    DrawGlyphStyle, Message, SavingError, TerminalResult,
 };
 
 pub struct CharFontEditor {
@@ -63,7 +63,11 @@ impl Document for CharFontEditor {
         let file = PathBuf::from(file_name);
         self.file_name = Some(file);
         let bytes = TheDrawFont::create_font_bundle(&self.fonts)?;
-        fs::write(file_name, bytes)?;
+
+        if let Err(err) = fs::write(file_name, bytes) {
+            return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
+        }
+
         self.is_dirty = false;
         Ok(())
     }

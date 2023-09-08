@@ -42,7 +42,7 @@ pub use tools::*;
 mod commands;
 pub use commands::*;
 
-pub type TerminalResult<T> = Result<T, Box<dyn Error>>;
+pub type TerminalResult<T> = Result<T, Box<dyn Error + Send>>;
 
 pub trait ModalDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool;

@@ -19,7 +19,7 @@ use icy_engine::{
 
 use crate::{
     model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message,
-    TerminalResult,
+    SavingError, TerminalResult,
 };
 
 use self::undo::UndoOperation;
@@ -587,7 +587,12 @@ impl Document for BitFontEditor {
     }
 
     fn save(&mut self, file_name: &str) -> TerminalResult<()> {
-        fs::write(file_name, self.font.to_psf2_bytes()?)?;
+        let contents = self.font.to_psf2_bytes()?;
+
+        if let Err(err) = fs::write(file_name, contents) {
+            return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
+        }
+
         self.dirty_pos = self.undo_stack.lock().unwrap().len();
         Ok(())
     }

@@ -25,7 +25,8 @@ use icy_engine_egui::{
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
-    ClipboardHandler, Commands, Document, DocumentOptions, Message, TerminalResult, FIRST_TOOL,
+    ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, TerminalResult,
+    FIRST_TOOL,
 };
 
 pub enum Event {
@@ -156,7 +157,9 @@ impl Document for AnsiEditor {
             .lock()
             .get_buffer()
             .to_bytes(file.extension().unwrap().to_str().unwrap(), &options)?;
-        fs::write(file_name, bytes)?;
+        if let Err(err) = fs::write(file_name, bytes) {
+            return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
+        }
         self.dirty_pos = self.buffer_view.lock().get_edit_state().undo_stack_len();
         Ok(())
     }
@@ -266,7 +269,7 @@ impl AnsiEditor {
         }
     }
 
-    pub fn print_char(&mut self, c: u8) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn print_char(&mut self, c: u8) -> TerminalResult<()> {
         self.buffer_view
             .lock()
             .print_char(unsafe { char::from_u32_unchecked(c as u32) })?;
@@ -359,21 +362,29 @@ impl AnsiEditor {
     }
 
     pub fn save_content(&self, file_name: &Path, options: &SaveOptions) -> EngineResult<bool> {
-        let mut f = File::create(file_name)?;
+        match File::create(file_name) {
+            Ok(mut f) => {
+                let content = if let Some(ext) = file_name.extension() {
+                    let ext = OsStr::to_str(ext).unwrap().to_lowercase();
+                    self.buffer_view
+                        .lock()
+                        .get_buffer()
+                        .to_bytes(ext.as_str(), options)?
+                } else {
+                    self.buffer_view
+                        .lock()
+                        .get_buffer()
+                        .to_bytes("icd", options)?
+                };
+                if let Err(err) = f.write_all(&content) {
+                    return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
+                }
+            }
+            Err(err) => {
+                return Err(Box::new(SavingError::ErrorCreatingFile(format!("{err}"))));
+            }
+        }
 
-        let content = if let Some(ext) = file_name.extension() {
-            let ext = OsStr::to_str(ext).unwrap().to_lowercase();
-            self.buffer_view
-                .lock()
-                .get_buffer()
-                .to_bytes(ext.as_str(), options)?
-        } else {
-            self.buffer_view
-                .lock()
-                .get_buffer()
-                .to_bytes("icd", options)?
-        };
-        f.write_all(&content)?;
         Ok(true)
     }
 
