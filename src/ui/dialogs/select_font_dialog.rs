@@ -1,8 +1,10 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::{
-    egui::{self, RichText, TextEdit},
-    epaint::{ahash::HashMap, ColorImage, FontFamily, FontId, Stroke},
+    egui::{self, Response, RichText, Sense, TextEdit, TextStyle, WidgetText},
+    epaint::{
+        ahash::HashMap, Color32, ColorImage, FontFamily, FontId, Pos2, Rect, Rounding, Stroke, Vec2,
+    },
 };
 use egui_extras::RetainedImage;
 use egui_modal::Modal;
@@ -40,12 +42,159 @@ impl SelectFontDialog {
             image_cache: HashMap::default(),
         }
     }
+
+    pub fn draw_font_row(
+        &mut self,
+        ui: &mut egui::Ui,
+        cur_font: usize,
+        row_height: f32,
+        is_selected: bool,
+    ) -> Response {
+        let font = &self.fonts.lock().unwrap()[cur_font];
+        let (id, rect) = ui.allocate_space([ui.available_width(), row_height].into());
+        let response = ui.interact(rect, id, Sense::click());
+
+        if response.hovered() {
+            ui.painter().rect_filled(
+                rect.expand(1.0),
+                Rounding::same(4.0),
+                ui.style().visuals.widgets.active.bg_fill,
+            );
+        } else if is_selected {
+            ui.painter().rect_filled(
+                rect.expand(1.0),
+                Rounding::same(4.0),
+                ui.style().visuals.extreme_bg_color,
+            );
+        }
+
+        let text_color = if is_selected {
+            ui.style().visuals.strong_text_color()
+        } else {
+            ui.style().visuals.text_color()
+        };
+
+        let font_id = TextStyle::Button.resolve(ui.style());
+        let text: WidgetText = font.name.clone().into();
+        let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
+        ui.painter().galley_with_color(
+            egui::Align2::LEFT_TOP
+                .align_size_within_rect(galley.size(), rect.shrink(4.0))
+                .min,
+            galley.galley,
+            text_color,
+        );
+
+        let mut x = 0.;
+        let mut y = 24.;
+        for ch in '!'..'P' {
+            let color = if font.has_char(ch as u8) {
+                ui.style().visuals.strong_text_color()
+            } else {
+                ui.style().visuals.text_color()
+            };
+            let text: WidgetText = ch.to_string().into();
+            let font_id = FontId::new(14.0, FontFamily::Monospace);
+            let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
+
+            let mut rect = rect.shrink(4.0);
+            rect.set_top(rect.top() + y);
+            rect.set_left(rect.left() + x);
+            x += galley.size().x;
+            if ch == '8' {
+                y += galley.size().y;
+                x = 0.;
+            }
+            ui.painter().galley_with_color(
+                egui::Align2::LEFT_TOP
+                    .align_size_within_rect(galley.size(), rect)
+                    .min,
+                galley.galley,
+                color,
+            );
+        }
+
+        if !self.image_cache.contains_key(&cur_font) {
+            let buffer = Buffer::new((100, 12));
+            let mut state = EditState::from_buffer(buffer);
+            let b = if font.has_char(b'H') {
+                "HELLO".bytes()
+            } else {
+                "hello".bytes()
+            };
+            for ch in b {
+                let opt_size: Option<Size> = font.render(&mut state, ch);
+                if let Some(size) = opt_size {
+                    let mut pos = state.get_caret().get_position();
+                    pos.x += size.width + font.spaces;
+                    state.get_caret_mut().set_position(pos);
+                }
+            }
+            let img = create_retained_image(state.get_buffer());
+            self.image_cache.insert(cur_font, img);
+        }
+
+        if let Some(image) = self.image_cache.get(&cur_font) {
+            let w = (image.width() as f32 / 2.0).floor();
+            let h = (image.height() as f32 / 2.0).floor();
+            let r = Rect::from_min_size(
+                Pos2::new(
+                    (rect.right() - w - 4.0).floor(),
+                    (rect.top() + ((rect.height() - h) / 2.0)).floor(),
+                ),
+                Vec2::new(w, h),
+            );
+            ui.painter().image(
+                image.texture_id(ui.ctx()),
+                r,
+                Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
+                Color32::WHITE,
+            );
+
+            let font_type = match font.font_type {
+                icy_engine::FontType::Outline => "OUTLINE",
+                icy_engine::FontType::Block => "BLOCK",
+                icy_engine::FontType::Color => "COLOR",
+            };
+
+            let font_id = FontId::new(12.0, FontFamily::Proportional);
+            let text: WidgetText = font_type.into();
+            let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
+
+            let rect = Rect::from_min_size(
+                Pos2::new(
+                    (rect.right() - galley.size().x - 10.0).floor(),
+                    (rect.top() + 8.0).floor(),
+                ),
+                galley.size(),
+            );
+
+            ui.painter().rect_filled(
+                rect.expand(2.0),
+                Rounding::same(4.0),
+                ui.style().visuals.widgets.active.bg_fill,
+            );
+
+            ui.painter()
+                .rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
+
+            ui.painter().galley_with_color(
+                egui::Align2::CENTER_CENTER
+                    .align_size_within_rect(galley.size(), rect)
+                    .min,
+                galley.galley,
+                text_color,
+            );
+        }
+
+        response
+    }
 }
 
 impl crate::ModalDialog for SelectFontDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
-        let modal = Modal::new(ctx, "select_font_dialog");
+        let modal = Modal::new(ctx, "select_font_dialog2");
         let font_count = self.fonts.lock().unwrap().len();
         modal.show(|ui| {
             modal.title(
@@ -57,7 +206,7 @@ impl crate::ModalDialog for SelectFontDialog {
                 ),
             );
             modal.frame(ui, |ui| {
-                let row_height = 176.0 / 2.0;
+                let row_height = 200.0 / 2.0;
                 ui.horizontal(|ui: &mut egui::Ui| {
                     ui.add_sized(
                         [250.0, 20.0],
@@ -122,94 +271,22 @@ impl crate::ModalDialog for SelectFontDialog {
                         filtered_fonts.len(),
                         |ui, range| {
                             for row in range {
-                                let font = &self.fonts.lock().unwrap()[filtered_fonts[row]];
-                                ui.horizontal(|ui: &mut egui::Ui| {
-                                    ui.vertical(|ui| {
-                                        ui.horizontal(|ui| {
-                                            let font_type = match font.font_type {
-                                                icy_engine::FontType::Outline => "OUTLINE",
-                                                icy_engine::FontType::Block => "BLOCK",
-                                                icy_engine::FontType::Color => "COLOR",
-                                            };
-                                            let response = ui.label(font_type);
-                                            ui.painter().rect_stroke(
-                                                response.rect.expand(2.0),
-                                                4.0,
-                                                Stroke::new(1.0, ctx.style().visuals.text_color()),
-                                            );
+                                let is_selected = self.selected_font == filtered_fonts[row] as i32;
+                                let response = self.draw_font_row(
+                                    ui,
+                                    filtered_fonts[row],
+                                    row_height,
+                                    is_selected,
+                                );
 
-                                            let sel = ui.selectable_label(
-                                                self.selected_font == filtered_fonts[row] as i32,
-                                                font.name.clone(),
-                                            );
-                                            if sel.clicked() {
-                                                self.selected_font = filtered_fonts[row] as i32;
-                                            }
-                                            if sel.double_clicked() {
-                                                self.selected_font = filtered_fonts[row] as i32;
-                                                self.do_select = true;
-                                                result = true;
-                                            }
-                                        });
-                                        ui.horizontal(|ui| {
-                                            for ch in '!'..'P' {
-                                                ui.spacing_mut().item_spacing =
-                                                    eframe::epaint::Vec2::new(0.0, 0.0);
-                                                let color = if font.has_char(ch as u8) {
-                                                    ui.style().visuals.strong_text_color()
-                                                } else {
-                                                    ui.style().visuals.text_color()
-                                                };
-
-                                                ui.colored_label(
-                                                    color,
-                                                    RichText::new(ch.to_string()).font(
-                                                        FontId::new(12.0, FontFamily::Monospace),
-                                                    ),
-                                                );
-                                            }
-                                        });
-
-                                        ui.horizontal(|ui| {
-                                            ui.spacing_mut().item_spacing =
-                                                eframe::epaint::Vec2::new(0.0, 0.0);
-                                            for ch in 'P'..='~' {
-                                                let color = if font.has_char(ch as u8) {
-                                                    ui.style().visuals.strong_text_color()
-                                                } else {
-                                                    ui.style().visuals.text_color()
-                                                };
-
-                                                ui.colored_label(
-                                                    color,
-                                                    RichText::new(ch.to_string()).font(
-                                                        FontId::new(12.0, FontFamily::Monospace),
-                                                    ),
-                                                );
-                                            }
-                                        });
-                                    });
-
-                                    if let Some(img) = self.image_cache.get(&filtered_fonts[row]) {
-                                        img.show_scaled(ui, 0.5);
-                                    } else {
-                                        let buffer = Buffer::new((100, 12));
-                                        let mut state = EditState::from_buffer(buffer);
-
-                                        for ch in "HELLO".bytes() {
-                                            let opt_size: Option<Size> =
-                                                font.render(&mut state, ch);
-                                            if let Some(size) = opt_size {
-                                                let mut pos = state.get_caret().get_position();
-                                                pos.x += size.width + font.spaces;
-                                                state.get_caret_mut().set_position(pos);
-                                            }
-                                        }
-                                        let img = create_retained_image(state.get_buffer());
-                                        img.show_scaled(ui, 0.5);
-                                        self.image_cache.insert(filtered_fonts[row], img);
-                                    }
-                                });
+                                if response.clicked() {
+                                    self.selected_font = filtered_fonts[row] as i32;
+                                }
+                                if response.double_clicked() {
+                                    self.selected_font = filtered_fonts[row] as i32;
+                                    self.do_select = true;
+                                    result = true;
+                                }
                             }
                         },
                     );

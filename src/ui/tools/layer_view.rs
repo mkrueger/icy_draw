@@ -213,15 +213,23 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
             if r.clicked() {
                 result = Some(Message::AddFloatingLayer);
             }
+            let role = editor
+                .buffer_view
+                .lock()
+                .get_edit_state()
+                .get_cur_layer()
+                .unwrap()
+                .role;
+            if matches!(role, icy_engine::Role::PastePreview) {
+                let r = medium_hover_button(ui, &crate::ANCHOR_SVG).on_hover_ui(|ui| {
+                    ui.label(
+                        RichText::new(fl!(crate::LANGUAGE_LOADER, "anchor_layer_tooltip")).small(),
+                    );
+                });
 
-            let r = medium_hover_button(ui, &crate::ANCHOR_SVG).on_hover_ui(|ui| {
-                ui.label(
-                    RichText::new(fl!(crate::LANGUAGE_LOADER, "anchor_layer_tooltip")).small(),
-                );
-            });
-
-            if r.clicked() && cur_layer < max {
-                result = Some(Message::AnchorLayer);
+                if r.clicked() && cur_layer < max {
+                    result = Some(Message::AnchorLayer);
+                }
             }
 
             let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
