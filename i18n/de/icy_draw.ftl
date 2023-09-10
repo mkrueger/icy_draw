@@ -104,6 +104,7 @@ edit-canvas-size-title=Leinwandgröße
 edit-canvas-size-width-label=Breite:
 edit-canvas-size-height-label=Höhe:
 edit-canvas-size-resize=Größe ändern
+edit-canvas-size-resize_layers-label=Ebenen anpassen
 
 toolbar-size = { $colums } Zeilen x { $rows } Reihen
 toolbar-position = ({ $column }:{ $line })

@@ -60,7 +60,7 @@ pub enum Message {
     FlipY,
     Crop,
     Paste,
-    ResizeBuffer(i32, i32),
+    ResizeBuffer(bool, i32, i32),
     PasteAsNewImage,
     PasteAsBrush,
     Copy,
@@ -463,10 +463,13 @@ impl MainWindow {
                     to_message(lock.get_edit_state_mut().crop())
                 });
             }
-            Message::ResizeBuffer(w, h) => {
-                self.run_editor_command((w, h), |_, editor, (w, h)| {
+            Message::ResizeBuffer(resize_layer, w, h) => {
+                self.run_editor_command((resize_layer, w, h), |_, editor, (resize_layer, w, h)| {
                     let mut lock = editor.buffer_view.lock();
-                    to_message(lock.get_edit_state_mut().resize_buffer(Size::new(w, h)))
+                    to_message(
+                        lock.get_edit_state_mut()
+                            .resize_buffer(resize_layer, Size::new(w, h)),
+                    )
                 });
             }
 

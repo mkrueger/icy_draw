@@ -104,6 +104,7 @@ edit-canvas-size-title=Set Canvas Size
 edit-canvas-size-width-label=Width:
 edit-canvas-size-height-label=Height:
 edit-canvas-size-resize=Resize
+edit-canvas-size-resize_layers-label=Resize layers
 
 toolbar-size = { $colums } Columns x { $rows } Rows
 toolbar-position = ({ $column }:{ $line })

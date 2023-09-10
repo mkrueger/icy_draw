@@ -6,9 +6,10 @@ use icy_engine::TextPane;
 use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 
 pub struct SetCanvasSizeDialog {
-    pub should_commit: bool,
-    pub width: i32,
-    pub height: i32,
+    should_commit: bool,
+    width: i32,
+    height: i32,
+    resize_layer: bool,
 }
 
 impl SetCanvasSizeDialog {
@@ -17,6 +18,7 @@ impl SetCanvasSizeDialog {
             should_commit: false,
             width: buf.get_width(),
             height: buf.get_height(),
+            resize_layer: true,
         }
     }
 }
@@ -27,6 +29,8 @@ impl ModalDialog for SetCanvasSizeDialog {
         let modal = Modal::new(ctx, "set_canvas_size_dialog");
 
         modal.show(|ui| {
+            ui.set_width(250.);
+
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "edit-canvas-size-title"));
 
             modal.frame(ui, |ui| {
@@ -37,13 +41,31 @@ impl ModalDialog for SetCanvasSizeDialog {
                         ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-canvas-size-width-label"));
                         });
-                        ui.add(egui::DragValue::new(&mut self.width));
+                        let mut tmp_str = self.width.to_string();
+                        ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
+                        if let Ok(new_width) = tmp_str.parse::<i32>() {
+                            self.width = new_width;
+                        }
                         ui.end_row();
 
                         ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-canvas-size-height-label"));
                         });
-                        ui.add(egui::DragValue::new(&mut self.height));
+                        let mut tmp_str = self.height.to_string();
+                        ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
+                        if let Ok(new_height) = tmp_str.parse::<i32>() {
+                            self.height = new_height;
+                        }
+                        ui.end_row();
+
+                        ui.label("");
+                        ui.checkbox(
+                            &mut self.resize_layer,
+                            fl!(
+                                crate::LANGUAGE_LOADER,
+                                "edit-canvas-size-resize_layers-label"
+                            ),
+                        );
                         ui.end_row();
                     });
                 ui.add_space(4.0);
@@ -74,6 +96,10 @@ impl ModalDialog for SetCanvasSizeDialog {
     }
 
     fn commit(&self, _editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
-        Ok(Some(Message::ResizeBuffer(self.width, self.height)))
+        Ok(Some(Message::ResizeBuffer(
+            self.resize_layer,
+            self.width,
+            self.height,
+        )))
     }
 }

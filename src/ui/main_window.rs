@@ -566,7 +566,7 @@ impl eframe::App for MainWindow {
                 }
             });
         self.dialog_open = false;
-
+        let mut dialog_message = None;
         if self.modal_dialog.is_some() {
             self.dialog_open = true;
             if self.modal_dialog.as_mut().unwrap().show(ctx) {
@@ -574,10 +574,32 @@ impl eframe::App for MainWindow {
                 if modal_dialog.should_commit() {
                     if let Some(doc) = self.get_active_document() {
                         if let Some(editor) = doc.lock().unwrap().get_ansi_editor_mut() {
-                            modal_dialog.commit(editor).unwrap();
+                            match modal_dialog.commit(editor) {
+                                Ok(msg) => {
+                                    dialog_message = msg;
+                                }
+                                Err(err) => {
+                                    log::error!("Error: {}", err);
+                                    self.toasts
+                                        .error(format!("{err}"))
+                                        .set_duration(Some(Duration::from_secs(5)));
+                                }
+                            }
                         }
                     }
-                    modal_dialog.commit_self(self).unwrap();
+                    match modal_dialog.commit_self(self) {
+                        Ok(msg) => {
+                            if dialog_message.is_none() {
+                                dialog_message = msg;
+                            }
+                        }
+                        Err(err) => {
+                            log::error!("Error: {}", err);
+                            self.toasts
+                                .error(format!("{err}"))
+                                .set_duration(Some(Duration::from_secs(5)));
+                        }
+                    }
                 }
             }
 
@@ -585,6 +607,8 @@ impl eframe::App for MainWindow {
                 self.modal_dialog = None;
             }
         }
+        self.handle_message(dialog_message);
+
         self.toasts.show(ctx);
         if let Some(close) = self.document_behavior.request_close {
             self.document_tree.tiles.remove(close);

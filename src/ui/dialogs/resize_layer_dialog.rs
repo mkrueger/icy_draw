@@ -6,10 +6,11 @@ use icy_engine::TextPane;
 use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 
 pub struct ResizeLayerDialog {
-    pub should_commit: bool,
-    pub layer: usize,
-    pub width: i32,
-    pub height: i32,
+    should_commit: bool,
+    layer: usize,
+
+    width: i32,
+    height: i32,
 }
 
 impl ResizeLayerDialog {
@@ -39,13 +40,21 @@ impl ModalDialog for ResizeLayerDialog {
                         ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-canvas-size-width-label"));
                         });
-                        ui.add(egui::DragValue::new(&mut self.width));
+                        let mut tmp_str = self.width.to_string();
+                        ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
+                        if let Ok(new_width) = tmp_str.parse::<i32>() {
+                            self.width = new_width;
+                        }
                         ui.end_row();
 
                         ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "edit-canvas-size-height-label"));
                         });
-                        ui.add(egui::DragValue::new(&mut self.height));
+                        let mut tmp_str = self.height.to_string();
+                        ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
+                        if let Ok(new_height) = tmp_str.parse::<i32>() {
+                            self.height = new_height;
+                        }
                         ui.end_row();
                     });
                 ui.add_space(4.0);
