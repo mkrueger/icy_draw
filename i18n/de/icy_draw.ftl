@@ -123,7 +123,7 @@ edit-canvas-size-resize=Größe ändern
 edit-canvas-size-resize_layers-label=Ebenen anpassen
 
 toolbar-size = { $colums } Zeilen x { $rows } Reihen
-toolbar-position = ({ $column }:{ $line })
+toolbar-position = Ze { $line }, Sp { $column }
 
 add_layer_tooltip = Neue Ebene
 move_layer_up_tooltip = Ebene hoch

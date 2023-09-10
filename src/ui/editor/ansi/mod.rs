@@ -8,8 +8,8 @@ use std::{
 };
 
 use eframe::{
-    egui::{self, Id, Key, Response, RichText},
-    epaint::{mutex::Mutex, FontId, Vec2},
+    egui::{self, Id, Key, Response},
+    epaint::{mutex::Mutex, Vec2},
 };
 use i18n_embed_fl::fl;
 use icy_engine::{
@@ -182,32 +182,27 @@ impl Document for AnsiEditor {
             self.buffer_view.lock().clear_selection();
         }
 
-        ui.allocate_ui(
-            Vec2::new(ui.available_width(), ui.available_height() - 35.0),
-            |ui| {
-                let opt = icy_engine_egui::TerminalOptions {
-                    focus_lock: false,
-                    stick_to_bottom: false,
-                    scale: Some(scale),
-                    fit_width: options.fit_width,
-                    settings: MonitorSettings {
-                        background_effect: BackgroundEffect::Checkers,
-                        ..Default::default()
-                    },
-                    id: Some(Id::new(self.id + 10000)),
-                    raster: self.raster,
-                    guide: self.guide,
-                    ..Default::default()
-                };
-                let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
-
-                let response = response.context_menu(|ui| {
-                    message = terminal_context_menu(self, &options.commands, ui);
-                });
-                self.handle_response(ui, response, calc, cur_tool)
+        let opt = icy_engine_egui::TerminalOptions {
+            focus_lock: false,
+            stick_to_bottom: false,
+            scale: Some(scale),
+            fit_width: options.fit_width,
+            settings: MonitorSettings {
+                background_effect: BackgroundEffect::Checkers,
+                ..Default::default()
             },
-        );
-        self.show_toolbar(ui);
+            id: Some(Id::new(self.id + 10000)),
+            raster: self.raster,
+            guide: self.guide,
+            ..Default::default()
+        };
+        let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
+
+        let response = response.context_menu(|ui| {
+            message = terminal_context_menu(self, &options.commands, ui);
+        });
+        self.handle_response(ui, response, calc, cur_tool);
+
         message
     }
 
@@ -521,68 +516,6 @@ impl AnsiEditor {
     pub fn insert_column(&mut self) {
         let _undo = self.begin_atomic_undo("Insert column");
         // TODO
-    }
-
-    fn show_toolbar(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            let pos = self.buffer_view.lock().get_caret().get_position();
-
-            ui.vertical(|ui| {
-                ui.add_space(4.);
-                ui.label(RichText::new(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "toolbar-position",
-                    line = pos.y,
-                    column = pos.x
-                )));
-            });
-
-            let r = ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let cur_outline = Settings::get_character_set();
-                let cur_font_page = self.buffer_view.lock().get_caret().get_font_page();
-
-                let button_font_size = 16.0;
-                if ui
-                    .selectable_label(
-                        false,
-                        RichText::new("▶").font(FontId::proportional(button_font_size)),
-                    )
-                    .clicked()
-                {
-                    Settings::set_character_set((cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len());
-                }
-                ui.label(
-                    RichText::new((cur_outline + 1).to_string()), //   .font(FontId::proportional(label_font_size)),
-                );
-
-                if ui
-                    .selectable_label(
-                        false,
-                        RichText::new("◀").font(FontId::proportional(button_font_size)),
-                    )
-                    .clicked()
-                {
-                    Settings::set_character_set(
-                        (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
-                            % DEFAULT_OUTLINE_TABLE.len(),
-                    );
-                }
-
-                for i in (0..10).rev() {
-                    let ch = self.get_outline_char_code(i).unwrap();
-                    ui.add(crate::model::pencil_imp::draw_glyph_plain(
-                        self,
-                        unsafe { char::from_u32_unchecked(ch as u32) },
-                        cur_font_page,
-                    ));
-
-                    ui.label(
-                        RichText::new(format!("F{}", i + 1)), //     .font(FontId::proportional(label_font_size)),
-                    );
-                }
-            });
-            r.response
-        });
     }
 
     fn handle_response(

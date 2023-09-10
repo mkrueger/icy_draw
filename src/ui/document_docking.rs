@@ -1,11 +1,18 @@
 use std::{
     path::PathBuf,
-    sync::{Arc, Mutex}, time::Instant,
+    sync::{Arc, Mutex},
+    time::Instant,
 };
 
-use crate::{model::Tool, util::autosave::store_auto_save, Document, DocumentOptions, Message};
-use eframe::egui::{self, Response};
-use egui_tiles::{TileId, Tiles};
+use crate::{
+    create_retained_image, model::Tool, util::autosave::store_auto_save, Document, DocumentOptions,
+    Message, Settings, DEFAULT_OUTLINE_TABLE, FIRST_TOOL,
+};
+use eframe::egui::{self, Response, Ui};
+use egui_extras::RetainedImage;
+use egui_tiles::{Tabs, TileId, Tiles};
+use i18n_embed_fl::fl;
+use icy_engine::{AttributedChar, Buffer, Position, TextAttribute, TextPane};
 
 pub struct DocumentTab {
     pub full_path: Option<PathBuf>,
@@ -13,7 +20,7 @@ pub struct DocumentTab {
     pub auto_save_status: usize,
 
     pub instant: Instant,
-    pub last_change: usize
+    pub last_change: usize,
 }
 
 pub struct DocumentBehavior {
@@ -21,8 +28,30 @@ pub struct DocumentBehavior {
     pub selected_tool: usize,
     pub document_options: DocumentOptions,
 
+    char_set_img: Option<RetainedImage>,
+    cur_char_set: usize,
+
+    pos_img: Option<RetainedImage>,
+    cur_pos: Position,
+
     pub request_close: Option<TileId>,
     pub message: Option<Message>,
+}
+
+impl DocumentBehavior {
+    pub fn new(tools: Arc<Mutex<Vec<Box<dyn Tool>>>>) -> Self {
+        Self {
+            tools,
+            selected_tool: FIRST_TOOL,
+            document_options: DocumentOptions::default(),
+            char_set_img: None,
+            cur_char_set: usize::MAX,
+            request_close: None,
+            message: None,
+            pos_img: None,
+            cur_pos: Position::new(i32::MAX, i32::MAX),
+        }
+    }
 }
 
 impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
@@ -48,22 +77,21 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                 self.selected_tool,
                 &self.document_options,
             );
-            
+
             let undo_stack_len = doc.undo_stack_len();
             if let Some(path) = &pane.full_path {
                 if doc.is_dirty() && undo_stack_len != pane.auto_save_status {
                     if pane.last_change != undo_stack_len {
                         pane.instant = Instant::now();
-                    } 
+                    }
                     pane.last_change = undo_stack_len;
-                    
+
                     if pane.instant.elapsed().as_secs() > 5 {
                         pane.auto_save_status = undo_stack_len;
                         if let Ok(bytes) = doc.get_bytes(path) {
                             store_auto_save(path, &bytes);
                         }
                     }
-                
                 }
             }
         }
@@ -98,6 +126,108 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
     fn has_close_buttons(&self) -> bool {
         true
     }
+
+    fn top_bar_rtl_ui(
+        &mut self,
+        tiles: &Tiles<DocumentTab>,
+        ui: &mut Ui,
+        _tile_id: TileId,
+        _tabs: &Tabs,
+    ) {
+        ui.add_space(4.0);
+        let mut buffer = Buffer::new((48, 1));
+        let char_set = Settings::get_character_set();
+        if self.cur_char_set != char_set {
+            self.cur_char_set = char_set;
+            let mut attr: TextAttribute = TextAttribute::default();
+            attr.set_foreground(9);
+            let s = format!("Set {:2} ", char_set + 1);
+            let mut i = 0;
+            for c in s.chars() {
+                buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
+                i += 1;
+            }
+            attr.set_foreground(15);
+            attr.set_background(4);
+
+            for j in i..buffer.get_width() {
+                buffer.layers[0].set_char((j, 0), AttributedChar::new(' ', attr));
+            }
+
+            for j in 0..10 {
+                if j == 9 {
+                    i += 1;
+                }
+                let s = format!("{:-2}=", j + 1);
+                attr.set_foreground(0);
+                for c in s.chars() {
+                    buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
+                    i += 1;
+                }
+                attr.set_foreground(15);
+                buffer.layers[0].set_char(
+                    (i, 0),
+                    AttributedChar::new(
+                        unsafe {
+                            char::from_u32_unchecked(
+                                DEFAULT_OUTLINE_TABLE[char_set][j as usize] as u32,
+                            )
+                        },
+                        attr,
+                    ),
+                );
+                i += 1;
+            }
+
+            self.char_set_img = Some(create_retained_image(&buffer));
+        }
+
+        if let Some(img) = &self.char_set_img {
+            img.show(ui);
+        }
+
+        if let Some(id) = _tabs.active {
+            if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(id) {
+                if let Ok(doc) = &mut pane.doc.lock() {
+                    if let Some(editor) = doc.get_ansi_editor() {
+                        let pos = editor.get_caret_position();
+
+                        if pos != self.cur_pos {
+                            self.cur_pos = pos;
+                            let txt = fl!(
+                                crate::LANGUAGE_LOADER,
+                                "toolbar-position",
+                                line = pos.y,
+                                column = pos.x
+                            );
+
+                            let mut buffer = Buffer::new((txt.chars().count(), 1));
+                            buffer.is_terminal_buffer = true;
+                            let mut attr: TextAttribute = TextAttribute::default();
+                            attr.set_foreground(15);
+
+                            for (i, mut c) in txt.chars().enumerate() {
+                                if c as u32 > 255 {
+                                    c = ' ';
+                                }
+                                buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
+                            }
+                            self.pos_img = Some(create_retained_image(&buffer));
+                        }
+
+                        if let Some(img) = &self.pos_img {
+                            img.show(ui);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+
+
+    */
 }
 
 pub fn add_child(
@@ -110,7 +240,7 @@ pub fn add_child(
         doc: Arc::new(Mutex::new(doc)),
         auto_save_status: 0,
         instant: Instant::now(),
-        last_change: 0
+        last_change: 0,
     };
     let new_child = tree.tiles.insert_pane(tile);
 

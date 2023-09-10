@@ -9,8 +9,8 @@ use std::{
 
 use crate::{
     add_child, model::Tool, util::autosave, AnsiEditor, BitFontEditor, CharFontEditor,
-    CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentOptions, DocumentTab,
-    LayerToolWindow, Message, MinimapToolWindow, ModalDialog, ToolBehavior, ToolTab, TopBar,
+    CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentTab, LayerToolWindow,
+    Message, MinimapToolWindow, ModalDialog, ToolBehavior, ToolTab, TopBar,
 };
 use eframe::{
     egui::{self, Key, Response, SidePanel, TextStyle, Ui},
@@ -182,13 +182,7 @@ impl MainWindow {
         tool_tree.root = Some(v);
 
         MainWindow {
-            document_behavior: DocumentBehavior {
-                tools: Arc::new(Mutex::new(tools)),
-                selected_tool: FIRST_TOOL,
-                document_options: DocumentOptions::new(),
-                request_close: None,
-                message: None,
-            },
+            document_behavior: DocumentBehavior::new(Arc::new(Mutex::new(tools))),
             tool_behavior: ToolBehavior::default(),
             toasts: egui_notify::Toasts::default(),
             document_tree: egui_tiles::Tree::<DocumentTab>::empty("document_tree"),
