@@ -1,12 +1,20 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
-use crate::{model::Tool, Document, DocumentOptions, Message};
+use crate::{
+    model::Tool,
+    util::autosave::{remove_autosave, store_auto_save},
+    Document, DocumentOptions, Message,
+};
 use eframe::egui::{self, Response};
 use egui_tiles::{TileId, Tiles};
 
 pub struct DocumentTab {
-    pub full_path: Option<String>,
+    pub full_path: Option<PathBuf>,
     pub doc: Arc<Mutex<Box<dyn Document>>>,
+    pub auto_save_status: usize,
 }
 
 pub struct DocumentBehavior {
@@ -34,12 +42,23 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         _tile_id: egui_tiles::TileId,
         pane: &mut DocumentTab,
     ) -> egui_tiles::UiResponse {
-        self.message = pane.doc.lock().unwrap().show_ui(
-            ui,
-            &mut self.tools.lock().unwrap()[self.selected_tool],
-            self.selected_tool,
-            &self.document_options,
-        );
+        if let Ok(doc) = &mut pane.doc.lock() {
+            self.message = doc.show_ui(
+                ui,
+                &mut self.tools.lock().unwrap()[self.selected_tool],
+                self.selected_tool,
+                &self.document_options,
+            );
+            let undo_stack_len = doc.undo_stack_len();
+            if let Some(path) = &pane.full_path {
+                if doc.is_dirty() && undo_stack_len != pane.auto_save_status {
+                    pane.auto_save_status = undo_stack_len;
+                    if let Ok(bytes) = doc.get_bytes(path) {
+                        store_auto_save(path, &bytes);
+                    }
+                }
+            }
+        }
         egui_tiles::UiResponse::None
     }
 
@@ -75,12 +94,13 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
 
 pub fn add_child(
     tree: &mut egui_tiles::Tree<DocumentTab>,
-    full_path: Option<String>,
+    full_path: Option<PathBuf>,
     doc: Box<dyn Document>,
 ) {
     let tile = DocumentTab {
         full_path,
         doc: Arc::new(Mutex::new(doc)),
+        auto_save_status: 0,
     };
     let new_child = tree.tiles.insert_pane(tile);
 

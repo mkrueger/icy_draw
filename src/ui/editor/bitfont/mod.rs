@@ -1,7 +1,7 @@
 mod undo;
 
 use std::{
-    fs,
+    path::Path,
     sync::{Arc, Mutex},
 };
 
@@ -19,7 +19,7 @@ use icy_engine::{
 
 use crate::{
     model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message,
-    SavingError, TerminalResult,
+    TerminalResult,
 };
 
 use self::undo::UndoOperation;
@@ -474,6 +474,10 @@ impl Document for BitFontEditor {
         self.dirty_pos != self.undo_stack.lock().unwrap().len()
     }
 
+    fn undo_stack_len(&self) -> usize {
+        self.undo_stack.lock().unwrap().len()
+    }
+
     fn show_ui(
         &mut self,
         ui: &mut eframe::egui::Ui,
@@ -483,7 +487,6 @@ impl Document for BitFontEditor {
     ) -> Option<Message> {
         let mut message = None;
         ui.add_space(16.);
-
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 ui.add_space(120.);
@@ -586,15 +589,8 @@ impl Document for BitFontEditor {
         message
     }
 
-    fn save(&mut self, file_name: &str) -> TerminalResult<()> {
-        let contents = self.font.to_psf2_bytes()?;
-
-        if let Err(err) = fs::write(file_name, contents) {
-            return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
-        }
-
-        self.dirty_pos = self.undo_stack.lock().unwrap().len();
-        Ok(())
+    fn get_bytes(&mut self, _path: &Path) -> TerminalResult<Vec<u8>> {
+        self.font.to_psf2_bytes()
     }
 
     fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor> {

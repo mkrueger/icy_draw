@@ -148,10 +148,10 @@ impl Command {
 }
 
 keys![
-    (new_file, "menu-new", NewFile, N, CTRL),
+    (new_file, "menu-new", NewFileDialog, N, CTRL),
     (save, "menu-save", SaveFile, S, CTRL),
     (save_as, "menu-save-as", SaveFileAs, S, CTRL_SHIFT),
-    (open_file, "menu-open", OpenFile, O, CTRL),
+    (open_file, "menu-open", OpenFileDialog, O, CTRL),
     (export, "menu-export", ExportFile),
     (
         edit_font_outline,

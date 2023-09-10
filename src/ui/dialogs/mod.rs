@@ -36,3 +36,6 @@ pub use resize_layer_dialog::*;
 
 mod font_manager;
 pub use font_manager::*;
+
+mod auto_save_dialog;
+pub use auto_save_dialog::*;

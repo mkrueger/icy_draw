@@ -225,3 +225,9 @@ undo-bitfont-clear=Leeren
 undo-bitfont-edit=Editieren
 undo-render_character=Zeichen rendern
 undo-delete_character=Zeichen löschen
+
+autosave-dialog-title=Autosave
+autosave-dialog-description=Icy Draw hat eine Autosave Datei gefunden.
+autosave-dialog-question=Was möchtest du tun?
+autosave-dialog-load_autosave_button=Autosave laden
+autosave-dialog-discard_autosave_button=Verwerfen

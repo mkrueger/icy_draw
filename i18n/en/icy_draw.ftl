@@ -227,3 +227,9 @@ undo-delete_character=Delete character
 font_manager-builtin_font=BUILTIN
 font_manager-library_font=LIBRARY
 font_manager-file_font=FILE
+
+autosave-dialog-title=Autosave
+autosave-dialog-description=Found an autosave for this file.
+autosave-dialog-question=Do you want to use the original file, or load the autosave?
+autosave-dialog-load_autosave_button=Load from autosave
+autosave-dialog-discard_autosave_button=Discard autosave

@@ -53,10 +53,11 @@ impl crate::ModalDialog for OpenFileDialog {
         self.open_file
     }
 
-    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn commit_self(&self, _: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         if let Some(file) = &self.opened_file.clone() {
-            window.open_file(file);
+            Ok(Some(Message::TryLoadFile(file.clone())))
+        } else {
+            Ok(None)
         }
-        Ok(None)
     }
 }

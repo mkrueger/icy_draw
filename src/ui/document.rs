@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use eframe::{egui, epaint::Vec2};
 use icy_engine::{editor::UndoState, EngineResult};
 
@@ -30,7 +32,9 @@ pub trait Document: UndoState + ClipboardHandler {
     fn get_title(&self) -> String;
     fn is_dirty(&self) -> bool;
 
-    fn save(&mut self, file_name: &str) -> TerminalResult<()>;
+    fn undo_stack_len(&self) -> usize;
+
+    fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>>;
 
     fn show_ui(
         &mut self,

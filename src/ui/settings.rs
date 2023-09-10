@@ -89,6 +89,22 @@ impl Settings {
             "font directory".to_string(),
         )))
     }
+
+    pub(crate) fn get_auto_save_diretory() -> TerminalResult<PathBuf> {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+            let dir = proj_dirs.config_dir().join("autosave");
+
+            if !dir.exists() && fs::create_dir_all(&dir).is_err() {
+                return Err(Box::new(IcyDrawError::ErrorCreatingDirectory(format!(
+                    "{dir:?}"
+                ))));
+            }
+            return Ok(dir);
+        }
+        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
+            "font directory".to_string(),
+        )))
+    }
 }
 
 pub static mut SETTINGS: Settings = Settings {

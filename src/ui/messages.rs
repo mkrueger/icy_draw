@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    fs,
     path::PathBuf,
     rc::Rc,
     sync::{Arc, Mutex},
@@ -14,14 +15,15 @@ use icy_engine::{
 };
 
 use crate::{
+    util::autosave::{self, remove_autosave},
     AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog,
     SelectCharacterDialog, SelectOutlineDialog, Settings,
 };
 
 #[derive(Clone)]
 pub enum Message {
-    NewFile,
-    OpenFile,
+    NewFileDialog,
+    OpenFileDialog,
     SaveFile,
     SaveFileAs,
     ExportFile,
@@ -118,6 +120,8 @@ pub enum Message {
     ToggleMirrorMode,
     SetGuide(i32, i32),
     SetRaster(i32, i32),
+    LoadFile(PathBuf, bool),
+    TryLoadFile(PathBuf),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -134,21 +138,60 @@ impl MainWindow {
             return;
         }
         match msg_opt.unwrap() {
-            Message::NewFile => {
+            Message::NewFileDialog => {
                 self.open_dialog(NewFileDialog::default());
             }
-            Message::OpenFile => {
+            Message::OpenFileDialog => {
                 self.open_dialog(OpenFileDialog::default());
             }
 
+            Message::TryLoadFile(path) => {
+                let auto_save = autosave::get_autosave_file(&path);
+                if auto_save.exists() {
+                    self.open_dialog(crate::AutoSaveDialog::new(path));
+                    return;
+                }
+
+                self.open_file(&path, false);
+            }
+            Message::LoadFile(path, load_autosave) => {
+                self.open_file(&path, load_autosave);
+            }
+
             Message::SaveFile => {
+                let mut msg = None;
                 if let Some(doc) = self.get_active_pane() {
                     let mut save_as = true;
-                    if let Some(str) = &doc.full_path {
-                        let path = PathBuf::from(str);
+                    if let Some(path) = &doc.full_path {
                         if let Some(ext) = path.extension() {
                             if ext == "icd" || ext == "psf" {
-                                doc.doc.lock().unwrap().save(str).unwrap();
+                                match doc.doc.lock().unwrap().get_bytes(path) {
+                                    Ok(bytes) => {
+                                        let mut tmp_file = path.clone();
+                                        tmp_file.push(".sav");
+                                        let mut num = 0;
+                                        while tmp_file.exists() {
+                                            tmp_file =
+                                                tmp_file.with_extension(format!("sav{}", num));
+                                            num += 1;
+                                        }
+                                        if let Err(err) = fs::write(&tmp_file, bytes) {
+                                            msg = Some(Message::ShowError(format!(
+                                                "Error saving file {err}"
+                                            )));
+                                        } else if let Err(err) = fs::rename(tmp_file, path) {
+                                            msg = Some(Message::ShowError(format!(
+                                                "Error saving file {err}"
+                                            )));
+                                        }
+                                    }
+                                    Err(err) => {
+                                        msg = Some(Message::ShowError(format!("{err}")));
+                                    }
+                                }
+                                if msg.is_none() {
+                                    remove_autosave(path);
+                                }
                                 save_as = false;
                             }
                         }
@@ -157,6 +200,8 @@ impl MainWindow {
                         self.handle_message(Some(Message::SaveFileAs))
                     }
                 }
+
+                self.handle_message(msg);
             }
             Message::SaveFileAs => {
                 if self.get_active_document().is_some() {

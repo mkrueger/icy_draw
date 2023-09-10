@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    add_child, model::Tool, AnsiEditor, BitFontEditor, CharFontEditor,
+    add_child, model::Tool, util::autosave, AnsiEditor, BitFontEditor, CharFontEditor,
     CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentOptions, DocumentTab,
     LayerToolWindow, Message, MinimapToolWindow, ModalDialog, ToolBehavior, ToolTab, TopBar,
 };
@@ -175,10 +175,8 @@ impl MainWindow {
         let char_table = tool_tree
             .tiles
             .insert_pane(ToolTab::new(CharTableToolWindow::default()));
-    
-        let tab = tool_tree
-            .tiles
-            .insert_tab_tile(vec![minimap, char_table]);
+
+        let tab = tool_tree.tiles.insert_tab_tile(vec![minimap, char_table]);
         let v = tool_tree.tiles.insert_vertical_tile(vec![tab, layers]);
 
         tool_tree.root = Some(v);
@@ -210,13 +208,18 @@ impl MainWindow {
         }
     }
 
-    pub fn open_file(&mut self, path: &Path) {
-        let full_path = path.to_str().unwrap().to_string();
+    pub fn open_file(&mut self, path: &Path, load_autosave: bool) {
+        let full_path = path.to_path_buf();
+        let load_path = if load_autosave {
+            autosave::get_autosave_file(path)
+        } else {
+            path.to_path_buf()
+        };
 
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap().to_ascii_lowercase();
             if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext || "fon" == ext {
-                if let Ok(data) = fs::read(path) {
+                if let Ok(data) = fs::read(&load_path) {
                     let file_name = path.file_name();
                     if file_name.is_none() {
                         return;
@@ -234,7 +237,7 @@ impl MainWindow {
             }
 
             if "tdf" == ext {
-                if let Ok(data) = fs::read(path) {
+                if let Ok(data) = fs::read(&load_path) {
                     let file_name = path.file_name();
                     if file_name.is_none() {
                         return;
@@ -252,23 +255,25 @@ impl MainWindow {
                 }
             }
         }
-        match Buffer::load_buffer(path, true) {
-            Ok(mut buf) => {
-                let id = self.create_id();
-                buf.is_terminal_buffer = false;
-                buf.set_height(buf.get_line_count());
-                let editor = AnsiEditor::new(&self.gl, id, buf);
-                add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
-            }
-            Err(err) => {
-                log::error!("Error loading file: {}", err);
-                self.toasts
-                    .error(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "error-load-file",
-                        error = err.to_string()
-                    ))
-                    .set_duration(Some(Duration::from_secs(5)));
+        if let Ok(data) = fs::read(&load_path) {
+            match Buffer::from_bytes(path, true, &data) {
+                Ok(mut buf) => {
+                    let id = self.create_id();
+                    buf.is_terminal_buffer = false;
+                    buf.set_height(buf.get_line_count());
+                    let editor = AnsiEditor::new(&self.gl, id, buf);
+                    add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
+                }
+                Err(err) => {
+                    log::error!("Error loading file: {}", err);
+                    self.toasts
+                        .error(fl!(
+                            crate::LANGUAGE_LOADER,
+                            "error-load-file",
+                            error = err.to_string()
+                        ))
+                        .set_duration(Some(Duration::from_secs(5)));
+                }
             }
         }
     }
@@ -619,7 +624,7 @@ impl eframe::App for MainWindow {
         ctx.input(|i| {
             for f in &i.raw.dropped_files {
                 if let Some(path) = &f.path {
-                    self.open_file(path);
+                    self.open_file(path, false);
                 }
             }
             for evt in &i.events.clone() {

@@ -1,7 +1,7 @@
 use std::{
     cmp::{max, min},
     ffi::OsStr,
-    fs::{self, File},
+    fs::File,
     io::Write,
     path::{Path, PathBuf},
     sync::Arc,
@@ -150,19 +150,19 @@ impl Document for AnsiEditor {
         self.dirty_pos != self.buffer_view.lock().get_edit_state().undo_stack_len()
     }
 
-    fn save(&mut self, file_name: &str) -> TerminalResult<()> {
-        let file = PathBuf::from(file_name);
+    fn undo_stack_len(&self) -> usize {
+        self.buffer_view.lock().get_edit_state().undo_stack_len()
+    }
+
+    fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>> {
         let options = SaveOptions::new();
         let bytes = self
             .buffer_view
             .lock()
             .get_buffer()
-            .to_bytes(file.extension().unwrap().to_str().unwrap(), &options)?;
-        if let Err(err) = fs::write(file_name, bytes) {
-            return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
-        }
-        self.dirty_pos = self.buffer_view.lock().get_edit_state().undo_stack_len();
-        Ok(())
+            .to_bytes(path.extension().unwrap().to_str().unwrap(), &options)?;
+
+        Ok(bytes)
     }
 
     fn show_ui(

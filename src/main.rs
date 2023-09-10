@@ -5,6 +5,7 @@ use eframe::egui;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 mod model;
 mod ui;
+mod util;
 
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader},

@@ -1,11 +1,14 @@
-use std::{fs, path::PathBuf, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use eframe::egui::{self, RichText};
 use icy_engine::{editor::UndoState, BitFont, Buffer, EngineResult, Layer, Size, TheDrawFont};
 
 use crate::{
     model::Tool, AnsiEditor, BitFontEditor, ClipboardHandler, Document, DocumentOptions,
-    DrawGlyphStyle, Message, SavingError, TerminalResult,
+    DrawGlyphStyle, Message, TerminalResult,
 };
 
 pub struct CharFontEditor {
@@ -59,17 +62,12 @@ impl Document for CharFontEditor {
         self.is_dirty
     }
 
-    fn save(&mut self, file_name: &str) -> TerminalResult<()> {
-        let file = PathBuf::from(file_name);
-        self.file_name = Some(file);
-        let bytes = TheDrawFont::create_font_bundle(&self.fonts)?;
+    fn undo_stack_len(&self) -> usize {
+        self.ansi_editor.undo_stack_len()
+    }
 
-        if let Err(err) = fs::write(file_name, bytes) {
-            return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
-        }
-
-        self.is_dirty = false;
-        Ok(())
+    fn get_bytes(&mut self, _path: &Path) -> TerminalResult<Vec<u8>> {
+        todo!("get_bytes")
     }
 
     fn show_ui(
