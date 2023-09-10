@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::{
-    egui::{self, Response, RichText, Sense, TextEdit, TextStyle, WidgetText},
+    egui::{self, Response, Sense, TextEdit, TextStyle, WidgetText},
     epaint::{
         ahash::HashMap, Color32, ColorImage, FontFamily, FontId, Pos2, Rect, Rounding, Stroke, Vec2,
     },
@@ -114,6 +114,7 @@ impl SelectFontDialog {
             );
         }
 
+        #[allow(clippy::map_entry)]
         if !self.image_cache.contains_key(&cur_font) {
             let buffer = Buffer::new((100, 12));
             let mut state = EditState::from_buffer(buffer);
@@ -152,9 +153,15 @@ impl SelectFontDialog {
             );
 
             let font_type = match font.font_type {
-                icy_engine::FontType::Outline => "OUTLINE",
-                icy_engine::FontType::Block => "BLOCK",
-                icy_engine::FontType::Color => "COLOR",
+                icy_engine::FontType::Outline => {
+                    fl!(crate::LANGUAGE_LOADER, "select-font-dialog-outline-font")
+                }
+                icy_engine::FontType::Block => {
+                    fl!(crate::LANGUAGE_LOADER, "select-font-dialog-block-font")
+                }
+                icy_engine::FontType::Color => {
+                    fl!(crate::LANGUAGE_LOADER, "select-font-dialog-color-font")
+                }
             };
 
             let font_id = FontId::new(12.0, FontFamily::Proportional);
@@ -220,17 +227,26 @@ impl crate::ModalDialog for SelectFontDialog {
                         self.filter.clear();
                     }
 
-                    let response = ui.selectable_label(self.show_color, "COLOR");
+                    let response = ui.selectable_label(
+                        self.show_color,
+                        fl!(crate::LANGUAGE_LOADER, "select-font-dialog-color-font"),
+                    );
                     if response.clicked() {
                         self.show_color = !self.show_color;
                     }
 
-                    let response = ui.selectable_label(self.show_block, "BLOCK");
+                    let response = ui.selectable_label(
+                        self.show_block,
+                        fl!(crate::LANGUAGE_LOADER, "select-font-dialog-block-font"),
+                    );
                     if response.clicked() {
                         self.show_block = !self.show_block;
                     }
 
-                    let response = ui.selectable_label(self.show_outline, "OUTLINE");
+                    let response = ui.selectable_label(
+                        self.show_outline,
+                        fl!(crate::LANGUAGE_LOADER, "select-font-dialog-outline-font"),
+                    );
                     if response.clicked() {
                         self.show_outline = !self.show_outline;
                     }

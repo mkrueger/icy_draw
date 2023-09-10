@@ -70,7 +70,7 @@ impl ModalDialog for EditLayerDialog {
                             if let Some(color) = &mut self.color {
                                 ui.label("");
                                 ui.horizontal(|ui| {
-                                    let mut c = (*color).into();
+                                    let mut c: [u8; 3] = (*color).into();
                                     color_picker::color_edit_button_srgb(ui, &mut c);
                                     *color = c.into();
 

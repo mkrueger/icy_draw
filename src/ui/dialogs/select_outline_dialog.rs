@@ -6,7 +6,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, TheDrawFont};
 
-use crate::{AnsiEditor, Message, ModalDialog, TerminalResult, SETTINGS};
+use crate::{AnsiEditor, Message, ModalDialog, Settings, TerminalResult};
 
 pub struct SelectOutlineDialog {
     should_commit: bool,
@@ -18,7 +18,7 @@ impl Default for SelectOutlineDialog {
     fn default() -> Self {
         Self {
             should_commit: false,
-            selected_outline: unsafe { SETTINGS.font_outline_style },
+            selected_outline: Settings::get_font_outline_style(),
             font: BitFont::default(),
         }
     }
@@ -151,9 +151,7 @@ impl ModalDialog for SelectOutlineDialog {
     }
 
     fn commit(&self, _editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
-        unsafe {
-            SETTINGS.font_outline_style = self.selected_outline;
-        }
+        Settings::set_font_outline_style(self.selected_outline);
         Ok(None)
     }
 }

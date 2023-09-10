@@ -448,13 +448,31 @@ impl eframe::App for MainWindow {
                         ui.add_space(8.0);
                         ui.horizontal(|ui| {
                             ui.add_space(8.0);
-                            if ui.selectable_label(palette == 0, "DOS").clicked() {
+                            if ui
+                                .selectable_label(
+                                    palette == 0,
+                                    fl!(crate::LANGUAGE_LOADER, "color-dos"),
+                                )
+                                .clicked()
+                            {
                                 palette = 0;
                             }
-                            if ui.selectable_label(palette == 1, "Extended").clicked() {
+                            if ui
+                                .selectable_label(
+                                    palette == 1,
+                                    fl!(crate::LANGUAGE_LOADER, "color-ext"),
+                                )
+                                .clicked()
+                            {
                                 palette = 1;
                             }
-                            if ui.selectable_label(palette == 2, "Custom").clicked() {
+                            if ui
+                                .selectable_label(
+                                    palette == 2,
+                                    fl!(crate::LANGUAGE_LOADER, "color-custom"),
+                                )
+                                .clicked()
+                            {
                                 palette = 2;
                             }
                         });
@@ -467,7 +485,7 @@ impl eframe::App for MainWindow {
                                 crate::show_extended_palette(ui, editor);
                             }
                             _ => {
-                                ui.label("TODO");
+                                crate::show_custom_palette(ui, editor);
                             }
                         }
                         ui.separator();

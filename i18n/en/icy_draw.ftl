@@ -20,6 +20,8 @@ menu-redo-op=Redo: { $op }
 menu-cut=Cut
 menu-copy=Copy
 menu-paste=Paste
+menu-delete=Delete
+menu-rename=Rename
 menu-paste-as=Paste as
 menu-paste-as-new-image=New image
 menu-paste-as-brush=Brush
@@ -51,6 +53,10 @@ menu-scroll_area_right=Scroll Area Right
 menu-selection=Selection
 menu-select-all=Select All
 menu-deselect=Deselect
+
+menu-colors=Colors
+
+menu-view=View
 menu-reference-image=Open Reference Image…
 menu-toggle-reference-image=Toggle Reference Image
 menu-clear-reference-image=Clear
@@ -111,6 +117,10 @@ anchor_layer_tooltip = Anchor layer
 glyph-char-label=Char
 glyph-font-label=Font
 
+color-dos=DOS
+color-ext=EXT
+color-custom=USR
+
 export-title=Export
 export-button-title=Export
 export-file-label=File name:
@@ -159,6 +169,9 @@ select-font-dialog-select=Select
 select-font-dialog-filter-text=Filter fonts
 select-font-dialog-no-fonts=No fonts matches the filter
 select-font-dialog-no-fonts-installed=No fonts installed
+select-font-dialog-color-font=COLOR
+select-font-dialog-block-font=BLOCK
+select-font-dialog-outline-font=OUTLINE
 
 layer_tool_title=Layer
 layer_tool_menu_layer_properties=Layer properties
@@ -170,7 +183,7 @@ layer_tool_menu_delete_layer=Delete layer
 
 char_table_tool_title=Char table
 bitfont_tool_title=Fonts
-minimap_tool_title=Minimap
+minimap_tool_title=Preview
 
 no_document_selected=No document selected
 

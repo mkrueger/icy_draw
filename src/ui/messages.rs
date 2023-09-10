@@ -12,7 +12,7 @@ use icy_engine::{
 
 use crate::{
     AnsiEditor, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
-    SelectOutlineDialog,
+    SelectOutlineDialog, Settings,
 };
 
 #[derive(Clone)]
@@ -698,10 +698,7 @@ impl MainWindow {
             }
 
             Message::SelectOutline(outline) => {
-                self.run_editor_command(outline, |_, editor, outline| {
-                    editor.cur_outline = outline;
-                    None
-                });
+                Settings::set_character_set(outline);
             }
         }
     }

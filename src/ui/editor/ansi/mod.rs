@@ -25,8 +25,8 @@ use icy_engine_egui::{
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
-    ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, TerminalResult,
-    FIRST_TOOL,
+    ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, Settings,
+    TerminalResult, FIRST_TOOL,
 };
 
 pub enum Event {
@@ -40,7 +40,6 @@ pub struct AnsiEditor {
     pub drag_pos: DragPos,
     drag_started: bool,
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
-    pub cur_outline: usize,
     pub is_inactive: bool,
 
     pub reference_image: Option<PathBuf>,
@@ -231,7 +230,6 @@ impl AnsiEditor {
         AnsiEditor {
             id,
             buffer_view,
-            cur_outline: 0,
             is_inactive: false,
             reference_image: None,
             drag_started: false,
@@ -352,15 +350,6 @@ impl AnsiEditor {
         Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())
     }
 
-    pub fn get_cur_outline(&self) -> usize {
-        self.cur_outline
-    }
-
-    pub fn set_cur_outline(&mut self, outline: usize) {
-        self.cur_outline = outline;
-        //(self.outline_changed)(self);
-    }
-
     pub fn save_content(&self, file_name: &Path, options: &SaveOptions) -> EngineResult<bool> {
         match File::create(file_name) {
             Ok(mut f) => {
@@ -389,14 +378,15 @@ impl AnsiEditor {
     }
 
     pub fn get_outline_char_code(&self, i: usize) -> Result<u16, &str> {
-        if self.cur_outline >= DEFAULT_OUTLINE_TABLE.len() {
+        let outline = Settings::get_character_set();
+        if outline >= DEFAULT_OUTLINE_TABLE.len() {
             return Err("current outline out of range.");
         }
         if !(0..=10).contains(&i) {
             return Err("outline char# out of range.");
         }
 
-        Ok(DEFAULT_OUTLINE_TABLE[self.cur_outline][i] as u16)
+        Ok(DEFAULT_OUTLINE_TABLE[outline][i] as u16)
     }
 
     pub fn get_outline_char_code_from(outline: usize, i: usize) -> Result<u16, &'static str> {
@@ -530,23 +520,18 @@ impl AnsiEditor {
         ui.horizontal(|ui| {
             let pos = self.buffer_view.lock().get_caret().get_position();
 
-            let label_font_size = 20.0;
-
             ui.vertical(|ui| {
                 ui.add_space(4.);
-                ui.label(
-                    RichText::new(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "toolbar-position",
-                        line = pos.y,
-                        column = pos.x
-                    ))
-                    .font(FontId::proportional(label_font_size)),
-                );
+                ui.label(RichText::new(fl!(
+                    crate::LANGUAGE_LOADER,
+                    "toolbar-position",
+                    line = pos.y,
+                    column = pos.x
+                )));
             });
 
             let r = ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let cur_outline = self.cur_outline;
+                let cur_outline = Settings::get_character_set();
                 let cur_font_page = self.buffer_view.lock().get_caret().get_font_page();
 
                 let button_font_size = 16.0;
@@ -557,11 +542,10 @@ impl AnsiEditor {
                     )
                     .clicked()
                 {
-                    self.cur_outline = (cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len();
+                    Settings::set_character_set((cur_outline + 1) % DEFAULT_OUTLINE_TABLE.len());
                 }
                 ui.label(
-                    RichText::new((cur_outline + 1).to_string())
-                        .font(FontId::proportional(label_font_size)),
+                    RichText::new((cur_outline + 1).to_string()), //   .font(FontId::proportional(label_font_size)),
                 );
 
                 if ui
@@ -571,8 +555,10 @@ impl AnsiEditor {
                     )
                     .clicked()
                 {
-                    self.cur_outline = (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
-                        % DEFAULT_OUTLINE_TABLE.len();
+                    Settings::set_character_set(
+                        (cur_outline + DEFAULT_OUTLINE_TABLE.len() - 1)
+                            % DEFAULT_OUTLINE_TABLE.len(),
+                    );
                 }
 
                 for i in (0..10).rev() {
@@ -584,8 +570,7 @@ impl AnsiEditor {
                     ));
 
                     ui.label(
-                        RichText::new(format!("F{}", i + 1))
-                            .font(FontId::proportional(label_font_size)),
+                        RichText::new(format!("F{}", i + 1)), //     .font(FontId::proportional(label_font_size)),
                     );
                 }
             });

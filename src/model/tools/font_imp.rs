@@ -6,7 +6,7 @@ use std::{
     thread,
 };
 
-use crate::{AnsiEditor, Message, SETTINGS};
+use crate::{AnsiEditor, Message, Settings};
 
 use super::{Event, MKey, MModifiers, Position, Tool};
 use directories::ProjectDirs;
@@ -444,7 +444,7 @@ impl Tool for FontTool {
                     .buffer_view
                     .lock()
                     .get_edit_state_mut()
-                    .set_outline_style(unsafe { SETTINGS.font_outline_style });
+                    .set_outline_style(Settings::get_font_outline_style());
 
                 let _ = editor
                     .buffer_view

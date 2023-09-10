@@ -255,7 +255,7 @@ impl MainWindow {
                     .ui_enabled(ui, has_buffer, &mut result);
                 self.commands.crop.ui_enabled(ui, has_buffer, &mut result);
             });
-            ui.menu_button("Colors", |ui| {
+            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-colors"), |ui| {
                 self.commands
                     .pick_attribute_under_caret
                     .ui_enabled(ui, has_buffer, &mut result);
@@ -266,7 +266,7 @@ impl MainWindow {
                     .switch_to_default_color
                     .ui_enabled(ui, has_buffer, &mut result);
             });
-            ui.menu_button("View", |ui| {
+            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-view"), |ui| {
                 if ui.button("100%").clicked() {
                     self.document_behavior.document_options.scale = Vec2::new(1.0, 1.0);
                     ui.close_menu();
