@@ -329,4 +329,5 @@ keys![
         "menu-open_palettes_directoy",
         OpenPalettesDirectory
     ),
+    (mirror_mode, "menu-mirror_mode", ToggleMirrorMode),
 ];

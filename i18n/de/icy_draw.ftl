@@ -49,6 +49,8 @@ menu-scroll_area_up=Hoch scrollen
 menu-scroll_area_down=Runter scrollen
 menu-scroll_area_left=Links scrollen
 menu-scroll_area_right=Rechts scrollen
+menu-mirror_mode=Spiegelmodus
+menu-area_operations=Bereichsoperationen
 
 menu-selection=Auswahl
 menu-select-all=Alles auswählen

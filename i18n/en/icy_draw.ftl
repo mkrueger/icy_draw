@@ -49,6 +49,8 @@ menu-scroll_area_up=Scroll Area Up
 menu-scroll_area_down=Scroll Area Down
 menu-scroll_area_left=Scroll Area Left
 menu-scroll_area_right=Scroll Area Right
+menu-mirror_mode=Mirror mode
+menu-area_operations=Area
 
 menu-selection=Selection
 menu-select-all=Select All

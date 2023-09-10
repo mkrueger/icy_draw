@@ -115,6 +115,7 @@ pub enum Message {
     OpenFontDirectory,
     OpenTdfDirectory,
     OpenPalettesDirectory,
+    ToggleMirrorMode,
     SetGuide(i32, i32),
     SetRaster(i32, i32),
 }
@@ -803,6 +804,22 @@ impl MainWindow {
                     } else {
                         editor.raster = Some(Vec2::new(x as f32, y as f32));
                     }
+                    None
+                });
+            }
+
+            Message::ToggleMirrorMode => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let mode = editor
+                        .buffer_view
+                        .lock()
+                        .get_edit_state_mut()
+                        .get_mirror_mode();
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_edit_state_mut()
+                        .set_mirror_mode(!mode);
                     None
                 });
             }
