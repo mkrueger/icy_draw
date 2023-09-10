@@ -1,11 +1,49 @@
-# MysticDraw
+# IcyDraw
 
-Back in the 90' I made my own ANSI drawing tool which I used in my BBS for drawing stuff. It supported TheDrawFonts and was a bit more "cool" than TD at that time.
-I updated it from time to time - but nobody seemed to use it. Never got a single feedback on that.
+IcyDraw is the successor of MysticDraw an Ansi drawing tool I developed 1996 and last updated 2003. Due to lack on feedback I lost interest there.
+Now 20 years later I've decided to give it an update and here it is.
 
-Doesn't matter - I know why: Because it was not written in rust :). First I used Turbo Pascal, moved to C 1996? (I think), reworked it in C++ (and introduced a lot of bugs, but with the lack of users it didn't matter).
-Now I've translated it to rust. Loading/Saving/Modelling is way better than before and unit tested.
 
-The state of the UI basicall non usuable. Mostly I blame the GTK4 bindings for rust. I know GTK 2.x quite well but for rust the bindings are nearly unusuable in my opnion. So development is a bit slower than I expected.
+IcyDraw is a full features ansi drawing tool doing things a bit different than other tools.
 
-Note: You can use it as an ansi viewer.
+# Features
+
+ * File formats: Ansi, Ascii, Artworx ADF, Avatar, BIN, XBIN, PCBoard, iCE, Tundra Draw 
+ * Layer model & transparent chars
+   * The model is more like modern graphic tools rather than AcidDraw 
+ * Can open multiple files
+ * Like Mystic draw full TDF font support, including creating/altering fonts
+ * Built in font editor for bit fonts
+   * Supports the usage of multiple bit fonts in the same file.
+ * Suports full RGB colors
+ * Sixel support - just paste an image 
+ * Shares the engine with IcyTerm and IcyView so it's 100% compatible
+ * Probably I forgot most features :)
+
+# File structure
+
+IcyDraw stores data only in one directory (~/.config/icy_draw on linux) - it doesn't scatter data around.
+
+There are several folders:
+
+| path           |  Description
+|----------------|:----------------:|
+| data/fonts/    | Stores bit fonts
+| data/tdf/      | Stores tdf fonts
+| data/palettes/ | Stores palettes
+| autosave/      | Autosave data
+| settings.toml  | IcyDraw settings
+
+Note that fonts/palettes etc. do not need to be unzipped. Just throw a .zip file in there containing fonts and IcyDraw will pick them up.
+
+# What it can't yet do, but potentially will be implemented
+
+* Full Unicode support
+* Non rectangular selections (select by color/char etc., select ellipse)
+* Server capabilities
+
+# Help
+
+Contributions are welcome. But also testing & bug reporting or feature requests.
+
+If you can't/want to contriubte code you can donate via paypal to mkrueger@posteo.de

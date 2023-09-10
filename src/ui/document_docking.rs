@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     model::Tool,
-    util::autosave::{remove_autosave, store_auto_save},
+    util::autosave::store_auto_save,
     Document, DocumentOptions, Message,
 };
 use eframe::egui::{self, Response};
