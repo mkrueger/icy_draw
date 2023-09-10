@@ -38,10 +38,14 @@ Note that fonts/palettes etc. do not need to be unzipped. Just throw a .zip file
 
 # What it can't yet do, but potentially will be implemented
 
+Likeley to be implemented by me:
 * Full Unicode support
 * Non rectangular selections (select by color/char etc., select ellipse)
-* Server capabilities
 
+Unlikely to be done soon:
+* Server capabilities
+* PETSCII, ATSCII and Viewdata - the engine can do it (see icy_term) 
+  
 # Help
 
 Contributions are welcome. But also testing & bug reporting or feature requests.

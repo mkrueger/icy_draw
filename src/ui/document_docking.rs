@@ -3,11 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{
-    model::Tool,
-    util::autosave::store_auto_save,
-    Document, DocumentOptions, Message,
-};
+use crate::{model::Tool, util::autosave::store_auto_save, Document, DocumentOptions, Message};
 use eframe::egui::{self, Response};
 use egui_tiles::{TileId, Tiles};
 
