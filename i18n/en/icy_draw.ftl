@@ -198,7 +198,6 @@ layer_tool_menu_merge_layer=Merge layer
 layer_tool_menu_delete_layer=Delete layer
 
 char_table_tool_title=Char table
-bitfont_tool_title=Fonts
 minimap_tool_title=Preview
 
 no_document_selected=No document selected

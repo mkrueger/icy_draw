@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    add_child, model::Tool, AnsiEditor, BitFontEditor, BitFontSelector, CharFontEditor,
+    add_child, model::Tool, AnsiEditor, BitFontEditor, CharFontEditor,
     CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentOptions, DocumentTab,
     LayerToolWindow, Message, MinimapToolWindow, ModalDialog, ToolBehavior, ToolTab, TopBar,
 };
@@ -175,13 +175,10 @@ impl MainWindow {
         let char_table = tool_tree
             .tiles
             .insert_pane(ToolTab::new(CharTableToolWindow::default()));
-        let bitfont_selector = tool_tree
-            .tiles
-            .insert_pane(ToolTab::new(BitFontSelector::default()));
-
+    
         let tab = tool_tree
             .tiles
-            .insert_tab_tile(vec![minimap, char_table, bitfont_selector]);
+            .insert_tab_tile(vec![minimap, char_table]);
         let v = tool_tree.tiles.insert_vertical_tile(vec![tab, layers]);
 
         tool_tree.root = Some(v);
