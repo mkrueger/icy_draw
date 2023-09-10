@@ -47,6 +47,30 @@ pub trait Document: UndoState + ClipboardHandler {
 }
 
 pub struct DocumentOptions {
-    pub scale: Vec2,
+    scale: Vec2,
     pub commands: Commands,
+    pub fit_width: bool,
+}
+
+impl DocumentOptions {
+    pub fn new() -> Self {
+        Self {
+            scale: Vec2::new(1., 1.),
+            commands: Commands::default(),
+            fit_width: false,
+        }
+    }
+    pub fn get_scale(&self) -> Vec2 {
+        self.scale
+    }
+
+    pub fn set_scale(&mut self, scale: Vec2) {
+        self.scale = scale.clamp(Vec2::new(0.5, 0.5), Vec2::new(5., 5.));
+    }
+}
+
+impl Default for DocumentOptions {
+    fn default() -> Self {
+        Self::new()
+    }
 }

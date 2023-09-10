@@ -5,7 +5,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use eframe::egui;
+use eframe::{egui, epaint::Vec2};
 use icy_engine::{
     util::pop_data, BitFont, EngineResult, Layer, Size, TextAttribute, TextPane, TheDrawFont,
 };
@@ -101,6 +101,12 @@ pub enum Message {
     StampLayerDown,
     RotateLayer,
     MakeLayerTransparent,
+
+    ToggleFullScreen,
+
+    ZoomReset,
+    ZoomIn,
+    ZoomOut,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -702,6 +708,28 @@ impl MainWindow {
 
             Message::SelectOutline(outline) => {
                 Settings::set_character_set(outline);
+            }
+
+            Message::ToggleFullScreen => {
+                self.is_fullscreen = !self.is_fullscreen;
+            }
+
+            Message::ZoomReset => {
+                self.document_behavior
+                    .document_options
+                    .set_scale(Vec2::new(1.0, 1.0));
+            }
+
+            Message::ZoomIn => {
+                self.document_behavior
+                    .document_options
+                    .set_scale(self.document_behavior.document_options.get_scale() * 1.2);
+            }
+
+            Message::ZoomOut => {
+                self.document_behavior
+                    .document_options
+                    .set_scale(self.document_behavior.document_options.get_scale() * 0.8);
             }
         }
     }

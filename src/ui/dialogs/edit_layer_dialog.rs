@@ -145,6 +145,7 @@ impl ModalDialog for EditLayerDialog {
                         ui.label("Mode:");
 
                         egui::ComboBox::from_id_source("combobox1")
+                            .width(150.)
                             .selected_text(RichText::new(match self.mode {
                                 Mode::Normal => "Normal",
                                 Mode::Chars => "Chars only",

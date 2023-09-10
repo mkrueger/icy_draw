@@ -40,6 +40,7 @@ pub struct MainWindow {
     pub bottom_panel: bool,
 
     pub commands: Commands,
+    pub is_fullscreen: bool,
 }
 
 pub const PASTE_TOOL: usize = 0;
@@ -189,10 +190,7 @@ impl MainWindow {
             document_behavior: DocumentBehavior {
                 tools: Arc::new(Mutex::new(tools)),
                 selected_tool: FIRST_TOOL,
-                document_options: DocumentOptions {
-                    scale: eframe::egui::Vec2::new(1.0, 1.0),
-                    commands: Commands::default(),
-                },
+                document_options: DocumentOptions::new(),
                 request_close: None,
                 message: None,
             },
@@ -211,6 +209,7 @@ impl MainWindow {
             top_bar: TopBar::new(&cc.egui_ctx),
             commands: Commands::default(),
             is_closed: false,
+            is_fullscreen: false,
         }
     }
 
@@ -626,7 +625,15 @@ impl eframe::App for MainWindow {
                     self.open_file(path);
                 }
             }
+            for evt in &i.events.clone() {
+                if let eframe::egui::Event::Zoom(vec) = evt {
+                    let scale = self.document_behavior.document_options.get_scale() * *vec;
+                    self.document_behavior.document_options.set_scale(scale);
+                }
+            }
         });
+
+        frame.set_fullscreen(self.is_fullscreen);
 
         ctx.request_repaint_after(Duration::from_millis(150));
     }

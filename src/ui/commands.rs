@@ -303,4 +303,14 @@ keys![
         CTRL
     ),
     (toggle_color, "menu-toggle_color", ToggleColor, X, ALT),
+    (
+        fullscreen,
+        "menu-toggle_fullscreen",
+        ToggleFullScreen,
+        F11,
+        NONE
+    ),
+    (zoom_reset, "menu-zoom_reset", ZoomReset, Num0, CTRL),
+    (zoom_in, "menu-zoom_in", ZoomIn, PlusEquals, CTRL),
+    (zoom_out, "menu-zoom_out", ZoomOut, Minus, CTRL),
 ];

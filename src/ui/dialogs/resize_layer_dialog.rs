@@ -30,6 +30,8 @@ impl ModalDialog for ResizeLayerDialog {
         let modal = Modal::new(ctx, "set_canvas_size_dialog");
 
         modal.show(|ui| {
+            ui.set_width(250.);
+
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "edit-canvas-size-title"));
 
             modal.frame(ui, |ui| {

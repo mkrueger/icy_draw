@@ -137,6 +137,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
 
                     if !paste_mode {
                         response = response.context_menu(|ui| {
+                            ui.set_width(250.);
                             if ui
                                 .button(fl!(
                                     crate::LANGUAGE_LOADER,

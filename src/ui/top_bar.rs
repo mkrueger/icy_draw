@@ -267,18 +267,73 @@ impl MainWindow {
                     .ui_enabled(ui, has_buffer, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-view"), |ui| {
-                if ui.button("100%").clicked() {
-                    self.document_behavior.document_options.scale = Vec2::new(1.0, 1.0);
-                    ui.close_menu();
-                }
-                if ui.button("200%").clicked() {
-                    self.document_behavior.document_options.scale = Vec2::new(2.0, 2.0);
-                    ui.close_menu();
-                }
-                if ui.button("300%").clicked() {
-                    self.document_behavior.document_options.scale = Vec2::new(3.0, 3.0);
-                    ui.close_menu();
-                }
+                ui.set_width(250.);
+                ui.menu_button(
+                    fl!(
+                        crate::LANGUAGE_LOADER,
+                        "menu-zoom",
+                        zoom = format!(
+                            "{}%",
+                            100. * self.document_behavior.document_options.get_scale().x
+                        )
+                    ),
+                    |ui| {
+                        self.commands.zoom_reset.ui(ui, &mut result);
+                        self.commands.zoom_in.ui(ui, &mut result);
+
+                        self.commands.zoom_out.ui(ui, &mut result);
+                        ui.separator();
+
+                        if ui.button("4:1 400%").clicked() {
+                            self.document_behavior
+                                .document_options
+                                .set_scale(Vec2::new(4.0, 4.0));
+                            ui.close_menu();
+                        }
+                        if ui.button("2:1 200%").clicked() {
+                            self.document_behavior
+                                .document_options
+                                .set_scale(Vec2::new(2.0, 2.0));
+                            ui.close_menu();
+                        }
+                        if ui.button("1:1 100%").clicked() {
+                            self.document_behavior
+                                .document_options
+                                .set_scale(Vec2::new(1.0, 1.0));
+                            ui.close_menu();
+                        }
+                        if ui.button("1:2 50%").clicked() {
+                            self.document_behavior
+                                .document_options
+                                .set_scale(Vec2::new(0.5, 0.5));
+                            ui.close_menu();
+                        }
+                        if ui.button("1:4 25%").clicked() {
+                            self.document_behavior
+                                .document_options
+                                .set_scale(Vec2::new(0.25, 0.25));
+                            ui.close_menu();
+                        }
+
+                        ui.separator();
+
+                        if ui
+                            .checkbox(
+                                &mut self.document_behavior.document_options.fit_width,
+                                "Fit Size",
+                            )
+                            .clicked()
+                        {
+                            self.document_behavior
+                                .document_options
+                                .set_scale(Vec2::new(3.0, 3.0));
+                            ui.close_menu();
+                        }
+                    },
+                );
+
+                self.commands.fullscreen.ui(ui, &mut result);
+
                 ui.separator();
                 self.commands
                     .set_reference_image

@@ -172,7 +172,7 @@ impl Document for AnsiEditor {
     ) -> Option<Message> {
         let mut message = None;
 
-        let mut scale = options.scale;
+        let mut scale = options.get_scale();
         if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
             scale.y *= 1.35;
         }
@@ -187,6 +187,7 @@ impl Document for AnsiEditor {
                     focus_lock: false,
                     stick_to_bottom: false,
                     scale: Some(scale),
+                    fit_width: options.fit_width,
                     settings: MonitorSettings {
                         background_effect: BackgroundEffect::Checkers,
                         ..Default::default()
