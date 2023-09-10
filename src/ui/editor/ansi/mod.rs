@@ -46,8 +46,10 @@ pub struct AnsiEditor {
     // pub outline_changed: std::boxed::Box<dyn Fn(&Editor)>,
     //pub request_refresh: Box<dyn Fn ()>,
     pub egui_id: Id,
-    //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
-    //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
+
+    pub guide: Option<Vec2>,
+    pub raster: Option<Vec2>, //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
+                              //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
 }
 
 impl UndoState for AnsiEditor {
@@ -193,6 +195,8 @@ impl Document for AnsiEditor {
                         ..Default::default()
                     },
                     id: Some(Id::new(self.id + 10000)),
+                    raster: self.raster,
+                    guide: self.guide,
                     ..Default::default()
                 };
                 let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
@@ -237,6 +241,8 @@ impl AnsiEditor {
             dirty_pos: 0,
             drag_pos: DragPos::default(),
             egui_id: Id::new(id),
+            guide: None,
+            raster: None,
         }
     }
 

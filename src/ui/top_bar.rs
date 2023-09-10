@@ -338,6 +338,63 @@ impl MainWindow {
                     },
                 );
 
+                ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-guides"), |ui| {
+                    if ui.button("Smallscale 80x25").clicked() {
+                        result = Some(Message::SetGuide(80, 25));
+                        ui.close_menu();
+                    }
+                    if ui.button("Square 80x40").clicked() {
+                        result = Some(Message::SetGuide(80, 40));
+                        ui.close_menu();
+                    }
+                    if ui.button("Instagram 80x50").clicked() {
+                        result = Some(Message::SetGuide(80, 50));
+                        ui.close_menu();
+                    }
+                    if ui.button("File_ID.DIZ 44x22").clicked() {
+                        result = Some(Message::SetGuide(44, 22));
+                        ui.close_menu();
+                    }
+                    ui.separator();
+                    if ui.button("Off").clicked() {
+                        result = Some(Message::SetGuide(0, 0));
+                        ui.close_menu();
+                    }
+                });
+
+                ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-raster"), |ui| {
+                    if ui.button("1x1").clicked() {
+                        result = Some(Message::SetRaster(1, 1));
+                        ui.close_menu();
+                    }
+                    if ui.button("4x2").clicked() {
+                        result = Some(Message::SetRaster(4, 2));
+                        ui.close_menu();
+                    }
+                    if ui.button("6x3").clicked() {
+                        result = Some(Message::SetRaster(6, 3));
+                        ui.close_menu();
+                    }
+                    if ui.button("8x4").clicked() {
+                        result = Some(Message::SetRaster(8, 4));
+                        ui.close_menu();
+                    }
+                    if ui.button("12x6").clicked() {
+                        result = Some(Message::SetRaster(12, 6));
+                        ui.close_menu();
+                    }
+                    if ui.button("16x8").clicked() {
+                        result = Some(Message::SetRaster(16, 8));
+                        ui.close_menu();
+                    }
+
+                    ui.separator();
+                    if ui.button("Off").clicked() {
+                        result = Some(Message::SetRaster(0, 0));
+                        ui.close_menu();
+                    }
+                });
+
                 self.commands.fullscreen.ui(ui, &mut result);
 
                 ui.separator();

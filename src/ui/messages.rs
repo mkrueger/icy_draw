@@ -5,7 +5,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use eframe::egui;
+use eframe::{
+    egui::{self},
+    epaint::Vec2,
+};
 use icy_engine::{
     util::pop_data, BitFont, EngineResult, Layer, Size, TextAttribute, TextPane, TheDrawFont,
 };
@@ -112,6 +115,8 @@ pub enum Message {
     OpenFontDirectory,
     OpenTdfDirectory,
     OpenPalettesDirectory,
+    SetGuide(i32, i32),
+    SetRaster(i32, i32),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -778,6 +783,26 @@ impl MainWindow {
             Message::OpenFontManager => {
                 self.run_editor_command(0, |window, editor, _| {
                     window.open_dialog(crate::FontManager::new(editor));
+                    None
+                });
+            }
+            Message::SetGuide(x, y) => {
+                self.run_editor_command((x, y), |_, editor, (x, y)| {
+                    if x <= 0 && y <= 0 {
+                        editor.guide = None;
+                    } else {
+                        editor.guide = Some(Vec2::new(x as f32, y as f32));
+                    }
+                    None
+                });
+            }
+            Message::SetRaster(x, y) => {
+                self.run_editor_command((x, y), |_, editor, (x, y)| {
+                    if x <= 0 && y <= 0 {
+                        editor.raster = None;
+                    } else {
+                        editor.raster = Some(Vec2::new(x as f32, y as f32));
+                    }
                     None
                 });
             }

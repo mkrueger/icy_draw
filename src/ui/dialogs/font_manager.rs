@@ -10,7 +10,7 @@ use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, TextAttribute, ANSI_FONTS};
 use walkdir::WalkDir;
 
-use crate::{create_retained_image, AnsiEditor, MainWindow, Message, Settings, TerminalResult};
+use crate::{create_retained_image, AnsiEditor, Message, Settings, TerminalResult};
 
 enum BitfontSource {
     BuiltIn(usize),

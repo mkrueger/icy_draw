@@ -65,6 +65,9 @@ menu-zoom=Zoom ({$zoom})
 menu-zoom_reset=Revert Zoom
 menu-zoom_in=Zoom In
 menu-zoom_out=Zoom Out
+menu-guides=Guides
+menu-raster=Raster
+
 menu-pick_attribute_under_caret=Use Attribute Under Caret
 menu-default_color=Default Color
 menu-toggle_color=Switch Foreground/Background

@@ -65,6 +65,9 @@ menu-zoom=Vergrößerung ({$zoom})
 menu-zoom_reset=Vergrößerung zurücksetzen
 menu-zoom_in=Vergrößern
 menu-zoom_out=Verkleinern
+menu-guides=Hilfslinien
+menu-raster=Raster
+
 menu-pick_attribute_under_caret=Attribut unter Cursor aufhebn
 menu-default_color=Standardfarbe
 menu-toggle_color=Farbe umschalten
