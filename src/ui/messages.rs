@@ -5,14 +5,14 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use eframe::{egui, epaint::Vec2};
+use eframe::egui;
 use icy_engine::{
     util::pop_data, BitFont, EngineResult, Layer, Size, TextAttribute, TextPane, TheDrawFont,
 };
 
 use crate::{
-    AnsiEditor, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog, SelectCharacterDialog,
-    SelectOutlineDialog, Settings,
+    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog,
+    SelectCharacterDialog, SelectOutlineDialog, Settings,
 };
 
 #[derive(Clone)]
@@ -107,6 +107,11 @@ pub enum Message {
     ZoomReset,
     ZoomIn,
     ZoomOut,
+
+    OpenFontManager,
+    OpenFontDirectory,
+    OpenTdfDirectory,
+    OpenPalettesDirectory,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -717,7 +722,7 @@ impl MainWindow {
             Message::ZoomReset => {
                 self.document_behavior
                     .document_options
-                    .set_scale(Vec2::new(1.0, 1.0));
+                    .set_scale(DocumentOptions::default().get_scale());
             }
 
             Message::ZoomIn => {
@@ -730,6 +735,51 @@ impl MainWindow {
                 self.document_behavior
                     .document_options
                     .set_scale(self.document_behavior.document_options.get_scale() * 0.8);
+            }
+
+            Message::OpenFontDirectory => match Settings::get_font_diretory() {
+                Ok(dir) => {
+                    if let Err(err) = open::that(dir) {
+                        self.handle_message(Some(Message::ShowError(format!(
+                            "Can't open font directory: {err}"
+                        ))));
+                    }
+                }
+                Err(err) => {
+                    self.handle_message(Some(Message::ShowError(format!("{err}"))));
+                }
+            },
+
+            Message::OpenTdfDirectory => match Settings::get_tdf_diretory() {
+                Ok(dir) => {
+                    if let Err(err) = open::that(dir) {
+                        self.handle_message(Some(Message::ShowError(format!(
+                            "Can't open font directory: {err}"
+                        ))));
+                    }
+                }
+                Err(err) => {
+                    self.handle_message(Some(Message::ShowError(format!("{err}"))));
+                }
+            },
+
+            Message::OpenPalettesDirectory => match Settings::get_palettes_diretory() {
+                Ok(dir) => {
+                    if let Err(err) = open::that(dir) {
+                        self.handle_message(Some(Message::ShowError(format!(
+                            "Can't open font directory: {err}"
+                        ))));
+                    }
+                }
+                Err(err) => {
+                    self.handle_message(Some(Message::ShowError(format!("{err}"))));
+                }
+            },
+            Message::OpenFontManager => {
+                self.run_editor_command(0, |window, editor, _| {
+                    window.open_dialog(crate::FontManager::new(editor));
+                    None
+                });
             }
         }
     }

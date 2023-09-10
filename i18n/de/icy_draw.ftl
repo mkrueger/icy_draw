@@ -69,6 +69,12 @@ menu-pick_attribute_under_caret=Attribut unter Cursor aufhebn
 menu-default_color=Standardfarbe
 menu-toggle_color=Farbe umschalten
 
+menu-fonts=Fonts
+menu-open_font_manager=Schriften…
+menu-open_font_directoy=Fontverzeichnis öffnen…
+menu-open_tdf_directoy=TDF Verzeichnis öffnen…
+menu-open_palettes_directoy=Palettenverzeichnis öffnen…
+
 menu-help=Hilfe
 menu-discuss=Diskussion
 menu-report-bug=Fehler melden
@@ -172,7 +178,7 @@ error-load-file=Fehler während des Dateiladens: { $error }
 
 select-font-dialog-title=Font auswählen ({ $fontcount} verfügbar)
 select-font-dialog-select=Auswählen
-select-font-dialog-filter-text=Filter:
+select-font-dialog-filter-text=Filter
 select-font-dialog-no-fonts=Keine Fonts gefunden
 select-font-dialog-no-fonts-installed=Keine Fonts installiert
 select-font-dialog-color-font=FARBE

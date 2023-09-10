@@ -9,7 +9,6 @@ use std::{
 use crate::{AnsiEditor, Message, Settings};
 
 use super::{Event, MKey, MModifiers, Position, Tool};
-use directories::ProjectDirs;
 use eframe::{
     egui::{self, RichText},
     epaint::{FontFamily, FontId},
@@ -29,7 +28,7 @@ impl FontTool {
         self.fonts.get(self.selected_font as usize)
     }*/
 
-    fn is_hidden(entry: &DirEntry) -> bool {
+    pub(crate) fn is_hidden(entry: &DirEntry) -> bool {
         entry
             .file_name()
             .to_str()
@@ -37,8 +36,7 @@ impl FontTool {
     }
 
     pub fn install_watcher(&self) {
-        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
-            let tdf_dir = proj_dirs.config_dir().join("tdf");
+        if let Ok(tdf_dir) = Settings::get_tdf_diretory() {
             let fonts = self.fonts.clone();
             thread::spawn(move || loop {
                 if watch(tdf_dir.as_path(), &fonts).is_err() {
@@ -49,16 +47,7 @@ impl FontTool {
     }
 
     pub fn load_fonts(&mut self) {
-        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
-            let tdf_dir = proj_dirs.config_dir().join("tdf");
-            if !tdf_dir.exists() {
-                fs::create_dir_all(&tdf_dir).unwrap_or_else(|_| {
-                    panic!(
-                        "Can't create tdf font directory {:?}",
-                        proj_dirs.config_dir()
-                    )
-                });
-            }
+        if let Ok(tdf_dir) = Settings::get_tdf_diretory() {
             self.fonts = Arc::new(Mutex::new(load_fonts(tdf_dir.as_path())));
         }
     }
@@ -273,14 +262,7 @@ impl Tool for FontTool {
         ui.add_space(32.0);
         ui.label("Install new fonts in the font directory.");
         if ui.button("Open font directory").clicked() {
-            if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
-                let tdf_dir = proj_dirs.config_dir().join("tdf");
-                if let Err(err) = open::that(tdf_dir) {
-                    return Some(Message::ShowError(format!(
-                        "Can't open font directory: {err}"
-                    )));
-                }
-            }
+            return Some(Message::OpenTdfDirectory);
         }
 
         if select {

@@ -313,4 +313,20 @@ keys![
     (zoom_reset, "menu-zoom_reset", ZoomReset, Num0, CTRL),
     (zoom_in, "menu-zoom_in", ZoomIn, PlusEquals, CTRL),
     (zoom_out, "menu-zoom_out", ZoomOut, Minus, CTRL),
+    (
+        open_tdf_directory,
+        "menu-open_tdf_directoy",
+        OpenTdfDirectory
+    ),
+    (open_font_manager, "menu-open_font_manager", OpenFontManager),
+    (
+        open_font_directory,
+        "menu-open_font_directoy",
+        OpenFontDirectory
+    ),
+    (
+        open_palettes_directory,
+        "menu-open_palettes_directoy",
+        OpenPalettesDirectory
+    ),
 ];

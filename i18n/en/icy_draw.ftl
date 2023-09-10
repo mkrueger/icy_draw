@@ -68,6 +68,11 @@ menu-zoom_out=Zoom Out
 menu-pick_attribute_under_caret=Use Attribute Under Caret
 menu-default_color=Default Color
 menu-toggle_color=Switch Foreground/Background
+menu-fonts=Fonts
+menu-open_font_manager=Fonts…
+menu-open_font_directoy=Open Font Directory…
+menu-open_tdf_directoy=Open TDF Directory…
+menu-open_palettes_directoy=Open Palettes Directory…
 
 menu-help=Help
 menu-discuss=Discuss
@@ -213,3 +218,8 @@ undo-bitfont-clear=Clear
 undo-bitfont-edit=Edit
 undo-render_character=Render character
 undo-delete_character=Delete character
+
+
+font_manager-builtin_font=BUILTIN
+font_manager-library_font=LIBRARY
+font_manager-file_font=FILE
