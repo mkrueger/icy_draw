@@ -1,6 +1,6 @@
 use std::{
     path::PathBuf,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex}, time::Instant,
 };
 
 use crate::{model::Tool, util::autosave::store_auto_save, Document, DocumentOptions, Message};
@@ -11,6 +11,9 @@ pub struct DocumentTab {
     pub full_path: Option<PathBuf>,
     pub doc: Arc<Mutex<Box<dyn Document>>>,
     pub auto_save_status: usize,
+
+    pub instant: Instant,
+    pub last_change: usize
 }
 
 pub struct DocumentBehavior {
@@ -45,13 +48,22 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                 self.selected_tool,
                 &self.document_options,
             );
+            
             let undo_stack_len = doc.undo_stack_len();
             if let Some(path) = &pane.full_path {
                 if doc.is_dirty() && undo_stack_len != pane.auto_save_status {
-                    pane.auto_save_status = undo_stack_len;
-                    if let Ok(bytes) = doc.get_bytes(path) {
-                        store_auto_save(path, &bytes);
+                    if pane.last_change != undo_stack_len {
+                        pane.instant = Instant::now();
+                    } 
+                    pane.last_change = undo_stack_len;
+                    
+                    if pane.instant.elapsed().as_secs() > 5 {
+                        pane.auto_save_status = undo_stack_len;
+                        if let Ok(bytes) = doc.get_bytes(path) {
+                            store_auto_save(path, &bytes);
+                        }
                     }
+                
                 }
             }
         }
@@ -97,6 +109,8 @@ pub fn add_child(
         full_path,
         doc: Arc::new(Mutex::new(doc)),
         auto_save_status: 0,
+        instant: Instant::now(),
+        last_change: 0
     };
     let new_child = tree.tiles.insert_pane(tile);
 
