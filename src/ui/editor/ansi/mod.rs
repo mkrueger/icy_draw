@@ -528,6 +528,7 @@ impl AnsiEditor {
         if response.has_focus() {
             let events = ui.input(|i| i.events.clone());
             for e in &events {
+                println!("{:?}", e);
                 match e {
                     egui::Event::Copy => {
                         let buffer_view = self.buffer_view.clone();

@@ -113,7 +113,7 @@ pub static mut SETTINGS: Settings = Settings {
         title: String::new(),
         colors: Vec::new(),
     },
-    character_set: 0,
+    character_set: 5,
 };
 
 #[derive(Default)]
