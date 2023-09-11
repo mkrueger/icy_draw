@@ -197,6 +197,7 @@ layer_tool_menu_new_layer=New layer
 layer_tool_menu_duplicate_layer=Duplicate layer
 layer_tool_menu_merge_layer=Merge layer
 layer_tool_menu_delete_layer=Delete layer
+layer_tool_menu_clear_layer=Clear layer
 
 char_table_tool_title=Char table
 minimap_tool_title=Preview

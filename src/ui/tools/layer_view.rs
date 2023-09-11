@@ -187,6 +187,15 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                                 result = Some(Message::RemoveLayer(i));
                                 ui.close_menu();
                             }
+                            ui.separator();
+
+                            if ui
+                                .button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_clear_layer"))
+                                .clicked()
+                            {
+                                result = Some(Message::ClearLayer(i));
+                                ui.close_menu();
+                            }
                         });
                     }
 

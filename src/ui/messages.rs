@@ -122,6 +122,7 @@ pub enum Message {
     SetRaster(i32, i32),
     LoadFile(PathBuf, bool),
     TryLoadFile(PathBuf),
+    ClearLayer(usize),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -361,6 +362,12 @@ impl MainWindow {
                     } else {
                         None
                     }
+                });
+            }
+            Message::ClearLayer(cur_layer) => {
+                self.run_editor_command(cur_layer, |_, editor, cur_layer| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().clear_layer(cur_layer))
                 });
             }
             Message::RemoveFloatingLayer => {

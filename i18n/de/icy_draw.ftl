@@ -192,12 +192,13 @@ select-font-dialog-block-font=BLOCK
 select-font-dialog-outline-font=OUTLINE
 
 layer_tool_title=Ebene
-layer_tool_menu_layer_properties=Ebeneneigensbchaften…
+layer_tool_menu_layer_properties=Ebeneneigenschaften…
 layer_tool_menu_resize_layer=Ebenengröße…
 layer_tool_menu_new_layer=Neue Ebene
 layer_tool_menu_duplicate_layer=Duplizieren
 layer_tool_menu_merge_layer=Ebene zusammenführen
 layer_tool_menu_delete_layer=Ebene löschen
+layer_tool_menu_clear_layer=Ebene leeren
 
 char_table_tool_title=Zeichentabelle
 minimap_tool_title=Übersicht
