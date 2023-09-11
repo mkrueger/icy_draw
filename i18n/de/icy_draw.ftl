@@ -1,5 +1,7 @@
 font-editor-table = Zeichentabelle 0-{ $length }:
 
+unsaved-title=Unbenannt
+
 menu-file=Datei
 menu-new=Neu…
 menu-open=Datei öffnen…

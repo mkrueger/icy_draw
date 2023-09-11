@@ -36,7 +36,6 @@ pub enum Event {
 
 pub struct AnsiEditor {
     pub id: usize,
-    dirty_pos: usize,
     pub drag_pos: DragPos,
     drag_started: bool,
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
@@ -138,16 +137,8 @@ impl ClipboardHandler for AnsiEditor {
 }
 
 impl Document for AnsiEditor {
-    fn get_title(&self) -> String {
-        if let Some(file_name) = &self.buffer_view.lock().get_buffer().file_name {
-            file_name.file_name().unwrap().to_str().unwrap().to_string()
-        } else {
-            "Untitled".to_string()
-        }
-    }
-
-    fn is_dirty(&self) -> bool {
-        self.dirty_pos != self.buffer_view.lock().get_edit_state().undo_stack_len()
+    fn default_extenision(&self) -> &'static str {
+        "icd"
     }
 
     fn undo_stack_len(&self) -> usize {
@@ -155,12 +146,18 @@ impl Document for AnsiEditor {
     }
 
     fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>> {
+        let ext = if let Some(ext) = path.extension() {
+            OsStr::to_str(ext).unwrap_or("icd").to_lowercase()
+        } else {
+            "icd".to_string()
+        };
+
         let options = SaveOptions::new();
         let bytes = self
             .buffer_view
             .lock()
             .get_buffer()
-            .to_bytes(path.extension().unwrap().to_str().unwrap(), &options)?;
+            .to_bytes(&ext, &options)?;
 
         Ok(bytes)
     }
@@ -233,7 +230,6 @@ impl AnsiEditor {
             is_inactive: false,
             reference_image: None,
             drag_started: false,
-            dirty_pos: 0,
             drag_pos: DragPos::default(),
             egui_id: Id::new(id),
             guide: None,
@@ -679,10 +675,6 @@ impl AnsiEditor {
             return layer.get_offset();
         }
         Position::default()
-    }
-
-    pub(crate) fn set_file_name(&self, file_name: impl Into<PathBuf>) {
-        self.buffer_view.lock().get_buffer_mut().file_name = Some(file_name.into());
     }
 
     pub(crate) fn clear_overlay_layer(&self) {

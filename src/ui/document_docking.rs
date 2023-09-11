@@ -18,21 +18,37 @@ use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Buffer, Position, TextAttribute, TextPane};
 
 pub struct DocumentTab {
-    pub full_path: Option<PathBuf>,
+    full_path: Option<PathBuf>,
     pub doc: Arc<Mutex<Box<dyn Document>>>,
-    pub auto_save_status: usize,
+    last_save: usize,
 
-    pub instant: Instant,
-    pub last_change: usize,
+    // autosave variables
+    auto_save_status: usize,
+    instant: Instant,
+    last_change_autosave_timer: usize,
 }
 impl DocumentTab {
-    pub(crate) fn save(&self) -> Option<Message> {
+    pub fn is_dirty(&self) -> bool {
+        if let Ok(doc) = self.doc.lock() {
+            let undo_stack_len = doc.undo_stack_len();
+            self.last_save != undo_stack_len
+        } else {
+            false
+        }
+    }
+
+    pub(crate) fn save(&mut self) -> Option<Message> {
         let Some(path) = &self.full_path else {
+            log::error!("No path to save to");
+            return None;
+        };
+        let Ok(doc) = &mut self.doc.lock() else {
+            log::error!("No document to save");
             return None;
         };
 
         let mut msg = None;
-        match self.doc.lock().unwrap().get_bytes(path) {
+        match doc.get_bytes(path) {
             Ok(bytes) => {
                 let mut tmp_file = path.clone();
                 let ext = path
@@ -54,6 +70,12 @@ impl DocumentTab {
                 } else if let Err(err) = fs::rename(tmp_file, path) {
                     msg = Some(Message::ShowError(format!("Error moving file {err}")));
                 }
+                remove_autosave(path);
+
+                let undo_stack_len = doc.undo_stack_len();
+                self.last_save = undo_stack_len;
+                self.last_change_autosave_timer = undo_stack_len;
+                self.auto_save_status = undo_stack_len;
             }
             Err(err) => {
                 msg = Some(Message::ShowError(format!("{err}")));
@@ -63,6 +85,26 @@ impl DocumentTab {
             remove_autosave(path);
         }
         msg
+    }
+
+    pub fn get_path(&self) -> Option<PathBuf> {
+        self.full_path.clone()
+    }
+
+    pub fn set_path(&mut self, mut path: PathBuf) {
+        let Ok(doc) = &mut self.doc.lock() else {
+            log::error!("No document to save");
+            return;
+        };
+        path.set_extension(doc.default_extenision());
+        if let Some(old_path) = &self.full_path {
+            remove_autosave(old_path);
+        }
+        self.full_path = Some(path);
+    }
+
+    pub fn is_untitled(&self) -> bool {
+        self.full_path.is_none()
     }
 }
 
@@ -99,9 +141,12 @@ impl DocumentBehavior {
 
 impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
     fn tab_title_for_pane(&mut self, pane: &DocumentTab) -> egui::WidgetText {
-        let doc = pane.doc.lock().unwrap();
-        let mut title = doc.get_title();
-        if doc.is_dirty() {
+        let mut title = if let Some(file_name) = &pane.full_path {
+            file_name.file_name().unwrap().to_str().unwrap().to_string()
+        } else {
+            fl!(crate::LANGUAGE_LOADER, "unsaved-title")
+        };
+        if pane.is_dirty() {
             title.push('*');
         }
         title.into()
@@ -123,11 +168,11 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
 
             let undo_stack_len = doc.undo_stack_len();
             if let Some(path) = &pane.full_path {
-                if doc.is_dirty() && undo_stack_len != pane.auto_save_status {
-                    if pane.last_change != undo_stack_len {
+                if undo_stack_len != pane.auto_save_status {
+                    if pane.last_change_autosave_timer != undo_stack_len {
                         pane.instant = Instant::now();
                     }
-                    pane.last_change = undo_stack_len;
+                    pane.last_change_autosave_timer = undo_stack_len;
 
                     if pane.instant.elapsed().as_secs() > 5 {
                         pane.auto_save_status = undo_stack_len;
@@ -138,6 +183,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                 }
             }
         }
+
         egui_tiles::UiResponse::None
     }
 
@@ -282,8 +328,9 @@ pub fn add_child(
         full_path,
         doc: Arc::new(Mutex::new(doc)),
         auto_save_status: 0,
+        last_save: 0,
         instant: Instant::now(),
-        last_change: 0,
+        last_change_autosave_timer: 0,
     };
     let new_child = tree.tiles.insert_pane(tile);
 

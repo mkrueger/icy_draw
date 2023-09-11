@@ -1,5 +1,7 @@
 font-editor-table = Char table 0-{ $length }:
 
+unsaved-title=Untitled
+
 menu-file=File
 menu-new=New…
 menu-open=Open…

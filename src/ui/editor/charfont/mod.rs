@@ -1,7 +1,4 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{path::Path, sync::Arc};
 
 use eframe::egui::{self, RichText, SidePanel, TextEdit, TopBottomPanel};
 use icy_engine::{
@@ -17,11 +14,10 @@ pub struct CharFontEditor {
     font: BitFont,
     selected_char_opt: Option<char>,
     old_selected_char_opt: Option<char>,
-    file_name: Option<PathBuf>,
     ansi_editor: AnsiEditor,
-    is_dirty: bool,
     selected_font: usize,
     fonts: Vec<TheDrawFont>,
+    undostack_len: usize,
 }
 
 impl ClipboardHandler for CharFontEditor {
@@ -76,24 +72,16 @@ impl UndoState for CharFontEditor {
 }
 
 impl Document for CharFontEditor {
-    fn get_title(&self) -> String {
-        if let Some(file_name) = &self.file_name {
-            file_name.file_name().unwrap().to_str().unwrap().to_string()
-        } else {
-            "Untitled".to_string()
-        }
-    }
-
-    fn is_dirty(&self) -> bool {
-        self.is_dirty || self.ansi_editor.is_dirty()
+    fn default_extenision(&self) -> &'static str {
+        "tdf"
     }
 
     fn undo_stack_len(&self) -> usize {
-        self.ansi_editor.undo_stack_len()
+        self.undostack_len
     }
 
     fn get_bytes(&mut self, _path: &Path) -> TerminalResult<Vec<u8>> {
-        self.is_dirty = false;
+        self.undostack_len += 1;
         self.save_old_selected_char();
         TheDrawFont::create_font_bundle(&self.fonts)
     }
@@ -146,7 +134,7 @@ impl Document for CharFontEditor {
                         self.selected_char_opt = None;
                         self.old_selected_char_opt = None;
                         self.show_selected_char();
-                        self.is_dirty = true;
+                        self.undostack_len += 1;
                     }
 
                     if ui.button("🗑").clicked() {
@@ -155,7 +143,7 @@ impl Document for CharFontEditor {
                         self.selected_char_opt = None;
                         self.old_selected_char_opt = None;
                         self.show_selected_char();
-                        self.is_dirty = true;
+                        self.undostack_len += 1;
                     }
 
                     if ui.button("Clone").clicked() {
@@ -164,7 +152,7 @@ impl Document for CharFontEditor {
                         self.selected_char_opt = None;
                         self.old_selected_char_opt = None;
                         self.show_selected_char();
-                        self.is_dirty = true;
+                        self.undostack_len += 1;
                     }
                 });
             });
@@ -182,7 +170,7 @@ impl Document for CharFontEditor {
                             )
                             .changed()
                         {
-                            self.is_dirty = true;
+                            self.undostack_len += 1;
                         }
                     });
                     ui.horizontal(|ui| {
@@ -194,7 +182,7 @@ impl Document for CharFontEditor {
                             )
                             .changed()
                         {
-                            self.is_dirty = true;
+                            self.undostack_len += 1;
                         }
                     });
                 } else {
@@ -213,7 +201,7 @@ impl Document for CharFontEditor {
                         self.selected_char_opt = None;
                         self.old_selected_char_opt = None;
                         self.show_selected_char();
-                        self.is_dirty = true;
+                        self.undostack_len += 1;
                     }
                 }
             });
@@ -267,25 +255,19 @@ impl Document for CharFontEditor {
 }
 
 impl CharFontEditor {
-    pub fn new(
-        gl: &Arc<glow::Context>,
-        file_name: Option<PathBuf>,
-        id: usize,
-        fonts: Vec<TheDrawFont>,
-    ) -> Self {
+    pub fn new(gl: &Arc<glow::Context>, id: usize, fonts: Vec<TheDrawFont>) -> Self {
         let mut buffer = Buffer::new(Size::new(30, 12));
         set_up_layers(&mut buffer);
         let ansi_editor = AnsiEditor::new(gl, id, buffer);
 
         Self {
             font: BitFont::default(),
-            file_name,
             ansi_editor,
-            is_dirty: false,
             selected_char_opt: None,
             old_selected_char_opt: None,
             fonts,
             selected_font: 0,
+            undostack_len: 0,
         }
     }
 
@@ -341,7 +323,7 @@ impl CharFontEditor {
         {
             return;
         }
-        self.is_dirty = true;
+        self.undostack_len += 1;
         if let Some(font) = self.fonts.get_mut(self.selected_font) {
             if let Some(ch) = self.old_selected_char_opt {
                 match font.font_type {

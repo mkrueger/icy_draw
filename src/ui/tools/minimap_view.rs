@@ -13,7 +13,7 @@ use crate::{AnsiEditor, Document, Message, ToolWindow};
 pub struct MinimapToolWindow {
     buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
     undo_size: i32,
-    last_title: String,
+    last_id: usize,
 }
 
 impl ToolWindow for MinimapToolWindow {
@@ -44,9 +44,9 @@ impl MinimapToolWindow {
         let w = (ui.available_width() / 8.0).floor();
 
         let undo_stack = editor.buffer_view.lock().get_edit_state().undo_stack_len() as i32;
-        if undo_stack != self.undo_size || self.last_title != editor.get_title() {
+        if undo_stack != self.undo_size || self.last_id != editor.id {
             self.undo_size = undo_stack;
-            self.last_title = editor.get_title().clone();
+            self.last_id = editor.id;
             let bv = editor.buffer_view.lock();
             let buffer = bv.get_buffer();
             self.buffer_view
@@ -81,7 +81,7 @@ impl MinimapToolWindow {
         buffer_view.get_caret_mut().is_visible = false;
         Self {
             buffer_view: Arc::new(eframe::epaint::mutex::Mutex::new(buffer_view)),
-            last_title: String::new(),
+            last_id: usize::MAX,
             undo_size: -1,
         }
     }

@@ -27,7 +27,6 @@ use self::undo::UndoOperation;
 pub struct BitFontEditor {
     font: BitFont,
     selected_char_opt: Option<char>,
-    dirty_pos: usize,
     undo_stack: Arc<Mutex<Vec<Box<dyn UndoOperation>>>>,
     redo_stack: Vec<Box<dyn UndoOperation>>,
     old_data: Option<Vec<u8>>,
@@ -44,7 +43,6 @@ impl BitFontEditor {
         Self {
             font,
             selected_char_opt: None,
-            dirty_pos: 0,
             undo_stack: Arc::new(Mutex::new(Vec::new())),
             redo_stack: Vec::new(),
             old_data: None,
@@ -466,12 +464,8 @@ impl UndoState for BitFontEditor {
 }
 
 impl Document for BitFontEditor {
-    fn get_title(&self) -> String {
-        self.font.name.to_string()
-    }
-
-    fn is_dirty(&self) -> bool {
-        self.dirty_pos != self.undo_stack.lock().unwrap().len()
+    fn default_extenision(&self) -> &'static str {
+        "psf"
     }
 
     fn undo_stack_len(&self) -> usize {

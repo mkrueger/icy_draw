@@ -260,7 +260,14 @@ pub trait Tool {
             }
 
             MKey::Home => {
-                editor.backspace();
+                let mut pos = editor.get_caret_position();
+                pos.x = 0;
+                editor.set_caret_position(pos);
+            }
+            MKey::End => {
+                let mut pos = editor.get_caret_position();
+                pos.x = i32::MAX;
+                editor.set_caret_position(pos);
             }
 
             MKey::Character(ch) => {

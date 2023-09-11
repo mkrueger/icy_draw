@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     fs,
-    path::{Path, PathBuf},
+    path::Path,
     rc::Rc,
     sync::{Arc, Mutex},
     time::Duration,
@@ -236,13 +236,12 @@ impl MainWindow {
                     if file_name.is_none() {
                         return;
                     }
-                    let file_name = PathBuf::from(file_name.unwrap());
                     if let Ok(fonts) = TheDrawFont::from_tdf_bytes(&data) {
                         let id = self.create_id();
                         add_child(
                             &mut self.document_tree,
                             Some(full_path),
-                            Box::new(CharFontEditor::new(&self.gl, Some(file_name), id, fonts)),
+                            Box::new(CharFontEditor::new(&self.gl, id, fonts)),
                         );
                         return;
                     }

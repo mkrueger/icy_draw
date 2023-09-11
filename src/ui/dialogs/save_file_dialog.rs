@@ -1,6 +1,5 @@
 use eframe::egui;
 //use egui_file::FileDialog;
-use icy_engine::SaveOptions;
 use std::path::PathBuf;
 
 use crate::{MainWindow, Message};
@@ -56,7 +55,7 @@ impl crate::ModalDialog for SaveFileDialog {
     fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         if let Some(file) = &self.opened_file.clone() {
             if let Some(pane) = window.get_active_pane() {
-                pane.full_path = Some(file.clone());
+                pane.set_path(file.clone());
                 pane.save();
             }
         }

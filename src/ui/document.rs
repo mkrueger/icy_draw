@@ -29,10 +29,9 @@ pub trait ClipboardHandler {
 }
 
 pub trait Document: UndoState + ClipboardHandler {
-    fn get_title(&self) -> String;
-    fn is_dirty(&self) -> bool;
-
     fn undo_stack_len(&self) -> usize;
+
+    fn default_extenision(&self) -> &'static str;
 
     fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>>;
 

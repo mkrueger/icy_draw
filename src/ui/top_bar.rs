@@ -45,9 +45,12 @@ impl MainWindow {
         menu::bar(ui, |ui| {
             let mut has_buffer = false;
             let mut is_dirty = false;
-            if let Some(doc) = self.get_active_document() {
-                has_buffer = doc.lock().unwrap().get_ansi_editor().is_some();
-                is_dirty = doc.lock().unwrap().is_dirty();
+            if let Some(pane) = self.get_active_pane() {
+                is_dirty = pane.is_dirty();
+
+                if let Ok(doc) = pane.doc.lock() {
+                    has_buffer = doc.get_ansi_editor().is_some();
+                }
             }
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {

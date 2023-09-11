@@ -1,6 +1,5 @@
 use std::{
     cell::RefCell,
-    fs,
     path::PathBuf,
     rc::Rc,
     sync::{Arc, Mutex},
@@ -15,7 +14,7 @@ use icy_engine::{
 };
 
 use crate::{
-    util::autosave::{self, remove_autosave},
+    util::autosave::{self},
     AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog,
     SelectCharacterDialog, SelectOutlineDialog, Settings,
 };
@@ -160,21 +159,15 @@ impl MainWindow {
             }
 
             Message::SaveFile => {
-                let mut msg = None;
-                if let Some(pane) = self.get_active_pane() {
-                    let mut save_as = true;
-                    if let Some(path) = &pane.full_path {
-                        if let Some(ext) = path.extension() {
-                            if ext == "icd" || ext == "psf" || ext == "tdf" {
-                                msg = pane.save();
-                                save_as = false;
-                            }
-                        }
+                let msg = if let Some(pane) = self.get_active_pane() {
+                    if pane.is_untitled() {
+                        Some(Message::SaveFileAs)
+                    } else {
+                        pane.save()
                     }
-                    if save_as {
-                        self.handle_message(Some(Message::SaveFileAs))
-                    }
-                }
+                } else {
+                    None
+                };
 
                 self.handle_message(msg);
             }
