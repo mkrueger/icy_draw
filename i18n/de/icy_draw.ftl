@@ -240,3 +240,8 @@ paste_mode-rotate=Rotieren
 paste_mode-flipx=X Spiegeln
 paste_mode-flipy=Y Spiegeln
 paste_mode-transparent=Transparent
+
+ask_close_file_dialog-description=Sollen die Änderungen in { $filename } gespeichert werden?
+ask_close_file_dialog-subdescription=Alle Änderungen gehen beim Verwerfen verloren.
+ask_close_file_dialog-dont_save_button=Verwerfen
+ask_close_file_dialog-save_button=Speichern

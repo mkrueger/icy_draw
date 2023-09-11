@@ -39,3 +39,6 @@ pub use font_manager::*;
 
 mod auto_save_dialog;
 pub use auto_save_dialog::*;
+
+mod ask_close_file_dialog;
+pub use ask_close_file_dialog::*;

@@ -8,9 +8,9 @@ use std::{
 };
 
 use crate::{
-    add_child, model::Tool, util::autosave, AnsiEditor, BitFontEditor, CharFontEditor,
-    CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentTab, LayerToolWindow,
-    Message, MinimapToolWindow, ModalDialog, ToolBehavior, ToolTab, TopBar,
+    add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor,
+    CharFontEditor, CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentTab,
+    LayerToolWindow, Message, MinimapToolWindow, ModalDialog, ToolBehavior, ToolTab, TopBar,
 };
 use eframe::{
     egui::{self, Key, Response, SidePanel, TextStyle, Ui},
@@ -604,9 +604,14 @@ impl eframe::App for MainWindow {
         self.handle_message(dialog_message);
 
         self.toasts.show(ctx);
-        if let Some(close) = self.document_behavior.request_close {
-            self.document_tree.tiles.remove(close);
-            self.document_behavior.request_close = None;
+        if let Some(close_id) = self.document_behavior.request_close.take() {
+            if let Some(egui_tiles::Tile::Pane(pane)) = self.document_tree.tiles.get(close_id) {
+                if !pane.is_dirty() {
+                    self.document_tree.tiles.remove(close_id);
+                } else {
+                    self.open_dialog(AskCloseFileDialog::new(pane.get_path(), close_id));
+                }
+            }
         }
 
         let mut msg = self.document_behavior.message.take();

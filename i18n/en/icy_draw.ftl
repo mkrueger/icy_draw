@@ -244,3 +244,8 @@ paste_mode-rotate=Rotate
 paste_mode-flipx=Flip X
 paste_mode-flipy=Flip Y
 paste_mode-transparent=Transparent
+
+ask_close_file_dialog-description=Do you want to save the changes you made to { $filename }?
+ask_close_file_dialog-subdescription=Your changes will be lost if you don't save them.
+ask_close_file_dialog-dont_save_button=Don't save
+ask_close_file_dialog-save_button=Save
