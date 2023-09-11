@@ -63,6 +63,8 @@ impl ModalDialog for ExportFileDialog {
                     }
 
                     if ui.add(egui::Button::new("…").wrap(false)).clicked() {
+                        /* TODO: File Dialog
+
                         let mut dialog = rfd::FileDialog::new();
                         if let Some(parent) = self.file_name.parent() {
                             dialog = dialog.set_directory(parent);
@@ -71,7 +73,7 @@ impl ModalDialog for ExportFileDialog {
 
                         if let Some(file) = res {
                             self.file_name = file;
-                        }
+                        }*/
                         ui.close_menu();
                     }
                     if let Some(ext) = self.file_name.extension() {

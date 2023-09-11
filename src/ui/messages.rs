@@ -676,15 +676,10 @@ impl MainWindow {
             }
 
             Message::SetReferenceImage => {
-                let dialog = rfd::FileDialog::new();
-                let res = dialog.pick_file();
-                if let Some(res) = res {
-                    self.run_editor_command(res, |_, editor, res| {
-                        let mut lock = editor.buffer_view.lock();
-                        lock.load_reference_image(res.as_path());
-                        None
-                    });
-                }
+                self.run_editor_command(0, |window, editor, _| {
+                    window.open_dialog(crate::OpenReferenceImageDialog::default()/*new(editor.buffer_view.lock().clear_reference_image())*/);
+                    None
+                });
             }
             Message::ToggleReferenceImage => {
                 self.run_editor_command(0, |_, editor, _| {

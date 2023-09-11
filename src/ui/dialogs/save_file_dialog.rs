@@ -1,16 +1,15 @@
 use eframe::egui;
-//use egui_file::FileDialog;
+use egui_file::FileDialog;
 use std::path::PathBuf;
 
 use crate::{MainWindow, Message};
 
-#[derive(Default)]
 pub struct SaveFileDialog {
     open_file: bool,
-    //dialog: FileDialog,
+    dialog: FileDialog,
     opened_file: Option<PathBuf>,
 }
-/*
+
 impl Default for SaveFileDialog {
     fn default() -> Self {
         let mut dialog = FileDialog::save_file(None);
@@ -22,11 +21,11 @@ impl Default for SaveFileDialog {
             opened_file: None,
         }
     }
-}*/
+}
 
 impl crate::ModalDialog for SaveFileDialog {
-    fn show(&mut self, _ctx: &egui::Context) -> bool {
-        /*let mut result = false;
+    fn show(&mut self, ctx: &egui::Context) -> bool {
+        let mut result = false;
 
         if self.dialog.show(ctx).selected() {
             if let Some(file) = self.dialog.path() {
@@ -36,16 +35,7 @@ impl crate::ModalDialog for SaveFileDialog {
             result = true;
         }
 
-        result*/
-
-        let dialog = rfd::FileDialog::new();
-        let res = dialog.save_file();
-        if let Some(res) = res {
-            self.opened_file = Some(res);
-            self.open_file = true;
-        }
-
-        true
+        result
     }
 
     fn should_commit(&self) -> bool {

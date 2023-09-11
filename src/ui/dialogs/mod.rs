@@ -42,3 +42,6 @@ pub use auto_save_dialog::*;
 
 mod ask_close_file_dialog;
 pub use ask_close_file_dialog::*;
+
+mod open_referenceimage_dialog;
+pub use open_referenceimage_dialog::*;
