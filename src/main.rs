@@ -45,7 +45,6 @@ static LANGUAGE_LOADER: Lazy<FluentLanguageLoader> = Lazy::new(|| {
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
     use std::fs;
-    println!("Foo  Bar!!!");
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(1280., 841.)),
         multisampling: 0,

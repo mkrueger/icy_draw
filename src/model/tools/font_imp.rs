@@ -10,7 +10,7 @@ use crate::{AnsiEditor, Message, Settings};
 
 use super::{Event, MKey, MModifiers, Position, Tool};
 use eframe::{
-    egui::{self, RichText},
+    egui::{self, Button, RichText},
     epaint::{FontFamily, FontId},
 };
 use i18n_embed_fl::fl;
@@ -161,9 +161,9 @@ impl Tool for FontTool {
         let selected_font = *self.selected_font.lock().unwrap();
 
         ui.vertical_centered(|ui| {
-            ui.label("Selected font");
+            ui.label(fl!(crate::LANGUAGE_LOADER, "font_tool_current_font_label"));
 
-            let mut selected_text = "<none>".to_string();
+            let mut selected_text = fl!(crate::LANGUAGE_LOADER, "font_tool_no_font");
 
             if selected_font >= 0 && (selected_font as usize) < font_count {
                 if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
@@ -172,97 +172,139 @@ impl Tool for FontTool {
             }
             let selected_text =
                 RichText::new(selected_text).font(FontId::new(18.0, FontFamily::Proportional));
-            select = ui.button(selected_text).clicked();
+            select = ui
+                .add_enabled(font_count > 0, Button::new(selected_text))
+                .clicked();
         });
 
-        ui.add_space(8.0);
-
-        ui.vertical_centered(|ui| {
-            ui.horizontal(|ui| {
-                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
-                    for ch in '!'..'9' {
-                        ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
-                        let color = if font.has_char(ch as u8) {
-                            ui.style().visuals.strong_text_color()
-                        } else {
-                            ui.style().visuals.text_color()
-                        };
-
-                        ui.colored_label(
-                            color,
-                            RichText::new(ch.to_string())
-                                .font(FontId::new(14.0, FontFamily::Monospace)),
-                        );
-                    }
+        if font_count == 0 {
+            ui.add_space(32.0);
+            let mut msg = None;
+            ui.vertical_centered(|ui| {
+                ui.label(fl!(crate::LANGUAGE_LOADER, "font_tool_no_fonts_label"));
+                if ui
+                    .button(fl!(
+                        crate::LANGUAGE_LOADER,
+                        "font_tool_open_directory_button"
+                    ))
+                    .clicked()
+                {
+                    msg = Some(Message::OpenTdfDirectory);
                 }
             });
-
-            ui.horizontal(|ui| {
-                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
-                    for ch in '9'..'Q' {
-                        ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
-                        let color = if font.has_char(ch as u8) {
-                            ui.style().visuals.strong_text_color()
-                        } else {
-                            ui.style().visuals.text_color()
-                        };
-
-                        ui.colored_label(
-                            color,
-                            RichText::new(ch.to_string())
-                                .font(FontId::new(14.0, FontFamily::Monospace)),
-                        );
-                    }
-                }
-            });
-
-            ui.horizontal(|ui| {
-                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
-                    ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
-                    for ch in 'Q'..'i' {
-                        let color = if font.has_char(ch as u8) {
-                            ui.style().visuals.strong_text_color()
-                        } else {
-                            ui.style().visuals.text_color()
-                        };
-
-                        ui.colored_label(
-                            color,
-                            RichText::new(ch.to_string())
-                                .font(FontId::new(14.0, FontFamily::Monospace)),
-                        );
-                    }
-                }
-            });
-            ui.horizontal(|ui| {
-                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
-                    ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
-                    for ch in 'i'..='~' {
-                        let color = if font.has_char(ch as u8) {
-                            ui.style().visuals.strong_text_color()
-                        } else {
-                            ui.style().visuals.text_color()
-                        };
-
-                        ui.colored_label(
-                            color,
-                            RichText::new(ch.to_string())
-                                .font(FontId::new(14.0, FontFamily::Monospace)),
-                        );
-                    }
-                }
-            });
-        });
-
-        ui.add_space(32.0);
-        if ui.button("Select Font Outline").clicked() {
-            return Some(Message::ShowOutlineDialog);
+            if msg.is_some() {
+                return msg;
+            }
         }
 
-        ui.add_space(32.0);
-        ui.label("Install new fonts in the font directory.");
-        if ui.button("Open font directory").clicked() {
-            return Some(Message::OpenTdfDirectory);
+        if selected_font >= 0 && (selected_font as usize) < font_count {
+            ui.add_space(8.0);
+            let left_border = 16.0;
+            ui.vertical_centered(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add_space(left_border);
+
+                    if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                        for ch in '!'..'9' {
+                            ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+                            let color = if font.has_char(ch as u8) {
+                                ui.style().visuals.strong_text_color()
+                            } else {
+                                ui.style().visuals.text_color()
+                            };
+
+                            ui.colored_label(
+                                color,
+                                RichText::new(ch.to_string())
+                                    .font(FontId::new(14.0, FontFamily::Monospace)),
+                            );
+                        }
+                    }
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add_space(left_border);
+
+                    if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                        for ch in '9'..'Q' {
+                            ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+                            let color = if font.has_char(ch as u8) {
+                                ui.style().visuals.strong_text_color()
+                            } else {
+                                ui.style().visuals.text_color()
+                            };
+
+                            ui.colored_label(
+                                color,
+                                RichText::new(ch.to_string())
+                                    .font(FontId::new(14.0, FontFamily::Monospace)),
+                            );
+                        }
+                    }
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add_space(left_border);
+                    if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                        ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+                        for ch in 'Q'..'i' {
+                            let color = if font.has_char(ch as u8) {
+                                ui.style().visuals.strong_text_color()
+                            } else {
+                                ui.style().visuals.text_color()
+                            };
+
+                            ui.colored_label(
+                                color,
+                                RichText::new(ch.to_string())
+                                    .font(FontId::new(14.0, FontFamily::Monospace)),
+                            );
+                        }
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.add_space(left_border);
+                    if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                        ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+                        for ch in 'i'..='~' {
+                            let color = if font.has_char(ch as u8) {
+                                ui.style().visuals.strong_text_color()
+                            } else {
+                                ui.style().visuals.text_color()
+                            };
+
+                            ui.colored_label(
+                                color,
+                                RichText::new(ch.to_string())
+                                    .font(FontId::new(14.0, FontFamily::Monospace)),
+                            );
+                        }
+                    }
+                });
+            });
+        }
+
+        if font_count > 0 {
+            if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                if matches!(font.font_type, icy_engine::FontType::Outline) {
+                    ui.add_space(32.0);
+                    let mut msg = None;
+                    ui.vertical_centered(|ui| {
+                        if ui
+                            .button(fl!(
+                                crate::LANGUAGE_LOADER,
+                                "font_tool_select_outline_button"
+                            ))
+                            .clicked()
+                        {
+                            msg = Some(Message::ShowOutlineDialog);
+                        }
+                    });
+                    if msg.is_some() {
+                        return msg;
+                    }
+                }
+            }
         }
 
         if select {

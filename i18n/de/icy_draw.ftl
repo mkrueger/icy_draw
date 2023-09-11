@@ -73,6 +73,8 @@ menu-zoom_in=Vergrößern
 menu-zoom_out=Verkleinern
 menu-guides=Hilfslinien
 menu-raster=Raster
+menu-guides-off=Aus
+menu-zoom-fit_size=Größe anpassen
 
 menu-pick_attribute_under_caret=Attribut unter Cursor aufhebn
 menu-default_color=Standardfarbe
@@ -185,7 +187,6 @@ edit-layer-dialog-is-alpha-locked-checkbox=Alphakanal gesperrt
 
 error-load-file=Fehler während des Dateiladens: { $error }
 
-
 select-font-dialog-title=Font auswählen ({ $fontcount} verfügbar)
 select-font-dialog-select=Auswählen
 select-font-dialog-filter-text=Filter
@@ -194,6 +195,7 @@ select-font-dialog-no-fonts-installed=Keine Fonts installiert
 select-font-dialog-color-font=FARBE
 select-font-dialog-block-font=BLOCK
 select-font-dialog-outline-font=OUTLINE
+select-font-dialog-preview-text=HALLO
 
 layer_tool_title=Ebene
 layer_tool_menu_layer_properties=Ebeneneigenschaften…
@@ -203,6 +205,14 @@ layer_tool_menu_duplicate_layer=Duplizieren
 layer_tool_menu_merge_layer=Ebene zusammenführen
 layer_tool_menu_delete_layer=Ebene löschen
 layer_tool_menu_clear_layer=Ebene leeren
+
+font_tool_select_outline_button=Outline Stil auswählen
+font_tool_current_font_label=Aktueller TDF Font
+font_tool_no_font=<nichts>
+font_tool_no_fonts_label=
+    Keine Fonts gefunden
+    Installiere Fonts in das Fontverzeichnis
+font_tool_open_directory_button=Fontverzeichnis öffnen
 
 char_table_tool_title=Zeichentabelle
 minimap_tool_title=Übersicht

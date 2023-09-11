@@ -354,7 +354,7 @@ impl MainWindow {
                         if ui
                             .checkbox(
                                 &mut self.document_behavior.document_options.fit_width,
-                                "Fit Size",
+                                fl!(crate::LANGUAGE_LOADER, "menu-zoom-fit_size"),
                             )
                             .clicked()
                         {
@@ -384,7 +384,10 @@ impl MainWindow {
                         ui.close_menu();
                     }
                     ui.separator();
-                    if ui.button("Off").clicked() {
+                    if ui
+                        .button(fl!(crate::LANGUAGE_LOADER, "menu-guides-off"))
+                        .clicked()
+                    {
                         result = Some(Message::SetGuide(0, 0));
                         ui.close_menu();
                     }
@@ -417,7 +420,10 @@ impl MainWindow {
                     }
 
                     ui.separator();
-                    if ui.button("Off").clicked() {
+                    if ui
+                        .button(fl!(crate::LANGUAGE_LOADER, "menu-guides-off"))
+                        .clicked()
+                    {
                         result = Some(Message::SetRaster(0, 0));
                         ui.close_menu();
                     }

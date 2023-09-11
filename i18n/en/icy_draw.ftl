@@ -73,6 +73,8 @@ menu-zoom_in=Zoom In
 menu-zoom_out=Zoom Out
 menu-guides=Guides
 menu-raster=Raster
+menu-guides-off=Off
+menu-zoom-fit_size=Fit Size
 
 menu-pick_attribute_under_caret=Use Attribute Under Caret
 menu-default_color=Default Color
@@ -184,7 +186,6 @@ edit-layer-dialog-is-alpha-locked-checkbox=Alpha locked
 
 error-load-file=Error loading file: { $error }
 
-
 select-font-dialog-title=Select Font ({ $fontcount} available)
 select-font-dialog-select=Select
 select-font-dialog-filter-text=Filter fonts
@@ -193,6 +194,7 @@ select-font-dialog-no-fonts-installed=No fonts installed
 select-font-dialog-color-font=COLOR
 select-font-dialog-block-font=BLOCK
 select-font-dialog-outline-font=OUTLINE
+select-font-dialog-preview-text=HELLO
 
 layer_tool_title=Layer
 layer_tool_menu_layer_properties=Layer properties
@@ -202,6 +204,14 @@ layer_tool_menu_duplicate_layer=Duplicate layer
 layer_tool_menu_merge_layer=Merge layer
 layer_tool_menu_delete_layer=Delete layer
 layer_tool_menu_clear_layer=Clear layer
+
+font_tool_select_outline_button=Set Font Outline
+font_tool_current_font_label=Current TDF Font
+font_tool_no_font=<none>
+font_tool_no_fonts_label=
+    No tdf fonts found.
+    Install new fonts in the font directory
+font_tool_open_directory_button=Open font directory
 
 char_table_tool_title=Char table
 minimap_tool_title=Preview

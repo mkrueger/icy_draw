@@ -19,12 +19,12 @@ egui_file = "0.10.0"
 egui_tiles = { git ="https://github.com/mkrueger/egui_tiles"}
 egui-bind = "0.7.0"
 #egui_tiles = { path = "../egui_tiles"  }
-egui-notify = "0.8.0"
+egui-notify = "0.9.0"
 log = "0.4.20"
 log4rs = "1.2.0"
 open = "5.0.0"
 dark-light = "1.0.0"
-rfd = "0.11.4"
+rfd = "0.12.0"
 zip = "0.6.6"
 notify = "6.1.1"
 
@@ -39,9 +39,9 @@ lazy_static = "1.4.0"
 directories = "5.0.1"
 image = { version = "0.24", features = ["gif", "jpeg", "ico", "png", "pnm", "tga", "tiff", "webp", "bmp", "hdr", "dxt", "dds", "farbfeld", "jpeg_rayon", "openexr", "qoi"] }
 
-i18n-embed = { version = "0.13.4", features = ["fluent-system", "desktop-requester"]} 
-i18n-embed-fl = "0.6.4"
-rust-embed = "6.4.2"
+i18n-embed = { version = "0.14.0", features = ["fluent-system", "desktop-requester"]} 
+i18n-embed-fl = "0.7.0"
+rust-embed = "8.0.0"
 once_cell = "1.16.0"
 
 [features]

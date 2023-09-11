@@ -56,7 +56,6 @@ impl SelectFontDialog {
         let font = &self.fonts.lock().unwrap()[cur_font];
         let (id, rect) = ui.allocate_space([ui.available_width(), row_height].into());
         let response = ui.interact(rect, id, Sense::click());
-
         if response.hovered() {
             ui.painter().rect_filled(
                 rect.expand(1.0),
@@ -89,8 +88,10 @@ impl SelectFontDialog {
         );
 
         let mut x = 0.;
-        let mut y = 24.;
-        for ch in '!'..'P' {
+        let mut y = 26.;
+        let mut cnt = 0;
+
+        for ch in '!'..='~' {
             let color = if font.has_char(ch as u8) {
                 ui.style().visuals.strong_text_color()
             } else {
@@ -104,9 +105,11 @@ impl SelectFontDialog {
             rect.set_top(rect.top() + y);
             rect.set_left(rect.left() + x);
             x += galley.size().x;
-            if ch == '8' {
+            cnt += 1;
+            if cnt > 31 {
                 y += galley.size().y;
                 x = 0.;
+                cnt = 0;
             }
             ui.painter().galley_with_color(
                 egui::Align2::LEFT_TOP
@@ -121,10 +124,14 @@ impl SelectFontDialog {
         if !self.image_cache.contains_key(&cur_font) {
             let buffer = Buffer::new((100, 12));
             let mut state = EditState::from_buffer(buffer);
-            let b = if font.has_char(b'H') {
-                "HELLO".bytes()
+
+            let text = fl!(crate::LANGUAGE_LOADER, "select-font-dialog-preview-text");
+            let lowercase = text.to_ascii_lowercase();
+
+            let b = if font.has_char(text.chars().nth(0).unwrap() as u8) {
+                text.bytes()
             } else {
-                "hello".bytes()
+                lowercase.bytes()
             };
             for ch in b {
                 let opt_size: Option<Size> = font.render(&mut state, ch);
@@ -207,6 +214,7 @@ impl crate::ModalDialog for SelectFontDialog {
         let modal = Modal::new(ctx, "select_font_dialog2");
         let font_count = self.fonts.lock().unwrap().len();
         modal.show(|ui| {
+            ui.set_width(700.);
             modal.title(
                 ui,
                 fl!(
@@ -314,6 +322,20 @@ impl crate::ModalDialog for SelectFontDialog {
 
             modal.buttons(ui, |ui| {
                 if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-select"))
+                    .clicked()
+                {
+                    self.do_select = true;
+                    result = true;
+                }
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
+                    .clicked()
+                {
+                    result = true;
+                }
+
+                if ui
                     .button(fl!(crate::LANGUAGE_LOADER, "export-button-title"))
                     .clicked()
                 {
@@ -332,20 +354,6 @@ impl crate::ModalDialog for SelectFontDialog {
                             log::error!("Failed to export font: {}", err);
                         }
                     }
-                }
-
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-select"))
-                    .clicked()
-                {
-                    self.do_select = true;
-                    result = true;
-                }
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
-                    .clicked()
-                {
-                    result = true;
                 }
             });
         });
