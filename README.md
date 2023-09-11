@@ -32,7 +32,7 @@ There are several folders:
 | data/tdf/      | Stores tdf fonts
 | data/palettes/ | Stores palettes
 | autosave/      | Autosave data
-| settings.toml  | IcyDraw settings
+| settings.json  | IcyDraw settings
 | icy_draw.log   | IcyDraw log file
 
 Note that fonts/palettes etc. do not need to be unzipped. Just throw a .zip file in there containing fonts and IcyDraw will pick them up.

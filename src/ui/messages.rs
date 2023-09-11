@@ -117,6 +117,7 @@ pub enum Message {
     OpenTdfDirectory,
     OpenPalettesDirectory,
     ToggleMirrorMode,
+    ClearRecentOpenFiles,
     SetGuide(i32, i32),
     SetRaster(i32, i32),
     LoadFile(PathBuf, bool),
@@ -851,6 +852,10 @@ impl MainWindow {
                         .set_mirror_mode(!mode);
                     None
                 });
+            }
+
+            Message::ClearRecentOpenFiles => {
+                Settings::clear_recent_files();
             }
         }
     }

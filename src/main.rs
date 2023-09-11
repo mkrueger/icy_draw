@@ -95,6 +95,17 @@ fn main() {
     } else {
         eprintln!("Failed to create log file");
     }
+
+    if let Ok(settings_file) = Settings::get_settings_file() {
+        if settings_file.exists() {
+            if let Ok(settings) = Settings::load(&settings_file) {
+                unsafe {
+                    SETTINGS = settings;
+                }
+            }
+        }
+    }
+
     log::info!("Starting iCY DRAW {}", VERSION);
     if let Err(err) = eframe::run_native(
         &DEFAULT_TITLE,
@@ -103,5 +114,6 @@ fn main() {
     ) {
         log::error!("Error returned by run_native: {}", err);
     }
+    let _ = Settings::save();
     log::info!("shutting down.");
 }

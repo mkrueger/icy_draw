@@ -1,15 +1,24 @@
-use std::{error::Error, fs, path::PathBuf};
-
 use directories::ProjectDirs;
-use icy_engine::Color;
+use serde::{Deserialize, Serialize};
+use std::{
+    error::Error,
+    fs::{self, File},
+    io::{self, BufReader, BufWriter},
+    path::{Path, PathBuf},
+};
 
 use crate::TerminalResult;
 
+const MAX_RECENT_FILES: usize = 10;
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {
     font_outline_style: usize,
     character_set: usize,
 
     custom_palette: IcePalette,
+
+    pub recent_files: Vec<PathBuf>,
 }
 
 impl Settings {
@@ -40,6 +49,29 @@ impl Settings {
     pub fn set_custom_palette(pal: IcePalette) {
         unsafe {
             SETTINGS.custom_palette = pal;
+        }
+    }
+
+    pub fn add_recent_file(file: &Path) {
+        unsafe {
+            let file = file.to_path_buf();
+            for i in 0..SETTINGS.recent_files.len() {
+                if SETTINGS.recent_files[i] == file {
+                    SETTINGS.recent_files.remove(i);
+                    break;
+                }
+            }
+
+            SETTINGS.recent_files.push(file);
+            while SETTINGS.recent_files.len() > MAX_RECENT_FILES {
+                SETTINGS.recent_files.remove(0);
+            }
+        }
+    }
+
+    pub fn clear_recent_files() {
+        unsafe {
+            SETTINGS.recent_files.clear();
         }
     }
 
@@ -115,6 +147,42 @@ impl Settings {
             "log_file".to_string(),
         )))
     }
+
+    pub(crate) fn get_settings_file() -> TerminalResult<PathBuf> {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+            let dir = proj_dirs.config_dir().join("settings.json");
+            return Ok(dir);
+        }
+        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
+            "log_file".to_string(),
+        )))
+    }
+
+    pub(crate) fn load(path: &PathBuf) -> io::Result<Settings> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+
+        // Read the JSON contents of the file as an instance of `User`.
+        let u = serde_json::from_reader(reader)?;
+
+        // Return the `User`.
+        Ok(u)
+    }
+
+    pub(crate) fn save() -> io::Result<()> {
+        let Ok(path) = Settings::get_settings_file() else {
+            return Ok(());
+        };
+
+        unsafe {
+            let file = File::create(path)?;
+            let reader = BufWriter::new(file);
+
+            serde_json::to_writer_pretty(reader, &SETTINGS)?;
+
+            Ok(())
+        }
+    }
 }
 
 pub static mut SETTINGS: Settings = Settings {
@@ -124,17 +192,18 @@ pub static mut SETTINGS: Settings = Settings {
         colors: Vec::new(),
     },
     character_set: 5,
+    recent_files: Vec::new(),
 };
 
-#[derive(Default)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct IceColor {
     pub name: Option<String>,
-    pub color: Color,
+    pub color: (u8, u8, u8),
 }
 
 impl IceColor {
     pub fn get_rgb(&self) -> (u8, u8, u8) {
-        self.color.get_rgb()
+        self.color
     }
 
     pub(crate) fn get_name(&self) -> String {
@@ -153,7 +222,7 @@ impl IceColor {
     pub fn from_rgb(r: u8, g: u8, b: u8) -> IceColor {
         IceColor {
             name: None,
-            color: Color::new(r, g, b),
+            color: (r, g, b),
         }
     }
 
@@ -166,11 +235,11 @@ impl IceColor {
     }
 
     pub(crate) fn set_rgb(&mut self, r: u8, g: u8, b: u8) {
-        self.color = Color::new(r, g, b);
+        self.color = (r, g, b);
     }
 }
 
-#[derive(Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct IcePalette {
     pub title: String,
     pub colors: Vec<IceColor>,

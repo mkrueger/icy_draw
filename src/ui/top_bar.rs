@@ -6,7 +6,7 @@ use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::util::{pop_data, BUFFER_DATA};
 
-use crate::{button_with_shortcut, MainWindow, Message, Settings};
+use crate::{button_with_shortcut, MainWindow, Message, Settings, SETTINGS};
 
 pub struct TopBar {
     pub dock_left: RetainedImage,
@@ -56,6 +56,26 @@ impl MainWindow {
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
                 self.commands.new_file.ui(ui, &mut result);
                 self.commands.open_file.ui(ui, &mut result);
+                ui.menu_button(
+                    fl!(crate::LANGUAGE_LOADER, "menu-open_recent"),
+                    |ui| unsafe {
+                        if !SETTINGS.recent_files.is_empty() {
+                            for file in SETTINGS.recent_files.iter().rev() {
+                                let button = ui.button(file.file_name().unwrap().to_str().unwrap());
+                                if button.clicked() {
+                                    result = Some(Message::TryLoadFile(file.clone()));
+                                    ui.close_menu();
+                                }
+                            }
+                            ui.separator();
+                        }
+                        self.commands.clear_recent_open.ui_enabled(
+                            ui,
+                            !SETTINGS.recent_files.is_empty(),
+                            &mut result,
+                        );
+                    },
+                );
                 ui.separator();
                 self.commands.save.ui_enabled(ui, is_dirty, &mut result);
                 self.commands.save_as.ui_enabled(ui, is_dirty, &mut result);

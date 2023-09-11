@@ -10,12 +10,14 @@ use std::{
 use crate::{
     add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor,
     CharFontEditor, CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentTab,
-    LayerToolWindow, Message, MinimapToolWindow, ModalDialog, ToolBehavior, ToolTab, TopBar,
+    LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, ToolBehavior, ToolTab,
+    TopBar,
 };
 use eframe::{
     egui::{self, Key, Response, SidePanel, TextStyle, Ui},
     epaint::{pos2, FontId},
 };
+use egui_tiles::TileId;
 use glow::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, EngineResult, Position, TextPane, TheDrawFont};
@@ -203,12 +205,30 @@ impl MainWindow {
     }
 
     pub fn open_file(&mut self, path: &Path, load_autosave: bool) {
+        let mut already_open = None;
+        self.enumerate_documents(|id, pane| {
+            if let Some(doc_path) = pane.get_path() {
+                if doc_path == *path {
+                    already_open = Some(id);
+                }
+            }
+        });
+        if let Some(id) = already_open {
+            self.enumerate_tabs(|_, tab| {
+                if tab.children.contains(&id) {
+                    tab.active = Some(id);
+                }
+            });
+            return;
+        }
+
         let full_path = path.to_path_buf();
         let load_path = if load_autosave {
             autosave::get_autosave_file(path)
         } else {
             path.to_path_buf()
         };
+        Settings::add_recent_file(path);
 
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap().to_ascii_lowercase();
@@ -310,7 +330,10 @@ impl MainWindow {
         None
     }
 
-    pub fn enumerate_documents(&mut self, callback: fn(&mut Box<dyn Document>)) {
+    pub fn enumerate_documents<F>(&mut self, mut callback: F)
+    where
+        F: FnMut(TileId, &mut DocumentTab),
+    {
         let mut stack = vec![];
 
         if let Some(root) = self.document_tree.root {
@@ -320,13 +343,49 @@ impl MainWindow {
             match self.document_tree.tiles.get(id) {
                 Some(egui_tiles::Tile::Pane(_)) => {
                     if let Some(egui_tiles::Tile::Pane(p)) = self.document_tree.tiles.get_mut(id) {
-                        callback(&mut p.doc.lock().unwrap());
+                        callback(id, p);
                     }
                 }
                 Some(egui_tiles::Tile::Container(container)) => match container {
                     egui_tiles::Container::Tabs(tabs) => {
-                        if let Some(active) = tabs.active {
-                            stack.push(active);
+                        for child in &tabs.children {
+                            stack.push(*child);
+                        }
+                    }
+                    egui_tiles::Container::Linear(l) => {
+                        for child in l.children.iter() {
+                            stack.push(*child);
+                        }
+                    }
+                    egui_tiles::Container::Grid(g) => {
+                        for child in g.children() {
+                            stack.push(*child);
+                        }
+                    }
+                },
+                None => {}
+            }
+        }
+    }
+
+    pub fn enumerate_tabs<F>(&mut self, mut callback: F)
+    where
+        F: FnMut(TileId, &mut egui_tiles::Tabs),
+    {
+        let mut stack = vec![];
+
+        if let Some(root) = self.document_tree.root {
+            stack.push(root);
+        }
+        while let Some(id) = stack.pop() {
+            match self.document_tree.tiles.get_mut(id) {
+                Some(egui_tiles::Tile::Pane(_)) => {}
+                Some(egui_tiles::Tile::Container(container)) => match container {
+                    egui_tiles::Container::Tabs(tabs) => {
+                        callback(id, tabs);
+
+                        for child in &tabs.children {
+                            stack.push(*child);
                         }
                     }
                     egui_tiles::Container::Linear(l) => {

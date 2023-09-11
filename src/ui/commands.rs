@@ -330,4 +330,9 @@ keys![
         OpenPalettesDirectory
     ),
     (mirror_mode, "menu-mirror_mode", ToggleMirrorMode),
+    (
+        clear_recent_open,
+        "menu-open_recent_clear",
+        ClearRecentOpenFiles
+    ),
 ];
