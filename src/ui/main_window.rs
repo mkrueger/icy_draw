@@ -646,64 +646,40 @@ impl eframe::App for MainWindow {
 fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
     let mut result = None;
 
-    if ctx.input(|i| {
-        i.key_pressed(Key::F1) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F1) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(0));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F2) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F2) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(1));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F3) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F3) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(2));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F4) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F4) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(3));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F5) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F5) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(4));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F6) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F6) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(5));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F7) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F7) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(6));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F8) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F8) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(7));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F9) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F9) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(8));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F10) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F10) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(9));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F11) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F11) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(10));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F12) && check_base_f_key_modifier(i)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F12) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(11));
     }
 
@@ -727,6 +703,5 @@ fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
 }
 
 fn check_base_f_key_modifier(i: &egui::InputState) -> bool {
-    (i.modifiers.command_only()
-        || (i.modifiers.alt && !i.modifiers.shift && !i.modifiers.ctrl))
+    i.modifiers.command_only() || (i.modifiers.alt && !i.modifiers.shift && !i.modifiers.ctrl)
 }

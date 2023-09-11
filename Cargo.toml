@@ -21,6 +21,7 @@ egui-bind = "0.7.0"
 #egui_tiles = { path = "../egui_tiles"  }
 egui-notify = "0.8.0"
 log = "0.4.20"
+log4rs = "1.2.0"
 open = "5.0.0"
 dark-light = "1.0.0"
 rfd = "0.11.4"

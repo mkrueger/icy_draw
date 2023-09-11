@@ -81,6 +81,7 @@ menu-open_palettes_directoy=Open Palettes Directory…
 
 menu-help=Help
 menu-discuss=Discuss
+menu-open_log_file=Open log file
 menu-report-bug=Report Bug
 menu-about=About…
 

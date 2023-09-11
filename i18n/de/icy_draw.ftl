@@ -82,6 +82,7 @@ menu-open_palettes_directoy=Palettenverzeichnis öffnen…
 
 menu-help=Hilfe
 menu-discuss=Diskussion
+menu-open_log_file=Logdatei öffnen
 menu-report-bug=Fehler melden
 menu-about=Info…
 
@@ -199,8 +200,6 @@ layer_tool_menu_merge_layer=Ebene zusammenführen
 layer_tool_menu_delete_layer=Ebene löschen
 
 char_table_tool_title=Zeichentabelle
-bitfont_tool_title=Fonts
-bitfont_tool_title=Bitfont
 minimap_tool_title=Übersicht
 
 no_document_selected=Kein Dokument ausgewählt

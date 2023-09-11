@@ -7,6 +7,17 @@ mod model;
 mod ui;
 mod util;
 
+use log::LevelFilter;
+use log4rs::{
+    append::{
+        console::{ConsoleAppender, Target},
+        file::FileAppender,
+    },
+    config::{Appender, Config, Root},
+    encode::pattern::PatternEncoder,
+    filter::threshold::ThresholdFilter,
+};
+
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader},
     DesktopLanguageRequester,
@@ -33,12 +44,57 @@ static LANGUAGE_LOADER: Lazy<FluentLanguageLoader> = Lazy::new(|| {
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
+    use std::fs;
+
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(1280., 841.)),
         multisampling: 0,
         renderer: eframe::Renderer::Glow,
         ..Default::default()
     };
+    if let Ok(log_file) = Settings::get_log_file() {
+        if let Ok(data) = fs::metadata(&log_file) {
+            if data.len() > 1024 * 256 {
+                fs::remove_file(&log_file).unwrap();
+            }
+        }
+
+        let level = log::LevelFilter::Info;
+
+        // Build a stderr logger.
+        let stderr = ConsoleAppender::builder().target(Target::Stderr).build();
+
+        // Logging to log file.
+        let logfile = FileAppender::builder()
+            // Pattern: https://docs.rs/log4rs/*/log4rs/encode/pattern/index.html
+            .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
+            .build(log_file)
+            .unwrap();
+
+        let config = Config::builder()
+            .appender(Appender::builder().build("logfile", Box::new(logfile)))
+            .appender(
+                Appender::builder()
+                    .filter(Box::new(ThresholdFilter::new(level)))
+                    .build("stderr", Box::new(stderr)),
+            )
+            .build(
+                Root::builder()
+                    .appender("logfile")
+                    .appender("stderr")
+                    .build(LevelFilter::Info),
+            )
+            .unwrap();
+
+        // Use this to change log levels at runtime.
+        // This means you can change the default log level to trace
+        // if you are trying to debug an issue and need more logs on then turn it off
+        // once you are done.
+        let _handle = log4rs::init_config(config);
+    } else {
+        eprintln!("Failed to create log file");
+    }
+    log::info!("Starting iCY DRAW {}", VERSION);
     eframe::run_native(
         &DEFAULT_TITLE,
         options,

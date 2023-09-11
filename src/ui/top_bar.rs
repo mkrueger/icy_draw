@@ -6,7 +6,7 @@ use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::util::{pop_data, BUFFER_DATA};
 
-use crate::{button_with_shortcut, MainWindow, Message};
+use crate::{button_with_shortcut, MainWindow, Message, Settings};
 
 pub struct TopBar {
     pub dock_left: RetainedImage,
@@ -427,6 +427,13 @@ impl MainWindow {
                     "https://github.com/mkrueger/icy_draw/issues/new",
                 );
                 if r.clicked() {
+                    ui.close_menu();
+                }
+                let r = ui.button(fl!(crate::LANGUAGE_LOADER, "menu-open_log_file"));
+                if r.clicked() {
+                    if let Ok(log_file) = Settings::get_log_file() {
+                        let _ = open::that(log_file);
+                    }
                     ui.close_menu();
                 }
                 ui.separator();

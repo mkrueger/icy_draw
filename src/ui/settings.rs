@@ -105,6 +105,16 @@ impl Settings {
             "font directory".to_string(),
         )))
     }
+
+    pub(crate) fn get_log_file() -> TerminalResult<PathBuf> {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+            let dir = proj_dirs.config_dir().join("icy_draw.log");
+            return Ok(dir);
+        }
+        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
+            "log_file".to_string(),
+        )))
+    }
 }
 
 pub static mut SETTINGS: Settings = Settings {
