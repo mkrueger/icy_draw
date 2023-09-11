@@ -443,6 +443,19 @@ impl MainWindow {
                 .set_duration(Some(Duration::from_secs(5)));
         }
     }
+
+    fn request_close_tab(&mut self, close_id: TileId) -> bool {
+        if let Some(egui_tiles::Tile::Pane(pane)) = self.document_tree.tiles.get(close_id) {
+            if !pane.is_dirty() {
+                self.document_tree.tiles.remove(close_id);
+                return true;
+            } else {
+                self.open_dialog(AskCloseFileDialog::new(pane.get_path(), close_id));
+                return false;
+            }
+        }
+        true
+    }
 }
 
 pub fn button_with_shortcut(
@@ -664,11 +677,33 @@ impl eframe::App for MainWindow {
 
         self.toasts.show(ctx);
         if let Some(close_id) = self.document_behavior.request_close.take() {
-            if let Some(egui_tiles::Tile::Pane(pane)) = self.document_tree.tiles.get(close_id) {
-                if !pane.is_dirty() {
-                    self.document_tree.tiles.remove(close_id);
-                } else {
-                    self.open_dialog(AskCloseFileDialog::new(pane.get_path(), close_id));
+            self.request_close_tab(close_id);
+        }
+
+        if let Some(close_id) = self.document_behavior.request_close_all.take() {
+            let mut open_tab = Vec::new();
+            self.enumerate_tabs(|_, tab| {
+                if tab.children.contains(&close_id) {
+                    open_tab = tab.children.clone();
+                }
+            });
+            for t in open_tab {
+                if !self.request_close_tab(t) {
+                    break;
+                }
+            }
+        }
+
+        if let Some(close_id) = self.document_behavior.request_close_others.take() {
+            let mut open_tab = Vec::new();
+            self.enumerate_tabs(|_, tab| {
+                if tab.children.contains(&close_id) {
+                    open_tab = tab.children.clone();
+                }
+            });
+            for t in open_tab {
+                if t != close_id && !self.request_close_tab(t) {
+                    break;
                 }
             }
         }

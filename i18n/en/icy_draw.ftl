@@ -251,3 +251,8 @@ ask_close_file_dialog-description=Do you want to save the changes you made to { 
 ask_close_file_dialog-subdescription=Your changes will be lost if you don't save them.
 ask_close_file_dialog-dont_save_button=Don't save
 ask_close_file_dialog-save_button=Save
+
+tab-context-menu-close=Close
+tab-context-menu-close_others=Close others
+tab-context-menu-close_all=Close all
+tab-context-menu-copy_path=Copy path

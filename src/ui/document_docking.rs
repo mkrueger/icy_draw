@@ -120,6 +120,9 @@ pub struct DocumentBehavior {
     cur_pos: Position,
 
     pub request_close: Option<TileId>,
+    pub request_close_others: Option<TileId>,
+    pub request_close_all: Option<TileId>,
+
     pub message: Option<Message>,
 }
 
@@ -132,6 +135,8 @@ impl DocumentBehavior {
             char_set_img: None,
             cur_char_set: usize::MAX,
             request_close: None,
+            request_close_others: None,
+            request_close_all: None,
             message: None,
             pos_img: None,
             cur_pos: Position::new(i32::MAX, i32::MAX),
@@ -194,8 +199,38 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         button_response: eframe::egui::Response,
     ) -> Response {
         button_response.context_menu(|ui| {
-            if ui.button("Close").clicked() {
+            if ui
+                .button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close"))
+                .clicked()
+            {
                 self.on_close_requested(tiles, tile_id);
+                ui.close_menu();
+            }
+            if ui
+                .button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close_others"))
+                .clicked()
+            {
+                self.request_close_others = Some(tile_id);
+                ui.close_menu();
+            }
+            if ui
+                .button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close_all"))
+                .clicked()
+            {
+                self.request_close_all = Some(tile_id);
+                ui.close_menu();
+            }
+            ui.separator();
+            if ui
+                .button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-copy_path"))
+                .clicked()
+            {
+                if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(tile_id) {
+                    if let Some(path) = &pane.full_path {
+                        let text = path.to_str().unwrap().to_string();
+                        ui.output_mut(|o| o.copied_text = text);
+                    }
+                }
                 ui.close_menu();
             }
         })

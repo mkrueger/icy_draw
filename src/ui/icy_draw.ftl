@@ -247,8 +247,3 @@ ask_close_file_dialog-description=Sollen die Änderungen in { $filename } gespei
 ask_close_file_dialog-subdescription=Alle Änderungen gehen beim Verwerfen verloren.
 ask_close_file_dialog-dont_save_button=Verwerfen
 ask_close_file_dialog-save_button=Speichern
-
-tab-context-menu-close=Schließen
-tab-context-menu-close_others=Andere schließen
-tab-context-menu-close_all=Alle schließen
-tab-context-menu-copy_path=Pfad kopieren
