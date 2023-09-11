@@ -5,6 +5,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use directories::UserDirs;
 use eframe::{
     egui::{self},
     epaint::Vec2,
@@ -143,7 +144,13 @@ impl MainWindow {
                 self.open_dialog(NewFileDialog::default());
             }
             Message::OpenFileDialog => {
-                self.open_dialog(OpenFileDialog::default());
+                let mut initial_directory = if let Some(d) = self.get_active_pane() {
+                    d.get_path()
+                } else {
+                    None
+                };
+                set_default_initial_directory_opt(&mut initial_directory);
+                self.open_dialog(OpenFileDialog::new(initial_directory));
             }
 
             Message::TryLoadFile(path) => {
@@ -677,7 +684,19 @@ impl MainWindow {
 
             Message::SetReferenceImage => {
                 self.run_editor_command(0, |window, editor, _| {
-                    window.open_dialog(crate::OpenReferenceImageDialog::default()/*new(editor.buffer_view.lock().clear_reference_image())*/);
+                    let mut initial_directory =
+                        if let Some(d) = editor.buffer_view.lock().get_reference_image_path() {
+                            if let Some(p) = d.parent() {
+                                Some(p.to_path_buf())
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        };
+                    set_default_initial_directory_opt(&mut initial_directory);
+
+                    window.open_dialog(crate::OpenReferenceImageDialog::new(initial_directory));
                     None
                 });
             }
@@ -854,6 +873,17 @@ impl MainWindow {
             }
         }
     }
+}
+
+pub fn set_default_initial_directory_opt(initial_directory: &mut Option<PathBuf>) {
+    if initial_directory.is_some() {
+        return;
+    }
+    *initial_directory = if let Some(user) = UserDirs::new() {
+        Some(user.home_dir().to_path_buf())
+    } else {
+        Some(std::env::current_dir().unwrap())
+    };
 }
 
 pub fn to_message<T>(result: EngineResult<T>) -> Option<Message> {

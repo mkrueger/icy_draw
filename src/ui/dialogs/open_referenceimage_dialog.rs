@@ -10,9 +10,9 @@ pub struct OpenReferenceImageDialog {
     opened_file: Option<PathBuf>,
 }
 
-impl Default for OpenReferenceImageDialog {
-    fn default() -> Self {
-        let mut dialog = FileDialog::open_file(None);
+impl OpenReferenceImageDialog {
+    pub fn new(initial_path: Option<PathBuf>) -> Self {
+        let mut dialog = FileDialog::open_file(initial_path);
         dialog.open();
         Self {
             open_file: false,

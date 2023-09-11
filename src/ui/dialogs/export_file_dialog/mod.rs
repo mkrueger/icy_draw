@@ -3,6 +3,7 @@
 use std::path::PathBuf;
 
 use eframe::egui::{self, TextEdit, Ui};
+use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{Rectangle, SaveOptions, TextPane};
@@ -24,6 +25,7 @@ pub struct ExportFileDialog {
     pub should_commit: bool,
     pub file_name: PathBuf,
     save_options: SaveOptions,
+    folder_dialog: Option<FileDialog>,
 }
 
 impl ExportFileDialog {
@@ -35,12 +37,24 @@ impl ExportFileDialog {
                 _ => PathBuf::from("Untitled.ans"),
             },
             save_options: SaveOptions::new(),
+            folder_dialog: None,
         }
     }
 }
 
 impl ModalDialog for ExportFileDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
+        if let Some(ed) = &mut self.folder_dialog {
+            if ed.show(ctx).selected() {
+                if let Some(res) = ed.path() {
+                    self.file_name = res.to_path_buf();
+                }
+                self.folder_dialog = None
+            } else {
+                return false;
+            }
+        }
+
         let mut result = false;
 
         let modal = Modal::new(ctx, "export_file-dialog");
@@ -63,17 +77,12 @@ impl ModalDialog for ExportFileDialog {
                     }
 
                     if ui.add(egui::Button::new("…").wrap(false)).clicked() {
-                        /* TODO: File Dialog
+                        let mut initial_path = None;
+                        crate::set_default_initial_directory_opt(&mut initial_path);
+                        let mut dialog = FileDialog::save_file(initial_path);
+                        dialog.open();
+                        self.folder_dialog = Some(dialog);
 
-                        let mut dialog = rfd::FileDialog::new();
-                        if let Some(parent) = self.file_name.parent() {
-                            dialog = dialog.set_directory(parent);
-                        }
-                        let res = dialog.pick_file();
-
-                        if let Some(file) = res {
-                            self.file_name = file;
-                        }*/
                         ui.close_menu();
                     }
                     if let Some(ext) = self.file_name.extension() {

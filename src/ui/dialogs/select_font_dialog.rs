@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    fs,
+    sync::{Arc, Mutex},
+};
 
 use eframe::{
     egui::{self, Response, Sense, TextEdit, TextStyle, WidgetText},
@@ -7,6 +10,7 @@ use eframe::{
     },
 };
 use egui_extras::RetainedImage;
+use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::EditState, Buffer, Rectangle, Size, TextPane, TheDrawFont};
@@ -22,6 +26,9 @@ pub struct SelectFontDialog {
     show_outline: bool,
     show_color: bool,
     show_block: bool,
+
+    export_data: Option<Vec<u8>>,
+    export_dialog: Option<FileDialog>,
 
     image_cache: HashMap<usize, RetainedImage>,
 }
@@ -40,6 +47,8 @@ impl SelectFontDialog {
             show_color: true,
             show_block: true,
             image_cache: HashMap::default(),
+            export_dialog: None,
+            export_data: None,
         }
     }
 
@@ -207,6 +216,21 @@ impl SelectFontDialog {
 
 impl crate::ModalDialog for SelectFontDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
+        if let Some(ed) = &mut self.export_dialog {
+            if ed.show(ctx).selected() {
+                if let Some(res) = ed.path() {
+                    let mut res = res.to_path_buf();
+                    res.set_extension("tdf");
+                    if let Err(err) = fs::write(res, self.export_data.take().unwrap()) {
+                        log::error!("Failed to write font: {}", err);
+                    }
+                }
+                self.export_dialog = None
+            } else {
+                return false;
+            }
+        }
+
         let mut result = false;
         let modal = Modal::new(ctx, "select_font_dialog2");
         let font_count = self.fonts.lock().unwrap().len();
@@ -338,15 +362,12 @@ impl crate::ModalDialog for SelectFontDialog {
                 {
                     match self.fonts.lock().unwrap()[self.selected_font as usize].as_tdf_bytes() {
                         Ok(data) => {
-                            /* TODO: File dialog
-                            let dialog = rfd::FileDialog::new();
-                            let res = dialog.save_file();
-                            if let Some(mut res) = res {
-                                res.set_extension("tdf");
-                                if let Err(err) = fs::write(res, data) {
-                                    log::error!("Failed to write font: {}", err);
-                                }
-                            }*/
+                            let mut initial_path = None;
+                            crate::set_default_initial_directory_opt(&mut initial_path);
+                            let mut dialog = FileDialog::save_file(initial_path);
+                            dialog.open();
+                            self.export_data = Some(data);
+                            self.export_dialog = Some(dialog);
                         }
                         Err(err) => {
                             log::error!("Failed to export font: {}", err);
