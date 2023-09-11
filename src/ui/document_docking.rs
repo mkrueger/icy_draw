@@ -15,7 +15,7 @@ use eframe::egui::{self, Response, Ui};
 use egui_extras::RetainedImage;
 use egui_tiles::{Tabs, TileId, Tiles};
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Buffer, Position, TextAttribute, TextPane};
+use icy_engine::{AttributedChar, Buffer, Position, Selection, TextAttribute, TextPane};
 
 pub struct DocumentTab {
     full_path: Option<PathBuf>,
@@ -118,6 +118,7 @@ pub struct DocumentBehavior {
 
     pos_img: Option<RetainedImage>,
     cur_pos: Position,
+    cur_selection: Option<Selection>,
 
     pub request_close: Option<TileId>,
     pub request_close_others: Option<TileId>,
@@ -140,6 +141,7 @@ impl DocumentBehavior {
             message: None,
             pos_img: None,
             cur_pos: Position::new(i32::MAX, i32::MAX),
+            cur_selection: None,
         }
     }
 }
@@ -315,15 +317,26 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                 if let Ok(doc) = &mut pane.doc.lock() {
                     if let Some(editor) = doc.get_ansi_editor() {
                         let pos = editor.get_caret_position();
-
-                        if pos != self.cur_pos {
+                        let sel = editor.buffer_view.lock().get_selection();
+                        if pos != self.cur_pos || sel != self.cur_selection {
                             self.cur_pos = pos;
-                            let txt = fl!(
-                                crate::LANGUAGE_LOADER,
-                                "toolbar-position",
-                                line = pos.y,
-                                column = pos.x
-                            );
+                            self.cur_selection = sel;
+                            let txt = if let Some(sel) = sel {
+                                let r = sel.as_rectangle();
+                                fl!(
+                                    crate::LANGUAGE_LOADER,
+                                    "toolbar-size",
+                                    colums = r.size.height,
+                                    rows = r.size.width
+                                )
+                            } else {
+                                fl!(
+                                    crate::LANGUAGE_LOADER,
+                                    "toolbar-position",
+                                    line = (pos.y + 1),
+                                    column = (pos.x + 1)
+                                )
+                            };
 
                             let mut buffer = Buffer::new((txt.chars().count(), 1));
                             buffer.is_terminal_buffer = true;

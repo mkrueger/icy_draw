@@ -128,7 +128,14 @@ edit-canvas-size-height-label=Height:
 edit-canvas-size-resize=Resize
 edit-canvas-size-resize_layers-label=Resize layers
 
-toolbar-size = { $colums } Columns x { $rows } Rows
+toolbar-size = { $colums ->
+     [1] 1 Column
+*[other] { $colums } Columns
+} x { $rows ->
+     [1] 1 Row
+*[other] { $rows } Rows
+}
+
 toolbar-position = Ln { $line }, Col { $column }
 
 add_layer_tooltip = Add new layer
