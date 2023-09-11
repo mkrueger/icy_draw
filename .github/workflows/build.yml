@@ -74,7 +74,7 @@ jobs:
           ${{ env.APP_NAME }}-${{ env.VERSION }}-installer.msi
           file_id.diz
     - name: Copy exe
-      run: cp ".\target\release\${{ env.APP_NAME }}.exe" .
+      run: cp ".\target\debug\${{ env.APP_NAME }}.exe" .
     - name: 'Upload plain exe'
       uses: actions/upload-artifact@v3
       with:

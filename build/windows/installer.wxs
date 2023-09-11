@@ -19,7 +19,7 @@
       <!-- Application binaries -->
       <DirectoryRef Id="$(PackageName)ProgramFiles">
          <Component Id="$(PackageName)Exe">
-            <File Id="$(PackageName)ExeFile" Source=".\target\release\$(ExeName).exe" Name="$(ExeName).exe" KeyPath="yes" />
+            <File Id="$(PackageName)ExeFile" Source=".\target\debug\$(ExeName).exe" Name="$(ExeName).exe" KeyPath="yes" />
          </Component>
       </DirectoryRef>
       <DirectoryRef Id="$(PackageName)ProgramMenu">
