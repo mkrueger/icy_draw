@@ -45,9 +45,10 @@ impl MainWindow {
         menu::bar(ui, |ui| {
             let mut has_buffer = false;
             let mut is_dirty = false;
+            let mut has_pane = false;
             if let Some(pane) = self.get_active_pane() {
                 is_dirty = pane.is_dirty();
-
+                has_pane = true;
                 if let Ok(doc) = pane.doc.lock() {
                     has_buffer = doc.get_ansi_editor().is_some();
                 }
@@ -78,7 +79,7 @@ impl MainWindow {
                 );
                 ui.separator();
                 self.commands.save.ui_enabled(ui, is_dirty, &mut result);
-                self.commands.save_as.ui_enabled(ui, is_dirty, &mut result);
+                self.commands.save_as.ui_enabled(ui, has_pane, &mut result);
                 self.commands.export.ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
                 self.commands.edit_font_outline.ui(ui, &mut result);

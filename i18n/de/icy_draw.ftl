@@ -129,9 +129,9 @@ edit-canvas-size-height-label=Höhe:
 edit-canvas-size-resize=Größe ändern
 edit-canvas-size-resize_layers-label=Ebenen anpassen
 
-toolbar-size = { $colums ->
+toolbar-size = {$colums ->
      [1] 1 Zeile
-*[other] { $colums } Zeilen
+*[other] {$colums} Zeilen
 } x { $rows ->
      [1] 1 Spalte
 *[other] { $rows } Spalten

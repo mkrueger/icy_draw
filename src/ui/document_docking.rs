@@ -337,13 +337,21 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                                     column = (pos.x + 1)
                                 )
                             };
+                            let mut txt2 = String::new();
+                            let mut char_count = 0;
+                            for c in txt.chars() {
+                                if (c as u32) < 255 {
+                                    txt2.push(c);
+                                    char_count += 1;
+                                }
+                            }
 
-                            let mut buffer = Buffer::new((txt.chars().count(), 1));
+                            let mut buffer = Buffer::new((char_count, 1));
                             buffer.is_terminal_buffer = true;
                             let mut attr: TextAttribute = TextAttribute::default();
                             attr.set_foreground(15);
 
-                            for (i, mut c) in txt.chars().enumerate() {
+                            for (i, mut c) in txt2.chars().enumerate() {
                                 if c as u32 > 255 {
                                     c = ' ';
                                 }
