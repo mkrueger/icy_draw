@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    fs,
+    sync::{Arc, Mutex},
+};
 
 use eframe::{
     egui::{self, Response, Sense, TextEdit, TextStyle, WidgetText},
@@ -310,6 +313,27 @@ impl crate::ModalDialog for SelectFontDialog {
             });
 
             modal.buttons(ui, |ui| {
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "export-button-title"))
+                    .clicked()
+                {
+                    match self.fonts.lock().unwrap()[self.selected_font as usize].as_tdf_bytes() {
+                        Ok(data) => {
+                            let dialog = rfd::FileDialog::new();
+                            let res = dialog.save_file();
+                            if let Some(mut res) = res {
+                                res.set_extension("tdf");
+                                if let Err(err) = fs::write(res, data) {
+                                    log::error!("Failed to write font: {}", err);
+                                }
+                            }
+                        }
+                        Err(err) => {
+                            log::error!("Failed to export font: {}", err);
+                        }
+                    }
+                }
+
                 if ui
                     .button(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-select"))
                     .clicked()

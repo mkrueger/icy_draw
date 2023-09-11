@@ -259,6 +259,10 @@ pub trait Tool {
                 editor.backspace();
             }
 
+            MKey::Home => {
+                editor.backspace();
+            }
+
             MKey::Character(ch) => {
                 editor.buffer_view.lock().clear_selection();
                 /*        if let MModifiers::Alt = modifier {

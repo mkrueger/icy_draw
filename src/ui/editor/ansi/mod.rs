@@ -264,7 +264,7 @@ impl AnsiEditor {
                 .get_parser()
                 .convert_from_unicode(ch, 0);
             if let Err(err) = self.print_char(translated_char as u8) {
-                eprintln!("{}", err);
+                log::error!("{err}");
             }
         }
     }
@@ -528,7 +528,6 @@ impl AnsiEditor {
         if response.has_focus() {
             let events = ui.input(|i| i.events.clone());
             for e in &events {
-                println!("{:?}", e);
                 match e {
                     egui::Event::Copy => {
                         let buffer_view = self.buffer_view.clone();
