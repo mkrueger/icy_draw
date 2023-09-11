@@ -159,10 +159,10 @@ pub fn palette_editor_16(ui: &mut egui::Ui, editor: &AnsiEditor) {
 
     ui.horizontal(|ui| {
         ui.add_space(4.0);
-
-        let height = (ui.available_width()) / 8.0;
+        let right_border = 4.0;
+        let height = (ui.available_width() - right_border) / 8.0;
         let (id, stroke_rect) =
-            ui.allocate_space(Vec2::new(ui.available_width() - 4.0, height * 2.0));
+            ui.allocate_space(Vec2::new(ui.available_width() - right_border, height * 2.0));
         let mut response = ui.interact(stroke_rect, id, Sense::click());
 
         let painter = ui.painter_at(stroke_rect);
