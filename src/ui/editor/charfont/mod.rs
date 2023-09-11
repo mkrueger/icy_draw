@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use eframe::egui::{self, RichText};
+use eframe::egui::{self, RichText, SidePanel, TextEdit, TopBottomPanel};
 use icy_engine::{
     editor::UndoState, BitFont, Buffer, EngineResult, FontGlyph, Layer, Size, TextPane, TheDrawFont,
 };
@@ -85,7 +85,7 @@ impl Document for CharFontEditor {
     }
 
     fn is_dirty(&self) -> bool {
-        self.is_dirty
+        self.is_dirty || self.ansi_editor.is_dirty()
     }
 
     fn undo_stack_len(&self) -> usize {
@@ -93,6 +93,7 @@ impl Document for CharFontEditor {
     }
 
     fn get_bytes(&mut self, _path: &Path) -> TerminalResult<Vec<u8>> {
+        self.is_dirty = false;
         self.save_old_selected_char();
         TheDrawFont::create_font_bundle(&self.fonts)
     }
@@ -104,60 +105,151 @@ impl Document for CharFontEditor {
         selected_tool: usize,
         options: &DocumentOptions,
     ) -> Option<Message> {
-        egui::ComboBox::from_id_source("combobox1")
-            .selected_text(RichText::new(
-                self.fonts[self.selected_font].name.to_string(),
-            ))
-            .show_ui(ui, |ui| {
-                let mut changed = false;
-                let mut select_font = 0;
-                for (i, font) in self.fonts.iter().enumerate() {
-                    if ui
-                        .selectable_value(&mut self.selected_font, i, &font.name)
-                        .clicked()
-                    {
-                        select_font = i;
-                        changed = true;
-                    }
+        SidePanel::left("side_panel")
+            .default_width(200.0)
+            .show_inside(ui, |ui| {
+                if self.selected_font < self.fonts.len() {
+                    egui::ComboBox::from_id_source("combobox1")
+                        .selected_text(RichText::new(
+                            self.fonts[self.selected_font].name.to_string(),
+                        ))
+                        .show_ui(ui, |ui| {
+                            let mut changed = false;
+                            let mut select_font = 0;
+                            for (i, font) in self.fonts.iter().enumerate() {
+                                if ui
+                                    .selectable_value(&mut self.selected_font, i, &font.name)
+                                    .clicked()
+                                {
+                                    select_font = i;
+                                    changed = true;
+                                }
+                            }
+                            if changed {
+                                self.save_old_selected_char();
+                                self.selected_font = select_font;
+                                self.old_selected_char_opt = None;
+                                self.selected_char_opt = None;
+                                self.show_selected_char();
+                            }
+                        });
                 }
-                if changed {
-                    self.save_old_selected_char();
-                    self.selected_font = select_font;
-                    self.old_selected_char_opt = None;
-                    self.selected_char_opt = None;
-                    self.show_selected_char();
+
+                ui.horizontal(|ui| {
+                    if ui.button("+").clicked() {
+                        self.fonts.push(TheDrawFont::new(
+                            "New Font",
+                            icy_engine::FontType::Color,
+                            1,
+                        ));
+                        self.selected_font = self.fonts.len() - 1;
+                        self.selected_char_opt = None;
+                        self.old_selected_char_opt = None;
+                        self.show_selected_char();
+                        self.is_dirty = true;
+                    }
+
+                    if ui.button("🗑").clicked() {
+                        self.fonts.remove(self.selected_font);
+                        self.selected_font = 0;
+                        self.selected_char_opt = None;
+                        self.old_selected_char_opt = None;
+                        self.show_selected_char();
+                        self.is_dirty = true;
+                    }
+
+                    if ui.button("Clone").clicked() {
+                        self.fonts.push(self.fonts[self.selected_font].clone());
+                        self.selected_font = self.fonts.len() - 1;
+                        self.selected_char_opt = None;
+                        self.old_selected_char_opt = None;
+                        self.show_selected_char();
+                        self.is_dirty = true;
+                    }
+                });
+            });
+
+        TopBottomPanel::top("char_top_panel")
+            .exact_height(60.)
+            .show_inside(ui, |ui| {
+                if self.selected_font < self.fonts.len() {
+                    ui.horizontal(|ui| {
+                        ui.label("Font Name:");
+                        if ui
+                            .add(
+                                TextEdit::singleline(&mut self.fonts[self.selected_font].name)
+                                    .char_limit(12),
+                            )
+                            .changed()
+                        {
+                            self.is_dirty = true;
+                        }
+                    });
+                    ui.horizontal(|ui| {
+                        ui.label("Spacing:");
+                        if ui
+                            .add(
+                                egui::DragValue::new(&mut self.fonts[self.selected_font].spaces)
+                                    .clamp_range(0.0..=40.0),
+                            )
+                            .changed()
+                        {
+                            self.is_dirty = true;
+                        }
+                    });
+                } else {
+                    ui.heading("No font selected");
                 }
             });
 
-        self.show_char_selector(ui);
-        let attr = self
-            .ansi_editor
-            .buffer_view
-            .lock()
-            .get_edit_state()
-            .get_caret()
-            .get_attribute();
+        TopBottomPanel::bottom("char_bottom_panel")
+            .exact_height(150.)
+            .show_inside(ui, |ui| {
+                if self.selected_font < self.fonts.len() {
+                    self.show_char_selector(ui);
 
-        for layer in &mut self
-            .ansi_editor
-            .buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .get_buffer_mut()
-            .layers
-        {
-            match self.fonts[self.selected_font].font_type {
-                icy_engine::FontType::Outline | icy_engine::FontType::Block => {
-                    layer.forced_output_attribute = Some(attr);
+                    if self.selected_char_opt.is_some() && ui.button("Clear char").clicked() {
+                        self.fonts[self.selected_font].clear_glyph(self.selected_char_opt.unwrap());
+                        self.selected_char_opt = None;
+                        self.old_selected_char_opt = None;
+                        self.show_selected_char();
+                        self.is_dirty = true;
+                    }
                 }
-                icy_engine::FontType::Color => {
-                    layer.forced_output_attribute = None;
+            });
+
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            if self.selected_font < self.fonts.len() {
+                let attr = self
+                    .ansi_editor
+                    .buffer_view
+                    .lock()
+                    .get_edit_state()
+                    .get_caret()
+                    .get_attribute();
+
+                for layer in &mut self
+                    .ansi_editor
+                    .buffer_view
+                    .lock()
+                    .get_edit_state_mut()
+                    .get_buffer_mut()
+                    .layers
+                {
+                    match self.fonts[self.selected_font].font_type {
+                        icy_engine::FontType::Outline | icy_engine::FontType::Block => {
+                            layer.forced_output_attribute = Some(attr);
+                        }
+                        icy_engine::FontType::Color => {
+                            layer.forced_output_attribute = None;
+                        }
+                    }
                 }
+
+                self.ansi_editor
+                    .show_ui(ui, cur_tool, selected_tool, options);
             }
-        }
-
-        self.ansi_editor
-            .show_ui(ui, cur_tool, selected_tool, options);
+        });
         None
     }
 
@@ -200,6 +292,7 @@ impl CharFontEditor {
     pub fn show_char_selector(&mut self, ui: &mut egui::Ui) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
+                ui.spacing_mut().item_spacing = egui::Vec2::new(0., 0.);
                 for i in b'!'..=b'~' {
                     let ch = unsafe { char::from_u32_unchecked(i as u32) };
                     let mut style = DrawGlyphStyle::Normal;
@@ -238,6 +331,17 @@ impl CharFontEditor {
     }
 
     fn save_old_selected_char(&mut self) {
+        if self
+            .ansi_editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .undo_stack_len()
+            == 0
+        {
+            return;
+        }
+        self.is_dirty = true;
         if let Some(font) = self.fonts.get_mut(self.selected_font) {
             if let Some(ch) = self.old_selected_char_opt {
                 match font.font_type {

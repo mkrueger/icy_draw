@@ -55,19 +55,9 @@ impl crate::ModalDialog for SaveFileDialog {
 
     fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         if let Some(file) = &self.opened_file.clone() {
-            let file = file.with_extension("icd");
-            if let Some(editor) = window
-                .get_active_document()
-                .unwrap()
-                .lock()
-                .unwrap()
-                .get_ansi_editor()
-            {
-                let options = SaveOptions::new();
-                editor
-                    .save_content(file.to_path_buf().as_path(), &options)
-                    .unwrap();
-                editor.set_file_name(file);
+            if let Some(pane) = window.get_active_pane() {
+                pane.full_path = Some(file.clone());
+                pane.save();
             }
         }
         Ok(None)

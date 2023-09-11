@@ -161,38 +161,12 @@ impl MainWindow {
 
             Message::SaveFile => {
                 let mut msg = None;
-                if let Some(doc) = self.get_active_pane() {
+                if let Some(pane) = self.get_active_pane() {
                     let mut save_as = true;
-                    if let Some(path) = &doc.full_path {
+                    if let Some(path) = &pane.full_path {
                         if let Some(ext) = path.extension() {
-                            if ext == "icd" || ext == "psf" {
-                                match doc.doc.lock().unwrap().get_bytes(path) {
-                                    Ok(bytes) => {
-                                        let mut tmp_file = path.clone();
-                                        tmp_file.push(".sav");
-                                        let mut num = 0;
-                                        while tmp_file.exists() {
-                                            tmp_file =
-                                                tmp_file.with_extension(format!("sav{}", num));
-                                            num += 1;
-                                        }
-                                        if let Err(err) = fs::write(&tmp_file, bytes) {
-                                            msg = Some(Message::ShowError(format!(
-                                                "Error saving file {err}"
-                                            )));
-                                        } else if let Err(err) = fs::rename(tmp_file, path) {
-                                            msg = Some(Message::ShowError(format!(
-                                                "Error saving file {err}"
-                                            )));
-                                        }
-                                    }
-                                    Err(err) => {
-                                        msg = Some(Message::ShowError(format!("{err}")));
-                                    }
-                                }
-                                if msg.is_none() {
-                                    remove_autosave(path);
-                                }
+                            if ext == "icd" || ext == "psf" || ext == "tdf" {
+                                msg = pane.save();
                                 save_as = false;
                             }
                         }

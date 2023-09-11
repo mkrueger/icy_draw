@@ -1,12 +1,15 @@
 use std::{
+    fs,
     path::PathBuf,
     sync::{Arc, Mutex},
     time::Instant,
 };
 
 use crate::{
-    create_retained_image, model::Tool, util::autosave::store_auto_save, Document, DocumentOptions,
-    Message, Settings, DEFAULT_OUTLINE_TABLE, FIRST_TOOL,
+    create_retained_image,
+    model::Tool,
+    util::autosave::{remove_autosave, store_auto_save},
+    Document, DocumentOptions, Message, Settings, DEFAULT_OUTLINE_TABLE, FIRST_TOOL,
 };
 use eframe::egui::{self, Response, Ui};
 use egui_extras::RetainedImage;
@@ -21,6 +24,46 @@ pub struct DocumentTab {
 
     pub instant: Instant,
     pub last_change: usize,
+}
+impl DocumentTab {
+    pub(crate) fn save(&self) -> Option<Message> {
+        let Some(path) = &self.full_path else {
+            return None;
+        };
+
+        let mut msg = None;
+        match self.doc.lock().unwrap().get_bytes(path) {
+            Ok(bytes) => {
+                let mut tmp_file = path.clone();
+                let ext = path
+                    .extension()
+                    .unwrap_or_default()
+                    .to_str()
+                    .unwrap()
+                    .to_ascii_lowercase();
+
+                tmp_file.with_extension(format!("{}~", ext));
+                let mut num = 1;
+                while tmp_file.exists() {
+                    tmp_file = tmp_file.with_extension(format!("{}{}~", ext, num));
+                    num += 1;
+                }
+
+                if let Err(err) = fs::write(&tmp_file, bytes) {
+                    msg = Some(Message::ShowError(format!("Error writing file {err}")));
+                } else if let Err(err) = fs::rename(tmp_file, path) {
+                    msg = Some(Message::ShowError(format!("Error moving file {err}")));
+                }
+            }
+            Err(err) => {
+                msg = Some(Message::ShowError(format!("{err}")));
+            }
+        }
+        if msg.is_none() {
+            remove_autosave(path);
+        }
+        msg
+    }
 }
 
 pub struct DocumentBehavior {
