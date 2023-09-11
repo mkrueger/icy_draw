@@ -5,17 +5,17 @@ use eframe::{
 };
 
 pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainWindow) {
-    let (id, back_rect) = ui.allocate_space(Vec2::new(200., 68.0));
-
     let spacing = 4.0;
     let icon_size = 28.0;
 
     if let Ok(tools) = arg.document_behavior.tools.lock() {
-        let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
-        let mut pos = back_rect.min + Vec2::new(spacing, spacing);
         if tools[arg.document_behavior.selected_tool].is_exclusive() {
             return;
         }
+        let (id, back_rect) = ui.allocate_space(Vec2::new(200., 68.0));
+        let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
+        let mut pos = back_rect.min + Vec2::new(spacing, spacing);
+
         for i in 0..tools.len() {
             let t = &tools[i];
             if !t.is_visible() {

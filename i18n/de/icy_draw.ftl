@@ -230,3 +230,10 @@ autosave-dialog-description=Icy Draw hat eine Autosave Datei gefunden.
 autosave-dialog-question=Was möchtest du tun?
 autosave-dialog-load_autosave_button=Autosave laden
 autosave-dialog-discard_autosave_button=Verwerfen
+
+paste_mode-description=Einfügemodos. Im Layer Tool neue Ebene hinzufügen oder verankern.
+paste_mode-stamp=Stempel
+paste_mode-rotate=Rotieren
+paste_mode-flipx=X Spiegeln
+paste_mode-flipy=Y Spiegeln
+paste_mode-transparent=Transparent

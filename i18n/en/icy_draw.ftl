@@ -234,3 +234,10 @@ autosave-dialog-description=Found an autosave for this file.
 autosave-dialog-question=Do you want to use the original file, or load the autosave?
 autosave-dialog-load_autosave_button=Load from autosave
 autosave-dialog-discard_autosave_button=Discard autosave
+
+paste_mode-description=You're now in paste mode. Use layer tool to add or anchor the layer.
+paste_mode-stamp=Stamp
+paste_mode-rotate=Rotate
+paste_mode-flipx=Flip X
+paste_mode-flipy=Flip Y
+paste_mode-transparent=Transparent

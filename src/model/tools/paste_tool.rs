@@ -1,6 +1,7 @@
 use super::{Event, Position, Tool};
 use crate::{AnsiEditor, Message};
 use eframe::egui::{self, Key};
+use i18n_embed_fl::fl;
 use icy_engine::TextPane;
 use icy_engine_egui::TerminalCalc;
 
@@ -74,23 +75,68 @@ impl Tool for PasteTool {
             return Some(Message::SelectTool(self.last_tool));
         }
 
-        ui.vertical(|ui| {
-            if ui.button("Stamp - S").clicked() || ui.input(|i| i.key_pressed(Key::S)) {
-                result = Some(Message::StampLayerDown);
-            }
-            if ui.button("Rotate - R").clicked() {
-                result = Some(Message::RotateLayer);
-            }
-            if ui.button("FlipX - X").clicked() || ui.input(|i| i.key_pressed(Key::X)) {
-                result = Some(Message::FlipX);
-            }
-            if ui.button("FlipY - Y").clicked() || ui.input(|i| i.key_pressed(Key::Y)) {
-                result = Some(Message::FlipY);
-            }
-            if ui.button("Transparent - T").clicked() || ui.input(|i| i.key_pressed(Key::T)) {
-                result = Some(Message::MakeLayerTransparent);
-            }
-        });
+        ui.label(fl!(crate::LANGUAGE_LOADER, "paste_mode-description"));
+        ui.add_space(8.0);
+        egui::Grid::new("paste_mode_grid")
+            .num_columns(2)
+            .spacing([4.0, 4.0])
+            .show(ui, |ui| {
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.strong("S -");
+                });
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "paste_mode-stamp"))
+                    .clicked()
+                    || ui.input(|i| i.key_pressed(Key::S))
+                {
+                    result = Some(Message::StampLayerDown);
+                }
+                ui.end_row();
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.strong("R -");
+                });
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "paste_mode-rotate"))
+                    .clicked()
+                    || ui.input(|i| i.key_pressed(Key::R))
+                {
+                    result = Some(Message::RotateLayer);
+                }
+                ui.end_row();
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.strong("X -");
+                });
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "paste_mode-flipx"))
+                    .clicked()
+                    || ui.input(|i| i.key_pressed(Key::X))
+                {
+                    result = Some(Message::FlipX);
+                }
+                ui.end_row();
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.strong("Y -");
+                });
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "paste_mode-flipy"))
+                    .clicked()
+                    || ui.input(|i| i.key_pressed(Key::Y))
+                {
+                    result = Some(Message::FlipY);
+                }
+                ui.end_row();
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.strong("T -");
+                });
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "paste_mode-transparent"))
+                    .clicked()
+                    || ui.input(|i| i.key_pressed(Key::T))
+                {
+                    result = Some(Message::MakeLayerTransparent);
+                }
+                ui.end_row();
+            });
 
         if ctx.input(|i| i.key_pressed(Key::Escape)) {
             return Some(Message::RemoveFloatingLayer);
