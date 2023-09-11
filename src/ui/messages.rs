@@ -352,6 +352,16 @@ impl MainWindow {
                         to_message(lock.get_edit_state_mut().remove_layer(cur_layer))
                     },
                 );
+
+                self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
+                    let mut lock = editor.buffer_view.lock();
+
+                    if lock.get_buffer().layers.is_empty() {
+                        to_message(lock.get_edit_state_mut().add_new_layer(0))
+                    } else {
+                        None
+                    }
+                });
             }
             Message::RemoveFloatingLayer => {
                 self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {

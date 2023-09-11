@@ -53,6 +53,7 @@ fn main() {
         ..Default::default()
     };
     if let Ok(log_file) = Settings::get_log_file() {
+        // delete log file when it is too big
         if let Ok(data) = fs::metadata(&log_file) {
             if data.len() > 1024 * 256 {
                 fs::remove_file(&log_file).unwrap();
@@ -95,10 +96,12 @@ fn main() {
         eprintln!("Failed to create log file");
     }
     log::info!("Starting iCY DRAW {}", VERSION);
-    eframe::run_native(
+    if let Err(err) = eframe::run_native(
         &DEFAULT_TITLE,
         options,
         Box::new(|cc| Box::new(MainWindow::new(cc))),
-    )
-    .unwrap();
+    ) {
+        log::error!("Error returned by run_native: {}", err);
+    }
+    log::info!("shutting down.");
 }
