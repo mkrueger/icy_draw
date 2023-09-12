@@ -20,7 +20,9 @@ use eframe::{
 use egui_tiles::{Container, TileId};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, EngineResult, Position, TextPane, TheDrawFont};
+use icy_engine::{
+    BitFont, Buffer, EngineResult, Palette, Position, TextAttribute, TextPane, TheDrawFont,
+};
 
 pub struct MainWindow {
     pub document_tree: egui_tiles::Tree<DocumentTab>,
@@ -512,59 +514,69 @@ impl eframe::App for MainWindow {
             .show_animated(ctx, self.left_panel, |ui| {
                 ui.add_space(8.0);
                 let mut msg = None;
-                let mut palette: usize = self.palette_mode;
+                let mut palette_mode: usize = self.palette_mode;
+
+                let mut caret_attr = TextAttribute::default();
+                let mut palette = Palette::default();
+
                 if let Some(doc) = self.get_active_document() {
                     if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
-                        ui.vertical_centered(|ui| {
-                            msg = crate::palette_switcher(ctx, ui, editor);
-                        });
-                        ui.add_space(8.0);
-                        ui.horizontal(|ui| {
-                            ui.add_space(8.0);
-                            if ui
-                                .selectable_label(
-                                    palette == 0,
-                                    fl!(crate::LANGUAGE_LOADER, "color-dos"),
-                                )
-                                .clicked()
-                            {
-                                palette = 0;
-                            }
-                            if ui
-                                .selectable_label(
-                                    palette == 1,
-                                    fl!(crate::LANGUAGE_LOADER, "color-ext"),
-                                )
-                                .clicked()
-                            {
-                                palette = 1;
-                            }
-                            if ui
-                                .selectable_label(
-                                    palette == 2,
-                                    fl!(crate::LANGUAGE_LOADER, "color-custom"),
-                                )
-                                .clicked()
-                            {
-                                palette = 2;
-                            }
-                        });
-                        ui.separator();
-                        match palette {
-                            0 => {
-                                crate::palette_editor_16(ui, editor);
-                            }
-                            1 => {
-                                crate::show_extended_palette(ui, editor);
-                            }
-                            _ => {
-                                crate::show_custom_palette(ui, editor);
-                            }
-                        }
-                        ui.separator();
+                        caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
+                        palette = editor.buffer_view.lock().get_buffer().palette.clone();
                     }
                 }
-                self.palette_mode = palette;
+
+                /*
+                   let caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
+                   let palette = editor.buffer_view.lock().get_buffer().palette.clone();
+                */
+                ui.vertical_centered(|ui| {
+                    msg = crate::palette_switcher(ctx, ui, &caret_attr, &palette);
+                });
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    ui.add_space(8.0);
+                    if ui
+                        .selectable_label(
+                            palette_mode == 0,
+                            fl!(crate::LANGUAGE_LOADER, "color-dos"),
+                        )
+                        .clicked()
+                    {
+                        palette_mode = 0;
+                    }
+                    if ui
+                        .selectable_label(
+                            palette_mode == 1,
+                            fl!(crate::LANGUAGE_LOADER, "color-ext"),
+                        )
+                        .clicked()
+                    {
+                        palette_mode = 1;
+                    }
+                    if ui
+                        .selectable_label(
+                            palette_mode == 2,
+                            fl!(crate::LANGUAGE_LOADER, "color-custom"),
+                        )
+                        .clicked()
+                    {
+                        palette_mode = 2;
+                    }
+                });
+                ui.separator();
+                let msg2 = match palette_mode {
+                    0 => crate::palette_editor_16(ui, &caret_attr, &palette),
+                    1 => crate::show_extended_palette(ui),
+                    _ => crate::show_custom_palette(ui),
+                };
+
+                if msg.is_none() {
+                    msg = msg2;
+                }
+                ui.separator();
+
+                self.palette_mode = palette_mode;
                 self.handle_message(msg);
 
                 crate::add_tool_switcher(ctx, ui, self);

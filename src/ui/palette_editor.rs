@@ -1,21 +1,20 @@
-use crate::{AnsiEditor, Message, Settings, SWAP_SVG};
+use crate::{Message, Settings, SWAP_SVG};
 use eframe::egui::{self, color_picker, Sense, TextEdit, TextStyle, Ui};
 use eframe::emath::Align2;
 use eframe::epaint::{Color32, FontId, Pos2, Rect, Rounding, Stroke, Vec2};
 use i18n_embed_fl::fl;
-use icy_engine::XTERM_256_PALETTE;
+use icy_engine::{Palette, TextAttribute, XTERM_256_PALETTE};
 use std::cmp::min;
 
 pub fn palette_switcher(
     ctx: &egui::Context,
     ui: &mut egui::Ui,
-    editor: &AnsiEditor,
+    caret_attr: &TextAttribute,
+    palette: &Palette,
 ) -> Option<Message> {
     let mut result = None;
 
     let tex_id = SWAP_SVG.texture_id(ctx);
-    let caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
-    let palette = editor.buffer_view.lock().get_buffer().palette.clone();
 
     let height = 62.0;
     let (id, rect) = ui.allocate_space(Vec2::new(height, height));
@@ -148,14 +147,15 @@ pub fn palette_switcher(
             }
         }
     }
-
     result
 }
 
-pub fn palette_editor_16(ui: &mut egui::Ui, editor: &AnsiEditor) {
-    let caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
-    let palette = editor.buffer_view.lock().get_buffer().palette.clone();
-    let buffer_view = editor.buffer_view.clone();
+pub fn palette_editor_16(
+    ui: &mut egui::Ui,
+    caret_attr: &TextAttribute,
+    palette: &Palette,
+) -> Option<Message> {
+    let mut result = None;
 
     ui.horizontal(|ui| {
         ui.add_space(4.0);
@@ -242,18 +242,22 @@ pub fn palette_editor_16(ui: &mut egui::Ui, editor: &AnsiEditor) {
             let pos = (hp.to_vec2() - stroke_rect.left_top().to_vec2()) / Vec2::new(height, height);
             let color = min(palette.len() - 1, pos.x as u32 + pos.y as u32 * 8);
             if response.clicked() {
-                buffer_view.lock().get_caret_mut().set_foreground(color);
+                result = Some(Message::SetForeground(color));
                 response.mark_changed();
             }
             if response.secondary_clicked() {
-                buffer_view.lock().get_caret_mut().set_background(color);
+                result = Some(Message::SetBackground(color));
                 response.mark_changed();
             }
         }
     });
+
+    result
 }
 
-pub fn show_extended_palette(ui: &mut Ui, editor: &AnsiEditor) {
+pub fn show_extended_palette(ui: &mut Ui) -> Option<Message> {
+    let mut result = None;
+
     let row_height = 24.0;
     egui::ScrollArea::vertical()
         .id_source("bitfont_scroll_area")
@@ -323,37 +327,29 @@ pub fn show_extended_palette(ui: &mut Ui, editor: &AnsiEditor) {
                         color,
                     );
 
-                    let buffer_view = editor.buffer_view.clone();
                     if response.clicked() {
-                        let color = buffer_view
-                            .lock()
-                            .get_buffer_mut()
-                            .palette
-                            .insert_color_rgb(r, g, b);
-                        buffer_view.lock().get_caret_mut().set_foreground(color);
+                        result = Some(Message::SetForegroundRgb(r, g, b));
                         response.mark_changed();
                     }
 
                     if response.secondary_clicked() {
-                        let color = buffer_view
-                            .lock()
-                            .get_buffer_mut()
-                            .palette
-                            .insert_color_rgb(r, g, b);
-                        buffer_view.lock().get_caret_mut().set_background(color);
+                        result = Some(Message::SetBackgroundRgb(r, g, b));
                         response.mark_changed();
                     }
                     response
                 });
             }
         });
+    result
 }
 
 static mut CUR_COLOR: [u8; 3] = [0xFF, 0xFF, 0xFF];
 static mut RENAME_INDEX: Option<usize> = None;
 static mut EDIT_INDEX: Option<usize> = None;
 
-pub fn show_custom_palette(ui: &mut egui::Ui, editor: &AnsiEditor) {
+pub fn show_custom_palette(ui: &mut egui::Ui) -> Option<Message> {
+    let mut result = None;
+
     let pal = Settings::get_custom_palette();
 
     let row_height = 24.0;
@@ -502,27 +498,16 @@ pub fn show_custom_palette(ui: &mut egui::Ui, editor: &AnsiEditor) {
                             color,
                         );
 
-                        let buffer_view = editor.buffer_view.clone();
                         let mut add_context_menu = true;
                         if let Some(pos) = response.interact_pointer_pos() {
                             if stroke_rect.contains(pos) {
                                 add_context_menu = false;
                                 if response.clicked() {
-                                    let color = buffer_view
-                                        .lock()
-                                        .get_buffer_mut()
-                                        .palette
-                                        .insert_color_rgb(r, g, b);
-                                    buffer_view.lock().get_caret_mut().set_foreground(color);
+                                    result = Some(Message::SetForegroundRgb(r, g, b));
                                 }
 
                                 if response.secondary_clicked() {
-                                    let color = buffer_view
-                                        .lock()
-                                        .get_buffer_mut()
-                                        .palette
-                                        .insert_color_rgb(r, g, b);
-                                    buffer_view.lock().get_caret_mut().set_background(color);
+                                    result = Some(Message::SetBackgroundRgb(r, g, b));
                                     return response;
                                 }
                             }
@@ -567,4 +552,5 @@ pub fn show_custom_palette(ui: &mut egui::Ui, editor: &AnsiEditor) {
                 });
             }
         });
+    result
 }

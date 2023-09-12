@@ -125,6 +125,12 @@ pub enum Message {
     TryLoadFile(PathBuf),
     ClearLayer(usize),
     InverseSelection,
+
+    SetForeground(u32),
+    SetForegroundRgb(u8, u8, u8),
+
+    SetBackground(u32),
+    SetBackgroundRgb(u8, u8, u8),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -880,6 +886,60 @@ impl MainWindow {
                             .get_edit_state_mut()
                             .inverse_selection(),
                     )
+                });
+            }
+
+            Message::SetForeground(color) => {
+                self.run_editor_command(color, |_, editor, color| {
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_foreground(color);
+                    None
+                });
+            }
+            Message::SetForegroundRgb(r, g, b) => {
+                self.run_editor_command((r, g, b), |_, editor, (r, g, b)| {
+                    let color = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .palette
+                        .insert_color_rgb(r, g, b);
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_foreground(color);
+                    None
+                });
+            }
+
+            Message::SetBackground(color) => {
+                self.run_editor_command(color, |_, editor, color| {
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_background(color);
+                    None
+                });
+            }
+            Message::SetBackgroundRgb(r, g, b) => {
+                self.run_editor_command((r, g, b), |_, editor, (r, g, b)| {
+                    let color = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .palette
+                        .insert_color_rgb(r, g, b);
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_background(color);
+                    None
                 });
             }
         }
