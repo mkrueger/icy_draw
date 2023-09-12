@@ -83,6 +83,7 @@ impl Tool for SelectTool {
         ui: &mut egui::Ui,
         _buffer_opt: &AnsiEditor,
     ) -> Option<Message> {
+        ui.label(fl!(crate::LANGUAGE_LOADER, "tool-select-label"));
         ui.radio_value(
             &mut self.mode,
             SelectionMode::Normal,
@@ -109,6 +110,10 @@ impl Tool for SelectTool {
             SelectionMode::Background,
             fl!(crate::LANGUAGE_LOADER, "tool-select-background"),
         );
+        ui.add_space(8.0);
+        ui.vertical_centered(|ui| {
+            ui.small(fl!(crate::LANGUAGE_LOADER, "tool-select-description"));
+        });
 
         None
     }
@@ -179,14 +184,21 @@ impl Tool for SelectTool {
         if self.mode != SelectionMode::Normal {
             return Event::None;
         }
-       
+
         self.selection_drag = get_selection_drag(editor, editor.drag_pos.start_abs);
         if !matches!(self.selection_drag, SelectionDrag::None) {
             if let Some(selection) = editor.buffer_view.lock().get_selection() {
                 self.start_selection = selection.as_rectangle();
             }
-        } else if !response.ctx.input(|i| i.modifiers.shift_only() ||  i.modifiers.command_only()) {
-            let _ = editor.buffer_view.lock().get_edit_state_mut().clear_selection();
+        } else if !response
+            .ctx
+            .input(|i| i.modifiers.shift_only() || i.modifiers.command_only())
+        {
+            let _ = editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .clear_selection();
         }
         Event::None
     }
@@ -331,7 +343,7 @@ impl Tool for SelectTool {
         }
 
         let lock = &mut editor.buffer_view.lock();
-        let _= lock.get_edit_state_mut().add_selection_to_mask();
+        let _ = lock.get_edit_state_mut().add_selection_to_mask();
         self.undo_op = None;
 
         Event::None
@@ -339,7 +351,7 @@ impl Tool for SelectTool {
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, _modifier: MModifiers) -> Event {
         if let MKey::Escape = key {
-            let _= editor.buffer_view.lock().get_edit_state_mut().deselect();
+            let _ = editor.buffer_view.lock().get_edit_state_mut().deselect();
         }
         Event::None
     }

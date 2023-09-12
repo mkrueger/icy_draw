@@ -104,6 +104,14 @@ tool-size-label=Größe:
 tool-half-block=Halbblock
 tool-custom-brush=Benutzerdefinierter Pinsel
 
+tool-select-label=Auswahlmodus:
+tool-select-normal=Rechteck
+tool-select-character=Zeichen
+tool-select-attribute=Attribute
+tool-select-foreground=Vordergund
+tool-select-background=Hintergrund
+tool-select-description=Shift halten, um Auswahl hinzuzufügen. Control/Cmd zum Entfernen.
+
 toolbar-new=Neu
 
 new-file-title=Neue Datei

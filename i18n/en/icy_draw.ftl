@@ -103,11 +103,13 @@ tool-size-label=Size:
 tool-half-block=Half block
 tool-custom-brush=Custom brush
 
-tool-select-normal=Normal
+tool-select-label=Selection mode:
+tool-select-normal=Rectangle
 tool-select-character=Character
 tool-select-attribute=Attribute
 tool-select-foreground=Foreground
 tool-select-background=Background
+tool-select-description=Hold shift to add to a selection. Control/Cmd to remove.
 
 toolbar-new=New
 
