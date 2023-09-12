@@ -47,6 +47,12 @@ impl BrushTool {
             return;
         }
 
+        let use_selection = editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .is_something_selected();
+
         for y in 0..self.size {
             for x in 0..self.size {
                 match self.brush_type {
@@ -63,16 +69,31 @@ impl BrushTool {
                                 }
                             }
                         }
-                        editor.set_char(
-                            center + Position::new(x, y),
-                            AttributedChar::new(char_code, caret_attr),
-                        );
+                        let pos = center + Position::new(x, y);
+                        if !use_selection
+                            || editor
+                                .buffer_view
+                                .lock()
+                                .get_edit_state()
+                                .get_is_selected(pos)
+                        {
+                            editor.set_char(pos, AttributedChar::new(char_code, caret_attr));
+                        }
                     }
                     BrushType::Solid => {
-                        editor.set_char(
-                            center + Position::new(x, y),
-                            AttributedChar::new(*self.char_code.borrow(), caret_attr),
-                        );
+                        let pos = center + Position::new(x, y);
+                        if !use_selection
+                            || editor
+                                .buffer_view
+                                .lock()
+                                .get_edit_state()
+                                .get_is_selected(pos)
+                        {
+                            editor.set_char(
+                                center + Position::new(x, y),
+                                AttributedChar::new(*self.char_code.borrow(), caret_attr),
+                            );
+                        }
                     }
                     BrushType::Color => {
                         let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));

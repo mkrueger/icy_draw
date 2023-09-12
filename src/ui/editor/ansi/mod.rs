@@ -279,14 +279,27 @@ impl AnsiEditor {
     pub fn join_overlay(&mut self, description: impl Into<String>) {
         let _undo = self.begin_atomic_undo(description.into());
         let opt_layer = self.buffer_view.lock().get_buffer_mut().remove_overlay();
+        let use_selection = self
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .is_something_selected();
 
         if let Some(layer) = &opt_layer {
             for y in 0..layer.lines.len() {
                 let line = &layer.lines[y];
                 for x in 0..line.chars.len() {
                     let ch = line.chars[x];
-                    if ch.is_visible() {
-                        self.set_char(Position::new(x as i32, y as i32), ch);
+                    let pos = Position::new(x as i32, y as i32);
+                    if ch.is_visible()
+                        && (!use_selection
+                            || self
+                                .buffer_view
+                                .lock()
+                                .get_edit_state()
+                                .get_is_selected(pos + layer.get_offset()))
+                    {
+                        self.set_char(pos, ch);
                     }
                 }
             }
