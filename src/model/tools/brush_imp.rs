@@ -1,5 +1,5 @@
 use eframe::{
-    egui::{self, RichText, Sense},
+    egui::{self, Response, RichText, Sense},
     epaint::{Color32, Pos2, Rect, Rounding, Vec2},
 };
 use egui_extras::RetainedImage;
@@ -231,6 +231,7 @@ impl Tool for BrushTool {
         button: i32,
         pos: Position,
         _pos_abs: Position,
+        _response: &Response,
     ) -> super::Event {
         if button == 1 {
             let _op: AtomicUndoGuard =
@@ -252,7 +253,7 @@ impl Tool for BrushTool {
         response
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.undo_op =
             Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush")));
         Event::None

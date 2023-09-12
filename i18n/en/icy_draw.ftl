@@ -102,6 +102,12 @@ tool-size-label=Size:
 tool-half-block=Half block
 tool-custom-brush=Custom brush
 
+tool-select-normal=Normal
+tool-select-character=Character
+tool-select-attribute=Attribute
+tool-select-foreground=Foreground
+tool-select-background=Background
+
 toolbar-new=New
 
 new-file-title=New File
@@ -203,7 +209,7 @@ select-font-dialog-block-font=BLOCK
 select-font-dialog-outline-font=OUTLINE
 select-font-dialog-preview-text=HELLO
 
-layer_tool_title=Layer
+layer_tool_title=Layers
 layer_tool_menu_layer_properties=Layer properties
 layer_tool_menu_resize_layer=Resize layer
 layer_tool_menu_new_layer=New layer

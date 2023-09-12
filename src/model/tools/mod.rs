@@ -13,6 +13,7 @@ pub mod move_layer_imp;
 pub mod paste_tool;
 pub mod pencil_imp;
 pub mod pipette_imp;
+pub mod select_imp;
 
 mod icons;
 
@@ -325,11 +326,12 @@ pub trait Tool {
         _button: i32,
         _pos: Position,
         _pos_abs: Position,
+        _response: &Response,
     ) -> Event {
         Event::None
     }
 
-    fn handle_drag_begin(&mut self, _editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_begin(&mut self, _editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         Event::None
     }
 

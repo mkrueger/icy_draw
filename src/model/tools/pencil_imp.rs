@@ -174,6 +174,7 @@ impl Tool for PencilTool {
         button: i32,
         pos: Position,
         _pos_abs: Position,
+        _response: &egui::Response,
     ) -> super::Event {
         if button == 1 {
             self.last_pos = pos;
@@ -198,7 +199,7 @@ impl Tool for PencilTool {
         response
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil")));
         Event::None
     }

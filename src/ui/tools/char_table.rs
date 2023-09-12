@@ -60,7 +60,7 @@ impl CharTableToolWindow {
                         ]
                         .into(),
                     );
-                    let mut response = ui.interact(rect, id, Sense::click());
+                    let response = ui.interact(rect, id, Sense::click());
 
                     ui.painter().image(
                         self.char_table.texture_id(ui.ctx()),
@@ -100,11 +100,8 @@ impl CharTableToolWindow {
                     }
 
                     if response.clicked() {
-                        if let Some(pos) = response.interact_pointer_pos() {
-                            let pos = pos - response.rect.min;
-                            if let Some(ch) = hover_char {
-                                result = Some(Message::CharTable(ch));
-                            }
+                        if let Some(ch) = hover_char {
+                            result = Some(Message::CharTable(ch));
                         }
                     }
                 });
@@ -137,6 +134,12 @@ impl CharTableToolWindow {
     }
 }
 
+impl Default for CharTableToolWindow {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 fn create_font_image(font: &BitFont) -> RetainedImage {
     let mut buffer = Buffer::new((BUFFER_WIDTH, 256 / BUFFER_WIDTH));
     buffer.set_font(0, font.clone());
@@ -149,8 +152,7 @@ fn create_font_image(font: &BitFont) -> RetainedImage {
             ),
         );
     }
-    let char_table = create_retained_image(&buffer);
-    char_table
+    create_retained_image(&buffer)
 }
 
 fn create_hover_image(font: &BitFont, ch: char) -> RetainedImage {
@@ -163,8 +165,7 @@ fn create_hover_image(font: &BitFont, ch: char) -> RetainedImage {
         (0, 0),
         AttributedChar::new(unsafe { char::from_u32_unchecked(ch as u32) }, attr),
     );
-    let char_table = create_retained_image(&buffer);
-    char_table
+    create_retained_image(&buffer)
 }
 
 impl ToolWindow for CharTableToolWindow {

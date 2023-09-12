@@ -41,7 +41,6 @@ Note that fonts/palettes etc. do not need to be unzipped. Just throw a .zip file
 
 Likeley to be implemented by me:
 * Full Unicode support
-* Non rectangular selections (select by color/char etc., select ellipse)
 
 Unlikely to be done soon:
 * Server capabilities

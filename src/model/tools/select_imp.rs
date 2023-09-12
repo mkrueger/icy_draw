@@ -1,5 +1,6 @@
 use eframe::egui;
 use egui_extras::RetainedImage;
+use i18n_embed_fl::fl;
 use icy_engine::Rectangle;
 use icy_engine_egui::TerminalCalc;
 
@@ -23,23 +24,91 @@ enum SelectionDrag {
     BottomRight,
 }
 
-#[derive(Default)]
-pub struct ClickTool {
-    start_selection: Rectangle,
-    selection_drag: SelectionDrag,
+#[derive(Default, PartialEq, Copy, Clone)]
+enum SelectionMode {
+    #[default]
+    Normal,
+    Character,
+    Attribute,
+    Foreground,
+    Background,
+}
+enum SelectionModifier {
+    Replace,
+    Add,
+    Remove,
+}
+impl SelectionModifier {
+    fn get_response(&self, ch: bool) -> Option<bool> {
+        match self {
+            SelectionModifier::Replace => Some(ch),
+            SelectionModifier::Add => {
+                if ch {
+                    Some(true)
+                } else {
+                    None
+                }
+            }
+            SelectionModifier::Remove => {
+                if ch {
+                    Some(false)
+                } else {
+                    None
+                }
+            }
+        }
+    }
 }
 
-impl Tool for ClickTool {
+#[derive(Default)]
+pub struct SelectTool {
+    start_selection: Rectangle,
+    selection_drag: SelectionDrag,
+    mode: SelectionMode,
+}
+
+impl Tool for SelectTool {
     fn get_icon_name(&self) -> &'static RetainedImage {
-        &super::icons::CURSOR_SVG
+        &super::icons::SELECT_SVG
+    }
+
+    fn use_caret(&self) -> bool {
+        false
     }
 
     fn show_ui(
         &mut self,
         _ctx: &egui::Context,
-        _ui: &mut egui::Ui,
+        ui: &mut egui::Ui,
         _buffer_opt: &AnsiEditor,
     ) -> Option<Message> {
+        ui.radio_value(
+            &mut self.mode,
+            SelectionMode::Normal,
+            fl!(crate::LANGUAGE_LOADER, "tool-select-normal"),
+        );
+        ui.radio_value(
+            &mut self.mode,
+            SelectionMode::Character,
+            fl!(crate::LANGUAGE_LOADER, "tool-select-character"),
+        );
+        ui.radio_value(
+            &mut self.mode,
+            SelectionMode::Attribute,
+            fl!(crate::LANGUAGE_LOADER, "tool-select-attribute"),
+        );
+        ui.radio_value(
+            &mut self.mode,
+            SelectionMode::Foreground,
+            fl!(crate::LANGUAGE_LOADER, "tool-select-foreground"),
+        );
+
+        ui.radio_value(
+            &mut self.mode,
+            SelectionMode::Background,
+            fl!(crate::LANGUAGE_LOADER, "tool-select-background"),
+        );
+
         None
     }
 
@@ -49,16 +118,65 @@ impl Tool for ClickTool {
         button: i32,
         pos: Position,
         cur_abs: Position,
-        _response: &egui::Response,
+        response: &egui::Response,
     ) -> Event {
-        if button == 1 && !is_inside_selection(editor, cur_abs) {
-            editor.set_caret_position(pos);
-            editor.buffer_view.lock().clear_selection();
+        let cur_ch = editor.get_char(pos);
+
+        let selection_mode = if response.ctx.input(|i| i.modifiers.shift_only()) {
+            SelectionModifier::Add
+        } else if response.ctx.input(|i| i.modifiers.command_only()) {
+            SelectionModifier::Remove
+        } else {
+            SelectionModifier::Replace
+        };
+
+        match self.mode {
+            SelectionMode::Normal => {
+                if button == 1 && !is_inside_selection(editor, cur_abs) {
+                    let lock = &mut editor.buffer_view.lock();
+                    lock.get_edit_state_mut().add_selection_to_mask();
+                    let _ = lock.get_edit_state_mut().deselect();
+                }
+            }
+            SelectionMode::Character => editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .enumerate_selections(|_, ch, _| selection_mode.get_response(ch.ch == cur_ch.ch)),
+            SelectionMode::Attribute => editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .enumerate_selections(|_, ch, _| {
+                    selection_mode.get_response(ch.attribute == cur_ch.attribute)
+                }),
+            SelectionMode::Foreground => editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .enumerate_selections(|_, ch, _| {
+                    selection_mode.get_response(
+                        ch.attribute.get_foreground() == cur_ch.attribute.get_foreground(),
+                    )
+                }),
+            SelectionMode::Background => editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .enumerate_selections(|_, ch, _| {
+                    selection_mode.get_response(
+                        ch.attribute.get_background() == cur_ch.attribute.get_background(),
+                    )
+                }),
         }
+
         Event::None
     }
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
+        if self.mode != SelectionMode::Normal {
+            return Event::None;
+        }
         self.selection_drag = get_selection_drag(editor, editor.drag_pos.start_abs);
 
         if !matches!(self.selection_drag, SelectionDrag::None) {
@@ -66,9 +184,9 @@ impl Tool for ClickTool {
                 self.start_selection = selection.as_rectangle();
             }
         }
-
         Event::None
     }
+
     fn handle_drag(
         &mut self,
         _ui: &egui::Ui,
@@ -76,6 +194,9 @@ impl Tool for ClickTool {
         editor: &mut AnsiEditor,
         _calc: &TerminalCalc,
     ) -> egui::Response {
+        if self.mode != SelectionMode::Normal {
+            return response;
+        }
         let mut rect = if let Some(selection) = editor.buffer_view.lock().get_selection() {
             selection.as_rectangle()
         } else {
@@ -127,7 +248,7 @@ impl Tool for ClickTool {
 
             SelectionDrag::None => {
                 if editor.drag_pos.start == editor.drag_pos.cur {
-                    editor.buffer_view.lock().clear_selection();
+                    let _ = editor.buffer_view.lock().get_edit_state_mut().deselect();
                 } else {
                     editor.buffer_view.lock().set_selection(Rectangle::from(
                         editor.drag_pos.start_abs.x.min(editor.drag_pos.cur_abs.x),
@@ -144,7 +265,6 @@ impl Tool for ClickTool {
             selection.is_negative_selection = response.ctx.input(|i| i.modifiers.command_only());
             lock.set_selection(selection);
         }
-
         response
     }
 
@@ -156,6 +276,10 @@ impl Tool for ClickTool {
         _cur: Position,
         cur_abs: Position,
     ) -> egui::Response {
+        if self.mode != SelectionMode::Normal {
+            return response;
+        }
+
         match get_selection_drag(editor, cur_abs) {
             SelectionDrag::None => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Text),
             SelectionDrag::Move => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Move),
@@ -182,6 +306,10 @@ impl Tool for ClickTool {
     }
 
     fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+        if self.mode != SelectionMode::Normal {
+            return Event::None;
+        }
+
         if !matches!(self.selection_drag, SelectionDrag::None) {
             self.selection_drag = SelectionDrag::None;
             return Event::None;
@@ -193,7 +321,7 @@ impl Tool for ClickTool {
         }
 
         if editor.drag_pos.start == cur {
-            editor.buffer_view.lock().clear_selection();
+            let _ = editor.buffer_view.lock().get_edit_state_mut().deselect();
         }
 
         let lock = &mut editor.buffer_view.lock();
@@ -202,7 +330,7 @@ impl Tool for ClickTool {
     }
 }
 
-impl ClickTool {
+impl SelectTool {
     fn move_left(&mut self, editor: &AnsiEditor, rect: &mut Rectangle) {
         let delta = editor.drag_pos.start_abs.x - editor.drag_pos.cur_abs.x;
         rect.start.x = self.start_selection.left() - delta;

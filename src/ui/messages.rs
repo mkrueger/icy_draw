@@ -238,7 +238,7 @@ impl MainWindow {
                             .buffer_view
                             .lock()
                             .get_edit_state_mut()
-                            .delete_selection(),
+                            .erase_selection(),
                     )
                 });
             }
@@ -683,11 +683,7 @@ impl MainWindow {
                 self.run_editor_command(0, |window, editor, _| {
                     let mut initial_directory =
                         if let Some(d) = editor.buffer_view.lock().get_reference_image_path() {
-                            if let Some(p) = d.parent() {
-                                Some(p.to_path_buf())
-                            } else {
-                                None
-                            }
+                            d.parent().map(|p| p.to_path_buf())
                         } else {
                             None
                         };

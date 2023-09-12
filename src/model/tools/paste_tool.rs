@@ -144,7 +144,7 @@ impl Tool for PasteTool {
         result
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.drag_started = false;
         if let Some(selected) = PasteTool::is_paste_layer_selected(editor, editor.drag_pos.cur) {
             if !selected {

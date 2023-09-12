@@ -323,6 +323,7 @@ impl Tool for FontTool {
         button: i32,
         pos: Position,
         _pos_abs: Position,
+        _response: &egui::Response,
     ) -> Event {
         if button == 1 {
             editor.set_caret_position(pos);

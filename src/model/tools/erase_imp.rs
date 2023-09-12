@@ -111,6 +111,7 @@ impl Tool for EraseTool {
         button: i32,
         pos: Position,
         _pos_abs: Position,
+        _response: &egui::Response,
     ) -> super::Event {
         if button == 1 {
             let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser"));
@@ -131,7 +132,7 @@ impl Tool for EraseTool {
         response
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser")));
         Event::None
     }

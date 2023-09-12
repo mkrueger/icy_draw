@@ -87,7 +87,7 @@ impl ClipboardHandler for AnsiEditor {
         self.buffer_view
             .lock()
             .get_edit_state_mut()
-            .delete_selection()?;
+            .erase_selection()?;
         Ok(())
     }
 
@@ -175,10 +175,6 @@ impl Document for AnsiEditor {
         if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
             scale.y *= 1.35;
         }
-        if selected_tool != FIRST_TOOL {
-            self.buffer_view.lock().clear_selection();
-        }
-
         let opt = icy_engine_egui::TerminalOptions {
             focus_lock: false,
             stick_to_bottom: false,
@@ -587,7 +583,7 @@ impl AnsiEditor {
                                      PointerButton::Extra1 => 4,
                                      PointerButton::Extra2 => 5,
                                  }; */
-                    cur_tool.handle_click(self, 1, cp, cp_abs);
+                    cur_tool.handle_click(self, 1, cp, cp_abs, &response);
                     self.redraw_view();
                 }
             }
@@ -607,8 +603,7 @@ impl AnsiEditor {
                     self.drag_pos.cur_abs = click_pos;
                     self.drag_pos.cur = cp;
                     self.drag_started = true;
-
-                    cur_tool.handle_drag_begin(self);
+                    cur_tool.handle_drag_begin(self, &response);
                 }
             }
             self.redraw_view();

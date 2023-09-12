@@ -30,6 +30,7 @@ impl Tool for PipetteTool {
         button: i32,
         pos: Position,
         _pos_abs: Position,
+        _response: &egui::Response,
     ) -> Event {
         if button == 1 {
             let ch = editor.get_char(pos);

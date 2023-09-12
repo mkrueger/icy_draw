@@ -67,6 +67,7 @@ impl MainWindow {
         let tools: Vec<Box<dyn Tool>> = vec![
             Box::<crate::model::paste_tool::PasteTool>::default(),
             Box::<crate::model::click_imp::ClickTool>::default(),
+            Box::<crate::model::select_imp::SelectTool>::default(),
             Box::new(crate::model::pencil_imp::PencilTool {
                 use_back: true,
                 use_fore: true,

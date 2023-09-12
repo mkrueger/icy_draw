@@ -194,6 +194,7 @@ impl Tool for FillTool {
         button: i32,
         pos: Position,
         _pos_abs: Position,
+        _response: &egui::Response,
     ) -> Event {
         if button == 1 {
             if editor.get_cur_layer_index() >= editor.buffer_view.lock().get_buffer().layers.len() {

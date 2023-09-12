@@ -31,7 +31,7 @@ impl Tool for MoveLayer {
         None
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.drag_started = false;
 
         if let Some(layer) = editor

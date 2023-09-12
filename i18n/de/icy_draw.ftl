@@ -204,7 +204,7 @@ select-font-dialog-block-font=BLOCK
 select-font-dialog-outline-font=OUTLINE
 select-font-dialog-preview-text=HALLO
 
-layer_tool_title=Ebene
+layer_tool_title=Ebenen
 layer_tool_menu_layer_properties=Ebeneneigenschaften…
 layer_tool_menu_resize_layer=Ebenengröße…
 layer_tool_menu_new_layer=Neue Ebene
