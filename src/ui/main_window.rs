@@ -675,10 +675,8 @@ impl eframe::App for MainWindow {
                     }
                 }
             }
-            if self.modal_dialog.is_some() {
-                if ctx.input(|i| i.key_pressed(Key::Escape)) {
-                    self.modal_dialog = None;
-                }
+            if self.modal_dialog.is_some() && ctx.input(|i| i.key_pressed(Key::Escape)) {
+                self.modal_dialog = None;
             }
         }
         self.handle_message(dialog_message);

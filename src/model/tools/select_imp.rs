@@ -174,17 +174,19 @@ impl Tool for SelectTool {
         Event::None
     }
 
-    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
+    fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, response: &egui::Response) -> Event {
         self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-select")));
-
         if self.mode != SelectionMode::Normal {
             return Event::None;
         }
+       
         self.selection_drag = get_selection_drag(editor, editor.drag_pos.start_abs);
         if !matches!(self.selection_drag, SelectionDrag::None) {
             if let Some(selection) = editor.buffer_view.lock().get_selection() {
                 self.start_selection = selection.as_rectangle();
             }
+        } else if !response.ctx.input(|i| i.modifiers.shift_only() ||  i.modifiers.command_only()) {
+            let _ = editor.buffer_view.lock().get_edit_state_mut().clear_selection();
         }
         Event::None
     }
@@ -329,18 +331,15 @@ impl Tool for SelectTool {
         }
 
         let lock = &mut editor.buffer_view.lock();
-        lock.get_edit_state_mut().add_selection_to_mask();
+        let _= lock.get_edit_state_mut().add_selection_to_mask();
         self.undo_op = None;
 
         Event::None
     }
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, _modifier: MModifiers) -> Event {
-        match key {
-            MKey::Escape => {
-                editor.buffer_view.lock().get_edit_state_mut().deselect();
-            }
-            _ => {}
+        if let MKey::Escape = key {
+            let _= editor.buffer_view.lock().get_edit_state_mut().deselect();
         }
         Event::None
     }

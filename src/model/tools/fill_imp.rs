@@ -218,7 +218,7 @@ impl Tool for FillTool {
                     editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-bucket-fill"));
                 let mut op = FillOperation::new(
                     self,
-                    &editor,
+                    editor,
                     ch,
                     AttributedChar::new(*self.char_code.borrow(), attr),
                 );

@@ -26,7 +26,7 @@ use icy_engine_egui::{
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
     ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, Settings,
-    TerminalResult, FIRST_TOOL,
+    TerminalResult,
 };
 
 pub enum Event {
@@ -166,7 +166,7 @@ impl Document for AnsiEditor {
         &mut self,
         ui: &mut egui::Ui,
         cur_tool: &mut Box<dyn Tool>,
-        selected_tool: usize,
+        _selected_tool: usize,
         options: &DocumentOptions,
     ) -> Option<Message> {
         let mut message = None;

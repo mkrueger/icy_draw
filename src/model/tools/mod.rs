@@ -113,7 +113,7 @@ pub trait Tool {
         buffer_opt: &AnsiEditor,
     ) -> Option<Message>;
 
-    fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
+    fn handle_key(&mut self, _editor: &mut AnsiEditor, _key: MKey, _modifier: MModifiers) -> Event {
         Event::None
     }
 
