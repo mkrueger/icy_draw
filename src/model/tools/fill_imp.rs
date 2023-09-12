@@ -155,7 +155,7 @@ impl Tool for FillTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        editor: &AnsiEditor,
+        editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         let mut result = None;
         ui.vertical_centered(|ui| {
@@ -181,8 +181,9 @@ impl Tool for FillTool {
                 FillType::Character,
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
-
-            result = draw_glyph(ui, editor, &self.char_code);
+            if let Some(editor) = editor_opt {
+                result = draw_glyph(ui, editor, &self.char_code);
+            }
         });
         ui.radio_value(
             &mut self.fill_type,

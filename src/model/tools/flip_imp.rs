@@ -19,7 +19,7 @@ impl Tool for FlipTool {
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: &AnsiEditor,
+        _editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         None
     }

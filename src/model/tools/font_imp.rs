@@ -154,7 +154,7 @@ impl Tool for FontTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        _buffer_opt: &AnsiEditor,
+        _editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         let mut select = false;
         let font_count = self.fonts.lock().unwrap().len();

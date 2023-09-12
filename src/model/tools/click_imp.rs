@@ -43,7 +43,7 @@ impl Tool for ClickTool {
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: &AnsiEditor,
+        _buffer_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         None
     }

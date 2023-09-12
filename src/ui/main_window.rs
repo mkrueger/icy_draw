@@ -592,10 +592,15 @@ impl eframe::App for MainWindow {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
                         ui.vertical(|ui| {
+                            let mut shown = false;
                             if let Some(doc) = self.get_active_document() {
                                 if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
-                                    tool_result = tool.show_ui(ctx, ui, editor)
+                                    shown = true;
+                                    tool_result = tool.show_ui(ctx, ui, Some(editor))
                                 }
+                            }
+                            if !shown {
+                                tool_result = tool.show_ui(ctx, ui, None);
                             }
                         });
                     });

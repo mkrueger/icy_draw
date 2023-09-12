@@ -41,9 +41,9 @@ Note that fonts/palettes etc. do not need to be unzipped. Just throw a .zip file
 
 Likeley to be implemented by me:
 * Full Unicode support
+* Server capabilities
 
 Unlikely to be done soon:
-* Server capabilities
 * PETSCII, ATSCII and Viewdata - the engine can do it (see icy_term) 
   
 # Help

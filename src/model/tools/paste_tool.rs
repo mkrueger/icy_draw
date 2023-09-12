@@ -64,11 +64,13 @@ impl Tool for PasteTool {
         &mut self,
         ctx: &egui::Context,
         ui: &mut egui::Ui,
-        editor: &AnsiEditor,
+        editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         let mut result = None;
-        if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
-            self.closed = !layer.role.is_paste();
+        if let Some(editor) = editor_opt {
+            if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
+                self.closed = !layer.role.is_paste();
+            }
         }
 
         if self.closed {

@@ -9,17 +9,20 @@ impl Tool for PipetteTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
         &super::icons::DROPPER_SVG
     }
+
     fn use_caret(&self) -> bool {
         false
     }
+
     fn use_selection(&self) -> bool {
         false
     }
+
     fn show_ui(
         &mut self,
         _ctx: &egui::Context,
         _ui: &mut egui::Ui,
-        _buffer_opt: &AnsiEditor,
+        _editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         None
     }

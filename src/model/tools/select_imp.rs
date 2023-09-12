@@ -81,7 +81,7 @@ impl Tool for SelectTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        _buffer_opt: &AnsiEditor,
+        _editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         ui.label(fl!(crate::LANGUAGE_LOADER, "tool-select-label"));
         ui.radio_value(

@@ -110,7 +110,7 @@ pub trait Tool {
         &mut self,
         ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: &AnsiEditor,
+        editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message>;
 
     fn handle_key(&mut self, _editor: &mut AnsiEditor, _key: MKey, _modifier: MModifiers) -> Event {

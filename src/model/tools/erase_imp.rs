@@ -82,7 +82,7 @@ impl Tool for EraseTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        _buffer_opt: &AnsiEditor,
+        _editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         ui.horizontal(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));

@@ -129,7 +129,7 @@ impl Tool for BrushTool {
         &mut self,
         _ctx: &egui::Context,
         ui: &mut egui::Ui,
-        buffer_opt: &AnsiEditor,
+        buffer_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         let mut result = None;
         ui.vertical_centered(|ui| {
@@ -167,8 +167,9 @@ impl Tool for BrushTool {
                 BrushType::Solid,
                 fl!(crate::LANGUAGE_LOADER, "tool-character"),
             );
-
-            result = draw_glyph(ui, buffer_opt, &self.char_code);
+            if let Some(buffer_opt) = buffer_opt {
+                result = draw_glyph(ui, buffer_opt, &self.char_code);
+            }
         });
         ui.radio_value(
             &mut self.brush_type,
