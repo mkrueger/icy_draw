@@ -269,3 +269,7 @@ tab-context-menu-close=Schließen
 tab-context-menu-close_others=Andere schließen
 tab-context-menu-close_all=Alle schließen
 tab-context-menu-copy_path=Pfad kopieren
+
+font-view-char_label=Zeichen
+font-view-ascii_label=ASCII
+font-view-font_label=Font

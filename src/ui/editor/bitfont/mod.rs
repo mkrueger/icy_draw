@@ -559,7 +559,10 @@ impl Document for BitFontEditor {
 
                     response.on_hover_ui(|ui| {
                         ui.horizontal(|ui| {
-                            ui.label(RichText::new("Char").small());
+                            ui.label(
+                                RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-char_label"))
+                                    .small(),
+                            );
                             ui.label(
                                 RichText::new(format!("{0}/0x{0:02X}", i))
                                     .small()
@@ -567,7 +570,10 @@ impl Document for BitFontEditor {
                             );
                         });
                         ui.horizontal(|ui| {
-                            ui.label(RichText::new("ASCII").small());
+                            ui.label(
+                                RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-ascii_label"))
+                                    .small(),
+                            );
                             ui.label(
                                 RichText::new(format!("'{0}'", unsafe {
                                     char::from_u32_unchecked(i as u32)

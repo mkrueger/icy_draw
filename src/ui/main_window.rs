@@ -17,7 +17,7 @@ use eframe::{
     egui::{self, Key, Response, SidePanel, TextStyle, Ui},
     epaint::{pos2, FontId},
 };
-use egui_tiles::TileId;
+use egui_tiles::{Container, TileId};
 use glow::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, EngineResult, Position, TextPane, TheDrawFont};
@@ -176,12 +176,18 @@ impl MainWindow {
             .insert_pane(ToolTab::new(MinimapToolWindow::new(gl.clone())));
         let char_table = tool_tree
             .tiles
-            .insert_pane(ToolTab::new(CharTableToolWindow::default()));
+            .insert_pane(ToolTab::new(CharTableToolWindow::new()));
 
         let tab = tool_tree.tiles.insert_tab_tile(vec![minimap, char_table]);
-        let v = tool_tree.tiles.insert_vertical_tile(vec![tab, layers]);
+        let vert_id = tool_tree.tiles.insert_vertical_tile(vec![tab, layers]);
+        if let Some(egui_tiles::Tile::Container(Container::Linear(linear))) =
+            tool_tree.tiles.get_mut(vert_id)
+        {
+            linear.shares.set_share(tab, 3.0);
+            linear.shares.set_share(layers, 1.25);
+        }
 
-        tool_tree.root = Some(v);
+        tool_tree.root = Some(vert_id);
 
         MainWindow {
             document_behavior: DocumentBehavior::new(Arc::new(Mutex::new(tools))),
@@ -592,7 +598,7 @@ impl eframe::App for MainWindow {
 
         egui::SidePanel::right("right_panel")
             .frame(panel_frame)
-            .exact_width(250.0)
+            .exact_width(260.0)
             .resizable(false)
             .show_animated(ctx, self.right_panel, |ui| {
                 self.tool_behavior.active_document = self.get_active_document();

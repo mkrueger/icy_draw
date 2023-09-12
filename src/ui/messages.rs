@@ -437,11 +437,8 @@ impl MainWindow {
             }
 
             Message::CharTable(ch) => {
-                let ch = ch as u8;
                 self.run_editor_command(ch, |_, editor, ch| {
-                    if let Err(err) = editor.print_char(ch) {
-                        return Some(Message::ShowError(format!("{err}")));
-                    }
+                    editor.type_key(ch);
                     None
                 });
             }

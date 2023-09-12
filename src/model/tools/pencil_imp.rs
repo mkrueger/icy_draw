@@ -1,7 +1,4 @@
-use eframe::{
-    egui::{self, RichText, Sense},
-    epaint::{Color32, Pos2, Rect, Rounding, Vec2},
-};
+use eframe::egui::{self};
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Rectangle};
@@ -209,71 +206,5 @@ impl Tool for PencilTool {
     fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         self.undo_op = None;
         Event::None
-    }
-}
-
-pub fn draw_glyph_plain(editor: &AnsiEditor, ch: char, font_page: usize) -> impl egui::Widget {
-    let bv = editor.buffer_view.clone();
-    move |ui: &mut egui::Ui| {
-        if let Some(font) = bv.lock().get_buffer().get_font(font_page) {
-            let scale = 1.8;
-            let padding = 2.;
-            let (id, stroke_rect) = ui.allocate_space(Vec2::new(
-                2. * padding + scale * font.size.width as f32,
-                2. * padding + scale * font.size.height as f32,
-            ));
-            let mut response = ui.interact(stroke_rect, id, Sense::click());
-
-            let col = if response.hovered() {
-                Color32::WHITE
-            } else {
-                Color32::GRAY
-            };
-
-            let painter = ui.painter_at(stroke_rect);
-            painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
-            let s = font.size;
-            if let Some(glyph) = font.get_glyph(ch) {
-                for y in 0..s.height {
-                    for x in 0..s.width {
-                        if glyph.data[y as usize] & (128 >> x) != 0 {
-                            painter.rect_filled(
-                                Rect::from_min_size(
-                                    Pos2::new(
-                                        padding + stroke_rect.left() + x as f32 * scale,
-                                        padding + stroke_rect.top() + y as f32 * scale,
-                                    ),
-                                    Vec2::new(scale.ceil(), scale.ceil()),
-                                ),
-                                Rounding::none(),
-                                col,
-                            );
-                        }
-                    }
-                }
-                response = response.on_hover_ui(|ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new("Char").small());
-                        ui.label(
-                            RichText::new(format!("{0}/0x{0:02X}", ch as u32))
-                                .small()
-                                .color(Color32::WHITE),
-                        );
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new("Font").small());
-                        ui.label(
-                            RichText::new(font.name.to_string())
-                                .small()
-                                .color(Color32::WHITE),
-                        );
-                    });
-                });
-            }
-            response
-        } else {
-            let (id, stroke_rect) = ui.allocate_space(Vec2::new(1., 1.));
-            ui.interact(stroke_rect, id, Sense::click())
-        }
     }
 }

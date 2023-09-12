@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use eframe::egui;
+use eframe::egui::{self, WidgetText};
 
 use crate::{Document, Message};
 
@@ -24,7 +24,8 @@ pub struct ToolBehavior {
 impl egui_tiles::Behavior<ToolTab> for ToolBehavior {
     fn tab_title_for_pane(&mut self, pane: &ToolTab) -> egui::WidgetText {
         let title = pane.doc.get_title();
-        title.into()
+
+        WidgetText::RichText(egui::RichText::new(title).small())
     }
 
     fn pane_ui(

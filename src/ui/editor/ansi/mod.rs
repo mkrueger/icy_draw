@@ -253,25 +253,10 @@ impl AnsiEditor {
 
     pub fn output_string(&mut self, str: &str) {
         for ch in str.chars() {
-            let translated_char = self
-                .buffer_view
-                .lock()
-                .get_edit_state()
-                .get_parser()
-                .convert_from_unicode(ch, 0);
-            if let Err(err) = self.print_char(translated_char as u8) {
-                log::error!("{err}");
-            }
+            self.type_key(ch);
         }
     }
 
-    pub fn print_char(&mut self, c: u8) -> TerminalResult<()> {
-        self.buffer_view
-            .lock()
-            .print_char(unsafe { char::from_u32_unchecked(c as u32) })?;
-        self.buffer_view.lock().redraw_view();
-        Ok(())
-    }
     pub fn get_caret_position(&self) -> Position {
         self.buffer_view.lock().get_caret().get_position()
     }
