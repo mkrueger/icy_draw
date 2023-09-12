@@ -1,6 +1,7 @@
 use eframe::egui;
 use egui_extras::RetainedImage;
-use icy_engine::Rectangle;
+use i18n_embed_fl::fl;
+use icy_engine::{editor::AtomicUndoGuard, Rectangle};
 use icy_engine_egui::TerminalCalc;
 
 use crate::{
@@ -30,6 +31,7 @@ enum SelectionDrag {
 pub struct ClickTool {
     start_selection: Rectangle,
     selection_drag: SelectionDrag,
+    undo_op: Option<AtomicUndoGuard>,
 }
 
 impl Tool for ClickTool {
@@ -69,6 +71,7 @@ impl Tool for ClickTool {
                 self.start_selection = selection.as_rectangle();
             }
         }
+        self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-select")));
 
         Event::None
     }
@@ -187,6 +190,7 @@ impl Tool for ClickTool {
     fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
         if !matches!(self.selection_drag, SelectionDrag::None) {
             self.selection_drag = SelectionDrag::None;
+            self.undo_op = None;
             return Event::None;
         }
 
@@ -198,9 +202,8 @@ impl Tool for ClickTool {
         if editor.drag_pos.start == cur {
             editor.buffer_view.lock().clear_selection();
         }
+        self.undo_op = None;
 
-        let lock = &mut editor.buffer_view.lock();
-        lock.get_edit_state_mut().add_selection_to_mask();
         Event::None
     }
 

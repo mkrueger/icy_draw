@@ -252,7 +252,7 @@ undo-bitfont-clear=Clear
 undo-bitfont-edit=Edit
 undo-render_character=Render character
 undo-delete_character=Delete character
-
+undo-select=Select
 
 font_manager-builtin_font=BUILTIN
 font_manager-library_font=LIBRARY

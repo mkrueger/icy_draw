@@ -58,7 +58,7 @@ fn load_fonts(tdf_dir: &Path) -> Vec<TheDrawFont> {
     let walker = WalkDir::new(tdf_dir).into_iter();
     for entry in walker.filter_entry(|e| !FontTool::is_hidden(e)) {
         if let Err(e) = entry {
-            eprintln!("Can't load tdf font library: {e}");
+            log::error!("Can't load tdf font library: {e}");
             break;
         }
         let entry = entry.unwrap();
@@ -516,7 +516,7 @@ fn watch(path: &Path, fonts: &Arc<Mutex<Vec<TheDrawFont>>>) -> notify::Result<()
 
                 break;
             }
-            Err(e) => println!("watch error: {e:}"),
+            Err(e) => log::error!("watch error: {e:}"),
         }
     }
 
