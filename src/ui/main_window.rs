@@ -9,9 +9,9 @@ use std::{
 
 use crate::{
     add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor,
-    CharFontEditor, CharTableToolWindow, Commands, Document, DocumentBehavior, DocumentTab,
-    LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, ToolBehavior, ToolTab,
-    TopBar,
+    ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands, Document, DocumentBehavior,
+    DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, ToolBehavior,
+    ToolTab, TopBar,
 };
 use eframe::{
     egui::{self, Key, Response, SidePanel, TextStyle, Ui},
@@ -174,6 +174,9 @@ impl MainWindow {
         let layers = tool_tree
             .tiles
             .insert_pane(ToolTab::new(LayerToolWindow::default()));
+        let channels = tool_tree
+            .tiles
+            .insert_pane(ToolTab::new(ChannelToolWindow::default()));
         let minimap = tool_tree
             .tiles
             .insert_pane(ToolTab::new(MinimapToolWindow::new(gl.clone())));
@@ -182,12 +185,13 @@ impl MainWindow {
             .insert_pane(ToolTab::new(CharTableToolWindow::new()));
 
         let tab = tool_tree.tiles.insert_tab_tile(vec![minimap, char_table]);
-        let vert_id = tool_tree.tiles.insert_vertical_tile(vec![tab, layers]);
+        let tab2 = tool_tree.tiles.insert_tab_tile(vec![layers, channels]);
+        let vert_id = tool_tree.tiles.insert_vertical_tile(vec![tab, tab2]);
         if let Some(egui_tiles::Tile::Container(Container::Linear(linear))) =
             tool_tree.tiles.get_mut(vert_id)
         {
             linear.shares.set_share(tab, 3.0);
-            linear.shares.set_share(layers, 1.25);
+            linear.shares.set_share(tab2, 1.25);
         }
 
         tool_tree.root = Some(vert_id);

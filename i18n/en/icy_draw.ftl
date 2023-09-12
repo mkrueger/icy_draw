@@ -221,6 +221,10 @@ layer_tool_menu_merge_layer=Merge layer
 layer_tool_menu_delete_layer=Delete layer
 layer_tool_menu_clear_layer=Clear layer
 
+channel_tool_title=Channels
+channel_tool_fg=Foreground
+channel_tool_bg=Background
+
 font_tool_select_outline_button=Set Font Outline
 font_tool_current_font_label=Current TDF Font
 font_tool_no_font=<none>

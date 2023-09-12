@@ -222,6 +222,10 @@ layer_tool_menu_merge_layer=Ebene zusammenführen
 layer_tool_menu_delete_layer=Ebene löschen
 layer_tool_menu_clear_layer=Ebene leeren
 
+channel_tool_title=Kanäle
+channel_tool_fg=Vordergrund
+channel_tool_bg=Hintergrund
+
 font_tool_select_outline_button=Outline Stil auswählen
 font_tool_current_font_label=Aktueller TDF Font
 font_tool_no_font=<nichts>

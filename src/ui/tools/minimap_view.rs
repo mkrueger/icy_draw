@@ -54,9 +54,11 @@ impl MinimapToolWindow {
                 .get_buffer_mut()
                 .set_size(buffer.get_size());
             self.buffer_view.lock().get_buffer_mut().layers = buffer.layers.clone();
-
             self.buffer_view.lock().redraw_view();
         }
+        self.buffer_view.lock().use_fg = editor.buffer_view.lock().use_fg;
+        self.buffer_view.lock().use_bg = editor.buffer_view.lock().use_bg;
+
         let scalex = (w / self.buffer_view.lock().get_width() as f32).min(2.0);
         let scaley = if self.buffer_view.lock().get_buffer_mut().use_aspect_ratio() {
             scalex * 1.35
