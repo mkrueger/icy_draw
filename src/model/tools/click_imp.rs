@@ -1,7 +1,7 @@
 use eframe::egui;
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::{editor::AtomicUndoGuard, Rectangle};
+use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle};
 use icy_engine_egui::TerminalCalc;
 
 use crate::{
@@ -147,7 +147,12 @@ impl Tool for ClickTool {
 
         let lock = &mut editor.buffer_view.lock();
         if let Some(mut selection) = lock.get_selection() {
-            selection.is_negative_selection = response.ctx.input(|i| i.modifiers.command_only());
+            if response.ctx.input(|i| i.modifiers.command_only()) {
+                selection.add_type = AddType::Subtract;
+            }
+            if response.ctx.input(|i| i.modifiers.shift_only()) {
+                selection.add_type = AddType::Add;
+            }
             lock.set_selection(selection);
         }
 

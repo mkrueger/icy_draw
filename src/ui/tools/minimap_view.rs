@@ -56,6 +56,7 @@ impl MinimapToolWindow {
             self.buffer_view.lock().get_buffer_mut().layers = buffer.layers.clone();
             self.buffer_view.lock().redraw_view();
         }
+
         self.buffer_view.lock().use_fg = editor.buffer_view.lock().use_fg;
         self.buffer_view.lock().use_bg = editor.buffer_view.lock().use_bg;
 
