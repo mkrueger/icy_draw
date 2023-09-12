@@ -6,7 +6,7 @@ use icy_engine_egui::TerminalCalc;
 
 use crate::{AnsiEditor, Message};
 
-use super::{Event, Position, Tool};
+use super::{Event, MKey, MModifiers, Position, Tool};
 
 #[derive(Default)]
 enum SelectionDrag {
@@ -134,7 +134,7 @@ impl Tool for SelectTool {
             SelectionMode::Normal => {
                 if button == 1 && !is_inside_selection(editor, cur_abs) {
                     let lock = &mut editor.buffer_view.lock();
-                    lock.get_edit_state_mut().add_selection_to_mask();
+                    let _ = lock.get_edit_state_mut().add_selection_to_mask();
                     let _ = lock.get_edit_state_mut().deselect();
                 }
             }
@@ -326,6 +326,16 @@ impl Tool for SelectTool {
 
         let lock = &mut editor.buffer_view.lock();
         lock.get_edit_state_mut().add_selection_to_mask();
+        Event::None
+    }
+
+    fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, _modifier: MModifiers) -> Event {
+        match key {
+            MKey::Escape => {
+                editor.buffer_view.lock().get_edit_state_mut().deselect();
+            }
+            _ => {}
+        }
         Event::None
     }
 }

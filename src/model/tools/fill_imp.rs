@@ -2,13 +2,13 @@ use std::collections::HashSet;
 
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, TextAttribute, TextPane};
+use icy_engine::{AttributedChar, Size, TextAttribute, TextPane};
 
 use crate::{AnsiEditor, Message};
 
 use super::{brush_imp::draw_glyph, Event, Position, Tool};
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum FillType {
     Character,
     Colorize,
@@ -23,15 +23,24 @@ pub struct FillTool {
     pub fill_type: FillType,
 }
 
-impl FillTool {
-    fn fill(
-        &self,
-        editor: &mut AnsiEditor,
-        visited: &mut HashSet<Position>,
-        pos: Position,
-        old_ch: AttributedChar,
+struct FillOperation {
+    fill_type: FillType,
+    use_fore: bool,
+    use_back: bool,
+
+    size: Size,
+    use_selection: bool,
+    base_char: AttributedChar,
+    new_char: AttributedChar,
+    visited: HashSet<Position>,
+}
+impl FillOperation {
+    pub fn new(
+        fill_tool: &FillTool,
+        editor: &AnsiEditor,
+        base_char: AttributedChar,
         new_ch: AttributedChar,
-    ) {
+    ) -> Self {
         let size = editor
             .buffer_view
             .lock()
@@ -39,100 +48,95 @@ impl FillTool {
             .get_cur_layer()
             .unwrap()
             .get_size();
+        let use_selection = editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .is_something_selected();
+        Self {
+            size,
+            fill_type: fill_tool.fill_type,
+            use_fore: fill_tool.use_fore,
+            use_back: fill_tool.use_back,
+            use_selection,
+            base_char,
+            new_char: new_ch,
+            visited: HashSet::new(),
+        }
+    }
 
+    pub fn fill(&mut self, editor: &mut AnsiEditor, pos: Position) {
         if pos.x < 0
             || pos.y < 0
-            || pos.x >= size.width
-            || pos.y >= size.height
-            || !visited.insert(pos)
+            || pos.x >= self.size.width
+            || pos.y >= self.size.height
+            || !self.visited.insert(pos)
         {
             return;
         }
 
-        let cur_char = editor
-            .buffer_view
-            .lock()
-            .get_edit_state()
-            .get_cur_layer()
-            .unwrap()
-            .get_char(pos);
-        if matches!(self.fill_type, FillType::Character) && self.use_fore && self.use_back {
-            if cur_char != old_ch || cur_char == new_ch {
-                return;
-            }
-        } else if self.use_fore && self.use_back {
-            if cur_char.attribute != old_ch.attribute || cur_char.attribute == new_ch.attribute {
-                return;
-            }
-        } else if matches!(self.fill_type, FillType::Character) && self.use_fore {
-            if cur_char.ch != old_ch.ch
-                && cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground()
-                || cur_char.ch == new_ch.ch
-                    && cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground()
-            {
-                return;
-            }
-        } else if matches!(self.fill_type, FillType::Character) && self.use_back {
-            if cur_char.ch != old_ch.ch
-                && cur_char.attribute.get_background() != old_ch.attribute.get_background()
-                || cur_char.ch == new_ch.ch
-                    && cur_char.attribute.get_background() == new_ch.attribute.get_background()
-            {
-                return;
-            }
-        } else if matches!(self.fill_type, FillType::Character) {
-            if cur_char.ch != old_ch.ch || cur_char.ch == new_ch.ch {
-                return;
-            }
-        } else if self.use_fore {
-            if cur_char.attribute.get_foreground() != old_ch.attribute.get_foreground()
-                || cur_char.attribute.get_foreground() == new_ch.attribute.get_foreground()
-            {
-                return;
-            }
-        } else if self.use_back {
-            if cur_char.attribute.get_background() != old_ch.attribute.get_background()
-                || cur_char.attribute.get_background() == new_ch.attribute.get_background()
-            {
-                return;
-            }
-        } else {
-            panic!("should never happen!");
-        }
-        let mut repl_ch = cur_char;
-        if matches!(self.fill_type, FillType::Character) {
-            repl_ch.ch = new_ch.ch;
-        }
-        if self.use_fore {
-            repl_ch
-                .attribute
-                .set_foreground(new_ch.attribute.get_foreground());
-        }
-        if self.use_back {
-            repl_ch
-                .attribute
-                .set_background(new_ch.attribute.get_background());
-        }
-
-        repl_ch.set_font_page(
-            editor
+        if !self.use_selection
+            || editor
                 .buffer_view
                 .lock()
-                .get_caret()
-                .get_attribute()
-                .get_font_page(),
-        );
-        editor.set_char(pos, repl_ch);
+                .get_edit_state()
+                .get_is_selected(pos)
+        {
+            let cur_char = editor
+                .buffer_view
+                .lock()
+                .get_edit_state()
+                .get_cur_layer()
+                .unwrap()
+                .get_char(pos);
 
-        if pos.x != 0 {
-            self.fill(editor, visited, pos + Position::new(-1, 0), old_ch, new_ch);
-        }
-        self.fill(editor, visited, pos + Position::new(1, 0), old_ch, new_ch);
+            let mut repl_ch = cur_char;
 
-        if pos.y != 0 {
-            self.fill(editor, visited, pos + Position::new(0, -1), old_ch, new_ch);
+            match self.fill_type {
+                FillType::Character => {
+                    if cur_char.ch != self.base_char.ch {
+                        return;
+                    }
+                    repl_ch.ch = self.new_char.ch;
+                    repl_ch.set_font_page(self.new_char.get_font_page());
+                }
+                FillType::Colorize => {
+                    if cur_char.attribute != self.base_char.attribute {
+                        return;
+                    }
+                }
+            }
+
+            if self.use_fore {
+                repl_ch
+                    .attribute
+                    .set_foreground(self.new_char.attribute.get_foreground());
+                repl_ch
+                    .attribute
+                    .set_is_bold(self.new_char.attribute.is_bold());
+            }
+
+            if self.use_back {
+                repl_ch
+                    .attribute
+                    .set_background(self.new_char.attribute.get_background());
+            }
+
+            repl_ch.set_font_page(
+                editor
+                    .buffer_view
+                    .lock()
+                    .get_caret()
+                    .get_attribute()
+                    .get_font_page(),
+            );
+            editor.set_char(pos, repl_ch);
         }
-        self.fill(editor, visited, pos + Position::new(0, 1), old_ch, new_ch);
+
+        self.fill(editor, pos + Position::new(-1, 0));
+        self.fill(editor, pos + Position::new(1, 0));
+        self.fill(editor, pos + Position::new(0, -1));
+        self.fill(editor, pos + Position::new(0, 1));
     }
 }
 
@@ -212,14 +216,13 @@ impl Tool for FillTool {
             if self.use_back || self.use_fore || matches!(self.fill_type, FillType::Character) {
                 let _undo =
                     editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-bucket-fill"));
-                let mut visited = HashSet::new();
-                self.fill(
-                    editor,
-                    &mut visited,
-                    pos,
+                let mut op = FillOperation::new(
+                    self,
+                    &editor,
                     ch,
                     AttributedChar::new(*self.char_code.borrow(), attr),
                 );
+                op.fill(editor, pos);
             }
         }
         Event::None

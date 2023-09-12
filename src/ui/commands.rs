@@ -165,7 +165,7 @@ keys![
     (copy, "menu-copy", Copy, C, CTRL),
     (paste, "menu-paste", Paste, V, CTRL),
     (select_all, "menu-select-all", SelectAll, A, CTRL),
-    (deselect, "menu-deselect", Deselect, Escape, NONE),
+    (deselect, "menu-select_nothing", SelectNothing),
     (erase_selection, "menu-erase", DeleteSelection, Delete, NONE),
     (flip_x, "menu-flipx", FlipX),
     (flip_y, "menu-flipy", FlipY),
@@ -334,5 +334,10 @@ keys![
         clear_recent_open,
         "menu-open_recent_clear",
         ClearRecentOpenFiles
+    ),
+    (
+        inverse_selection,
+        "menu-inverse_selection",
+        InverseSelection
     ),
 ];

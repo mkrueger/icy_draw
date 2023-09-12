@@ -58,7 +58,7 @@ menu-area_operations=Bereichsoperationen
 
 menu-selection=Auswahl
 menu-select-all=Alles auswählen
-menu-deselect=Nichts
+menu-select_nothing=Nichts
 
 menu-colors=Farben
 

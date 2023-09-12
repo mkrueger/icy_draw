@@ -58,7 +58,8 @@ menu-area_operations=Area
 
 menu-selection=Selection
 menu-select-all=Select All
-menu-deselect=Deselect
+menu-select_nothing=Deselect
+menu-inverse_selection=Inverse
 
 menu-colors=Colors
 

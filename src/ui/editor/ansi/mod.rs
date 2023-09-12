@@ -566,6 +566,9 @@ impl AnsiEditor {
                     _ => {}
                 }
             }
+        } else if ui.input(|i| i.key_pressed(Key::Escape)) {
+            // workaround for egui behavior - escape is used for surrender focus internally so we lose fokus here
+            cur_tool.handle_key(self, MKey::Escape, MModifiers::None);
         }
 
         if response.clicked_by(egui::PointerButton::Primary) {

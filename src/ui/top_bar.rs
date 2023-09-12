@@ -267,6 +267,9 @@ impl MainWindow {
                 self.commands
                     .deselect
                     .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .inverse_selection
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
                 self.commands
                     .erase_selection

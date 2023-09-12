@@ -45,7 +45,7 @@ pub enum Message {
     EditSauce,
     SetCanvasSize,
     SelectAll,
-    Deselect,
+    SelectNothing,
     DeleteSelection,
 
     ShowAboutDialog,
@@ -124,6 +124,7 @@ pub enum Message {
     LoadFile(PathBuf, bool),
     TryLoadFile(PathBuf),
     ClearLayer(usize),
+    InverseSelection,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -225,10 +226,15 @@ impl MainWindow {
                     None
                 });
             }
-            Message::Deselect => {
+            Message::SelectNothing => {
                 self.run_editor_command(0, |_, editor, _| {
-                    editor.buffer_view.lock().clear_selection();
-                    None
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .clear_selection(),
+                    )
                 });
             }
             Message::DeleteSelection => {
@@ -863,6 +869,18 @@ impl MainWindow {
 
             Message::ClearRecentOpenFiles => {
                 Settings::clear_recent_files();
+            }
+
+            Message::InverseSelection => {
+                self.run_editor_command(0, |_, editor, _| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .inverse_selection(),
+                    )
+                });
             }
         }
     }
