@@ -90,11 +90,7 @@ impl MainWindow {
                 brush_type: crate::model::brush_imp::BrushType::Shade,
                 char_code: Rc::new(RefCell::new('\u{00B0}')),
             }),
-            Box::new(crate::model::erase_imp::EraseTool {
-                size: 3,
-                brush_type: crate::model::erase_imp::EraseType::Shade,
-                undo_op: None,
-            }),
+            Box::<crate::model::erase_imp::EraseTool>::default(),
             Box::new(crate::model::pipette_imp::PipetteTool {}),
             Box::new(crate::model::line_imp::LineTool {
                 draw_mode: crate::model::DrawMode::Line,

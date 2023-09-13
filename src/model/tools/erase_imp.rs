@@ -14,9 +14,19 @@ pub enum EraseType {
 }
 
 pub struct EraseTool {
-    pub size: i32,
-    pub brush_type: EraseType,
-    pub undo_op: Option<AtomicUndoGuard>,
+    size: i32,
+    brush_type: EraseType,
+    undo_op: Option<AtomicUndoGuard>,
+}
+
+impl Default for EraseTool {
+    fn default() -> Self {
+        Self {
+            size: 3,
+            brush_type: crate::model::erase_imp::EraseType::Solid,
+            undo_op: None,
+        }
+    }
 }
 
 impl EraseTool {
