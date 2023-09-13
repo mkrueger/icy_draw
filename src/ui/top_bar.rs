@@ -313,7 +313,7 @@ impl MainWindow {
                         "menu-zoom",
                         zoom = format!(
                             "{}%",
-                            100. * self.document_behavior.document_options.get_scale().x
+                            (100. * self.document_behavior.document_options.get_scale().x) as i32
                         )
                     ),
                     |ui| {
