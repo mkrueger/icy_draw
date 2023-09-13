@@ -137,10 +137,11 @@ impl ClipboardHandler for AnsiEditor {
         Ok(())
     }
 }
+const ICED_EXT: &str = "icy";
 
 impl Document for AnsiEditor {
     fn default_extenision(&self) -> &'static str {
-        "iced"
+        ICED_EXT
     }
 
     fn undo_stack_len(&self) -> usize {
@@ -149,9 +150,9 @@ impl Document for AnsiEditor {
 
     fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>> {
         let ext = if let Some(ext) = path.extension() {
-            OsStr::to_str(ext).unwrap_or("iced").to_lowercase()
+            OsStr::to_str(ext).unwrap_or(ICED_EXT).to_lowercase()
         } else {
-            "iced".to_string()
+            ICED_EXT.to_string()
         };
 
         let options = SaveOptions::new();
@@ -357,7 +358,7 @@ impl AnsiEditor {
                     self.buffer_view
                         .lock()
                         .get_buffer()
-                        .to_bytes("iced", options)?
+                        .to_bytes(ICED_EXT, options)?
                 };
                 if let Err(err) = f.write_all(&content) {
                     return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
