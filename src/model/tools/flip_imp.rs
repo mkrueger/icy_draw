@@ -24,6 +24,16 @@ impl Tool for FlipTool {
         None
     }
 
+    fn handle_hover(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
+        _cur_abs: Position,
+    ) -> egui::Response {
+        response.on_hover_cursor(egui::CursorIcon::Crosshair)
+    }
     fn handle_click(
         &mut self,
         editor: &mut AnsiEditor,

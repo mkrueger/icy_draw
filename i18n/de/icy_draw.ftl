@@ -112,6 +112,8 @@ tool-select-foreground=Vordergund
 tool-select-background=Hintergrund
 tool-select-description=Shift halten, um Auswahl hinzuzufügen. Control/Cmd zum Entfernen.
 
+tool-fill-exact_match_label=Exakte Übereinstimmung
+
 toolbar-new=Neu
 
 new-file-title=Neue Datei

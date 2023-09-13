@@ -298,11 +298,11 @@ impl Tool for SelectTool {
         cur_abs: Position,
     ) -> egui::Response {
         if self.mode != SelectionMode::Normal {
-            return response;
+            return response.on_hover_cursor(egui::CursorIcon::Crosshair);
         }
 
         match get_selection_drag(editor, cur_abs) {
-            SelectionDrag::None => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Text),
+            SelectionDrag::None => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Crosshair),
             SelectionDrag::Move => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Move),
             SelectionDrag::Left => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::ResizeWest),
             SelectionDrag::Right => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::ResizeEast),
@@ -356,7 +356,11 @@ impl Tool for SelectTool {
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, _modifier: MModifiers) -> Event {
         if let MKey::Escape = key {
-            let _ = editor.buffer_view.lock().get_edit_state_mut().deselect();
+            let _ = editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .clear_selection();
         }
         Event::None
     }

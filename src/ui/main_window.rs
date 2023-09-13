@@ -21,9 +21,7 @@ use eframe::{
 use egui_tiles::{Container, TileId};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{
-    BitFont, Buffer, EngineResult, Palette, Position, TextAttribute, TextPane, TheDrawFont,
-};
+use icy_engine::{BitFont, Buffer, EngineResult, Palette, Position, TextAttribute, TheDrawFont};
 
 pub struct MainWindow {
     pub document_tree: egui_tiles::Tree<DocumentTab>,
@@ -138,13 +136,7 @@ impl MainWindow {
                     char_code: Rc::new(RefCell::new('\u{00B0}')),
                 },
             ),
-            Box::new(crate::model::fill_imp::FillTool {
-                use_fore: true,
-                use_back: true,
-                char_code: Rc::new(RefCell::new('\u{00B0}')),
-                fill_type: crate::model::fill_imp::FillType::Character,
-                attr: icy_engine::TextAttribute::default(),
-            }),
+            Box::new(crate::model::fill_imp::FillTool::new()),
             Box::new(fnt),
             Box::<crate::model::move_layer_imp::MoveLayer>::default(),
         ];
@@ -219,7 +211,7 @@ impl MainWindow {
             is_closed: false,
             is_fullscreen: false,
             in_open_file_mode: false,
-            open_file_window
+            open_file_window,
         }
     }
 
@@ -231,38 +223,38 @@ impl MainWindow {
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap().to_ascii_lowercase();
             if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext || "fon" == ext {
-                    let file_name = path.file_name();
-                    if file_name.is_none() {
-                        return;
-                    }
-                    let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
-                    if let Ok(font) = BitFont::from_bytes(&file_name_str, data) {
-                        add_child(
-                            &mut self.document_tree,
-                            Some(full_path),
-                            Box::new(BitFontEditor::new(font)),
-                        );
-                        return;
-                    }
+                let file_name = path.file_name();
+                if file_name.is_none() {
+                    return;
+                }
+                let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
+                if let Ok(font) = BitFont::from_bytes(&file_name_str, data) {
+                    add_child(
+                        &mut self.document_tree,
+                        Some(full_path),
+                        Box::new(BitFontEditor::new(font)),
+                    );
+                    return;
+                }
             }
 
             if "tdf" == ext {
-                    let file_name = path.file_name();
-                    if file_name.is_none() {
-                        return;
-                    }
-                    if let Ok(fonts) = TheDrawFont::from_tdf_bytes(data) {
-                        let id = self.create_id();
-                        add_child(
-                            &mut self.document_tree,
-                            Some(full_path),
-                            Box::new(CharFontEditor::new(&self.gl, id, fonts)),
-                        );
-                        return;
-                    }
+                let file_name = path.file_name();
+                if file_name.is_none() {
+                    return;
+                }
+                if let Ok(fonts) = TheDrawFont::from_tdf_bytes(data) {
+                    let id = self.create_id();
+                    add_child(
+                        &mut self.document_tree,
+                        Some(full_path),
+                        Box::new(CharFontEditor::new(&self.gl, id, fonts)),
+                    );
+                    return;
+                }
             }
         }
-        
+
         match Buffer::from_bytes(path, true, data) {
             Ok(mut buf) => {
                 let id = self.create_id();
@@ -281,7 +273,6 @@ impl MainWindow {
                     .set_duration(Some(Duration::from_secs(5)));
             }
         }
-
     }
 
     pub fn open_file(&mut self, path: &Path, load_autosave: bool) {
@@ -309,7 +300,7 @@ impl MainWindow {
         };
         Settings::add_recent_file(path);
         if let Ok(data) = fs::read(load_path) {
-            self.open_data(path, &data); 
+            self.open_data(path, &data);
         }
     }
 
@@ -512,20 +503,22 @@ pub fn button_with_shortcut(
 
 impl eframe::App for MainWindow {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-
         if self.in_open_file_mode {
             if self.open_file_window.show_file_chooser(ctx) {
                 let file = self.open_file_window.opened_file.take();
-                if let Some(file) = & file{
-                    if file.path.exists()  {
+                if let Some(file) = &file {
+                    if file.path.exists() {
                         self.open_file(&file.path, false);
-                    } else if let Some(data) = &file.file_data { 
+                    } else if let Some(data) = &file.file_data {
                         let mut path = file.path.clone();
                         if let Some(user) = UserDirs::new() {
                             if let Some(dir) = user.document_dir() {
                                 path = dir.join(path);
                                 while path.exists() {
-                                    path = path.with_extension(format!("1.{}", file.path.extension().unwrap().to_str().unwrap()));
+                                    path = path.with_extension(format!(
+                                        "1.{}",
+                                        file.path.extension().unwrap().to_str().unwrap()
+                                    ));
                                 }
                             }
                         }
@@ -667,7 +660,7 @@ impl eframe::App for MainWindow {
                 self.handle_message(msg);
             });
 
-            egui::CentralPanel::default()
+        egui::CentralPanel::default()
             .frame(egui::Frame {
                 fill: ctx.style().visuals.panel_fill,
                 ..Default::default()
@@ -804,7 +797,6 @@ impl eframe::App for MainWindow {
         });*/
     }
 }
-
 
 fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
     let mut result = None;

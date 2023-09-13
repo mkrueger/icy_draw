@@ -1,8 +1,8 @@
-use std::collections::HashSet;
+use std::{cell::RefCell, collections::HashSet, rc::Rc};
 
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Size, TextAttribute, TextPane};
+use icy_engine::{AttributedChar, Size, TextPane};
 
 use crate::{AnsiEditor, Message};
 
@@ -15,25 +15,40 @@ pub enum FillType {
 }
 
 pub struct FillTool {
-    pub use_fore: bool,
-    pub use_back: bool,
+    use_fore: bool,
+    use_back: bool,
 
-    pub attr: TextAttribute,
-    pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
-    pub fill_type: FillType,
+    char_code: std::rc::Rc<std::cell::RefCell<char>>,
+    fill_type: FillType,
+    use_exact_matching: bool,
 }
 
+impl FillTool {
+    pub fn new() -> Self {
+        Self {
+            use_fore: true,
+            use_back: true,
+            char_code: Rc::new(RefCell::new('\u{00B0}')),
+            fill_type: crate::model::fill_imp::FillType::Character,
+            use_exact_matching: false,
+        }
+    }
+}
+#[allow(clippy::struct_excessive_bools)]
 struct FillOperation {
     fill_type: FillType,
     use_fore: bool,
     use_back: bool,
+    use_exact_matching: bool,
 
     size: Size,
+    pub offset: Position,
     use_selection: bool,
     base_char: AttributedChar,
     new_char: AttributedChar,
     visited: HashSet<Position>,
 }
+
 impl FillOperation {
     pub fn new(
         fill_tool: &FillTool,
@@ -53,6 +68,13 @@ impl FillOperation {
             .lock()
             .get_edit_state()
             .is_something_selected();
+        let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer()
+        {
+            layer.get_offset()
+        } else {
+            Position::default()
+        };
+
         Self {
             size,
             fill_type: fill_tool.fill_type,
@@ -60,7 +82,9 @@ impl FillOperation {
             use_back: fill_tool.use_back,
             use_selection,
             base_char,
+            offset,
             new_char: new_ch,
+            use_exact_matching: fill_tool.use_exact_matching,
             visited: HashSet::new(),
         }
     }
@@ -80,7 +104,7 @@ impl FillOperation {
                 .buffer_view
                 .lock()
                 .get_edit_state()
-                .get_is_selected(pos)
+                .get_is_selected(pos + self.offset)
         {
             let cur_char = editor
                 .buffer_view
@@ -94,14 +118,19 @@ impl FillOperation {
 
             match self.fill_type {
                 FillType::Character => {
-                    if cur_char.ch != self.base_char.ch {
+                    if self.use_exact_matching && cur_char != self.base_char
+                        || !self.use_exact_matching && cur_char.ch != self.base_char.ch
+                    {
                         return;
                     }
                     repl_ch.ch = self.new_char.ch;
                     repl_ch.set_font_page(self.new_char.get_font_page());
                 }
                 FillType::Colorize => {
-                    if cur_char.attribute != self.base_char.attribute {
+                    if self.use_exact_matching && cur_char != self.base_char
+                        || !self.use_exact_matching
+                            && cur_char.attribute != self.base_char.attribute
+                    {
                         return;
                     }
                 }
@@ -190,7 +219,24 @@ impl Tool for FillTool {
             FillType::Colorize,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+
+        ui.checkbox(
+            &mut self.use_exact_matching,
+            fl!(crate::LANGUAGE_LOADER, "tool-fill-exact_match_label"),
+        );
+
         result
+    }
+
+    fn handle_hover(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
+        _cur_abs: Position,
+    ) -> egui::Response {
+        response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
     fn handle_click(

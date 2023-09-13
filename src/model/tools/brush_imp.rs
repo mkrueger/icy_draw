@@ -53,11 +53,29 @@ impl BrushTool {
             .get_edit_state()
             .is_something_selected();
 
+        let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer()
+        {
+            layer.get_offset()
+        } else {
+            Position::default()
+        };
+
         for y in 0..self.size {
             for x in 0..self.size {
+                let pos = center + Position::new(x, y);
+                if use_selection
+                    && !editor
+                        .buffer_view
+                        .lock()
+                        .get_edit_state()
+                        .get_is_selected(pos + offset)
+                {
+                    continue;
+                }
+
                 match self.brush_type {
                     BrushType::Shade => {
-                        let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
+                        let ch = editor.get_char_from_cur_layer(pos);
                         let mut char_code = gradient[0];
                         if ch.ch == gradient[gradient.len() - 1] {
                             char_code = gradient[gradient.len() - 1];
@@ -69,34 +87,16 @@ impl BrushTool {
                                 }
                             }
                         }
-                        let pos = center + Position::new(x, y);
-                        if !use_selection
-                            || editor
-                                .buffer_view
-                                .lock()
-                                .get_edit_state()
-                                .get_is_selected(pos)
-                        {
-                            editor.set_char(pos, AttributedChar::new(char_code, caret_attr));
-                        }
+                        editor.set_char(pos, AttributedChar::new(char_code, caret_attr));
                     }
                     BrushType::Solid => {
-                        let pos = center + Position::new(x, y);
-                        if !use_selection
-                            || editor
-                                .buffer_view
-                                .lock()
-                                .get_edit_state()
-                                .get_is_selected(pos)
-                        {
-                            editor.set_char(
-                                center + Position::new(x, y),
-                                AttributedChar::new(*self.char_code.borrow(), caret_attr),
-                            );
-                        }
+                        editor.set_char(
+                            center + Position::new(x, y),
+                            AttributedChar::new(*self.char_code.borrow(), caret_attr),
+                        );
                     }
                     BrushType::Color => {
-                        let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
+                        let ch = editor.get_char_from_cur_layer(pos);
                         let mut attribute = ch.attribute;
                         if self.use_fore {
                             attribute.set_foreground(caret_attr.get_foreground());
@@ -104,10 +104,7 @@ impl BrushTool {
                         if self.use_back {
                             attribute.set_background(caret_attr.get_background());
                         }
-                        editor.set_char(
-                            center + Position::new(x, y),
-                            AttributedChar::new(ch.ch, attribute),
-                        );
+                        editor.set_char(pos, AttributedChar::new(ch.ch, attribute));
                     }
                     BrushType::Custom => {}
                 }
@@ -243,8 +240,7 @@ impl Tool for BrushTool {
         } else {
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         }
-
-        response
+        response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
     fn handle_click(

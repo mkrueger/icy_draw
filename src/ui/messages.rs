@@ -16,8 +16,8 @@ use icy_engine::{
 
 use crate::{
     util::autosave::{self},
-    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog,
-    SelectCharacterDialog, SelectOutlineDialog, Settings,
+    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog,
+    SelectOutlineDialog, Settings,
 };
 
 #[derive(Clone)]

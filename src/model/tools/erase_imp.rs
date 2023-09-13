@@ -25,12 +25,33 @@ impl EraseTool {
 
         let center = pos + mid;
         let gradient = ['\u{00DB}', '\u{00B2}', '\u{00B1}', '\u{00B0}', ' '];
+        let use_selection = editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .is_something_selected();
+        let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer()
+        {
+            layer.get_offset()
+        } else {
+            Position::default()
+        };
 
         for y in 0..self.size {
             for x in 0..self.size {
+                let pos = center + Position::new(x, y);
+                if use_selection
+                    && !editor
+                        .buffer_view
+                        .lock()
+                        .get_edit_state()
+                        .get_is_selected(pos + offset)
+                {
+                    continue;
+                }
                 match self.brush_type {
                     EraseType::Shade => {
-                        let ch = editor.get_char_from_cur_layer(center + Position::new(x, y));
+                        let ch = editor.get_char_from_cur_layer(pos);
 
                         let mut attribute = ch.attribute;
 
@@ -51,17 +72,11 @@ impl EraseTool {
                         }
 
                         if found {
-                            editor.set_char(
-                                center + Position::new(x, y),
-                                AttributedChar::new(char_code, attribute),
-                            );
+                            editor.set_char(pos, AttributedChar::new(char_code, attribute));
                         }
                     }
                     EraseType::Solid => {
-                        editor.set_char(
-                            center + Position::new(x, y),
-                            AttributedChar::new(' ', TextAttribute::default()),
-                        );
+                        editor.set_char(pos, AttributedChar::new(' ', TextAttribute::default()));
                     }
                 }
             }
@@ -103,6 +118,17 @@ impl Tool for EraseTool {
             fl!(crate::LANGUAGE_LOADER, "tool-shade"),
         );
         None
+    }
+
+    fn handle_hover(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
+        _cur_abs: Position,
+    ) -> egui::Response {
+        response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
     fn handle_click(

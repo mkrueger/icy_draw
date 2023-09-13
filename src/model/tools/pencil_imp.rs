@@ -30,6 +30,29 @@ impl PencilTool {
     fn paint_brush(&self, editor: &mut AnsiEditor, pos: Position) {
         let center = pos;
         let gradient = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
+        let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer()
+        {
+            layer.get_offset()
+        } else {
+            Position::default()
+        };
+
+        let use_selection = editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .is_something_selected();
+
+        if use_selection
+            && !editor
+                .buffer_view
+                .lock()
+                .get_edit_state()
+                .get_is_selected(pos + offset)
+        {
+            return;
+        }
+
         match self.brush_type {
             PencilType::HalfBlock => {
                 let mut lines = ScanLines::new(1);
@@ -185,6 +208,16 @@ impl Tool for PencilTool {
             self.paint_brush(editor, pos);
         }
         super::Event::None
+    }
+    fn handle_hover(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
+        _cur_abs: Position,
+    ) -> egui::Response {
+        response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
     fn handle_drag(

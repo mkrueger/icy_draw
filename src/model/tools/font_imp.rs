@@ -332,6 +332,17 @@ impl Tool for FontTool {
         Event::None
     }
 
+    fn handle_hover(
+        &mut self,
+        _ui: &egui::Ui,
+        response: egui::Response,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
+        _cur_abs: Position,
+    ) -> egui::Response {
+        response.on_hover_cursor(egui::CursorIcon::Text)
+    }
+
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
         let selected_font = *self.selected_font.lock().unwrap();
 
