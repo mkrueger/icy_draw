@@ -267,7 +267,6 @@ impl MainWindow {
             Ok(mut buf) => {
                 let id = self.create_id();
                 buf.is_terminal_buffer = false;
-                buf.set_height(buf.get_line_count());
                 let editor = AnsiEditor::new(&self.gl, id, buf);
                 add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
             }
