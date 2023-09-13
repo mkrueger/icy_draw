@@ -6,8 +6,8 @@ use icy_engine_egui::TerminalCalc;
 use crate::{AnsiEditor, Message};
 
 use super::{
-    brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
-    ScanLines, Tool, plot_point,
+    brush_imp::draw_glyph, line_imp::set_half_block, plot_point, DrawMode, Event, Plottable,
+    Position, ScanLines, Tool,
 };
 
 pub struct DrawRectangleTool {
@@ -95,7 +95,7 @@ impl Tool for DrawRectangleTool {
             DrawMode::Colorize,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
-    /*   ui.radio_value(
+        /*   ui.radio_value(
             &mut self.draw_mode,
             DrawMode::Outline,
             "Outline",
@@ -141,19 +141,15 @@ impl Tool for DrawRectangleTool {
         for rect in lines.outline() {
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
-                    let pos  = Position::new(rect.start.x + x, rect.start.y + y);
+                    let pos = Position::new(rect.start.x + x, rect.start.y + y);
                     match self.draw_mode {
                         DrawMode::Line => {
-                            set_half_block(
-                                editor,
-                                pos,
-                                col,
-                            );
+                            set_half_block(editor, pos, col);
                         }
-                        DrawMode::Char |
-                        DrawMode::Shade |
-                        DrawMode::Colorize |
-                        DrawMode::Outline => {
+                        DrawMode::Char
+                        | DrawMode::Shade
+                        | DrawMode::Colorize
+                        | DrawMode::Outline => {
                             plot_point(editor, self, pos);
                         }
                     }

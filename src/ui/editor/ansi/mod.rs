@@ -103,6 +103,8 @@ impl ClipboardHandler for AnsiEditor {
             .get_clipboard_data()
         {
             push_data(BUFFER_DATA, &data)?;
+        } else {
+            log::error!("can't get clipboard data!");
         }
         Ok(())
     }
@@ -138,7 +140,7 @@ impl ClipboardHandler for AnsiEditor {
 
 impl Document for AnsiEditor {
     fn default_extenision(&self) -> &'static str {
-        "icd"
+        "iced"
     }
 
     fn undo_stack_len(&self) -> usize {
@@ -147,9 +149,9 @@ impl Document for AnsiEditor {
 
     fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>> {
         let ext = if let Some(ext) = path.extension() {
-            OsStr::to_str(ext).unwrap_or("icd").to_lowercase()
+            OsStr::to_str(ext).unwrap_or("iced").to_lowercase()
         } else {
-            "icd".to_string()
+            "iced".to_string()
         };
 
         let options = SaveOptions::new();
@@ -355,7 +357,7 @@ impl AnsiEditor {
                     self.buffer_view
                         .lock()
                         .get_buffer()
-                        .to_bytes("icd", options)?
+                        .to_bytes("iced", options)?
                 };
                 if let Err(err) = f.write_all(&content) {
                     return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));

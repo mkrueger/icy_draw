@@ -299,11 +299,11 @@ impl MainWindow {
             }
             Err(err) => {
                 log::error!("error loading file {path:?}: {err}");
-                self.toasts.error(format!("{err}"))
-                .set_duration(Some(Duration::from_secs(5)));
-
-            },
-        } 
+                self.toasts
+                    .error(format!("{err}"))
+                    .set_duration(Some(Duration::from_secs(5)));
+            }
+        }
     }
 
     pub fn get_active_pane(&mut self) -> Option<&mut DocumentTab> {

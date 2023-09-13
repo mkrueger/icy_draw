@@ -6,7 +6,7 @@ use icy_engine_egui::TerminalCalc;
 
 use crate::{AnsiEditor, Message};
 
-use super::{Event, MKey, MModifiers, Position, Tool};
+use super::{Event, Position, Tool};
 
 #[derive(Default)]
 enum SelectionDrag {
@@ -353,8 +353,6 @@ impl Tool for SelectTool {
 
         Event::None
     }
-
-   
 }
 
 impl SelectTool {
