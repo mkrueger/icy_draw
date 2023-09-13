@@ -18,7 +18,7 @@ pub struct Settings {
 
     custom_palette: IcePalette,
 
-    pub recent_files: Vec<PathBuf>,
+    recent_files: Vec<PathBuf>,
 }
 
 impl Settings {
@@ -54,6 +54,9 @@ impl Settings {
 
     pub fn add_recent_file(file: &Path) {
         unsafe {
+            if !file.exists() {
+                return;
+            }
             let file = file.to_path_buf();
             for i in 0..SETTINGS.recent_files.len() {
                 if SETTINGS.recent_files[i] == file {
@@ -182,6 +185,11 @@ impl Settings {
 
             Ok(())
         }
+    }
+
+    pub(crate) fn get_recent_files(&mut self) -> &Vec<PathBuf> {
+        self.recent_files.retain(|p| p.exists());
+        &self.recent_files
     }
 }
 

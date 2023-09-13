@@ -19,11 +19,12 @@ mod icons;
 
 use eframe::egui::{self, Response};
 use egui_extras::RetainedImage;
-use icy_engine::{AttributedChar, Position, TextAttribute};
+use icy_engine::{AttributedChar, Position, TextAttribute, TextPane};
 use icy_engine_egui::TerminalCalc;
 pub use scan_lines::*;
 
 use crate::{AnsiEditor, Event, Message, Settings};
+
 pub mod scan_lines;
 
 #[derive(Copy, Clone, Debug)]
@@ -183,6 +184,7 @@ pub enum DrawMode {
     Char,
     Shade,
     Colorize,
+    Outline
 }
 
 trait Plottable {
@@ -192,6 +194,31 @@ trait Plottable {
     fn get_use_back(&self) -> bool;
     fn get_char_code(&self) -> char;
 }
+
+
+pub const OUTLINE_TABLE: [[u8;11]; 4] = [
+    // UL,   UR,   LR,   
+    [0xDA, 0xBF, 0xC0, 0xD9, 0xC4, 0xBC, 0xC3, 0xB4, 0xC1, 0xC2, 0xC5],
+    [0xC9, 0xBB, 0xC8, 0xBC, 0xCD, 0xBA, 0xCC, 0xB9, 0xCA, 0xCB, 0xCE],
+    [0xD5, 0xB8, 0xD4, 0xBE, 0xCD, 0xB3, 0xC6, 0xB5, 0xCF, 0xD1, 0xD8],
+    [0xD6, 0xB7, 0xD3, 0xBD, 0xC4, 0xBA, 0xC7, 0xB6, 0xD0, 0xD2, 0xD7],
+];
+
+const CORNER_UPPER_LEFT: usize = 0;
+const CORNER_UPPER_RIGHT: usize = 1;
+const CORNER_LOWER_LEFT: usize = 2;
+const CORNER_LOWER_RIGHT: usize = 3;
+
+const HORIZONTAL_CHAR: usize = 4;
+const VERTICAL_CHAR: usize = 5;
+
+const VERT_RIGHT_CHAR: usize = 6;
+const VERT_LEFT_CHAR: usize = 7;
+
+const HORIZ_UP_CHAR: usize = 8;
+const HORIZ_DOWN_CHAR: usize = 9;
+const CROSS_CHAR: usize = 11;
+
 
 fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
     let ch = editor.get_char_from_cur_layer(pos);
@@ -209,7 +236,6 @@ fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
     }
 
     attribute.set_font_page(editor_attr.get_font_page());
-
     match tool.get_draw_mode() {
         DrawMode::Line => {
             if let Some(layer) = editor
@@ -265,6 +291,34 @@ fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
                 layer.set_char(pos, AttributedChar::new(ch.ch, attribute));
             }
         }
+        DrawMode::Outline => { 
+
+
+            if let Some(layer) = editor
+            .buffer_view
+            .lock()
+            .get_buffer_mut()
+            .get_overlay_layer()
+            {
+                let left = layer.get_char(pos - Position::new(1, 0));
+                let right = layer.get_char(pos + Position::new(1, 0));
+                let up = layer.get_char(pos - Position::new(0, 1));
+                let down = layer.get_char(pos + Position::new(0, 1));
+
+                let idx = if left.is_transparent() && right.is_transparent() && up.is_transparent() && down.is_transparent() {
+                    CORNER_UPPER_LEFT
+                } else if left.ch as u8 ==  OUTLINE_TABLE[0][CORNER_UPPER_LEFT] || left.ch as u8 ==  OUTLINE_TABLE[0][HORIZONTAL_CHAR] {
+                    HORIZONTAL_CHAR
+                } else { 
+                    VERTICAL_CHAR
+                };
+
+                layer.set_char(pos, AttributedChar::new(unsafe { char::from_u32_unchecked(OUTLINE_TABLE[0][idx] as u32) } , attribute));
+            }
+
+
+        }
+
     }
 }
 

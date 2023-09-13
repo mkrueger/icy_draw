@@ -33,20 +33,8 @@ impl Plottable for LineTool {
         *self.char_code.borrow()
     }
 }
+
 /*
-const CORNER_UPPER_LEFT: usize = 0;
-const CORNER_UPPER_RIGHT: usize = 1;
-const CORNER_LOWER_LEFT: usize = 2;
-const CORNER_LOWER_RIGHT: usize = 3;
-
-const HORIZONTAL_CHAR: usize = 4;
-const VERTICAL_CHAR: usize = 5;
-
-const VERT_RIGHT_CHAR: usize = 6;
-const VERT_LEFT_CHAR: usize = 7;
-
-const HORIZ_UP_CHAR: usize = 8;
-const HORIZ_DOWN_CHAR: usize = 9;
 
 impl LineTool {
     pub fn get_new_horiz_char(editor: &mut Editor, new_char: u16, to_left: bool) -> usize {
@@ -176,6 +164,7 @@ impl LineTool {
     }
 }
 */
+
 // block tools:
 // copy/moxe
 // fill, delete

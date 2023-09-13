@@ -131,6 +131,7 @@ pub enum Message {
 
     SetBackground(u32),
     SetBackgroundRgb(u8, u8, u8),
+    ClearSelection,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -369,6 +370,12 @@ impl MainWindow {
                     let mut lock = editor.buffer_view.lock();
                     let layer = lock.get_edit_state().get_current_layer();
                     to_message(lock.get_edit_state_mut().remove_layer(layer))
+                });
+            }
+            Message::ClearSelection => {
+                self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().clear_selection())
                 });
             }
             Message::DuplicateLayer(cur_layer) => {

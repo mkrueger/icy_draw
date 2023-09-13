@@ -340,4 +340,7 @@ keys![
         "menu-inverse_selection",
         InverseSelection
     ),
+
+    (clear_selection, "menu-delete_row", ClearSelection, Escape, NONE),
+
 ];

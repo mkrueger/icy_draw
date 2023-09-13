@@ -213,9 +213,7 @@ impl MainWindow {
 
     pub fn open_data(&mut self, path: &Path, data: &[u8]) {
         let full_path = path.to_path_buf();
-
         Settings::add_recent_file(path);
-
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap().to_ascii_lowercase();
             if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext || "fon" == ext {
@@ -280,6 +278,7 @@ impl MainWindow {
                 }
             }
         });
+
         if let Some(id) = already_open {
             self.enumerate_tabs(|_, tab| {
                 if tab.children.contains(&id) {
@@ -288,16 +287,23 @@ impl MainWindow {
             });
             return;
         }
-
         let load_path = if load_autosave {
             autosave::get_autosave_file(path)
         } else {
             path.to_path_buf()
         };
-        Settings::add_recent_file(path);
-        if let Ok(data) = fs::read(load_path) {
-            self.open_data(path, &data);
-        }
+
+        match fs::read(load_path) {
+            Ok(data) => {
+                self.open_data(path, &data);
+            }
+            Err(err) => {
+                log::error!("error loading file {path:?}: {err}");
+                self.toasts.error(format!("{err}"))
+                .set_duration(Some(Duration::from_secs(5)));
+
+            },
+        } 
     }
 
     pub fn get_active_pane(&mut self) -> Option<&mut DocumentTab> {

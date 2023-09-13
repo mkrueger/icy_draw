@@ -354,16 +354,7 @@ impl Tool for SelectTool {
         Event::None
     }
 
-    fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, _modifier: MModifiers) -> Event {
-        if let MKey::Escape = key {
-            let _ = editor
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .clear_selection();
-        }
-        Event::None
-    }
+   
 }
 
 impl SelectTool {

@@ -7,7 +7,7 @@ use crate::{AnsiEditor, Message};
 
 use super::{
     brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
-    ScanLines, Tool,
+    ScanLines, Tool, plot_point,
 };
 
 pub struct DrawEllipseTool {
@@ -142,11 +142,22 @@ impl Tool for DrawEllipseTool {
         for rect in lines.outline() {
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
-                    set_half_block(
-                        editor,
-                        Position::new(rect.start.x + x, rect.start.y + y),
-                        col,
-                    );
+                    let pos  = Position::new(rect.start.x + x, rect.start.y + y);
+                    match self.draw_mode {
+                        DrawMode::Line => {
+                            set_half_block(
+                                editor,
+                                pos,
+                                col,
+                            );
+                        }
+                        DrawMode::Char |
+                        DrawMode::Shade |
+                        DrawMode::Colorize |
+                        DrawMode::Outline => {
+                            plot_point(editor, self, pos);
+                        }
+                    }
                 }
             }
         }

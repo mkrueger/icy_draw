@@ -7,7 +7,7 @@ use crate::{AnsiEditor, Message};
 
 use super::{
     brush_imp::draw_glyph, line_imp::set_half_block, DrawMode, Event, Plottable, Position,
-    ScanLines, Tool,
+    ScanLines, Tool, plot_point,
 };
 
 pub struct DrawRectangleTool {
@@ -95,6 +95,11 @@ impl Tool for DrawRectangleTool {
             DrawMode::Colorize,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+    /*   ui.radio_value(
+            &mut self.draw_mode,
+            DrawMode::Outline,
+            "Outline",
+        );*/
         result
     }
 
@@ -136,11 +141,22 @@ impl Tool for DrawRectangleTool {
         for rect in lines.outline() {
             for y in 0..rect.size.height {
                 for x in 0..rect.size.width {
-                    set_half_block(
-                        editor,
-                        Position::new(rect.start.x + x, rect.start.y + y),
-                        col,
-                    );
+                    let pos  = Position::new(rect.start.x + x, rect.start.y + y);
+                    match self.draw_mode {
+                        DrawMode::Line => {
+                            set_half_block(
+                                editor,
+                                pos,
+                                col,
+                            );
+                        }
+                        DrawMode::Char |
+                        DrawMode::Shade |
+                        DrawMode::Colorize |
+                        DrawMode::Outline => {
+                            plot_point(editor, self, pos);
+                        }
+                    }
                 }
             }
         }

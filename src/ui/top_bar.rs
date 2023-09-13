@@ -60,8 +60,9 @@ impl MainWindow {
                 ui.menu_button(
                     fl!(crate::LANGUAGE_LOADER, "menu-open_recent"),
                     |ui| unsafe {
-                        if !SETTINGS.recent_files.is_empty() {
-                            for file in SETTINGS.recent_files.iter().rev() {
+                        let get_recent_files = SETTINGS.get_recent_files();
+                        if !get_recent_files.is_empty() {
+                            for file in get_recent_files.iter().rev() {
                                 let button = ui.button(file.file_name().unwrap().to_str().unwrap());
                                 if button.clicked() {
                                     result = Some(Message::TryLoadFile(file.clone()));
@@ -72,7 +73,7 @@ impl MainWindow {
                         }
                         self.commands.clear_recent_open.ui_enabled(
                             ui,
-                            !SETTINGS.recent_files.is_empty(),
+                            !get_recent_files.is_empty(),
                             &mut result,
                         );
                     },
