@@ -13,6 +13,7 @@ use crate::{
     DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, ToolBehavior,
     ToolTab, TopBar,
 };
+use directories::UserDirs;
 use eframe::{
     egui::{self, Key, Response, SidePanel, TextStyle, Ui},
     epaint::{pos2, FontId},
@@ -45,6 +46,9 @@ pub struct MainWindow {
 
     pub commands: Commands,
     pub is_fullscreen: bool,
+
+    pub in_open_file_mode: bool,
+    pub open_file_window: view_library::MainWindow,
 }
 
 pub const PASTE_TOOL: usize = 0;
@@ -195,7 +199,7 @@ impl MainWindow {
         }
 
         tool_tree.root = Some(vert_id);
-
+        let open_file_window = view_library::MainWindow::new(&gl, None);
         MainWindow {
             document_behavior: DocumentBehavior::new(Arc::new(Mutex::new(tools))),
             tool_behavior: ToolBehavior::default(),
@@ -214,7 +218,71 @@ impl MainWindow {
             commands: Commands::default(),
             is_closed: false,
             is_fullscreen: false,
+            in_open_file_mode: false,
+            open_file_window
         }
+    }
+
+    pub fn open_data(&mut self, path: &Path, data: &[u8]) {
+        let full_path = path.to_path_buf();
+
+        Settings::add_recent_file(path);
+
+        if let Some(ext) = path.extension() {
+            let ext = ext.to_str().unwrap().to_ascii_lowercase();
+            if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext || "fon" == ext {
+                    let file_name = path.file_name();
+                    if file_name.is_none() {
+                        return;
+                    }
+                    let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
+                    if let Ok(font) = BitFont::from_bytes(&file_name_str, data) {
+                        add_child(
+                            &mut self.document_tree,
+                            Some(full_path),
+                            Box::new(BitFontEditor::new(font)),
+                        );
+                        return;
+                    }
+            }
+
+            if "tdf" == ext {
+                    let file_name = path.file_name();
+                    if file_name.is_none() {
+                        return;
+                    }
+                    if let Ok(fonts) = TheDrawFont::from_tdf_bytes(data) {
+                        let id = self.create_id();
+                        add_child(
+                            &mut self.document_tree,
+                            Some(full_path),
+                            Box::new(CharFontEditor::new(&self.gl, id, fonts)),
+                        );
+                        return;
+                    }
+            }
+        }
+        
+        match Buffer::from_bytes(path, true, data) {
+            Ok(mut buf) => {
+                let id = self.create_id();
+                buf.is_terminal_buffer = false;
+                buf.set_height(buf.get_line_count());
+                let editor = AnsiEditor::new(&self.gl, id, buf);
+                add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
+            }
+            Err(err) => {
+                log::error!("Error loading file: {}", err);
+                self.toasts
+                    .error(fl!(
+                        crate::LANGUAGE_LOADER,
+                        "error-load-file",
+                        error = err.to_string()
+                    ))
+                    .set_duration(Some(Duration::from_secs(5)));
+            }
+        }
+
     }
 
     pub fn open_file(&mut self, path: &Path, load_autosave: bool) {
@@ -235,72 +303,14 @@ impl MainWindow {
             return;
         }
 
-        let full_path = path.to_path_buf();
         let load_path = if load_autosave {
             autosave::get_autosave_file(path)
         } else {
             path.to_path_buf()
         };
         Settings::add_recent_file(path);
-
-        if let Some(ext) = path.extension() {
-            let ext = ext.to_str().unwrap().to_ascii_lowercase();
-            if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext || "fon" == ext {
-                if let Ok(data) = fs::read(&load_path) {
-                    let file_name = path.file_name();
-                    if file_name.is_none() {
-                        return;
-                    }
-                    let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
-                    if let Ok(font) = BitFont::from_bytes(&file_name_str, &data) {
-                        add_child(
-                            &mut self.document_tree,
-                            Some(full_path),
-                            Box::new(BitFontEditor::new(font)),
-                        );
-                        return;
-                    }
-                }
-            }
-
-            if "tdf" == ext {
-                if let Ok(data) = fs::read(&load_path) {
-                    let file_name = path.file_name();
-                    if file_name.is_none() {
-                        return;
-                    }
-                    if let Ok(fonts) = TheDrawFont::from_tdf_bytes(&data) {
-                        let id = self.create_id();
-                        add_child(
-                            &mut self.document_tree,
-                            Some(full_path),
-                            Box::new(CharFontEditor::new(&self.gl, id, fonts)),
-                        );
-                        return;
-                    }
-                }
-            }
-        }
-        if let Ok(data) = fs::read(&load_path) {
-            match Buffer::from_bytes(path, true, &data) {
-                Ok(mut buf) => {
-                    let id = self.create_id();
-                    buf.is_terminal_buffer = false;
-                    buf.set_height(buf.get_line_count());
-                    let editor = AnsiEditor::new(&self.gl, id, buf);
-                    add_child(&mut self.document_tree, Some(full_path), Box::new(editor));
-                }
-                Err(err) => {
-                    log::error!("Error loading file: {}", err);
-                    self.toasts
-                        .error(fl!(
-                            crate::LANGUAGE_LOADER,
-                            "error-load-file",
-                            error = err.to_string()
-                        ))
-                        .set_duration(Some(Duration::from_secs(5)));
-                }
-            }
+        if let Ok(data) = fs::read(load_path) {
+            self.open_data(path, &data); 
         }
     }
 
@@ -503,6 +513,34 @@ pub fn button_with_shortcut(
 
 impl eframe::App for MainWindow {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+
+        if self.in_open_file_mode {
+            if self.open_file_window.show_file_chooser(ctx) {
+                let file = self.open_file_window.opened_file.take();
+                if let Some(file) = & file{
+                    if file.path.exists()  {
+                        self.open_file(&file.path, false);
+                    } else if let Some(data) = &file.file_data { 
+                        let mut path = file.path.clone();
+                        if let Some(user) = UserDirs::new() {
+                            if let Some(dir) = user.document_dir() {
+                                path = dir.join(path);
+                                while path.exists() {
+                                    path = path.with_extension(format!("1.{}", file.path.extension().unwrap().to_str().unwrap()));
+                                }
+                            }
+                        }
+                        self.open_data(&path, data);
+                    }
+                }
+                self.in_open_file_mode = false;
+            }
+            if ctx.input(|i| i.key_pressed(Key::Escape)) {
+                self.in_open_file_mode = false;
+            }
+            return;
+        }
+
         let msg = self.show_top_bar(ctx, frame);
         self.handle_message(msg);
         if self.is_closed {
@@ -630,7 +668,7 @@ impl eframe::App for MainWindow {
                 self.handle_message(msg);
             });
 
-        egui::CentralPanel::default()
+            egui::CentralPanel::default()
             .frame(egui::Frame {
                 fill: ctx.style().visuals.panel_fill,
                 ..Default::default()
@@ -767,6 +805,7 @@ impl eframe::App for MainWindow {
         });*/
     }
 }
+
 
 fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
     let mut result = None;

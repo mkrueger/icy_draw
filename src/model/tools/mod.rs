@@ -204,6 +204,7 @@ fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
         attribute.set_background(editor_attr.get_background());
     }
     if tool.get_use_fore() {
+        attribute.set_is_bold(false);
         attribute.set_foreground(editor_attr.get_foreground());
     }
 

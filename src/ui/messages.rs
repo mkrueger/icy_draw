@@ -16,7 +16,7 @@ use icy_engine::{
 
 use crate::{
     util::autosave::{self},
-    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, OpenFileDialog, SaveFileDialog,
+    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog,
     SelectCharacterDialog, SelectOutlineDialog, Settings,
 };
 
@@ -157,7 +157,14 @@ impl MainWindow {
                     None
                 };
                 set_default_initial_directory_opt(&mut initial_directory);
-                self.open_dialog(OpenFileDialog::new(initial_directory));
+                if let Some(mut path) = initial_directory {
+                    while path.parent().is_some() && !path.is_dir() {
+                        path = path.parent().unwrap().to_path_buf();
+                    }
+
+                    self.open_file_window.file_view.set_path(path);
+                }
+                self.in_open_file_mode = true;
             }
 
             Message::TryLoadFile(path) => {
