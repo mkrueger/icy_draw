@@ -149,7 +149,7 @@ impl Tool for DrawRectangleTool {
                         DrawMode::Char
                         | DrawMode::Shade
                         | DrawMode::Colorize
-                        | DrawMode::Outline => {
+                       /*  | DrawMode::Outline */=> {
                             plot_point(editor, self, pos);
                         }
                     }

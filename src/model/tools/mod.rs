@@ -19,7 +19,7 @@ mod icons;
 
 use eframe::egui::{self, Response};
 use egui_extras::RetainedImage;
-use icy_engine::{AttributedChar, Position, TextAttribute, TextPane};
+use icy_engine::{AttributedChar, Position, TextAttribute};
 use icy_engine_egui::TerminalCalc;
 pub use scan_lines::*;
 
@@ -184,7 +184,7 @@ pub enum DrawMode {
     Char,
     Shade,
     Colorize,
-    Outline,
+    //   Outline,
 }
 
 trait Plottable {
@@ -194,7 +194,7 @@ trait Plottable {
     fn get_use_back(&self) -> bool;
     fn get_char_code(&self) -> char;
 }
-
+/*
 pub const OUTLINE_TABLE: [[u8; 11]; 4] = [
     // UL,   UR,   LR,
     [
@@ -225,7 +225,7 @@ const VERT_LEFT_CHAR: usize = 7;
 const HORIZ_UP_CHAR: usize = 8;
 const HORIZ_DOWN_CHAR: usize = 9;
 const CROSS_CHAR: usize = 11;
-
+ */
 fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
     let ch = editor.get_char_from_cur_layer(pos);
     let editor_attr = editor.buffer_view.lock().get_caret().get_attribute();
@@ -296,42 +296,42 @@ fn plot_point(editor: &AnsiEditor, tool: &dyn Plottable, pos: Position) {
             {
                 layer.set_char(pos, AttributedChar::new(ch.ch, attribute));
             }
-        }
-        DrawMode::Outline => {
-            if let Some(layer) = editor
-                .buffer_view
-                .lock()
-                .get_buffer_mut()
-                .get_overlay_layer()
-            {
-                let left = layer.get_char(pos - Position::new(1, 0));
-                let right = layer.get_char(pos + Position::new(1, 0));
-                let up = layer.get_char(pos - Position::new(0, 1));
-                let down = layer.get_char(pos + Position::new(0, 1));
+        } /*
+          DrawMode::Outline => {
+              if let Some(layer) = editor
+                  .buffer_view
+                  .lock()
+                  .get_buffer_mut()
+                  .get_overlay_layer()
+              {
+                  let left = layer.get_char(pos - Position::new(1, 0));
+                  let right = layer.get_char(pos + Position::new(1, 0));
+                  let up = layer.get_char(pos - Position::new(0, 1));
+                  let down = layer.get_char(pos + Position::new(0, 1));
 
-                let idx = if left.is_transparent()
-                    && right.is_transparent()
-                    && up.is_transparent()
-                    && down.is_transparent()
-                {
-                    CORNER_UPPER_LEFT
-                } else if left.ch as u8 == OUTLINE_TABLE[0][CORNER_UPPER_LEFT]
-                    || left.ch as u8 == OUTLINE_TABLE[0][HORIZONTAL_CHAR]
-                {
-                    HORIZONTAL_CHAR
-                } else {
-                    VERTICAL_CHAR
-                };
+                  let idx = if left.is_transparent()
+                      && right.is_transparent()
+                      && up.is_transparent()
+                      && down.is_transparent()
+                  {
+                      CORNER_UPPER_LEFT
+                  } else if left.ch as u8 == OUTLINE_TABLE[0][CORNER_UPPER_LEFT]
+                      || left.ch as u8 == OUTLINE_TABLE[0][HORIZONTAL_CHAR]
+                  {
+                      HORIZONTAL_CHAR
+                  } else {
+                      VERTICAL_CHAR
+                  };
 
-                layer.set_char(
-                    pos,
-                    AttributedChar::new(
-                        unsafe { char::from_u32_unchecked(OUTLINE_TABLE[0][idx] as u32) },
-                        attribute,
-                    ),
-                );
-            }
-        }
+                  layer.set_char(
+                      pos,
+                      AttributedChar::new(
+                          unsafe { char::from_u32_unchecked(OUTLINE_TABLE[0][idx] as u32) },
+                          attribute,
+                      ),
+                  );
+              }
+          }*/
     }
 }
 
