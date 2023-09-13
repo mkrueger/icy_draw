@@ -46,6 +46,7 @@ impl DocumentTab {
             log::error!("No document to save");
             return None;
         };
+        Settings::add_recent_file(path);
 
         let mut msg = None;
         match doc.get_bytes(path) {

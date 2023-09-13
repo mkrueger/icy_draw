@@ -126,7 +126,7 @@ impl Tool for SelectTool {
         cur_abs: Position,
         response: &egui::Response,
     ) -> Event {
-        let cur_ch = editor.get_char(pos);
+        let cur_ch = editor.get_char_from_cur_layer(pos);
 
         let selection_mode = if response.ctx.input(|i| i.modifiers.shift_only()) {
             SelectionModifier::Add
@@ -135,7 +135,6 @@ impl Tool for SelectTool {
         } else {
             SelectionModifier::Replace
         };
-
         match self.mode {
             SelectionMode::Normal => {
                 if button == 1 && !is_inside_selection(editor, cur_abs) {
@@ -175,7 +174,6 @@ impl Tool for SelectTool {
                     )
                 }),
         }
-
         Event::None
     }
 

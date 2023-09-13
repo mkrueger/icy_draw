@@ -2,7 +2,7 @@ use eframe::egui;
 use egui_file::FileDialog;
 use std::path::PathBuf;
 
-use crate::{MainWindow, Message, Settings};
+use crate::{MainWindow, Message};
 
 pub struct SaveFileDialog {
     open_file: bool,
@@ -45,7 +45,6 @@ impl crate::ModalDialog for SaveFileDialog {
     fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         if let Some(file) = &self.opened_file.clone() {
             if let Some(pane) = window.get_active_pane() {
-                Settings::add_recent_file(file);
                 pane.set_path(file.clone());
                 pane.save();
             }
