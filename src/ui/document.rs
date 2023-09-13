@@ -58,7 +58,7 @@ pub struct DocumentOptions {
 impl DocumentOptions {
     pub fn new() -> Self {
         Self {
-            scale: Vec2::new(1., 1.),
+            scale: Vec2::new(2., 2.),
             commands: Commands::default(),
             fit_width: false,
         }
@@ -69,6 +69,7 @@ impl DocumentOptions {
 
     pub fn set_scale(&mut self, scale: Vec2) {
         self.scale = scale.clamp(Vec2::new(0.5, 0.5), Vec2::new(5., 5.));
+        self.scale = (self.scale * 100.0).floor() / 100.0;
     }
 }
 
