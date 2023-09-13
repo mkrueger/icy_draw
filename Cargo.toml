@@ -27,11 +27,12 @@ dark-light = "1.0.0"
 zip = "0.6.6"
 notify = "6.1.1"
 
-#icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
-#icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
-icy_engine = { path = "../icy_engine" }
-icy_engine_egui = { path = "../icy_engine_egui" }
-view_library = { path = "../icy_view/view_library" }
+icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
+icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
+view_library = { git ="https://github.com/mkrueger/icy_view" }
+#icy_engine = { path = "../icy_engine" }
+#icy_engine_egui = { path = "../icy_engine_egui" }
+#view_library = { path = "../icy_view/view_library" }
 
 walkdir = "2"
 serde = { version = "1", features = ["derive"] }
