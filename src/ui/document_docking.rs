@@ -97,7 +97,7 @@ impl DocumentTab {
             log::error!("No document to save");
             return;
         };
-        path.set_extension(doc.default_extenision());
+        path.set_extension(doc.default_extension());
         if let Some(old_path) = &self.full_path {
             remove_autosave(old_path);
         }

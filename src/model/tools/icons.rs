@@ -16,4 +16,5 @@ lazy_static::lazy_static! {
     pub static ref RECTANGLE_FILLED_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("rectangle_filled.svg", include_bytes!("../../../data/icons/rectangle_filled.svg")).unwrap();
     pub static ref RECTANGLE_OUTLINE_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("rectangle_outline.svg", include_bytes!("../../../data/icons/rectangle_outline.svg")).unwrap();
     pub static ref SELECT_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("select.svg", include_bytes!("../../../data/icons/select.svg")).unwrap();
+
 }

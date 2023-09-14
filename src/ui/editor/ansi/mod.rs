@@ -140,7 +140,7 @@ impl ClipboardHandler for AnsiEditor {
 const ICED_EXT: &str = "icy";
 
 impl Document for AnsiEditor {
-    fn default_extenision(&self) -> &'static str {
+    fn default_extension(&self) -> &'static str {
         ICED_EXT
     }
 

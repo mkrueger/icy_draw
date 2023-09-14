@@ -72,7 +72,7 @@ impl UndoState for CharFontEditor {
 }
 
 impl Document for CharFontEditor {
-    fn default_extenision(&self) -> &'static str {
+    fn default_extension(&self) -> &'static str {
         "tdf"
     }
 

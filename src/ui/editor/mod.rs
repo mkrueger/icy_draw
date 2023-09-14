@@ -9,6 +9,9 @@ pub use bitfont::*;
 mod charfont;
 pub use charfont::*;
 
+mod animation;
+pub use animation::*;
+
 #[derive(Debug, Clone)]
 pub enum SavingError {
     ErrorWritingFile(String),

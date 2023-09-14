@@ -464,7 +464,7 @@ impl UndoState for BitFontEditor {
 }
 
 impl Document for BitFontEditor {
-    fn default_extenision(&self) -> &'static str {
+    fn default_extension(&self) -> &'static str {
         "psf"
     }
 

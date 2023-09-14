@@ -292,3 +292,8 @@ tab-context-menu-copy_path=Copy path
 font-view-char_label=Char
 font-view-ascii_label=ASCII
 font-view-font_label=Font
+
+animation_editor_path_label=Path:
+animation_editor_export_button=Export
+animation_editor_gif_label=Gif
+animation_editor_ansi_label=Ansimation

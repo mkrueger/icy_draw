@@ -232,6 +232,17 @@ impl MainWindow {
                 }
             }
 
+            if "icyanim" == ext {
+                let id = self.create_id();
+                let txt = std::str::from_utf8(data).unwrap().to_string();
+                add_child(
+                    &mut self.document_tree,
+                    Some(full_path),
+                    Box::new(crate::AnimationEditor::new(&self.gl, path, id, txt)),
+                );
+                return;
+            }
+
             if "tdf" == ext {
                 let file_name = path.file_name();
                 if file_name.is_none() {

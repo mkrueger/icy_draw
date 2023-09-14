@@ -31,7 +31,7 @@ pub trait ClipboardHandler {
 pub trait Document: UndoState + ClipboardHandler {
     fn undo_stack_len(&self) -> usize;
 
-    fn default_extenision(&self) -> &'static str;
+    fn default_extension(&self) -> &'static str;
 
     fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>>;
 
