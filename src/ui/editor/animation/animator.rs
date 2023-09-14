@@ -4,18 +4,240 @@ use std::{
 };
 
 use eframe::epaint::mutex::Mutex;
-use icy_engine::{Buffer, TextPane};
-use mlua::Lua;
+use icy_engine::{AttributedChar, Buffer, Caret, TextPane};
+use mlua::{Lua, UserData, Value};
 
 #[derive(Default)]
 pub struct Animator {
     pub scene: Option<Buffer>,
     pub frames: Vec<Buffer>,
+
+    pub buffers: Vec<Buffer>,
+}
+
+struct LuaBuffer {
+    caret: Caret,
+    buffer: Buffer,
+}
+
+impl UserData for LuaBuffer {
+    fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_field_method_get("height", |_, this| Ok(this.buffer.get_height()));
+        fields.add_field_method_set("height", |_, this, val| {
+            this.buffer.set_height(val);
+            Ok(())
+        });
+        fields.add_field_method_get("width", |_, this| Ok(this.buffer.get_width()));
+        fields.add_field_method_set("width", |_, this, val| {
+            this.buffer.set_width(val);
+            Ok(())
+        });
+
+        fields.add_field_method_get("font_page", |_, this| Ok(this.caret.get_font_page()));
+        fields.add_field_method_set("font_page", |_, this, val| {
+            this.caret.set_font_page(val);
+            Ok(())
+        });
+
+        fields.add_field_method_get("fg", |_, this| {
+            Ok(this.caret.get_attribute().get_foreground())
+        });
+        fields.add_field_method_set("fg", |_, this, val| {
+            let mut attr = this.caret.get_attribute();
+            attr.set_foreground(val);
+            this.caret.set_attr(attr);
+            Ok(())
+        });
+
+        fields.add_field_method_get("bg", |_, this| {
+            Ok(this.caret.get_attribute().get_background())
+        });
+        fields.add_field_method_set("bg", |_, this, val| {
+            let mut attr = this.caret.get_attribute();
+            attr.set_background(val);
+            this.caret.set_attr(attr);
+            Ok(())
+        });
+
+        fields.add_field_method_get("layer_count", |_, this| Ok(this.buffer.layers.len()));
+    }
+
+    fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
+        methods.add_method_mut("set_fg", |_, this, (r, g, b): (u8, u8, u8)| {
+            let color = this.buffer.palette.insert_color_rgb(r, g, b);
+            this.caret.set_foreground(color);
+            Ok(())
+        });
+
+        methods.add_method_mut("set_bg", |_, this, (r, g, b): (u8, u8, u8)| {
+            let color = this.buffer.palette.insert_color_rgb(r, g, b);
+            this.caret.set_background(color);
+            Ok(())
+        });
+
+        methods.add_method_mut(
+            "set_char",
+            |_, this, (layer, x, y, ch): (usize, i32, i32, u32)| {
+                if layer < this.buffer.layers.len() {
+                    this.buffer.layers[layer].set_char(
+                        (x, y),
+                        AttributedChar::new(
+                            unsafe { std::char::from_u32_unchecked(ch) },
+                            this.caret.get_attribute(),
+                        ),
+                    );
+                    Ok(())
+                } else {
+                    Err(mlua::Error::SyntaxError {
+                        message: format!(
+                            "Layer {} out of range (0..<{})",
+                            layer,
+                            this.buffer.layers.len()
+                        ),
+                        incomplete_input: false,
+                    })
+                }
+            },
+        );
+
+        methods.add_method_mut("get_char", |_, this, (layer, x, y): (usize, i32, i32)| {
+            if layer < this.buffer.layers.len() {
+                let ch = this.buffer.layers[layer].get_char((x, y));
+                Ok(ch.ch as u32)
+            } else {
+                Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Layer {} out of range (0..<{})",
+                        layer,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                })
+            }
+        });
+
+        methods.add_method_mut(
+            "get_color_at",
+            |_, this, (layer, x, y): (usize, i32, i32)| {
+                if layer < this.buffer.layers.len() {
+                    let ch = this.buffer.layers[layer].get_char((x, y));
+                    Ok((ch.attribute.get_foreground(), ch.attribute.get_background()))
+                } else {
+                    Err(mlua::Error::SyntaxError {
+                        message: format!(
+                            "Layer {} out of range (0..<{})",
+                            layer,
+                            this.buffer.layers.len()
+                        ),
+                        incomplete_input: false,
+                    })
+                }
+            },
+        );
+
+        methods.add_method_mut(
+            "print",
+            |_, this, (layer, mut x, y, str): (usize, i32, i32, String)| {
+                if layer < this.buffer.layers.len() {
+                    for c in str.chars() {
+                        this.buffer.layers[layer]
+                            .set_char((x, y), AttributedChar::new(c, this.caret.get_attribute()));
+                        x += 1;
+                    }
+                    Ok(())
+                } else {
+                    Err(mlua::Error::SyntaxError {
+                        message: format!(
+                            "Layer {} out of range (0..<{})",
+                            layer,
+                            this.buffer.layers.len()
+                        ),
+                        incomplete_input: false,
+                    })
+                }
+            },
+        );
+
+        methods.add_method_mut(
+            "set_layer_position",
+            |_, this, (layer, x, y): (usize, i32, i32)| {
+                if layer < this.buffer.layers.len() {
+                    this.buffer.layers[layer].set_offset((x, y));
+                    Ok(())
+                } else {
+                    Err(mlua::Error::SyntaxError {
+                        message: format!(
+                            "Layer {} out of range (0..<{})",
+                            layer,
+                            this.buffer.layers.len()
+                        ),
+                        incomplete_input: false,
+                    })
+                }
+            },
+        );
+        methods.add_method_mut("get_layer_position", |_, this, layer: usize| {
+            if layer < this.buffer.layers.len() {
+                let pos = this.buffer.layers[layer].get_offset();
+                Ok((pos.x, pos.y))
+            } else {
+                Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Layer {} out of range (0..<{})",
+                        layer,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                })
+            }
+        });
+
+        methods.add_method_mut(
+            "set_layer_visible",
+            |_, this, (layer, is_visible): (i32, bool)| {
+                let layer = layer as usize;
+                if layer < this.buffer.layers.len() {
+                    this.buffer.layers[layer].is_visible = is_visible;
+                    Ok(())
+                } else {
+                    Err(mlua::Error::SyntaxError {
+                        message: format!(
+                            "Layer {} out of range (0..<{})",
+                            layer,
+                            this.buffer.layers.len()
+                        ),
+                        incomplete_input: false,
+                    })
+                }
+            },
+        );
+
+        methods.add_method_mut("get_layer_visible", |_, this, layer: usize| {
+            if layer < this.buffer.layers.len() {
+                Ok(this.buffer.layers[layer].is_visible)
+            } else {
+                Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Layer {} out of range (0..<{})",
+                        layer,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                })
+            }
+        });
+
+        methods.add_method_mut("clear", |_, this, ()| {
+            this.caret = Caret::default();
+            this.buffer = Buffer::new(this.buffer.get_size());
+            Ok(())
+        });
+    }
 }
 
 const MAX_FRAMES: usize = 4096;
 impl Animator {
-    pub fn next_frame(&mut self) -> mlua::Result<()> {
+    pub fn next_frame(&mut self, buffer: &Buffer) -> mlua::Result<()> {
         // Need to limit it a bit to avoid out of memory & slowness
         // Not sure how large the number should be but it's easy to define millions of frames
         if self.frames.len() > MAX_FRAMES {
@@ -23,136 +245,90 @@ impl Animator {
                 "Maximum number of frames reached".to_string(),
             ));
         }
-        if let Some(scene) = &self.scene {
-            let mut frame = Buffer::new(scene.get_size());
-            frame.layers = scene.layers.clone();
-            frame.terminal_state = scene.terminal_state.clone();
-            frame.palette = scene.palette.clone();
-            frame.layers = scene.layers.clone();
-            frame.clear_font_table();
-            for f in scene.font_iter() {
-                frame.set_font(*f.0, f.1.clone());
-            }
-            self.frames.push(frame);
-            Ok(())
-        } else {
-            Err(mlua::Error::SyntaxError {
-                message: "No scene set up.".to_string(),
-                incomplete_input: false,
-            })
+        let mut frame = Buffer::new(buffer.get_size());
+        frame.layers = buffer.layers.clone();
+        frame.terminal_state = buffer.terminal_state.clone();
+        frame.palette = buffer.palette.clone();
+        frame.layers = buffer.layers.clone();
+        frame.clear_font_table();
+        for f in buffer.font_iter() {
+            frame.set_font(*f.0, f.1.clone());
         }
+        self.frames.push(frame);
+        Ok(())
     }
 
-    pub fn move_layer(&mut self, layer: usize, x: i32, y: i32) -> mlua::Result<()> {
-        if let Some(scene) = &mut self.scene {
-            if layer < scene.layers.len() {
-                scene.layers[layer].set_offset((x, y));
-                Ok(())
-            } else {
-                Err(mlua::Error::SyntaxError {
-                    message: format!("Layer {} out of range (0..<{})", layer, scene.layers.len()),
-                    incomplete_input: false,
-                })
-            }
-        } else {
-            Err(mlua::Error::SyntaxError {
-                message: "No scene set up.".to_string(),
-                incomplete_input: false,
-            })
-        }
-    }
-
-    pub fn set_layer_visible(&mut self, layer: usize, is_visible: bool) -> mlua::Result<()> {
-        if let Some(scene) = &mut self.scene {
-            if layer < scene.layers.len() {
-                scene.layers[layer].is_visible = is_visible;
-                Ok(())
-            } else {
-                Err(mlua::Error::SyntaxError {
-                    message: format!("Layer {} out of range (0..<{})", layer, scene.layers.len()),
-                    incomplete_input: false,
-                })
-            }
-        } else {
-            Err(mlua::Error::SyntaxError {
-                message: "No scene set up.".to_string(),
-                incomplete_input: false,
-            })
-        }
-    }
-
-    pub fn get_layer_visible(&mut self, layer: usize) -> mlua::Result<bool> {
-        if let Some(scene) = &mut self.scene {
-            if layer < scene.layers.len() {
-                Ok(scene.layers[layer].is_visible)
-            } else {
-                Err(mlua::Error::SyntaxError {
-                    message: format!("Layer {} out of range (0..<{})", layer, scene.layers.len()),
-                    incomplete_input: false,
-                })
-            }
-        } else {
-            Err(mlua::Error::SyntaxError {
-                message: "No scene set up.".to_string(),
-                incomplete_input: false,
-            })
-        }
-    }
     //   set_layer_visible(1, !get_layer_visible(1))
     pub fn run(parent: &Option<PathBuf>, txt: &str) -> mlua::Result<Arc<Mutex<Self>>> {
         let lua = Lua::new();
         let globals = lua.globals();
         let animator = Arc::new(Mutex::new(Animator::default()));
 
-        let a = animator.clone();
         let parent = parent.clone();
-        let load_func = lua.create_function(move |_lua, file: String| {
-            let mut file_name = Path::new(&file).to_path_buf();
-            if file_name.is_relative() {
-                if let Some(parent) = &parent {
-                    file_name = parent.join(&file_name);
-                }
-            }
-            if !file_name.exists() {
-                return Err(mlua::Error::RuntimeError(format!(
-                    "File not found {}",
-                    file
-                )));
-            }
-            if let Ok(buffer) = icy_engine::Buffer::load_buffer(&file_name, true) {
-                a.lock().scene = Some(buffer);
-                Ok(())
-            } else {
-                Err(mlua::Error::RuntimeError(format!(
-                    "Could not load file {}",
-                    file
-                )))
-            }
-        })?;
-        globals.set("load", load_func).unwrap();
+
+        globals
+            .set(
+                "load_buffer",
+                lua.create_function(move |_lua, file: String| {
+                    let mut file_name = Path::new(&file).to_path_buf();
+                    if file_name.is_relative() {
+                        if let Some(parent) = &parent {
+                            file_name = parent.join(&file_name);
+                        }
+                    }
+
+                    if !file_name.exists() {
+                        return Err(mlua::Error::RuntimeError(format!(
+                            "File not found {}",
+                            file
+                        )));
+                    }
+
+                    if let Ok(buffer) = icy_engine::Buffer::load_buffer(&file_name, true) {
+                        mlua::Result::Ok(LuaBuffer {
+                            caret: Caret::default(),
+                            buffer,
+                        })
+                    } else {
+                        Err(mlua::Error::RuntimeError(format!(
+                            "Could not load file {}",
+                            file
+                        )))
+                    }
+                })?,
+            )
+            .unwrap();
+
+        globals
+            .set(
+                "new_buffer",
+                lua.create_function(move |_lua, (width, height): (i32, i32)| {
+                    mlua::Result::Ok(LuaBuffer {
+                        caret: Caret::default(),
+                        buffer: Buffer::create((width, height)),
+                    })
+                })?,
+            )
+            .unwrap();
 
         let a = animator.clone();
-        let next_frame_func = lua.create_function(move |_lua, _: ()| a.lock().next_frame())?;
-        globals.set("next_frame", next_frame_func).unwrap();
-
-        let a = animator.clone();
-        let next_frame_func =
-            lua.create_function(move |_lua, (layer, x, y): (usize, i32, i32)| {
-                a.lock().move_layer(layer, x, y)
-            })?;
-        globals.set("move_layer", next_frame_func).unwrap();
-
-        let a = animator.clone();
-        let next_frame_func =
-            lua.create_function(move |_lua, (layer, is_visible): (usize, bool)| {
-                a.lock().set_layer_visible(layer, is_visible)
-            })?;
-        globals.set("set_layer_visible", next_frame_func).unwrap();
-
-        let a = animator.clone();
-        let next_frame_func =
-            lua.create_function(move |_lua, layer: usize| a.lock().get_layer_visible(layer))?;
-        globals.set("get_layer_visible", next_frame_func).unwrap();
+        globals
+            .set(
+                "next_frame",
+                lua.create_function_mut(move |lua, buffer: Value<'_>| {
+                    if let Value::UserData(data) = &buffer {
+                        lua.globals().set("cur_frame", a.lock().frames.len() + 1)?;
+                        a.lock().next_frame(&data.borrow::<LuaBuffer>()?.buffer)
+                    } else {
+                        Err(mlua::Error::RuntimeError(format!(
+                            "UserData parameter required, got: {:?}",
+                            buffer
+                        )))
+                    }
+                })?,
+            )
+            .unwrap();
+        globals.set("cur_frame", 1)?;
 
         lua.load(txt).exec()?;
         Ok(animator)

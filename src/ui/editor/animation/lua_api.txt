@@ -1,0 +1,41 @@
+global variables:
+
+cur_frame - Number of current frame (1 based)
+
+global functions:
+
+new_buffer(width: i32, height: i32) -> Buffer - create new, empty buffer with given get_size
+load_buffer(file_name: String) -> Buffer - loads a buffer relatively to the animation file.
+
+next_frame(buf: Buffer) - Snapshots the "buf" table as new frame and moves to the next frame.
+
+Buffer members:
+
+fields: 
+width - gets or sets the width of the buffer
+height - gets or sets the height of the buffer
+
+layer_count - Number of layers in the buffer
+
+font_page - current font page of the caret
+fg - current foreground color of the caret
+bg - current background color of the caret
+
+methods:
+
+clear() - clears the buffer & resets caret 
+
+set_fg(r, g, b) sets the rgb color of the caret fg
+set_bg(r, g, b) sets the rgb color of the caret bg
+
+set_char(layer, x, y, ch) - sets a specific char at a given layer position (uses caret color)
+get_char(layer, x, y) - gets a specific char at a given layer position 
+get_color_at(layer, x, y) -> fg, bg - gets a specific color at a given layer position 
+
+print(layer, x, y, string) - prints a string at a specific position (uses caret color)
+
+set_layer_position(layer, x, y) - sets the offset of a specific layer to move it
+get_layer_position(layer) -> x, y
+
+set_layer_visible(layer, is_visible)
+get_layer_visible(layer)
