@@ -4,8 +4,9 @@ use std::{
 };
 
 use eframe::epaint::mutex::Mutex;
-use icy_engine::{AttributedChar, Buffer, Caret, TextPane};
+use icy_engine::{AttributedChar, Buffer, Caret, Position, TextPane};
 use mlua::{Lua, UserData, Value};
+use regex::Regex;
 
 #[derive(Default)]
 pub struct Animator {
@@ -16,6 +17,7 @@ pub struct Animator {
 }
 
 struct LuaBuffer {
+    cur_layer: usize,
     caret: Caret,
     buffer: Buffer,
 }
@@ -37,6 +39,23 @@ impl UserData for LuaBuffer {
         fields.add_field_method_set("font_page", |_, this, val| {
             this.caret.set_font_page(val);
             Ok(())
+        });
+
+        fields.add_field_method_get("layer", |_, this| Ok(this.cur_layer));
+        fields.add_field_method_set("layer", |_, this, val| {
+            if val < this.buffer.layers.len() {
+                this.cur_layer = val;
+                Ok(())
+            } else {
+                Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Layer {} out of range (0..<{})",
+                        val,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                })
+            }
         });
 
         fields.add_field_method_get("fg", |_, this| {
@@ -63,100 +82,87 @@ impl UserData for LuaBuffer {
     }
 
     fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
-        methods.add_method_mut("set_fg", |_, this, (r, g, b): (u8, u8, u8)| {
+        methods.add_method_mut("fg_rgb", |_, this, (r, g, b): (u8, u8, u8)| {
             let color = this.buffer.palette.insert_color_rgb(r, g, b);
             this.caret.set_foreground(color);
             Ok(())
         });
 
-        methods.add_method_mut("set_bg", |_, this, (r, g, b): (u8, u8, u8)| {
+        methods.add_method_mut("bg_rgb", |_, this, (r, g, b): (u8, u8, u8)| {
             let color = this.buffer.palette.insert_color_rgb(r, g, b);
             this.caret.set_background(color);
             Ok(())
         });
 
-        methods.add_method_mut(
-            "set_char",
-            |_, this, (layer, x, y, ch): (usize, i32, i32, u32)| {
-                if layer < this.buffer.layers.len() {
-                    this.buffer.layers[layer].set_char(
-                        (x, y),
-                        AttributedChar::new(
-                            unsafe { std::char::from_u32_unchecked(ch) },
-                            this.caret.get_attribute(),
-                        ),
-                    );
-                    Ok(())
-                } else {
-                    Err(mlua::Error::SyntaxError {
-                        message: format!(
-                            "Layer {} out of range (0..<{})",
-                            layer,
-                            this.buffer.layers.len()
-                        ),
-                        incomplete_input: false,
-                    })
-                }
-            },
-        );
-
-        methods.add_method_mut("get_char", |_, this, (layer, x, y): (usize, i32, i32)| {
-            if layer < this.buffer.layers.len() {
-                let ch = this.buffer.layers[layer].get_char((x, y));
-                Ok(ch.ch as u32)
-            } else {
-                Err(mlua::Error::SyntaxError {
+        methods.add_method_mut("set_char", |_, this, (x, y, ch): (i32, i32, u32)| {
+            if this.cur_layer >= this.buffer.layers.len() {
+                return Err(mlua::Error::SyntaxError {
                     message: format!(
-                        "Layer {} out of range (0..<{})",
-                        layer,
+                        "Current layer {} out of range (0..<{})",
+                        this.cur_layer,
                         this.buffer.layers.len()
                     ),
                     incomplete_input: false,
-                })
+                });
             }
+
+            this.buffer.layers[this.cur_layer].set_char(
+                (x, y),
+                AttributedChar::new(
+                    unsafe { std::char::from_u32_unchecked(ch) },
+                    this.caret.get_attribute(),
+                ),
+            );
+            Ok(())
         });
 
-        methods.add_method_mut(
-            "get_color_at",
-            |_, this, (layer, x, y): (usize, i32, i32)| {
-                if layer < this.buffer.layers.len() {
-                    let ch = this.buffer.layers[layer].get_char((x, y));
-                    Ok((ch.attribute.get_foreground(), ch.attribute.get_background()))
-                } else {
-                    Err(mlua::Error::SyntaxError {
-                        message: format!(
-                            "Layer {} out of range (0..<{})",
-                            layer,
-                            this.buffer.layers.len()
-                        ),
-                        incomplete_input: false,
-                    })
-                }
-            },
-        );
+        methods.add_method_mut("get_char", |_, this, (x, y): (i32, i32)| {
+            if this.cur_layer >= this.buffer.layers.len() {
+                return Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Current layer {} out of range (0..<{})",
+                        this.cur_layer,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                });
+            }
 
-        methods.add_method_mut(
-            "print",
-            |_, this, (layer, mut x, y, str): (usize, i32, i32, String)| {
-                if layer < this.buffer.layers.len() {
-                    for c in str.chars() {
-                        this.buffer.layers[layer]
-                            .set_char((x, y), AttributedChar::new(c, this.caret.get_attribute()));
-                        x += 1;
-                    }
-                    Ok(())
-                } else {
-                    Err(mlua::Error::SyntaxError {
-                        message: format!(
-                            "Layer {} out of range (0..<{})",
-                            layer,
-                            this.buffer.layers.len()
-                        ),
-                        incomplete_input: false,
-                    })
-                }
-            },
-        );
+            let ch = this.buffer.layers[this.cur_layer].get_char((x, y));
+            Ok(ch.ch as u32)
+        });
+
+        methods.add_method_mut("get_color", |_, this, (x, y): (i32, i32)| {
+            if this.cur_layer >= this.buffer.layers.len() {
+                return Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Current layer {} out of range (0..<{})",
+                        this.cur_layer,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                });
+            }
+
+            let ch = this.buffer.layers[this.cur_layer].get_char((x, y));
+            Ok((ch.attribute.get_foreground(), ch.attribute.get_background()))
+        });
+
+        methods.add_method_mut("print", |_, this, str: String| {
+            for c in str.chars() {
+                let mut pos = this.caret.get_position();
+                this.buffer.layers[this.cur_layer]
+                    .set_char(pos, AttributedChar::new(c, this.caret.get_attribute()));
+                pos.x += 1;
+                this.caret.set_position(pos);
+            }
+            Ok(())
+        });
+
+        methods.add_method_mut("gotoxy", |_, this, (x, y): (i32, i32)| {
+            this.caret.set_position(Position::new(x as i32, y as i32));
+            Ok(())
+        });
 
         methods.add_method_mut(
             "set_layer_position",
@@ -258,12 +264,27 @@ impl Animator {
         Ok(())
     }
 
-    pub fn run(parent: &Option<PathBuf>, txt: &str) -> mlua::Result<Arc<Mutex<Self>>> {
+    pub fn run(parent: &Option<PathBuf>, in_txt: &str) -> mlua::Result<Arc<Mutex<Self>>> {
         let lua = Lua::new();
         let globals = lua.globals();
         let animator = Arc::new(Mutex::new(Animator::default()));
 
+        let re = Regex::new(r"#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})").unwrap();
+
         let parent = parent.clone();
+
+        let txt = re
+            .replace_all(in_txt, |caps: &regex::Captures<'_>| {
+                let r = u32::from_str_radix(caps.get(1).unwrap().as_str(), 16).unwrap();
+                let g = u32::from_str_radix(caps.get(2).unwrap().as_str(), 16).unwrap();
+                let b = u32::from_str_radix(caps.get(3).unwrap().as_str(), 16).unwrap();
+
+                format!("{},{},{}", r, g, b)
+            })
+            .to_string();
+        //  txt.push_str(&in_txt[last_pos..]);
+
+        println!("{}", txt);
 
         globals
             .set(
@@ -287,6 +308,7 @@ impl Animator {
                         mlua::Result::Ok(LuaBuffer {
                             caret: Caret::default(),
                             buffer,
+                            cur_layer: 0,
                         })
                     } else {
                         Err(mlua::Error::RuntimeError(format!(
@@ -305,6 +327,7 @@ impl Animator {
                     mlua::Result::Ok(LuaBuffer {
                         caret: Caret::default(),
                         buffer: Buffer::create((width, height)),
+                        cur_layer: 0,
                     })
                 })?,
             )
