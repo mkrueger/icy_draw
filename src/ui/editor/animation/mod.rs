@@ -3,6 +3,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     sync::Arc,
+    thread,
     time::Instant,
 };
 
@@ -50,6 +51,10 @@ pub struct AnimationEditor {
     parent_path: Option<PathBuf>,
     export_path: PathBuf,
     export_type: ExportType,
+
+    update_thread: Option<thread::JoinHandle<mlua::Result<Arc<Mutex<Animator>>>>>,
+    shedule_update: bool,
+    last_update: Instant,
 }
 
 impl AnimationEditor {
@@ -86,6 +91,10 @@ impl AnimationEditor {
             export_path,
             export_type: ExportType::Gif,
             parent_path,
+
+            update_thread: None,
+            shedule_update: false,
+            last_update: Instant::now(),
         };
         result.show_frame();
 
@@ -415,20 +424,38 @@ impl Document for AnimationEditor {
                         );
                     });
             }
-            if r.response.changed {
-                self.undostack += 1;
-                match Animator::run(&self.parent_path, &self.txt) {
-                    Ok(animator) => {
-                        self.frame_count = animator.lock().frames.len();
-                        self.cur_frame = self.cur_frame.min(self.frame_count.max(1) - 1);
-                        self.animator = Some(animator);
-                        self.show_frame();
-                        self.error = "".to_string();
-                    }
-                    Err(e) => {
-                        self.error = format!("Error: {}", e);
+
+            if self.shedule_update && self.last_update.elapsed().as_millis() > 1000 {
+                self.shedule_update = false;
+
+                let path = self.parent_path.clone();
+                let txt = self.txt.clone();
+                self.update_thread = Some(thread::spawn(move || Animator::run(&path, &txt)));
+            }
+
+            if let Some(handle) = &self.update_thread {
+                if handle.is_finished() {
+                    if let Ok(result) = self.update_thread.take().unwrap().join() {
+                        match result {
+                            Ok(animator) => {
+                                self.frame_count = animator.lock().frames.len();
+                                self.cur_frame = self.cur_frame.min(self.frame_count.max(1) - 1);
+                                self.animator = Some(animator);
+                                self.show_frame();
+                                self.error = "".to_string();
+                            }
+                            Err(e) => {
+                                self.error = format!("Error: {}", e);
+                            }
+                        }
                     }
                 }
+            }
+
+            if r.response.changed {
+                self.shedule_update = true;
+                self.last_update = Instant::now();
+                self.undostack += 1;
             }
         });
 

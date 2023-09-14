@@ -258,7 +258,6 @@ impl Animator {
         Ok(())
     }
 
-    //   set_layer_visible(1, !get_layer_visible(1))
     pub fn run(parent: &Option<PathBuf>, txt: &str) -> mlua::Result<Arc<Mutex<Self>>> {
         let lua = Lua::new();
         let globals = lua.globals();
