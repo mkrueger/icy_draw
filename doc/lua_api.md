@@ -53,7 +53,9 @@ Input/Output
 | Method                                 | Returns | Description
 |----------------------------------------|---------|--------------------------
 | `fg_rgb(r, g, b)`                      | u32     | Sets the caret fg rgb color, returns color palette number
+| `fg_rgb(#rrggbb)`                      | u32     | Sets the caret fg rgb color with html style notation , returns color palette number
 | `bg_rgb(r, g, b)`                      | u32     | Sets the caret bg rgb color, returns color palette number
+| `bg_rgb(#rrggbb)`                      | u32     | Sets the caret bg rgb color with html style notation , returns color palette number
 | `set_char(x, y, ch)`                   | -       | Sets a specific char at a given position (uses caret color)
 | `get_char(x, y)`                       | char    | Gets a specific char at a given position
 | `get_fg(x, y)`                         | u32     | Gets the foreground at a given positon
@@ -61,3 +63,5 @@ Input/Output
 | `get_bg(x, y)`                         | u32     | Gets the background at a given positon
 | `set_bg(x, y, bg)`                     | -       | Sets a specific foreground at a given layer position
 | `print(string)`                        | -       | Prints a string at caret position, advances caret.
+
+
