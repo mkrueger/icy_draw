@@ -63,17 +63,15 @@ impl AnimationEditor {
         )));
         let mut frame_count = 0;
         let parent_path = path.parent().map(|p| p.to_path_buf());
-
         let animator = if let Ok(animator) = Animator::run(&parent_path, &txt) {
             frame_count = animator.lock().frames.len();
-
             Some(animator)
         } else {
             None
         };
 
         let export_path = path.with_extension("gif");
-        Self {
+        let mut result = Self {
             id,
             buffer_view,
             is_playing: false,
@@ -88,7 +86,10 @@ impl AnimationEditor {
             export_path,
             export_type: ExportType::Gif,
             parent_path,
-        }
+        };
+        result.show_frame();
+
+        result
     }
 
     fn show_frame(&mut self) {
@@ -386,6 +387,7 @@ impl Document for AnimationEditor {
                         id: Some(Id::new(self.id + 20000)),
                         ..Default::default()
                     };
+                    self.buffer_view.lock().get_caret_mut().is_visible = false;
                     let (_, _) = show_terminal_area(ui, self.buffer_view.clone(), opt);
                 });
             });
