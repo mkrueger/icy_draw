@@ -78,6 +78,18 @@ impl UserData for LuaBuffer {
             Ok(())
         });
 
+        fields.add_field_method_get("x", |_, this| Ok(this.caret.get_position().x));
+        fields.add_field_method_set("x", |_, this, val| {
+            this.caret.set_x_position(val);
+            Ok(())
+        });
+
+        fields.add_field_method_get("y", |_, this| Ok(this.caret.get_position().y));
+        fields.add_field_method_set("y", |_, this, val| {
+            this.caret.set_y_position(val);
+            Ok(())
+        });
+
         fields.add_field_method_get("layer_count", |_, this| Ok(this.buffer.layers.len()));
     }
 
@@ -85,13 +97,13 @@ impl UserData for LuaBuffer {
         methods.add_method_mut("fg_rgb", |_, this, (r, g, b): (u8, u8, u8)| {
             let color = this.buffer.palette.insert_color_rgb(r, g, b);
             this.caret.set_foreground(color);
-            Ok(())
+            Ok(color)
         });
 
         methods.add_method_mut("bg_rgb", |_, this, (r, g, b): (u8, u8, u8)| {
             let color = this.buffer.palette.insert_color_rgb(r, g, b);
             this.caret.set_background(color);
-            Ok(())
+            Ok(color)
         });
 
         methods.add_method_mut("set_char", |_, this, (x, y, ch): (i32, i32, u32)| {
@@ -132,7 +144,24 @@ impl UserData for LuaBuffer {
             Ok(ch.ch as u32)
         });
 
-        methods.add_method_mut("get_color", |_, this, (x, y): (i32, i32)| {
+        methods.add_method_mut("set_fg", |_, this, (x, y, col): (i32, i32, u32)| {
+            if this.cur_layer >= this.buffer.layers.len() {
+                return Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Current layer {} out of range (0..<{})",
+                        this.cur_layer,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                });
+            }
+            let mut ch = this.buffer.layers[this.cur_layer].get_char((x, y));
+            ch.attribute.set_foreground(col);
+            this.buffer.layers[this.cur_layer].set_char((x, y), ch);
+            Ok(())
+        });
+
+        methods.add_method_mut("get_fg", |_, this, (x, y): (i32, i32)| {
             if this.cur_layer >= this.buffer.layers.len() {
                 return Err(mlua::Error::SyntaxError {
                     message: format!(
@@ -145,7 +174,40 @@ impl UserData for LuaBuffer {
             }
 
             let ch = this.buffer.layers[this.cur_layer].get_char((x, y));
-            Ok((ch.attribute.get_foreground(), ch.attribute.get_background()))
+            Ok(ch.attribute.get_foreground())
+        });
+
+        methods.add_method_mut("set_bg", |_, this, (x, y, col): (i32, i32, u32)| {
+            if this.cur_layer >= this.buffer.layers.len() {
+                return Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Current layer {} out of range (0..<{})",
+                        this.cur_layer,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                });
+            }
+            let mut ch = this.buffer.layers[this.cur_layer].get_char((x, y));
+            ch.attribute.set_background(col);
+            this.buffer.layers[this.cur_layer].set_char((x, y), ch);
+            Ok(())
+        });
+
+        methods.add_method_mut("get_bg", |_, this, (x, y): (i32, i32)| {
+            if this.cur_layer >= this.buffer.layers.len() {
+                return Err(mlua::Error::SyntaxError {
+                    message: format!(
+                        "Current layer {} out of range (0..<{})",
+                        this.cur_layer,
+                        this.buffer.layers.len()
+                    ),
+                    incomplete_input: false,
+                });
+            }
+
+            let ch = this.buffer.layers[this.cur_layer].get_char((x, y));
+            Ok(ch.attribute.get_background())
         });
 
         methods.add_method_mut("print", |_, this, str: String| {
