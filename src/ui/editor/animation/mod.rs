@@ -58,7 +58,7 @@ pub struct AnimationEditor {
 }
 
 impl AnimationEditor {
-    pub fn new(gl: &Arc<glow::Context>, path: &Path, id: usize, txt: String) -> Self {
+    pub fn new(gl: &Arc<glow::Context>, id: usize, path: &Path, txt: String) -> Self {
         let mut buffer = Buffer::new(Size::new(80, 25));
         buffer.is_terminal_buffer = true;
         let buffer_view = Arc::new(Mutex::new(BufferView::from_buffer(
@@ -487,5 +487,8 @@ impl Document for AnimationEditor {
         None
     }
 
-    fn destroy(&self, _gl: &glow::Context) {}
+    fn destroy(&self, gl: &glow::Context) -> Option<Message> {
+        self.buffer_view.lock().destroy(gl);
+        None
+     }
 }

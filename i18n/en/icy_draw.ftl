@@ -213,6 +213,7 @@ select-font-dialog-color-font=COLOR
 select-font-dialog-block-font=BLOCK
 select-font-dialog-outline-font=OUTLINE
 select-font-dialog-preview-text=HELLO
+select-font-dialog-edit-button=Edit font…
 
 layer_tool_title=Layers
 layer_tool_menu_layer_properties=Layer properties
@@ -292,6 +293,12 @@ tab-context-menu-copy_path=Copy path
 font-view-char_label=Char
 font-view-ascii_label=ASCII
 font-view-font_label=Font
+
+font-editor-tile_area=Tile area
+font-editor-clear=Clear
+font-editor-inverse=Inverse
+font-editor-flip_x=Flip X
+font-editor-flip_y=Flip Y
 
 animation_editor_path_label=Path:
 animation_editor_export_button=Export

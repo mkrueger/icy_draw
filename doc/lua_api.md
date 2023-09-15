@@ -63,5 +63,3 @@ Input/Output
 | `get_bg(x, y)`                         | u32     | Gets the background at a given positon
 | `set_bg(x, y, bg)`                     | -       | Sets a specific foreground at a given layer position
 | `print(string)`                        | -       | Prints a string at caret position, advances caret.
-
-

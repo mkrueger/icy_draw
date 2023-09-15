@@ -43,10 +43,14 @@ pub trait Document: UndoState + ClipboardHandler {
         options: &DocumentOptions,
     ) -> Option<Message>;
 
-    fn destroy(&self, gl: &glow::Context);
+    fn destroy(&self, gl: &glow::Context) -> Option<Message>;
 
     fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor>;
     fn get_ansi_editor(&self) -> Option<&AnsiEditor>;
+
+    fn inform_save(&mut self) {
+        
+    }
 }
 
 pub struct DocumentOptions {

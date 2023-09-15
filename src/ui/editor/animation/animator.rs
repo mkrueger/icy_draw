@@ -222,7 +222,7 @@ impl UserData for LuaBuffer {
         });
 
         methods.add_method_mut("gotoxy", |_, this, (x, y): (i32, i32)| {
-            this.caret.set_position(Position::new(x as i32, y as i32));
+            this.caret.set_position(Position::new(x, y));
             Ok(())
         });
 
@@ -265,6 +265,7 @@ impl UserData for LuaBuffer {
             |_, this, (layer, is_visible): (i32, bool)| {
                 let layer = layer as usize;
                 if layer < this.buffer.layers.len() {
+                    println!("set layer {} visible {}", layer, is_visible);
                     this.buffer.layers[layer].is_visible = is_visible;
                     Ok(())
                 } else {
@@ -317,7 +318,12 @@ impl Animator {
         frame.layers = buffer.layers.clone();
         frame.terminal_state = buffer.terminal_state.clone();
         frame.palette = buffer.palette.clone();
-        frame.layers = buffer.layers.clone();
+        frame.layers = Vec::new();
+        println!("----");
+        for l in buffer.layers.iter() {
+            println!("layer visible:  {}", l.is_visible);
+            frame.layers.push(l.clone());
+        }
         frame.clear_font_table();
         for f in buffer.font_iter() {
             frame.set_font(*f.0, f.1.clone());

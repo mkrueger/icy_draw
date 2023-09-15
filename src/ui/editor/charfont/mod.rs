@@ -249,8 +249,9 @@ impl Document for CharFontEditor {
         self.ansi_editor.get_ansi_editor()
     }
 
-    fn destroy(&self, gl: &glow::Context) {
+    fn destroy(&self, gl: &glow::Context) -> Option<Message>  {
         self.ansi_editor.destroy(gl);
+        None
     }
 }
 

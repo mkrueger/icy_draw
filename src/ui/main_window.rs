@@ -223,10 +223,11 @@ impl MainWindow {
                 }
                 let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
                 if let Ok(font) = BitFont::from_bytes(&file_name_str, data) {
+                    let id = self.create_id();
                     add_child(
                         &mut self.document_tree,
                         Some(full_path),
-                        Box::new(BitFontEditor::new(font)),
+                        Box::new(BitFontEditor::new(&self.gl, id, font)),
                     );
                     return;
                 }
@@ -238,7 +239,7 @@ impl MainWindow {
                 add_child(
                     &mut self.document_tree,
                     Some(full_path),
-                    Box::new(crate::AnimationEditor::new(&self.gl, path, id, txt)),
+                    Box::new(crate::AnimationEditor::new(&self.gl, id, path, txt)),
                 );
                 return;
             }
@@ -471,16 +472,19 @@ impl MainWindow {
     }
 
     fn request_close_tab(&mut self, close_id: TileId) -> bool {
+        let mut result = true;
+        let mut msg = None;
         if let Some(egui_tiles::Tile::Pane(pane)) = self.document_tree.tiles.get(close_id) {
             if !pane.is_dirty() {
+                msg = pane.doc.lock().unwrap().destroy(&self.gl);
                 self.document_tree.tiles.remove(close_id);
-                return true;
             } else {
                 self.open_dialog(AskCloseFileDialog::new(pane.get_path(), close_id));
-                return false;
+                result = false;
             }
         }
-        true
+        self.handle_message(msg);
+        result
     }
 }
 

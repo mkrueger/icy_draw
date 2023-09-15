@@ -2,20 +2,21 @@ mod undo;
 
 use std::{
     path::Path,
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
 use eframe::{
-    egui::{self, RichText, Sense},
+    egui::{self, RichText, Sense, Id},
     emath::Align2,
-    epaint::{Color32, FontFamily, FontId, Pos2, Rect, Rounding, Vec2},
+    epaint::{Color32, FontFamily, FontId, Pos2, Rect, Rounding, Vec2, mutex::Mutex},
 };
 use i18n_embed_fl::fl;
 use icy_engine::{
     editor::UndoState,
     util::{pop_data, push_data, BITFONT_GLYPH},
-    BitFont, EngineResult, Glyph,
+    BitFont, EngineResult, Glyph, Buffer, Size, TextPane, TextAttribute,
 };
+use icy_engine_egui::{BufferView, MonitorSettings, show_terminal_area};
 
 use crate::{
     model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message,
@@ -25,11 +26,19 @@ use crate::{
 use self::undo::UndoOperation;
 
 pub struct BitFontEditor {
+    id: usize,
+    original_font: BitFont,
+    last_updated_font: BitFont,
     font: BitFont,
+
+    buffer_view: Arc<Mutex<BufferView>>,
+
     selected_char_opt: Option<char>,
     undo_stack: Arc<Mutex<Vec<Box<dyn UndoOperation>>>>,
     redo_stack: Vec<Box<dyn UndoOperation>>,
     old_data: Option<Vec<u8>>,
+
+    send_update_message: bool,
 }
 
 pub enum DrawGlyphStyle {
@@ -39,13 +48,27 @@ pub enum DrawGlyphStyle {
 }
 
 impl BitFontEditor {
-    pub fn new(font: BitFont) -> Self {
+    pub fn new(gl: &Arc<glow::Context>, id: usize, font: BitFont) -> Self {
+        let mut buffer = Buffer::new(Size::new(10, 10));
+        buffer.is_terminal_buffer = true;
+        let buffer_view = Arc::new(Mutex::new(BufferView::from_buffer(
+            gl,
+            buffer,
+            glow::NEAREST as i32,
+        )));
+
+        let last_updated_font = font.clone();
         Self {
+            id,
+            buffer_view,
+            original_font: font.clone(),
+            last_updated_font,
             font,
             selected_char_opt: None,
             undo_stack: Arc::new(Mutex::new(Vec::new())),
             redo_stack: Vec::new(),
             old_data: None,
+            send_update_message: false,
         }
     }
 
@@ -98,6 +121,21 @@ impl BitFontEditor {
             }
         }
         response
+    }
+
+    pub fn update_tile_area(&mut self) {
+        let lock  = &mut self.buffer_view.lock();
+        let buf = lock.get_buffer_mut();
+        buf.set_font(0, self.font.clone());
+
+        let ch = self.selected_char_opt.unwrap_or(' ');
+        for y in 0..buf.get_width()  {
+            for x in 0..buf.get_height() {
+                buf.layers[0].set_char((x, y), icy_engine::AttributedChar { ch, attribute: TextAttribute::default() });
+            }
+        }
+        self.send_update_message = true;
+        lock.redraw_view();
     }
 
     pub fn edit_glyph(&mut self) -> impl egui::Widget + '_ {
@@ -161,6 +199,7 @@ impl BitFontEditor {
                                 as usize;
                             if y < glyph.data.len() && x < 8 {
                                 glyph.data[y] |= 128 >> x;
+                                self.update_tile_area();
                                 response.mark_changed();
                             }
                         }
@@ -178,6 +217,7 @@ impl BitFontEditor {
                                 as usize;
                             if y < glyph.data.len() && x < 8 {
                                 glyph.data[y] &= !(128 >> x);
+                                self.update_tile_area();
                                 response.mark_changed();
                             }
                         }
@@ -296,8 +336,9 @@ impl BitFontEditor {
 
     fn push_undo(&mut self, mut op: Box<dyn UndoOperation>) -> EngineResult<()> {
         op.redo(self)?;
-        self.undo_stack.lock().unwrap().push(op);
+        self.undo_stack.lock().push(op);
         self.redo_stack.clear();
+        self.update_tile_area();
         Ok(())
     }
 
@@ -380,7 +421,7 @@ impl BitFontEditor {
         if let Some(number) = self.selected_char_opt {
             if let Some(glyph) = self.font.get_glyph(number) {
                 let op = undo::Edit::new(number, glyph.data.clone(), self.old_data.take().unwrap());
-                self.undo_stack.lock().unwrap().push(Box::new(op));
+                self.undo_stack.lock().push(Box::new(op));
                 self.redo_stack.clear();
             }
         }
@@ -425,23 +466,22 @@ impl UndoState for BitFontEditor {
     fn undo_description(&self) -> Option<String> {
         self.undo_stack
             .lock()
-            .unwrap()
             .last()
             .map(|op| op.get_description())
     }
 
     fn can_undo(&self) -> bool {
-        !self.undo_stack.lock().unwrap().is_empty()
+        !self.undo_stack.lock().is_empty()
     }
 
     fn undo(&mut self) -> EngineResult<()> {
-        let Some(mut op) = self.undo_stack.lock().unwrap().pop() else {
+        let Some(mut op) = self.undo_stack.lock().pop() else {
             return Ok(());
         };
 
         let res = op.undo(self);
         self.redo_stack.push(op);
-
+        self.update_tile_area();
         res
     }
 
@@ -456,9 +496,10 @@ impl UndoState for BitFontEditor {
     fn redo(&mut self) -> EngineResult<()> {
         if let Some(mut op) = self.redo_stack.pop() {
             let res = op.redo(self);
-            self.undo_stack.lock().unwrap().push(op);
+            self.undo_stack.lock().push(op);
             return res;
         }
+        self.update_tile_area();
         Ok(())
     }
 }
@@ -469,7 +510,7 @@ impl Document for BitFontEditor {
     }
 
     fn undo_stack_len(&self) -> usize {
-        self.undo_stack.lock().unwrap().len()
+        self.undo_stack.lock().len()
     }
 
     fn show_ui(
@@ -477,7 +518,7 @@ impl Document for BitFontEditor {
         ui: &mut eframe::egui::Ui,
         _cur_tool: &mut Box<dyn Tool>,
         _selected_tool: usize,
-        _options: &DocumentOptions,
+        options: &DocumentOptions,
     ) -> Option<Message> {
         let mut message = None;
         ui.add_space(16.);
@@ -489,10 +530,10 @@ impl Document for BitFontEditor {
                 ui.vertical(|ui| {
                     ui.add_space(20.);
                     ui.horizontal(|ui| {
-                        if ui.button("Clear").clicked() {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-clear")).clicked() {
                             message = to_message(self.clear_selected_glyph());
                         }
-                        if ui.button("Inverse").clicked() {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-inverse")).clicked() {
                             message = to_message(self.inverse_selected_glyph());
                         }
                     });
@@ -525,14 +566,35 @@ impl Document for BitFontEditor {
                     ui.add_space(8.);
 
                     ui.horizontal(|ui| {
-                        if ui.button("Flip X").clicked() {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_x")).clicked() {
                             message = to_message(self.flip_x_selected_glyph());
                         }
 
-                        if ui.button("Flip Y").clicked() {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_y")).clicked() {
                             message = to_message(self.flip_y_selected_glyph());
                         }
                     });
+                });
+
+
+                ui.vertical(|ui| { 
+                    ui.heading(fl!(crate::LANGUAGE_LOADER, "font-editor-tile_area"));
+                    let mut scale = options.get_scale();
+                        if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
+                            scale.y *= 1.35;
+                        }
+                        let opt = icy_engine_egui::TerminalOptions {
+                            focus_lock: false,
+                            stick_to_bottom: false,
+                            scale: Some(Vec2::new(2.0, 2.0)),
+                            settings: MonitorSettings {
+                                ..Default::default()
+                            },
+                            id: Some(Id::new(self.id + 20000)),
+                            ..Default::default()
+                        };
+                    self.buffer_view.lock().get_caret_mut().is_visible = false;
+                    let (_, _) = show_terminal_area(ui, self.buffer_view.clone(), opt);
                 });
             });
         });
@@ -555,6 +617,7 @@ impl Document for BitFontEditor {
                     let response = BitFontEditor::draw_glyph(ui, &self.font, style, ch);
                     if response.clicked() {
                         self.selected_char_opt = Some(ch);
+                        self.update_tile_area();
                     }
 
                     response.on_hover_ui(|ui| {
@@ -586,6 +649,13 @@ impl Document for BitFontEditor {
                 }
             })
         });
+
+        if message.is_none() && self.send_update_message {
+            message = Some(Message::UpdateFont(Box::new((self.last_updated_font.clone(), self.font.clone()))));
+            self.last_updated_font = self.font.clone();
+            self.send_update_message = false;
+        }
+
         message
     }
 
@@ -601,5 +671,12 @@ impl Document for BitFontEditor {
         None
     }
 
-    fn destroy(&self, _gl: &glow::Context) {}
+    fn inform_save(&mut self) {
+        self.original_font = self.font.clone();    
+    }
+
+    fn destroy(&self, gl: &glow::Context) -> Option<Message> {
+        self.buffer_view.lock().destroy(gl);
+        Some(Message::UpdateFont(Box::new((self.last_updated_font.clone(), self.original_font.clone())))) 
+    }
 }

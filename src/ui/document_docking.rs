@@ -77,6 +77,7 @@ impl DocumentTab {
                 self.last_save = undo_stack_len;
                 self.last_change_autosave_timer = undo_stack_len;
                 self.auto_save_status = undo_stack_len;
+                doc.inform_save();
             }
             Err(err) => {
                 msg = Some(Message::ShowError(format!("{err}")));

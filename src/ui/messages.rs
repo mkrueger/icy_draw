@@ -132,6 +132,7 @@ pub enum Message {
     SetBackground(u32),
     SetBackgroundRgb(u8, u8, u8),
     ClearSelection,
+    UpdateFont(Box<(BitFont, BitFont)>),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -954,6 +955,20 @@ impl MainWindow {
                         .get_caret_mut()
                         .set_background(color);
                     None
+                });
+            }
+
+            Message::UpdateFont(font_box) => {
+                let (old, new) = font_box.as_ref();
+                self.enumerate_documents(|_, pane| {
+                    if let Some(editor) = pane.doc.lock().unwrap().get_ansi_editor() {
+                        editor.buffer_view.lock().get_buffer_mut().font_iter_mut().for_each(|(_, font)| {
+                            if font.glyphs == old.glyphs {
+                                *font = new.clone();
+                            }
+                        });
+                        editor.buffer_view.lock().redraw_font();
+                    }
                 });
             }
         }

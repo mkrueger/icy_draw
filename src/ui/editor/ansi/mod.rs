@@ -154,14 +154,14 @@ impl Document for AnsiEditor {
         } else {
             ICED_EXT.to_string()
         };
-
+        println!("extension:{}", ext);
         let options = SaveOptions::new();
         let bytes = self
             .buffer_view
             .lock()
             .get_buffer()
             .to_bytes(&ext, &options)?;
-
+        println!("return2 : {}", bytes.len());
         Ok(bytes)
     }
 
@@ -210,8 +210,9 @@ impl Document for AnsiEditor {
         Some(self)
     }
 
-    fn destroy(&self, gl: &glow::Context) {
+    fn destroy(&self, gl: &glow::Context) -> Option<Message> {
         self.buffer_view.lock().destroy(gl);
+        None
     }
 }
 

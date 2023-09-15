@@ -214,6 +214,7 @@ select-font-dialog-color-font=FARBE
 select-font-dialog-block-font=BLOCK
 select-font-dialog-outline-font=OUTLINE
 select-font-dialog-preview-text=HALLO
+select-font-dialog-edit-button=Font bearbeiten…
 
 layer_tool_title=Ebenen
 layer_tool_menu_layer_properties=Ebeneneigenschaften…
@@ -289,6 +290,12 @@ tab-context-menu-copy_path=Pfad kopieren
 font-view-char_label=Zeichen
 font-view-ascii_label=ASCII
 font-view-font_label=Font
+
+font-editor-tile_area=Kacheln
+font-editor-clear=Löschen
+font-editor-inverse=Invertieren
+font-editor-flip_x=X Spiegeln
+font-editor-flip_y=Y Spiegeln
 
 animation_editor_path_label=Datei:
 animation_editor_export_button=Export
