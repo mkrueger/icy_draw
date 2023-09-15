@@ -2,7 +2,6 @@ use crate::{Message, Settings, SWAP_SVG};
 use eframe::egui::{self, color_picker, Sense, TextEdit, TextStyle, Ui};
 use eframe::emath::Align2;
 use eframe::epaint::{Color32, FontId, Pos2, Rect, Rounding, Stroke, Vec2};
-use glow::Buffer;
 use i18n_embed_fl::fl;
 use icy_engine::{BufferType, Palette, TextAttribute, XTERM_256_PALETTE};
 use std::cmp::min;
