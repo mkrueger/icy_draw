@@ -4,7 +4,10 @@ use eframe::{
 };
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::util::{pop_data, BUFFER_DATA};
+use icy_engine::{
+    util::{pop_data, BUFFER_DATA},
+    BufferType,
+};
 
 use crate::{button_with_shortcut, MainWindow, Message, Settings, SETTINGS};
 
@@ -289,6 +292,83 @@ impl MainWindow {
                 self.commands.crop.ui_enabled(ui, has_buffer, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-colors"), |ui| {
+                if has_buffer {
+                    if let Some(pane) = self.get_active_pane() {
+                        if let Ok(doc) = &mut pane.doc.lock() {
+                            let editor = doc.get_ansi_editor_mut().unwrap();
+                            let lock = &mut editor.buffer_view.lock();
+
+                            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-color-mode"), |ui| {
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().buffer_type == BufferType::NoLimits,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-unrestricted"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().buffer_type = BufferType::NoLimits;
+                                    ui.close_menu();
+                                }
+
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().buffer_type == BufferType::LegacyDos,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-dos"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().buffer_type = BufferType::LegacyDos;
+                                    ui.close_menu();
+                                }
+
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().buffer_type == BufferType::LegacyIce,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ice"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().buffer_type = BufferType::LegacyIce;
+                                    ui.close_menu();
+                                }
+
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().buffer_type == BufferType::ExtendedColors,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ext-colors"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().buffer_type = BufferType::ExtendedColors;
+                                    ui.close_menu();
+                                }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().buffer_type == BufferType::ExtendedFont,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ext-font"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().buffer_type = BufferType::ExtendedFont;
+                                    ui.close_menu();
+                                }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().buffer_type
+                                            == BufferType::ExtendedFontAndIce,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ext-font-ice"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().buffer_type =
+                                        BufferType::ExtendedFontAndIce;
+                                    ui.close_menu();
+                                }
+                            });
+                        }
+                    }
+                }
+
                 self.commands
                     .pick_attribute_under_caret
                     .ui_enabled(ui, has_buffer, &mut result);

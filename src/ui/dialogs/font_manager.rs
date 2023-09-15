@@ -82,6 +82,11 @@ impl crate::ModalDialog for FontManager {
                                     let mut title_rect = rect;
                                     title_rect.set_left(title_rect.left() + 4.0);
                                     title_rect.set_top(title_rect.bottom() - size.y - 8.0);
+                                    let text_color = if is_selected {
+                                        ui.style().visuals.strong_text_color()
+                                    } else {
+                                        ui.style().visuals.text_color()
+                                    };
                                     ui.painter().galley_with_color(
                                         egui::Align2::LEFT_TOP
                                             .align_size_within_rect(
@@ -90,7 +95,7 @@ impl crate::ModalDialog for FontManager {
                                             )
                                             .min,
                                         galley.galley,
-                                        ui.style().visuals.text_color(),
+                                        text_color,
                                     );
 
                                     let font_id = TextStyle::Button.resolve(ui.style());
@@ -107,7 +112,7 @@ impl crate::ModalDialog for FontManager {
                                             )
                                             .min,
                                         galley.galley,
-                                        ui.style().visuals.strong_text_color(),
+                                        text_color,
                                     );
 
                                     if response.clicked() {

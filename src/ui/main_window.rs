@@ -573,11 +573,13 @@ impl eframe::App for MainWindow {
 
                 let mut caret_attr = TextAttribute::default();
                 let mut palette = Palette::default();
+                let mut buffer_type = icy_engine::BufferType::NoLimits;
 
                 if let Some(doc) = self.get_active_document() {
                     if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
                         caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
                         palette = editor.buffer_view.lock().get_buffer().palette.clone();
+                        buffer_type = editor.buffer_view.lock().get_buffer().buffer_type;
                     }
                 }
 
@@ -589,42 +591,74 @@ impl eframe::App for MainWindow {
                     msg = crate::palette_switcher(ctx, ui, &caret_attr, &palette);
                 });
                 ui.add_space(8.0);
-                ui.horizontal(|ui| {
-                    ui.add_space(8.0);
-                    if ui
-                        .selectable_label(
-                            palette_mode == 0,
-                            fl!(crate::LANGUAGE_LOADER, "color-dos"),
-                        )
-                        .clicked()
-                    {
-                        palette_mode = 0;
-                    }
-                    if ui
-                        .selectable_label(
-                            palette_mode == 1,
-                            fl!(crate::LANGUAGE_LOADER, "color-ext"),
-                        )
-                        .clicked()
-                    {
-                        palette_mode = 1;
-                    }
-                    if ui
-                        .selectable_label(
-                            palette_mode == 2,
-                            fl!(crate::LANGUAGE_LOADER, "color-custom"),
-                        )
-                        .clicked()
-                    {
-                        palette_mode = 2;
-                    }
-                });
+                if buffer_type.has_extended_colors() || buffer_type.has_rgb_colors() {
+                    ui.horizontal(|ui| {
+                        ui.add_space(8.0);
+                        if ui
+                            .selectable_label(
+                                palette_mode == 0,
+                                fl!(crate::LANGUAGE_LOADER, "color-dos"),
+                            )
+                            .clicked()
+                        {
+                            palette_mode = 0;
+                        }
+                        if buffer_type.has_extended_colors() {
+                            if ui
+                                .selectable_label(
+                                    palette_mode == 1,
+                                    fl!(crate::LANGUAGE_LOADER, "color-ext"),
+                                )
+                                .clicked()
+                            {
+                                palette_mode = 1;
+                            }
+                        } else if palette_mode == 1 {
+                            palette_mode = 0;
+                        }
+                        if buffer_type.has_rgb_colors() {
+                            if ui
+                                .selectable_label(
+                                    palette_mode == 2,
+                                    fl!(crate::LANGUAGE_LOADER, "color-custom"),
+                                )
+                                .clicked()
+                            {
+                                palette_mode = 2;
+                            }
+                        } else if palette_mode == 2 {
+                            palette_mode = 0;
+                        }
+                    });
+                } else {
+                    palette_mode = 0;
+                }
                 ui.separator();
                 let msg2 = match palette_mode {
-                    0 => crate::palette_editor_16(ui, &caret_attr, &palette),
+                    0 => crate::palette_editor_16(ui, &caret_attr, &palette, buffer_type),
                     1 => crate::show_extended_palette(ui),
                     _ => crate::show_custom_palette(ui),
                 };
+
+                if buffer_type.has_blink()
+                    && ui
+                        .selectable_label(
+                            caret_attr.is_blinking(),
+                            fl!(crate::LANGUAGE_LOADER, "color-is_blinking"),
+                        )
+                        .clicked()
+                {
+                    if let Some(doc) = self.get_active_document() {
+                        if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                            caret_attr.set_is_blinking(!caret_attr.is_blinking());
+                            editor
+                                .buffer_view
+                                .lock()
+                                .get_caret_mut()
+                                .set_attr(caret_attr);
+                        }
+                    }
+                }
 
                 if msg.is_none() {
                     msg = msg2;

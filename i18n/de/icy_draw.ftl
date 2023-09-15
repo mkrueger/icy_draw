@@ -163,6 +163,7 @@ glyph-font-label=Schriftart
 color-dos=DOS
 color-ext=ERW
 color-custom=USR
+color-is_blinking=Blinken
 
 export-title=Export
 export-button-title=Export

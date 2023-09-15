@@ -62,6 +62,13 @@ menu-select_nothing=Deselect
 menu-inverse_selection=Inverse
 
 menu-colors=Colors
+menu-color-mode=Color Mode
+menu-color-mode-unrestricted=Unrestricted
+menu-color-mode-dos=16 Colors, blink
+menu-color-mode-ice=16 Colors, ice
+menu-color-mode-ext-colors=256 Colors
+menu-color-mode-ext-font=16 Colors, ext font, blink
+menu-color-mode-ext-font-ice=16 Colors, ext font, ice
 
 menu-view=View
 menu-reference-image=Open Reference Image…
@@ -162,6 +169,7 @@ glyph-font-label=Font
 color-dos=DOS
 color-ext=EXT
 color-custom=USR
+color-is_blinking=Blink
 
 export-title=Export
 export-button-title=Export

@@ -2,8 +2,9 @@ use crate::{Message, Settings, SWAP_SVG};
 use eframe::egui::{self, color_picker, Sense, TextEdit, TextStyle, Ui};
 use eframe::emath::Align2;
 use eframe::epaint::{Color32, FontId, Pos2, Rect, Rounding, Stroke, Vec2};
+use glow::Buffer;
 use i18n_embed_fl::fl;
-use icy_engine::{Palette, TextAttribute, XTERM_256_PALETTE};
+use icy_engine::{BufferType, Palette, TextAttribute, XTERM_256_PALETTE};
 use std::cmp::min;
 
 pub fn palette_switcher(
@@ -154,6 +155,7 @@ pub fn palette_editor_16(
     ui: &mut egui::Ui,
     caret_attr: &TextAttribute,
     palette: &Palette,
+    buffer_type: BufferType,
 ) -> Option<Message> {
     let mut result = None;
 
@@ -166,8 +168,12 @@ pub fn palette_editor_16(
         let mut response = ui.interact(stroke_rect, id, Sense::click());
 
         let painter = ui.painter_at(stroke_rect);
-
-        for i in 0..16 {
+        let upper_limit = if buffer_type == BufferType::ExtendedFont {
+            8
+        } else {
+            16
+        };
+        for i in 0..upper_limit {
             let (r, g, b) = palette.colors[i].get_rgb();
             painter.rect_filled(
                 Rect::from_min_size(
@@ -242,11 +248,15 @@ pub fn palette_editor_16(
             let pos = (hp.to_vec2() - stroke_rect.left_top().to_vec2()) / Vec2::new(height, height);
             let color = min(palette.len() - 1, pos.x as u32 + pos.y as u32 * 8);
             if response.clicked() {
-                result = Some(Message::SetForeground(color));
+                if color < 8 || buffer_type.has_high_fg_colors() {
+                    result = Some(Message::SetForeground(color));
+                }
                 response.mark_changed();
             }
             if response.secondary_clicked() {
-                result = Some(Message::SetBackground(color));
+                if color < 8 || buffer_type.has_high_bg_colors() {
+                    result = Some(Message::SetBackground(color));
+                }
                 response.mark_changed();
             }
         }
