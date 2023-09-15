@@ -23,7 +23,6 @@ use crate::{
 
 use self::{
     animator::Animator,
-    highlighting::{DARK, LIGHT},
 };
 mod highlighting;
 
@@ -408,9 +407,9 @@ impl Document for AnimationEditor {
                 .with_rows(12)
                 .with_fontsize(14.0)
                 .with_theme(if ui.style().visuals.dark_mode {
-                    DARK
+                    egui_code_editor::ColorTheme::GITHUB_DARK
                 } else {
-                    LIGHT
+                    egui_code_editor::ColorTheme::GITHUB_LIGHT
                 })
                 .with_syntax(highlighting::lua())
                 .with_numlines(true)
