@@ -216,6 +216,7 @@ impl Document for CharFontEditor {
                     .get_caret()
                     .get_attribute();
 
+                let mut show_color = false;
                 for layer in &mut self
                     .ansi_editor
                     .buffer_view
@@ -230,10 +231,13 @@ impl Document for CharFontEditor {
                         }
                         icy_engine::FontType::Color => {
                             layer.forced_output_attribute = None;
+                            show_color = true;
                         }
                     }
                 }
 
+                self.ansi_editor.buffer_view.lock().use_bg = show_color;
+                self.ansi_editor.buffer_view.lock().use_fg = show_color;
                 self.ansi_editor
                     .show_ui(ui, cur_tool, selected_tool, options);
             }

@@ -357,8 +357,8 @@ impl Tool for ClickTool {
                 editor.set_caret(0, pos.y + 1);
             }
             MKey::Insert => {
-                editor.buffer_view.lock().get_caret_mut().insert_mode =
-                    !editor.buffer_view.lock().get_caret().insert_mode;
+                let insert_mode = editor.buffer_view.lock().get_caret().insert_mode;
+                editor.buffer_view.lock().get_caret_mut().insert_mode = !insert_mode;
             }
             MKey::Backspace => {
                 editor.backspace();

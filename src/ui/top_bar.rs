@@ -301,7 +301,7 @@ impl MainWindow {
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-fonts"), |ui| {
                 self.commands
-                    .open_font_manager
+                    .open_font_selector
                     .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
                 self.commands.open_font_directory.ui(ui, &mut result);

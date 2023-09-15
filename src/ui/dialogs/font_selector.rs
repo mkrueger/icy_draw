@@ -18,7 +18,7 @@ enum BitfontSource {
     Library,
 }
 
-pub struct FontManager {
+pub struct FontSelector {
     fonts: Vec<(BitFont, BitfontSource)>,
     selected_font: i32,
 
@@ -32,7 +32,7 @@ pub struct FontManager {
     edit_selected_font: bool,
 }
 
-impl FontManager {
+impl FontSelector {
     pub fn new(editor: &AnsiEditor) -> Self {
         let mut fonts = Vec::new();
         for f in 0..ANSI_FONTS {
@@ -43,7 +43,7 @@ impl FontManager {
         }
 
         if let Ok(font_dir) = Settings::get_font_diretory() {
-            for font in FontManager::load_fonts(font_dir.as_path()) {
+            for font in FontSelector::load_fonts(font_dir.as_path()) {
                 fonts.push((font, BitfontSource::Library));
             }
         }
@@ -116,7 +116,7 @@ impl FontManager {
                     Ok(mut file) => {
                         let mut data = Vec::new();
                         file.read_to_end(&mut data).unwrap_or_default();
-                        FontManager::read_zip_archive(data, &mut fonts);
+                        FontSelector::read_zip_archive(data, &mut fonts);
                     }
 
                     Err(err) => {
@@ -151,7 +151,7 @@ impl FontManager {
                                 } else if name.ends_with(".zip") {
                                     let mut data = Vec::new();
                                     file.read_to_end(&mut data).unwrap_or_default();
-                                    FontManager::read_zip_archive(data, fonts);
+                                    FontSelector::read_zip_archive(data, fonts);
                                 }
                             }
                         }
@@ -242,13 +242,13 @@ impl FontManager {
 
             let font_type = match font.1 {
                 BitfontSource::BuiltIn(_) => {
-                    fl!(crate::LANGUAGE_LOADER, "font_manager-builtin_font")
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-builtin_font")
                 }
                 BitfontSource::Library => {
-                    fl!(crate::LANGUAGE_LOADER, "font_manager-library_font")
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-library_font")
                 }
                 BitfontSource::File(_) => {
-                    fl!(crate::LANGUAGE_LOADER, "font_manager-file_font")
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-file_font")
                 }
             };
 
@@ -285,7 +285,7 @@ impl FontManager {
     }
 }
 
-impl crate::ModalDialog for FontManager {
+impl crate::ModalDialog for FontSelector {
     fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut result = false;
         let modal = Modal::new(ctx, "select_font_dialog2");
@@ -316,7 +316,7 @@ impl crate::ModalDialog for FontManager {
 
                     let response = ui.selectable_label(
                         self.show_library,
-                        fl!(crate::LANGUAGE_LOADER, "font_manager-library_font"),
+                        fl!(crate::LANGUAGE_LOADER, "font_selector-library_font"),
                     );
                     if response.clicked() {
                         self.show_library = !self.show_library;
@@ -324,7 +324,7 @@ impl crate::ModalDialog for FontManager {
 
                     let response = ui.selectable_label(
                         self.show_file,
-                        fl!(crate::LANGUAGE_LOADER, "font_manager-file_font"),
+                        fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"),
                     );
                     if response.clicked() {
                         self.show_file = !self.show_file;
@@ -332,7 +332,7 @@ impl crate::ModalDialog for FontManager {
 
                     let response = ui.selectable_label(
                         self.show_builtin,
-                        fl!(crate::LANGUAGE_LOADER, "font_manager-builtin_font"),
+                        fl!(crate::LANGUAGE_LOADER, "font_selector-builtin_font"),
                     );
                     if response.clicked() {
                         self.show_builtin = !self.show_builtin;

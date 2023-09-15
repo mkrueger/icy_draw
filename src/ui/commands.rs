@@ -318,7 +318,11 @@ keys![
         "menu-open_tdf_directoy",
         OpenTdfDirectory
     ),
-    (open_font_manager, "menu-open_font_manager", OpenFontManager),
+    (
+        open_font_selector,
+        "menu-open_font_selector",
+        OpenFontManager
+    ),
     (
         open_font_directory,
         "menu-open_font_directoy",

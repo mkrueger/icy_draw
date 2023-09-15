@@ -855,7 +855,7 @@ impl MainWindow {
             },
             Message::OpenFontManager => {
                 self.run_editor_command(0, |window, editor, _| {
-                    window.open_dialog(crate::FontManager::new(editor));
+                    window.open_dialog(crate::FontSelector::new(editor));
                     None
                 });
             }

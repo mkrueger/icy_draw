@@ -81,7 +81,7 @@ menu-pick_attribute_under_caret=Use Attribute Under Caret
 menu-default_color=Default Color
 menu-toggle_color=Switch Foreground/Background
 menu-fonts=Fonts
-menu-open_font_manager=Fonts…
+menu-open_font_selector=Fonts…
 menu-open_font_directoy=Open Font Directory…
 menu-open_tdf_directoy=Open TDF Directory…
 menu-open_palettes_directoy=Open Palettes Directory…
@@ -263,9 +263,9 @@ undo-render_character=Render character
 undo-delete_character=Delete character
 undo-select=Select
 
-font_manager-builtin_font=BUILTIN
-font_manager-library_font=LIBRARY
-font_manager-file_font=FILE
+font_selector-builtin_font=BUILTIN
+font_selector-library_font=LIBRARY
+font_selector-file_font=FILE
 
 autosave-dialog-title=Autosave
 autosave-dialog-description=Found an autosave for this file.
