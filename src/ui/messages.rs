@@ -113,6 +113,7 @@ pub enum Message {
     ZoomIn,
     ZoomOut,
 
+    OpenFontSelector,
     OpenFontManager,
     OpenFontDirectory,
     OpenTdfDirectory,
@@ -853,9 +854,15 @@ impl MainWindow {
                     self.handle_message(Some(Message::ShowError(format!("{err}"))));
                 }
             },
-            Message::OpenFontManager => {
+            Message::OpenFontSelector => {
                 self.run_editor_command(0, |window, editor, _| {
                     window.open_dialog(crate::FontSelector::new(editor));
+                    None
+                });
+            }
+            Message::OpenFontManager => {
+                self.run_editor_command(0, |window, editor, _| {
+                    window.open_dialog(crate::FontManager::new(editor));
                     None
                 });
             }
