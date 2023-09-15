@@ -300,7 +300,9 @@ impl MainWindow {
                     .ui_enabled(ui, has_buffer, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-fonts"), |ui| {
-                self.commands.open_font_manager.ui(ui, &mut result);
+                self.commands
+                    .open_font_manager
+                    .ui_enabled(ui, has_buffer, &mut result);
                 ui.separator();
                 self.commands.open_font_directory.ui(ui, &mut result);
                 self.commands.open_tdf_directory.ui(ui, &mut result);

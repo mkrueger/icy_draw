@@ -260,8 +260,20 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         tiles: &Tiles<DocumentTab>,
         ui: &mut Ui,
         _tile_id: TileId,
-        _tabs: &Tabs,
+        tabs: &Tabs,
     ) {
+        let mut show = false;
+        if let Some(active_id) = tabs.active {
+            if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(active_id) {
+                if pane.doc.lock().unwrap().get_ansi_editor().is_some() {
+                    show = true;
+                }
+            }
+        }
+        if !show {
+            return;
+        }
+
         ui.add_space(4.0);
         let mut buffer = Buffer::new((48, 1));
         let char_set = Settings::get_character_set();
@@ -314,7 +326,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
             img.show(ui);
         }
 
-        if let Some(id) = _tabs.active {
+        if let Some(id) = tabs.active {
             if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(id) {
                 if let Ok(doc) = &mut pane.doc.lock() {
                     if let Some(editor) = doc.get_ansi_editor() {
