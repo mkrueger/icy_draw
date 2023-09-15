@@ -103,7 +103,8 @@ impl crate::ModalDialog for AskCloseFileDialog {
                     msg = msg2;
                 }
             }
-        } else if let Some(egui_tiles::Tile::Pane(pane)) = window.document_tree.tiles.get_mut(self.id)
+        } else if let Some(egui_tiles::Tile::Pane(pane)) =
+            window.document_tree.tiles.get_mut(self.id)
         {
             msg = pane.doc.lock().unwrap().destroy(&window.gl);
         }

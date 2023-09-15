@@ -26,7 +26,7 @@ use icy_engine_egui::{
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
     ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, Settings,
-    TerminalResult,
+    TerminalResult, UndoHandler,
 };
 
 pub enum Event {
@@ -51,7 +51,7 @@ pub struct AnsiEditor {
                               //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
 }
 
-impl UndoState for AnsiEditor {
+impl UndoHandler for AnsiEditor {
     fn undo_description(&self) -> Option<String> {
         self.buffer_view.lock().get_edit_state().undo_description()
     }
@@ -60,8 +60,9 @@ impl UndoState for AnsiEditor {
         self.buffer_view.lock().get_edit_state().can_undo()
     }
 
-    fn undo(&mut self) -> icy_engine::EngineResult<()> {
-        self.buffer_view.lock().get_edit_state_mut().undo()
+    fn undo(&mut self) -> EngineResult<Option<Message>> {
+        self.buffer_view.lock().get_edit_state_mut().undo()?;
+        Ok(None)
     }
 
     fn redo_description(&self) -> Option<String> {
@@ -72,8 +73,9 @@ impl UndoState for AnsiEditor {
         self.buffer_view.lock().get_edit_state().can_redo()
     }
 
-    fn redo(&mut self) -> icy_engine::EngineResult<()> {
-        self.buffer_view.lock().get_edit_state_mut().redo()
+    fn redo(&mut self) -> EngineResult<Option<Message>> {
+        self.buffer_view.lock().get_edit_state_mut().redo()?;
+        Ok(None)
     }
 }
 

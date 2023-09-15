@@ -458,16 +458,20 @@ impl MainWindow {
         self.handle_message(msg);
     }
 
-    pub(crate) fn handle_result<T>(&mut self, result: EngineResult<T>) {
-        if let Err(err) = result {
-            log::error!("Error: {}", err);
-            self.toasts
-                .error(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "error-load-file",
-                    error = err.to_string()
-                ))
-                .set_duration(Some(Duration::from_secs(5)));
+    pub(crate) fn handle_result<T>(&mut self, result: EngineResult<T>) -> Option<T> {
+        match result {
+            Err(err) => {
+                log::error!("Error: {}", err);
+                self.toasts
+                    .error(fl!(
+                        crate::LANGUAGE_LOADER,
+                        "error-load-file",
+                        error = err.to_string()
+                    ))
+                    .set_duration(Some(Duration::from_secs(5)));
+                None
+            }
+            Ok(res) => Some(res),
         }
     }
 

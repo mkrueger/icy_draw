@@ -1,26 +1,22 @@
 mod undo;
 
-use std::{
-    path::Path,
-    sync::Arc,
-};
+use std::{path::Path, sync::Arc};
 
 use eframe::{
-    egui::{self, RichText, Sense, Id},
+    egui::{self, Id, RichText, Sense},
     emath::Align2,
-    epaint::{Color32, FontFamily, FontId, Pos2, Rect, Rounding, Vec2, mutex::Mutex},
+    epaint::{mutex::Mutex, Color32, FontFamily, FontId, Pos2, Rect, Rounding, Vec2},
 };
 use i18n_embed_fl::fl;
 use icy_engine::{
-    editor::UndoState,
     util::{pop_data, push_data, BITFONT_GLYPH},
-    BitFont, EngineResult, Glyph, Buffer, Size, TextPane, TextAttribute,
+    BitFont, Buffer, EngineResult, Glyph, Size, TextAttribute, TextPane,
 };
-use icy_engine_egui::{BufferView, MonitorSettings, show_terminal_area};
+use icy_engine_egui::{show_terminal_area, BufferView, MonitorSettings};
 
 use crate::{
     model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message,
-    TerminalResult,
+    TerminalResult, UndoHandler,
 };
 
 use self::undo::UndoOperation;
@@ -124,14 +120,20 @@ impl BitFontEditor {
     }
 
     pub fn update_tile_area(&mut self) {
-        let lock  = &mut self.buffer_view.lock();
+        let lock = &mut self.buffer_view.lock();
         let buf = lock.get_buffer_mut();
         buf.set_font(0, self.font.clone());
 
         let ch = self.selected_char_opt.unwrap_or(' ');
-        for y in 0..buf.get_width()  {
+        for y in 0..buf.get_width() {
             for x in 0..buf.get_height() {
-                buf.layers[0].set_char((x, y), icy_engine::AttributedChar { ch, attribute: TextAttribute::default() });
+                buf.layers[0].set_char(
+                    (x, y),
+                    icy_engine::AttributedChar {
+                        ch,
+                        attribute: TextAttribute::default(),
+                    },
+                );
             }
         }
         self.send_update_message = true;
@@ -462,27 +464,25 @@ impl ClipboardHandler for BitFontEditor {
     }
 }
 
-impl UndoState for BitFontEditor {
+impl UndoHandler for BitFontEditor {
     fn undo_description(&self) -> Option<String> {
-        self.undo_stack
-            .lock()
-            .last()
-            .map(|op| op.get_description())
+        self.undo_stack.lock().last().map(|op| op.get_description())
     }
 
     fn can_undo(&self) -> bool {
         !self.undo_stack.lock().is_empty()
     }
 
-    fn undo(&mut self) -> EngineResult<()> {
+    fn undo(&mut self) -> EngineResult<Option<Message>> {
         let Some(mut op) = self.undo_stack.lock().pop() else {
-            return Ok(());
+            return Ok(None);
         };
 
-        let res = op.undo(self);
+        op.undo(self)?;
         self.redo_stack.push(op);
         self.update_tile_area();
-        res
+        self.send_update_message = true;
+        Ok(None)
     }
 
     fn redo_description(&self) -> Option<String> {
@@ -493,14 +493,15 @@ impl UndoState for BitFontEditor {
         !self.redo_stack.is_empty()
     }
 
-    fn redo(&mut self) -> EngineResult<()> {
+    fn redo(&mut self) -> EngineResult<Option<Message>> {
         if let Some(mut op) = self.redo_stack.pop() {
-            let res = op.redo(self);
+            op.redo(self)?;
             self.undo_stack.lock().push(op);
-            return res;
+            return Ok(None);
         }
         self.update_tile_area();
-        Ok(())
+        self.send_update_message = true;
+        Ok(None)
     }
 }
 
@@ -530,10 +531,16 @@ impl Document for BitFontEditor {
                 ui.vertical(|ui| {
                     ui.add_space(20.);
                     ui.horizontal(|ui| {
-                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-clear")).clicked() {
+                        if ui
+                            .button(fl!(crate::LANGUAGE_LOADER, "font-editor-clear"))
+                            .clicked()
+                        {
                             message = to_message(self.clear_selected_glyph());
                         }
-                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-inverse")).clicked() {
+                        if ui
+                            .button(fl!(crate::LANGUAGE_LOADER, "font-editor-inverse"))
+                            .clicked()
+                        {
                             message = to_message(self.inverse_selected_glyph());
                         }
                     });
@@ -566,33 +573,38 @@ impl Document for BitFontEditor {
                     ui.add_space(8.);
 
                     ui.horizontal(|ui| {
-                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_x")).clicked() {
+                        if ui
+                            .button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_x"))
+                            .clicked()
+                        {
                             message = to_message(self.flip_x_selected_glyph());
                         }
 
-                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_y")).clicked() {
+                        if ui
+                            .button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_y"))
+                            .clicked()
+                        {
                             message = to_message(self.flip_y_selected_glyph());
                         }
                     });
                 });
 
-
-                ui.vertical(|ui| { 
+                ui.vertical(|ui| {
                     ui.heading(fl!(crate::LANGUAGE_LOADER, "font-editor-tile_area"));
                     let mut scale = options.get_scale();
-                        if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
-                            scale.y *= 1.35;
-                        }
-                        let opt = icy_engine_egui::TerminalOptions {
-                            focus_lock: false,
-                            stick_to_bottom: false,
-                            scale: Some(Vec2::new(2.0, 2.0)),
-                            settings: MonitorSettings {
-                                ..Default::default()
-                            },
-                            id: Some(Id::new(self.id + 20000)),
+                    if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
+                        scale.y *= 1.35;
+                    }
+                    let opt = icy_engine_egui::TerminalOptions {
+                        focus_lock: false,
+                        stick_to_bottom: false,
+                        scale: Some(Vec2::new(2.0, 2.0)),
+                        settings: MonitorSettings {
                             ..Default::default()
-                        };
+                        },
+                        id: Some(Id::new(self.id + 20000)),
+                        ..Default::default()
+                    };
                     self.buffer_view.lock().get_caret_mut().is_visible = false;
                     let (_, _) = show_terminal_area(ui, self.buffer_view.clone(), opt);
                 });
@@ -651,7 +663,10 @@ impl Document for BitFontEditor {
         });
 
         if message.is_none() && self.send_update_message {
-            message = Some(Message::UpdateFont(Box::new((self.last_updated_font.clone(), self.font.clone()))));
+            message = Some(Message::UpdateFont(Box::new((
+                self.last_updated_font.clone(),
+                self.font.clone(),
+            ))));
             self.last_updated_font = self.font.clone();
             self.send_update_message = false;
         }
@@ -672,11 +687,14 @@ impl Document for BitFontEditor {
     }
 
     fn inform_save(&mut self) {
-        self.original_font = self.font.clone();    
+        self.original_font = self.font.clone();
     }
 
     fn destroy(&self, gl: &glow::Context) -> Option<Message> {
         self.buffer_view.lock().destroy(gl);
-        Some(Message::UpdateFont(Box::new((self.last_updated_font.clone(), self.original_font.clone())))) 
+        Some(Message::UpdateFont(Box::new((
+            self.last_updated_font.clone(),
+            self.original_font.clone(),
+        ))))
     }
 }

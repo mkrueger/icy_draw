@@ -1,7 +1,7 @@
 use std::{fs, io::Read, path::Path};
 
 use eframe::{
-    egui::{self, Response, Sense, TextEdit, WidgetText, Button},
+    egui::{self, Button, Response, Sense, TextEdit, WidgetText},
     epaint::{ahash::HashMap, Color32, FontFamily, FontId, Pos2, Rect, Rounding, Stroke, Vec2},
 };
 use egui_extras::RetainedImage;
@@ -29,7 +29,7 @@ pub struct FontManager {
 
     image_cache: HashMap<usize, RetainedImage>,
     do_select: bool,
-    edit_selected_font: bool
+    edit_selected_font: bool,
 }
 
 impl FontManager {
@@ -77,7 +77,7 @@ impl FontManager {
             show_builtin: true,
             show_library: true,
             show_file: true,
-            edit_selected_font: false
+            edit_selected_font: false,
         }
     }
 
@@ -414,7 +414,14 @@ impl crate::ModalDialog for FontManager {
                 }
 
                 let enabled = self.fonts[self.selected_font as usize].0.path_opt.is_some();
-                if ui.add_enabled(enabled, Button::new(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-edit-button")))
+                if ui
+                    .add_enabled(
+                        enabled,
+                        Button::new(fl!(
+                            crate::LANGUAGE_LOADER,
+                            "select-font-dialog-edit-button"
+                        )),
+                    )
                     .clicked()
                 {
                     self.edit_selected_font = true;
@@ -431,7 +438,6 @@ impl crate::ModalDialog for FontManager {
     }
 
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
-
         if self.edit_selected_font {
             let font = &self.fonts[self.selected_font as usize];
             if let Some(path) = &font.0.path_opt {

@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use eframe::{egui, epaint::Vec2};
-use icy_engine::{editor::UndoState, EngineResult};
+use icy_engine::EngineResult;
 
 use crate::{model::Tool, AnsiEditor, Commands, Message, TerminalResult};
 
@@ -28,7 +28,27 @@ pub trait ClipboardHandler {
     }
 }
 
-pub trait Document: UndoState + ClipboardHandler {
+pub trait UndoHandler {
+    fn undo_description(&self) -> Option<String>;
+    fn can_undo(&self) -> bool;
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if .
+    fn undo(&mut self) -> EngineResult<Option<Message>>;
+
+    fn redo_description(&self) -> Option<String>;
+    fn can_redo(&self) -> bool;
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if .
+    fn redo(&mut self) -> EngineResult<Option<Message>>;
+}
+
+pub trait Document: UndoHandler + ClipboardHandler {
     fn undo_stack_len(&self) -> usize;
 
     fn default_extension(&self) -> &'static str;
@@ -48,9 +68,7 @@ pub trait Document: UndoState + ClipboardHandler {
     fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor>;
     fn get_ansi_editor(&self) -> Option<&AnsiEditor>;
 
-    fn inform_save(&mut self) {
-        
-    }
+    fn inform_save(&mut self) {}
 }
 
 pub struct DocumentOptions {

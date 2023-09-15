@@ -13,11 +13,12 @@ use eframe::{
 };
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
-use icy_engine::{editor::UndoState, Buffer, EngineResult, SaveOptions, Size, TextPane};
+use icy_engine::{Buffer, EngineResult, SaveOptions, Size, TextPane};
 use icy_engine_egui::{show_terminal_area, BufferView, MonitorSettings};
 
 use crate::{
     model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
+    UndoHandler,
 };
 
 use self::{
@@ -204,7 +205,7 @@ impl ClipboardHandler for AnimationEditor {
     }
 }
 
-impl UndoState for AnimationEditor {
+impl UndoHandler for AnimationEditor {
     fn undo_description(&self) -> Option<String> {
         None
     }
@@ -213,8 +214,8 @@ impl UndoState for AnimationEditor {
         false
     }
 
-    fn undo(&mut self) -> EngineResult<()> {
-        Ok(())
+    fn undo(&mut self) -> EngineResult<Option<Message>> {
+        Ok(None)
     }
 
     fn redo_description(&self) -> Option<String> {
@@ -225,8 +226,8 @@ impl UndoState for AnimationEditor {
         false
     }
 
-    fn redo(&mut self) -> EngineResult<()> {
-        Ok(())
+    fn redo(&mut self) -> EngineResult<Option<Message>> {
+        Ok(None)
     }
 }
 
@@ -490,5 +491,5 @@ impl Document for AnimationEditor {
     fn destroy(&self, gl: &glow::Context) -> Option<Message> {
         self.buffer_view.lock().destroy(gl);
         None
-     }
+    }
 }

@@ -1,13 +1,11 @@
 use std::{path::Path, sync::Arc};
 
 use eframe::egui::{self, RichText, SidePanel, TextEdit, TopBottomPanel};
-use icy_engine::{
-    editor::UndoState, BitFont, Buffer, EngineResult, FontGlyph, Layer, Size, TextPane, TheDrawFont,
-};
+use icy_engine::{BitFont, Buffer, EngineResult, FontGlyph, Layer, Size, TextPane, TheDrawFont};
 
 use crate::{
     model::Tool, AnsiEditor, BitFontEditor, ClipboardHandler, Document, DocumentOptions,
-    DrawGlyphStyle, Message, TerminalResult,
+    DrawGlyphStyle, Message, TerminalResult, UndoHandler,
 };
 
 pub struct CharFontEditor {
@@ -45,7 +43,7 @@ impl ClipboardHandler for CharFontEditor {
     }
 }
 
-impl UndoState for CharFontEditor {
+impl UndoHandler for CharFontEditor {
     fn undo_description(&self) -> Option<String> {
         self.ansi_editor.undo_description()
     }
@@ -54,8 +52,9 @@ impl UndoState for CharFontEditor {
         self.ansi_editor.can_undo()
     }
 
-    fn undo(&mut self) -> EngineResult<()> {
-        self.ansi_editor.undo()
+    fn undo(&mut self) -> EngineResult<Option<Message>> {
+        self.ansi_editor.undo()?;
+        Ok(None)
     }
 
     fn redo_description(&self) -> Option<String> {
@@ -66,8 +65,9 @@ impl UndoState for CharFontEditor {
         self.ansi_editor.can_redo()
     }
 
-    fn redo(&mut self) -> EngineResult<()> {
-        self.ansi_editor.redo()
+    fn redo(&mut self) -> EngineResult<Option<Message>> {
+        self.ansi_editor.redo()?;
+        Ok(None)
     }
 }
 
@@ -249,7 +249,7 @@ impl Document for CharFontEditor {
         self.ansi_editor.get_ansi_editor()
     }
 
-    fn destroy(&self, gl: &glow::Context) -> Option<Message>  {
+    fn destroy(&self, gl: &glow::Context) -> Option<Message> {
         self.ansi_editor.destroy(gl);
         None
     }
