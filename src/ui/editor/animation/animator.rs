@@ -319,9 +319,7 @@ impl Animator {
         frame.terminal_state = buffer.terminal_state.clone();
         frame.palette = buffer.palette.clone();
         frame.layers = Vec::new();
-        println!("----");
         for l in buffer.layers.iter() {
-            println!("layer visible:  {}", l.is_visible);
             frame.layers.push(l.clone());
         }
         frame.clear_font_table();
@@ -407,7 +405,7 @@ impl Animator {
                 "next_frame",
                 lua.create_function_mut(move |lua, buffer: Value<'_>| {
                     if let Value::UserData(data) = &buffer {
-                        lua.globals().set("cur_frame", a.lock().frames.len() + 1)?;
+                        lua.globals().set("cur_frame", a.lock().frames.len() + 2)?;
                         a.lock().next_frame(&data.borrow::<LuaBuffer>()?.buffer)
                     } else {
                         Err(mlua::Error::RuntimeError(format!(

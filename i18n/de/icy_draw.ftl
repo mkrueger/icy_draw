@@ -301,3 +301,30 @@ animation_editor_path_label=Datei:
 animation_editor_export_button=Export
 animation_editor_gif_label=Gif
 animation_editor_ansi_label=Ansimation
+
+new-file-template-ansi-title=CP437 ANSI
+new-file-template-ansi-description=Ein neues DOS Ansi erstellen
+new-file-template-file_id-title=FILE_ID.DIZ
+new-file-template-file_id-description=FILE_ID.DIZ erstellen
+new-file-template-ansimation-title=Ansimation
+new-file-template-ansimation-description=Eine Ansi-Animation erstellen
+new-file-template-bit_font-title=Bit Font
+new-file-template-bit_font-description=Einen neuen Bit-Font erstellen
+new-file-template-color_font-title=TDF Farb-Font
+new-file-template-color_font-description=Einen neuen TDF Farb-Font erstellen
+new-file-template-block_font-title=TDF Block-Font
+new-file-template-block_font-description=Einen neuen TDF Block-Font erstellen
+new-file-template-outline_font-title=TDF Outline-font
+new-file-template-outline_font-description=Einen neuen TDF Outline-Font erstellen
+new-file-template-ansimation-ui-label=
+    Eine IcyDraw Animation ist eine Lua Textdatei, die eine Animationssequenz beschreibt.
+    Für eine vollständige Beschreibung der Syntax klicke auf diesen Link:
+new-file-template-bitfont-ui-label=
+    Ein Bit-Font ist eine Sammlung von Zeichen, die in einem Raster angeordnet sind.
+    Bit-Fonts können in ANSI-Editoren verwendet werden.
+
+new-file-template-thedraw-ui-label=
+    TheDraw Fonts können in ANSI-Editoren verwendet werden, um größere Zeichen zu definieren.
+    TheDraw definiert drei Font-Typen: Farbe, Block und Outline.
+
+    Eine große Font-Sammlung kann hier heruntergeladen werden:

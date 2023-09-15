@@ -304,3 +304,29 @@ animation_editor_path_label=Path:
 animation_editor_export_button=Export
 animation_editor_gif_label=Gif
 animation_editor_ansi_label=Ansimation
+
+new-file-template-ansi-title=CP437 ANSI
+new-file-template-ansi-description=Create a new DOS ANSI file
+new-file-template-file_id-title=FILE_ID.DIZ
+new-file-template-file_id-description=Create a new FILE_ID.DIZ file
+new-file-template-ansimation-title=Ansimation
+new-file-template-ansimation-description=Create a new ansi animation file
+new-file-template-bit_font-title=Bit Font
+new-file-template-bit_font-description=Create a new bit font file
+new-file-template-color_font-title=TDF Color Font
+new-file-template-color_font-description=Create a new TheDraw color font
+new-file-template-block_font-title=TDF Block Font
+new-file-template-block_font-description=Create a new TheDraw block font
+new-file-template-outline_font-title=TDF Outline Font
+new-file-template-outline_font-description=Create a new TheDraw outline font
+new-file-template-ansimation-ui-label=
+    An IcyDraw ansimation is a lua text file describing an animation sequence.
+    For a syntax description click this link:
+new-file-template-bitfont-ui-label=
+    A bitfont is used by legacy computers to display text.
+
+new-file-template-thedraw-ui-label=
+    TheDraw fonts are used to render larger text in ANSI editors.
+    TheDraw defined three font types: Color, Block and Outline. 
+
+    A big font archive can be downloaded from:

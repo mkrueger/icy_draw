@@ -261,15 +261,17 @@ impl CharFontEditor {
         set_up_layers(&mut buffer);
         let ansi_editor = AnsiEditor::new(gl, id, buffer);
 
-        Self {
+        let mut res = Self {
             font: BitFont::default(),
             ansi_editor,
-            selected_char_opt: None,
+            selected_char_opt: Some('A'),
             old_selected_char_opt: None,
             fonts,
             selected_font: 0,
             undostack_len: 0,
-        }
+        };
+        res.show_selected_char();
+        res
     }
 
     pub fn show_char_selector(&mut self, ui: &mut egui::Ui) {
@@ -298,6 +300,7 @@ impl CharFontEditor {
     }
 
     fn show_selected_char(&mut self) {
+        println!("show selected!");
         self.save_old_selected_char();
 
         let lock = &mut self.ansi_editor.buffer_view.lock();

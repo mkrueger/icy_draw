@@ -60,7 +60,7 @@ impl BitFontEditor {
             original_font: font.clone(),
             last_updated_font,
             font,
-            selected_char_opt: None,
+            selected_char_opt: Some('A'),
             undo_stack: Arc::new(Mutex::new(Vec::new())),
             redo_stack: Vec::new(),
             old_data: None,

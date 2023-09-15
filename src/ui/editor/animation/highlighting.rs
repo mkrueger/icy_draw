@@ -1,5 +1,3 @@
-use egui_code_editor::ColorTheme;
-
 use super::Syntax;
 use std::collections::HashSet;
 
@@ -18,11 +16,9 @@ pub fn lua() -> Syntax {
             "nil", "boolean", "number", "string", "nil", "function", "userdata", "thread", "table",
         ]),
         special: HashSet::from([
-
             "new_buffer",
             "load_buffer",
             "next_frame",
-
             "fg_rgb",
             "bg_rgb",
             "set_char",

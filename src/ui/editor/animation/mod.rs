@@ -21,9 +21,7 @@ use crate::{
     UndoHandler,
 };
 
-use self::{
-    animator::Animator,
-};
+use self::animator::Animator;
 mod highlighting;
 
 mod animator;
