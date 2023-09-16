@@ -80,7 +80,7 @@ menu-zoom_reset=Revert Zoom
 menu-zoom_in=Zoom In
 menu-zoom_out=Zoom Out
 menu-guides=Guides
-menu-raster=Raster
+menu-raster=Grid
 menu-guides-off=Off
 menu-zoom-fit_size=Fit Size
 

@@ -73,7 +73,7 @@ menu-zoom_reset=Vergrößerung zurücksetzen
 menu-zoom_in=Vergrößern
 menu-zoom_out=Verkleinern
 menu-guides=Hilfslinien
-menu-raster=Raster
+menu-raster=Gitter
 menu-guides-off=Aus
 menu-zoom-fit_size=Größe anpassen
 
