@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::{
-    egui::{self, RichText, Sense},
+    egui::{self, RichText, Sense, accesskit::Size, TextureOptions},
     epaint::{Color32, Pos2, Rect, Vec2},
 };
 use egui_extras::RetainedImage;
@@ -38,7 +38,7 @@ impl CharTableToolWindow {
         if let Some(cur_font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
             if cur_font.name != self.font.name {
                 self.font = cur_font.clone();
-                self.char_table = create_font_image(&self.font);
+                self.char_table = create_font_image(&self.font).with_options(TextureOptions::NEAREST);
                 self.hover_char = None;
             }
         }
@@ -50,18 +50,21 @@ impl CharTableToolWindow {
             .show(ui, |ui| {
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
-                    ui.add_space(2.0);
                     let scale = 2.0;
+                    
+                    let width = self.char_table.width() as f32 * scale;
+                    
+                    let height = self.char_table.height() as f32 * scale;
+                    ui.add_space((ui.available_width() - width) / 2.0);
 
                     let (id, rect) = ui.allocate_space(
                         [
-                            self.char_table.width() as f32 * scale,
-                            self.char_table.height() as f32 * scale,
+                            width,
+                            height,
                         ]
                         .into(),
                     );
                     let response = ui.interact(rect, id, Sense::click());
-
                     ui.painter().image(
                         self.char_table.texture_id(ui.ctx()),
                         rect,
@@ -165,7 +168,7 @@ fn create_hover_image(font: &BitFont, ch: char) -> RetainedImage {
         (0, 0),
         AttributedChar::new(unsafe { char::from_u32_unchecked(ch as u32) }, attr),
     );
-    create_retained_image(&buffer)
+    create_retained_image(&buffer).with_options(TextureOptions::NEAREST)
 }
 
 impl ToolWindow for CharTableToolWindow {

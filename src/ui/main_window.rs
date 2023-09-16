@@ -705,7 +705,7 @@ impl eframe::App for MainWindow {
 
         egui::SidePanel::right("right_panel")
             .frame(panel_frame)
-            .exact_width(260.0)
+            .exact_width(270.0)
             .resizable(false)
             .show_animated(ctx, self.right_panel, |ui| {
                 self.tool_behavior.active_document = self.get_active_document();
