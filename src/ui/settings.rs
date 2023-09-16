@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::TerminalResult;
+use crate::{IcePalette, TerminalResult};
 
 const MAX_RECENT_FILES: usize = 10;
 
@@ -197,75 +197,12 @@ pub static mut SETTINGS: Settings = Settings {
     font_outline_style: 0,
     custom_palette: IcePalette {
         title: String::new(),
+        description: String::new(),
         colors: Vec::new(),
     },
     character_set: 5,
     recent_files: Vec::new(),
 };
-
-#[derive(Serialize, Deserialize, Default, Debug, Clone)]
-pub struct IceColor {
-    pub name: Option<String>,
-    pub color: (u8, u8, u8),
-}
-
-impl IceColor {
-    pub fn get_rgb(&self) -> (u8, u8, u8) {
-        self.color
-    }
-
-    pub(crate) fn get_name(&self) -> String {
-        if let Some(name) = &self.name {
-            name.clone()
-        } else {
-            self.get_rgb_text()
-        }
-    }
-
-    pub(crate) fn get_rgb_text(&self) -> String {
-        let (r, g, b) = self.get_rgb();
-        format!("#{:02x}{:02x}{:02x}", r, g, b)
-    }
-
-    pub fn from_rgb(r: u8, g: u8, b: u8) -> IceColor {
-        IceColor {
-            name: None,
-            color: (r, g, b),
-        }
-    }
-
-    pub fn set_name(&mut self, name: String) {
-        if name.is_empty() {
-            self.name = None;
-        } else {
-            self.name = Some(name);
-        }
-    }
-
-    pub(crate) fn set_rgb(&mut self, r: u8, g: u8, b: u8) {
-        self.color = (r, g, b);
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct IcePalette {
-    pub title: String,
-    pub colors: Vec<IceColor>,
-}
-
-impl IcePalette {
-    pub fn is_empty(&self) -> bool {
-        self.colors.is_empty()
-    }
-
-    pub fn len(&self) -> usize {
-        self.colors.len()
-    }
-
-    pub fn push_rgb(&mut self, r: u8, g: u8, b: u8) {
-        self.colors.push(IceColor::from_rgb(r, g, b));
-    }
-}
 
 #[derive(Debug, Clone)]
 pub enum IcyDrawError {

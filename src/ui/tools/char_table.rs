@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::{
-    egui::{self, accesskit::Size, RichText, Sense, TextureOptions},
+    egui::{self, RichText, Sense, TextureOptions},
     epaint::{Color32, Pos2, Rect, Vec2},
 };
 use egui_extras::RetainedImage;
