@@ -27,6 +27,8 @@ dark-light = "1.0.0"
 zip = "0.6.6"
 notify = "6.1.1"
 gif = "0.12.0"
+thiserror = "1.0"
+anyhow = "1.0.75"
 
 icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
 icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
