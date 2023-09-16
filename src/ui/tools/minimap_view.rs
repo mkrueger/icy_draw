@@ -54,6 +54,7 @@ impl MinimapToolWindow {
                 .get_buffer_mut()
                 .set_size(buffer.get_size());
             self.buffer_view.lock().get_buffer_mut().layers = buffer.layers.clone();
+            self.buffer_view.lock().get_buffer_mut().palette = buffer.palette.clone();
             self.buffer_view.lock().redraw_view();
         }
 

@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::{
-    egui::{self, RichText, Sense, accesskit::Size, TextureOptions},
+    egui::{self, accesskit::Size, RichText, Sense, TextureOptions},
     epaint::{Color32, Pos2, Rect, Vec2},
 };
 use egui_extras::RetainedImage;
@@ -38,7 +38,8 @@ impl CharTableToolWindow {
         if let Some(cur_font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
             if cur_font.name != self.font.name {
                 self.font = cur_font.clone();
-                self.char_table = create_font_image(&self.font).with_options(TextureOptions::NEAREST);
+                self.char_table =
+                    create_font_image(&self.font).with_options(TextureOptions::NEAREST);
                 self.hover_char = None;
             }
         }
@@ -51,19 +52,13 @@ impl CharTableToolWindow {
                 ui.add_space(4.0);
                 ui.horizontal(|ui| {
                     let scale = 2.0;
-                    
+
                     let width = self.char_table.width() as f32 * scale;
-                    
+
                     let height = self.char_table.height() as f32 * scale;
                     ui.add_space((ui.available_width() - width) / 2.0);
 
-                    let (id, rect) = ui.allocate_space(
-                        [
-                            width,
-                            height,
-                        ]
-                        .into(),
-                    );
+                    let (id, rect) = ui.allocate_space([width, height].into());
                     let response = ui.interact(rect, id, Sense::click());
                     ui.painter().image(
                         self.char_table.texture_id(ui.ctx()),

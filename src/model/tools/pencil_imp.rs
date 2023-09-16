@@ -204,8 +204,9 @@ impl Tool for PencilTool {
             self.last_pos = pos;
             let _op: AtomicUndoGuard =
                 editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
-
+            editor.clear_overlay_layer();
             self.paint_brush(editor, pos);
+            editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
         }
         super::Event::None
     }
@@ -235,10 +236,14 @@ impl Tool for PencilTool {
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil")));
+        self.last_pos = editor.drag_pos.cur;
+        editor.clear_overlay_layer();
+
         Event::None
     }
 
-    fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+        editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
         self.undo_op = None;
         Event::None
     }
