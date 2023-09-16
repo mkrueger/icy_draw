@@ -82,15 +82,11 @@ impl Settings {
         if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
             let dir = proj_dirs.config_dir().join("data/fonts");
             if !dir.exists() && fs::create_dir_all(&dir).is_err() {
-                return Err(Box::new(IcyDrawError::ErrorCreatingDirectory(format!(
-                    "{dir:?}"
-                ))));
+                return Err(IcyDrawError::ErrorCreatingDirectory(format!("{dir:?}")).into());
             }
             return Ok(dir);
         }
-        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
-            "font directory".to_string(),
-        )))
+        Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
     }
 
     pub(crate) fn get_tdf_diretory() -> TerminalResult<PathBuf> {
@@ -98,15 +94,11 @@ impl Settings {
             let dir = proj_dirs.config_dir().join("data/tdf");
 
             if !dir.exists() && fs::create_dir_all(&dir).is_err() {
-                return Err(Box::new(IcyDrawError::ErrorCreatingDirectory(format!(
-                    "{dir:?}"
-                ))));
+                return Err(IcyDrawError::ErrorCreatingDirectory(format!("{dir:?}")).into());
             }
             return Ok(dir);
         }
-        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
-            "font directory".to_string(),
-        )))
+        Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
     }
 
     pub(crate) fn get_palettes_diretory() -> TerminalResult<PathBuf> {
@@ -114,15 +106,11 @@ impl Settings {
             let dir = proj_dirs.config_dir().join("data/palettes");
 
             if !dir.exists() && fs::create_dir_all(&dir).is_err() {
-                return Err(Box::new(IcyDrawError::ErrorCreatingDirectory(format!(
-                    "{dir:?}"
-                ))));
+                return Err(IcyDrawError::ErrorCreatingDirectory(format!("{dir:?}")).into());
             }
             return Ok(dir);
         }
-        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
-            "font directory".to_string(),
-        )))
+        Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
     }
 
     pub(crate) fn get_auto_save_diretory() -> TerminalResult<PathBuf> {
@@ -130,15 +118,11 @@ impl Settings {
             let dir = proj_dirs.config_dir().join("autosave");
 
             if !dir.exists() && fs::create_dir_all(&dir).is_err() {
-                return Err(Box::new(IcyDrawError::ErrorCreatingDirectory(format!(
-                    "{dir:?}"
-                ))));
+                return Err(IcyDrawError::ErrorCreatingDirectory(format!("{dir:?}")).into());
             }
             return Ok(dir);
         }
-        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
-            "font directory".to_string(),
-        )))
+        Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
     }
 
     pub(crate) fn get_log_file() -> TerminalResult<PathBuf> {
@@ -146,9 +130,7 @@ impl Settings {
             let dir = proj_dirs.config_dir().join("icy_draw.log");
             return Ok(dir);
         }
-        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
-            "log_file".to_string(),
-        )))
+        Err(IcyDrawError::ErrorCreatingDirectory("log_file".to_string()).into())
     }
 
     pub(crate) fn get_settings_file() -> TerminalResult<PathBuf> {
@@ -156,9 +138,7 @@ impl Settings {
             let dir = proj_dirs.config_dir().join("settings.json");
             return Ok(dir);
         }
-        Err(Box::new(IcyDrawError::ErrorCreatingDirectory(
-            "log_file".to_string(),
-        )))
+        Err(IcyDrawError::ErrorCreatingDirectory("log_file".to_string()).into())
     }
 
     pub(crate) fn load(path: &PathBuf) -> io::Result<Settings> {

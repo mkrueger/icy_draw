@@ -32,7 +32,7 @@ impl EditLayerDialog {
             should_commit: false,
             layer,
             title: l.title.clone(),
-            color: l.color,
+            color: l.color.clone(),
             is_visible: l.is_visible,
             is_locked: l.is_locked,
             is_position_locked: l.is_position_locked,
@@ -70,7 +70,7 @@ impl ModalDialog for EditLayerDialog {
                             if let Some(color) = &mut self.color {
                                 ui.label("");
                                 ui.horizontal(|ui| {
-                                    let mut c: [u8; 3] = (*color).into();
+                                    let mut c: [u8; 3] = (color.clone()).into();
                                     color_picker::color_edit_button_srgb(ui, &mut c);
                                     *color = c.into();
 
@@ -207,7 +207,7 @@ impl ModalDialog for EditLayerDialog {
         let mut bv = editor.buffer_view.lock();
         let layer = &mut bv.get_buffer_mut().layers[self.layer];
         layer.title = self.title.clone();
-        layer.color = self.color;
+        layer.color = self.color.clone();
         layer.is_visible = self.is_visible;
         layer.is_locked = self.is_locked;
         layer.is_position_locked = self.is_position_locked;

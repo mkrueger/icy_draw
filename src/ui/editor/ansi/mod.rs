@@ -364,11 +364,11 @@ impl AnsiEditor {
                         .to_bytes(ICED_EXT, options)?
                 };
                 if let Err(err) = f.write_all(&content) {
-                    return Err(Box::new(SavingError::ErrorWritingFile(format!("{err}"))));
+                    return Err(SavingError::ErrorWritingFile(format!("{err}")).into());
                 }
             }
             Err(err) => {
-                return Err(Box::new(SavingError::ErrorCreatingFile(format!("{err}"))));
+                return Err(SavingError::ErrorCreatingFile(format!("{err}")).into());
             }
         }
 

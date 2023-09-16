@@ -130,35 +130,23 @@ impl AnimationEditor {
 
                     let Ok(mut encoder) = ::gif::Encoder::new(&mut image, width, height, &[])
                     else {
-                        return Err(Box::new(std::io::Error::new(
-                            std::io::ErrorKind::Other,
-                            "Could not create encoder",
-                        )));
+                        return Err(anyhow::anyhow!("Could not create encoder"));
                     };
                     encoder.set_repeat(::gif::Repeat::Infinite).unwrap();
                     if let Some(animator) = &self.animator {
                         let animator = animator.lock();
                         for frame in &animator.frames {
                             let mut data = frame.render_to_rgba(frame.get_rectangle());
-                            println!("{} ---{}x{} ", data.0, width, height);
                             let gif_frame = ::gif::Frame::from_rgba(
                                 data.0.width as u16,
                                 data.0.height as u16,
                                 &mut data.1,
                             );
-                            if let Err(err) = encoder.write_frame(&gif_frame) {
-                                return Err(Box::new(std::io::Error::new(
-                                    std::io::ErrorKind::Other,
-                                    format!("{err}"),
-                                )));
-                            }
+                            encoder.write_frame(&gif_frame)?;
                         }
                     }
                 } else {
-                    return Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "Could not create file",
-                    )));
+                    return Err(anyhow::anyhow!("Could not create file"));
                 }
             }
             ExportType::Ansi => {
@@ -173,10 +161,7 @@ impl AnimationEditor {
                         }
                     }
                 } else {
-                    return Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "Could not create file",
-                    )));
+                    return Err(anyhow::anyhow!("Could not create file"));
                 }
             }
         }

@@ -1,5 +1,4 @@
 mod main_window;
-use std::error::Error;
 
 use eframe::egui;
 pub use main_window::*;
@@ -45,7 +44,7 @@ pub use commands::*;
 mod palette;
 pub use palette::*;
 
-pub type TerminalResult<T> = Result<T, Box<dyn Error + Send>>;
+pub type TerminalResult<T> = anyhow::Result<T>;
 
 pub trait ModalDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool;

@@ -42,7 +42,7 @@ pub fn palette_switcher(
         Color32::WHITE,
     );
 
-    let (r, g, b) = palette.colors[caret_attr.get_background() as usize].get_rgb();
+    let (r, g, b) = palette.get_rgb(caret_attr.get_background() as usize);
     painter.rect_filled(
         Rect::from_min_size(
             Pos2::new(height - rect_height + 2., height - rect_height + 2.)
@@ -71,7 +71,7 @@ pub fn palette_switcher(
         Color32::WHITE,
     );
 
-    let (r, g, b) = palette.colors[caret_attr.get_foreground() as usize].get_rgb();
+    let (r, g, b) = palette.get_rgb(caret_attr.get_foreground() as usize);
     painter.rect_filled(
         Rect::from_min_size(
             Pos2::new(2., 2.) + rect.left_top().to_vec2(),
@@ -83,7 +83,7 @@ pub fn palette_switcher(
 
     let s_rect_height = height * 0.382;
     let rh = s_rect_height / 1.8;
-    let (r, g, b) = palette.colors[7].get_rgb();
+    let (r, g, b) = palette.get_rgb(7);
 
     let overlap = 2.0;
 
@@ -105,7 +105,7 @@ pub fn palette_switcher(
         Color32::from_rgb(r, g, b),
     );
 
-    let (r, g, b) = palette.colors[0].get_rgb();
+    let (r, g, b) = palette.get_rgb(0);
     painter.rect_filled(
         Rect::from_min_size(
             Pos2::new(overlap, height - 2. * rh + 2. + overlap) + rect.left_top().to_vec2(),
@@ -173,7 +173,7 @@ pub fn palette_editor_16(
             16
         };
         for i in 0..upper_limit {
-            let (r, g, b) = palette.colors[i].get_rgb();
+            let (r, g, b) = palette.get_rgb(i);
             painter.rect_filled(
                 Rect::from_min_size(
                     Pos2::new(
@@ -245,7 +245,7 @@ pub fn palette_editor_16(
         );
         if let Some(hp) = response.hover_pos() {
             let pos = (hp.to_vec2() - stroke_rect.left_top().to_vec2()) / Vec2::new(height, height);
-            let color = min(palette.len() - 1, pos.x as u32 + pos.y as u32 * 8);
+            let color = min(palette.len() as u32 - 1, pos.x as u32 + pos.y as u32 * 8);
             if response.clicked() {
                 if color < 8 || buffer_type.has_high_fg_colors() {
                     result = Some(Message::SetForeground(color));
@@ -297,7 +297,7 @@ pub fn show_extended_palette(ui: &mut Ui) -> Option<Message> {
 
                     let painter = ui.painter_at(stroke_rect);
 
-                    let (r, g, b) = XTERM_256_PALETTE[idx].1.get_rgb();
+                    let (r, g, b) = XTERM_256_PALETTE[idx].1.clone().get_rgb();
                     painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
                     painter.rect_filled(stroke_rect.shrink(1.0), Rounding::none(), Color32::WHITE);
                     let color = Color32::from_rgb(r, g, b);

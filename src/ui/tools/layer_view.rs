@@ -148,7 +148,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                         let (is_visible, title, color) = {
                             let lock = editor.buffer_view.lock();
                             let layer = &lock.get_buffer().layers[i];
-                            (layer.is_visible, layer.title.clone(), layer.color)
+                            (layer.is_visible, layer.title.clone(), layer.color.clone())
                         };
                         let width = ui.available_width();
 

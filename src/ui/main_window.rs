@@ -222,7 +222,7 @@ impl MainWindow {
                     return;
                 }
                 let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
-                if let Ok(font) = BitFont::from_bytes(&file_name_str, data) {
+                if let Ok(font) = BitFont::from_bytes(file_name_str, data) {
                     let id = self.create_id();
                     add_child(
                         &mut self.document_tree,
