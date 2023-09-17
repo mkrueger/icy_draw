@@ -6,6 +6,7 @@
 use eframe::egui;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 mod model;
+mod plugins;
 mod ui;
 mod util;
 
@@ -47,12 +48,15 @@ static LANGUAGE_LOADER: Lazy<FluentLanguageLoader> = Lazy::new(|| {
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
     use std::fs;
+
+    use crate::plugins::Plugin;
     let options = eframe::NativeOptions {
         initial_window_size: Some(egui::vec2(1280., 841.)),
         multisampling: 0,
         renderer: eframe::Renderer::Glow,
         ..Default::default()
     };
+
     if let Ok(log_file) = Settings::get_log_file() {
         // delete log file when it is too big
         if let Ok(data) = fs::metadata(&log_file) {
@@ -108,6 +112,8 @@ fn main() {
     }
 
     log::info!("Starting iCY DRAW {}", VERSION);
+    Plugin::read_plugin_directory();
+
     if let Err(err) = eframe::run_native(
         &DEFAULT_TITLE,
         options,

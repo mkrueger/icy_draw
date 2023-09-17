@@ -17,7 +17,7 @@ use icy_engine::{
 use crate::{
     util::autosave::{self},
     AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog,
-    SelectOutlineDialog, Settings, SETTINGS,
+    SelectOutlineDialog, Settings, PLUGINS, SETTINGS,
 };
 
 #[derive(Clone)]
@@ -138,6 +138,8 @@ pub enum Message {
     SelectPalette,
     ToggleLayerBorders,
     ToggleLineNumbers,
+    RunPlugin(usize),
+    OpenPluginDirectory,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -1018,6 +1020,29 @@ impl MainWindow {
             },
             Message::ToggleLineNumbers => unsafe {
                 SETTINGS.show_line_numbers = !SETTINGS.show_line_numbers;
+            },
+            Message::RunPlugin(i) => {
+                self.run_editor_command(i, |window, editor, i| {
+                    let mut msg = None;
+                    unsafe {
+                        if let Err(err) = PLUGINS[i].run_plugin(window, editor) {
+                            msg = Some(Message::ShowError(format!("Error running plugin: {err}")));
+                        }
+                    }
+                    msg
+                });
+            }
+            Message::OpenPluginDirectory => match Settings::get_plugin_directory() {
+                Ok(dir) => {
+                    if let Err(err) = open::that(dir) {
+                        self.handle_message(Some(Message::ShowError(format!(
+                            "Can't open font directory: {err}"
+                        ))));
+                    }
+                }
+                Err(err) => {
+                    self.handle_message(Some(Message::ShowError(format!("{err}"))));
+                }
             },
         }
     }

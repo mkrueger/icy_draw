@@ -363,4 +363,9 @@ keys![
         "menu-show_line_numbers",
         ToggleLineNumbers
     ),
+    (
+        open_plugin_directory,
+        "menu-open_plugin_directory",
+        OpenPluginDirectory
+    ),
 ];

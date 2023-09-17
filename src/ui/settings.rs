@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::TerminalResult;
+use crate::{plugins::Plugin, TerminalResult};
 
 const MAX_RECENT_FILES: usize = 10;
 
@@ -132,6 +132,24 @@ impl Settings {
         Err(IcyDrawError::ErrorCreatingDirectory("log_file".to_string()).into())
     }
 
+    pub(crate) fn get_plugin_directory() -> TerminalResult<PathBuf> {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+            let dir = proj_dirs.config_dir().join("data/plugins");
+
+            if !dir.exists() {
+                if fs::create_dir_all(&dir).is_err() {
+                    return Err(IcyDrawError::ErrorCreatingDirectory(format!("{dir:?}")).into());
+                }
+                fs::write(
+                    dir.join("elite-writing.lua"),
+                    include_bytes!("../plugins/elite-writing.lua.txt"),
+                )?;
+            }
+            return Ok(dir);
+        }
+        Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
+    }
+
     pub(crate) fn load(path: &PathBuf) -> io::Result<Settings> {
         let file = File::open(path)?;
         let reader = BufReader::new(file);
@@ -163,6 +181,8 @@ impl Settings {
         &self.recent_files
     }
 }
+
+pub static mut PLUGINS: Vec<Plugin> = Vec::new();
 
 pub static mut SETTINGS: Settings = Settings {
     font_outline_style: 0,

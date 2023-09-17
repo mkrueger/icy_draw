@@ -102,7 +102,8 @@ menu-discuss=Discuss
 menu-open_log_file=Open log file
 menu-report-bug=Report Bug
 menu-about=About…
-
+menu-plugins=Plugins
+menu-open_plugin_directory=Open Plugin Directory…
 
 tool-fg=Fg
 tool-bg=Bg
@@ -272,6 +273,7 @@ undo-bitfont-edit=Edit
 undo-render_character=Render character
 undo-delete_character=Delete character
 undo-select=Select
+undo-plugin=Plugin { $title }
 
 font_selector-builtin_font=BUILTIN
 font_selector-library_font=LIBRARY

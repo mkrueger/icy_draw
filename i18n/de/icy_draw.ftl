@@ -104,6 +104,8 @@ menu-discuss=Diskussion
 menu-open_log_file=Logdatei öffnen
 menu-report-bug=Fehler melden
 menu-about=Info…
+menu-plugins=Erweiterungen
+menu-open_plugin_directory=Erweiterungsverzeichnis öffnen…
 
 tool-fg=Fg
 tool-bg=Bg
@@ -273,6 +275,7 @@ undo-bitfont-edit=Editieren
 undo-render_character=Zeichen rendern
 undo-delete_character=Zeichen löschen
 undo-select=Auswahl
+undo-plugin=Erweiterung { $title }
 
 autosave-dialog-title=Autosave
 autosave-dialog-description=Icy Draw hat eine Autosave Datei gefunden.

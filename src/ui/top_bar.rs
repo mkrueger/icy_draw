@@ -9,7 +9,7 @@ use icy_engine::{
     BufferType,
 };
 
-use crate::{button_with_shortcut, MainWindow, Message, Settings, SETTINGS};
+use crate::{button_with_shortcut, MainWindow, Message, Settings, PLUGINS, SETTINGS};
 
 pub struct TopBar {
     pub dock_left: RetainedImage,
@@ -528,6 +528,8 @@ impl MainWindow {
                 });
 
                 self.commands.show_layer_borders.ui(ui, &mut result);
+                self.commands.show_line_numbers.ui(ui, &mut result);
+
                 self.commands.fullscreen.ui(ui, &mut result);
 
                 ui.separator();
@@ -541,6 +543,28 @@ impl MainWindow {
                     .clear_reference_image
                     .ui_enabled(ui, has_buffer, &mut result);
             });
+
+            unsafe {
+                if !PLUGINS.is_empty() {
+                    ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-plugins"), |ui| {
+                        for (i, p) in PLUGINS.iter().enumerate() {
+                            if ui
+                                .add_enabled(
+                                    has_buffer,
+                                    egui::Button::new(p.title.clone()).wrap(false),
+                                )
+                                .clicked()
+                            {
+                                result = Some(Message::RunPlugin(i));
+                                ui.close_menu();
+                            }
+                        }
+
+                        ui.separator();
+                        self.commands.open_plugin_directory.ui(ui, &mut result);
+                    });
+                }
+            }
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-help"), |ui| {
                 let r = ui.hyperlink_to(
