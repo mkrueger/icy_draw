@@ -8,8 +8,8 @@ use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{
-    Palette, C64_DEFAULT_PALETTE, DOS_DEFAULT_PALETTE, EGA_PALETTE, VIEWDATA_PALETTE,
-    XTERM_256_PALETTE, PaletteFormat,
+    Palette, PaletteFormat, C64_DEFAULT_PALETTE, DOS_DEFAULT_PALETTE, EGA_PALETTE,
+    VIEWDATA_PALETTE, XTERM_256_PALETTE,
 };
 use walkdir::WalkDir;
 
@@ -310,11 +310,11 @@ impl crate::ModalDialog for SelectPaletteDialog {
         if let Some(ed) = &mut self.export_dialog {
             if ed.show(ctx).selected() {
                 if let Some(res) = ed.path() {
-                    let s  =self.selected_palette as usize;
+                    let s = self.selected_palette as usize;
                     if s < self.palettes.len() {
                         let res = res.with_extension("gpl");
                         let data = self.palettes[s].0.export_palette(&PaletteFormat::Gpl);
-                        if let Err(err)= fs::write(res, data) {
+                        if let Err(err) = fs::write(res, data) {
                             log::error!("Error exporting palette: {err}");
                         }
                     }
@@ -324,7 +324,6 @@ impl crate::ModalDialog for SelectPaletteDialog {
                 return false;
             }
         }
-
 
         let mut result = false;
         let modal = Modal::new(ctx, "select_font_dialog2");
@@ -439,11 +438,11 @@ impl crate::ModalDialog for SelectPaletteDialog {
                     result = true;
                 }
                 if ui
-                .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
-                .clicked()
-            {
-                result = true;
-            }
+                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
+                    .clicked()
+                {
+                    result = true;
+                }
 
                 if ui
                     .button(fl!(crate::LANGUAGE_LOADER, "export-button-title"))

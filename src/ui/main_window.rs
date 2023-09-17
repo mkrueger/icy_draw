@@ -587,9 +587,12 @@ impl eframe::App for MainWindow {
                 ui.vertical_centered(|ui| {
                     msg = crate::palette_switcher(ctx, ui, &caret_attr, &palette);
                 });
-              
+
                 ui.separator();
-                crate::palette_editor_16(ui, &caret_attr, &palette, buffer_type);
+                let msg2 = crate::palette_editor_16(ui, &caret_attr, &palette, buffer_type);
+                if msg.is_none() {
+                    msg = msg2;
+                }
 
                 if buffer_type.has_blink()
                     && ui
