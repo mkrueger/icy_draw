@@ -6,7 +6,7 @@ use eframe::{
 };
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::BitFont;
+use icy_engine::{BitFont, TextPane};
 use icy_engine_egui::BufferView;
 
 use crate::{AnsiEditor, Message, TerminalResult};
@@ -123,10 +123,18 @@ impl crate::ModalDialog for FontManager {
                     });
 
                 egui::CentralPanel::default().show_inside(ui, |ui| {
-                    if let Some(font) = self.buffer_view.lock().get_buffer().get_font(self.selected)
                     {
-                        ui.label(format!("Using slot {}", self.selected));
-                        ui.label(format!("Size {}x{}", font.size.width, font.size.height));
+                        let lock = &self.buffer_view.lock();
+                        if let Some(font) = lock.get_buffer().get_font(self.selected) {
+                            ui.label(format!("Using slot {}", self.selected));
+                            ui.label(format!("Size {}x{}", font.size.width, font.size.height));
+                            let fonts = icy_engine::analyze_font_usage(lock.get_buffer());
+                            if fonts.contains(&self.selected) {
+                                ui.label("Font used.");
+                            } else {
+                                ui.label("No font usage.");
+                            }
+                        }
                     }
                     ui.horizontal(|ui| {
                         ui.label("Replace usage with slot:");
@@ -224,12 +232,22 @@ fn replace_font_usage(buffer_view: &mut BufferView, from: usize, to: usize) {
         buffer_view.get_caret_mut().set_font_page(to);
     }
     for layer in &mut buffer_view.get_buffer_mut().layers {
-        for line in &mut layer.lines {
-            for ch in &mut line.chars {
+        for y in 0..layer.get_height() {
+            for x in 0..layer.get_width() {
+                let mut ch = layer.get_char((x, y));
                 if ch.attribute.get_font_page() == from {
                     ch.attribute.set_font_page(to);
+                    layer.set_char((x, y), ch);
+                    assert!(layer.get_char((x, y)).get_font_page() == to);
                 }
             }
+        }
+    }
+
+    for y in 0..buffer_view.get_buffer_mut().get_height() {
+        for x in 0..buffer_view.get_buffer_mut().get_width() {
+            let mut ch = buffer_view.get_buffer_mut().get_char((x, y));
+            println!("{}", ch.get_font_page());
         }
     }
 }

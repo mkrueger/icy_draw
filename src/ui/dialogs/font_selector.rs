@@ -16,6 +16,7 @@ enum BitfontSource {
     BuiltIn(usize),
     File(usize),
     Library,
+    LibraryAndFile(usize),
 }
 
 pub struct FontSelector {
@@ -61,6 +62,8 @@ impl FontSelector {
             if index < 0 {
                 index = fonts.len() as i32;
                 fonts.push((font.clone(), BitfontSource::File(*id)));
+            } else {
+                fonts[index as usize].1 = BitfontSource::LibraryAndFile(*id);
             }
 
             if *id == cur_font {
@@ -247,7 +250,7 @@ impl FontSelector {
                 BitfontSource::Library => {
                     fl!(crate::LANGUAGE_LOADER, "font_selector-library_font")
                 }
-                BitfontSource::File(_) => {
+                BitfontSource::LibraryAndFile(_) | BitfontSource::File(_) => {
                     fl!(crate::LANGUAGE_LOADER, "font_selector-file_font")
                 }
             };
@@ -348,6 +351,7 @@ impl crate::ModalDialog for FontSelector {
                         BitfontSource::BuiltIn(_) => self.show_builtin,
                         BitfontSource::File(_) => self.show_file,
                         BitfontSource::Library => self.show_library,
+                        BitfontSource::LibraryAndFile(_) => self.show_file || self.show_library,
                     };
 
                     if font
@@ -456,7 +460,7 @@ impl crate::ModalDialog for FontSelector {
                         .get_buffer_mut()
                         .set_font(*id, font.clone());
                 }
-                BitfontSource::File(id) => {
+                BitfontSource::LibraryAndFile(id) | BitfontSource::File(id) => {
                     editor.buffer_view.lock().get_caret_mut().set_font_page(*id);
                 }
                 BitfontSource::Library => {
