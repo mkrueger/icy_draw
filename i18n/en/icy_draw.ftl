@@ -84,6 +84,7 @@ menu-guides=Guides
 menu-raster=Grid
 menu-guides-off=Off
 menu-zoom-fit_size=Fit Size
+menu-show_layer_borders=Show Layer Borders
 
 menu-pick_attribute_under_caret=Use Attribute Under Caret
 menu-default_color=Default Color

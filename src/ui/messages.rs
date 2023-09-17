@@ -17,7 +17,7 @@ use icy_engine::{
 use crate::{
     util::autosave::{self},
     AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog,
-    SelectOutlineDialog, Settings,
+    SelectOutlineDialog, Settings, SETTINGS,
 };
 
 #[derive(Clone)]
@@ -136,6 +136,7 @@ pub enum Message {
     UpdateFont(Box<(BitFont, BitFont)>),
 
     SelectPalette,
+    ToggleLayerBorders
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -1009,6 +1010,12 @@ impl MainWindow {
                     }
                     msg
                 });
+            }
+
+            Message::ToggleLayerBorders => {
+                unsafe {
+                    SETTINGS.show_layer_borders = !SETTINGS.show_layer_borders;
+                }
             }
         }
     }

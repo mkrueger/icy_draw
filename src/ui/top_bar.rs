@@ -527,8 +527,9 @@ impl MainWindow {
                     }
                 });
 
+                self.commands.show_layer_borders.ui(ui, &mut result);
                 self.commands.fullscreen.ui(ui, &mut result);
-
+                
                 ui.separator();
                 self.commands
                     .set_reference_image

@@ -26,7 +26,7 @@ use icy_engine_egui::{
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
     ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, Settings,
-    TerminalResult, UndoHandler,
+    TerminalResult, UndoHandler, SETTINGS,
 };
 
 pub enum Event {
@@ -192,6 +192,7 @@ impl Document for AnsiEditor {
             id: Some(Id::new(self.id + 10000)),
             raster: self.raster,
             guide: self.guide,
+            show_layer_borders: unsafe { SETTINGS.show_layer_borders },
             ..Default::default()
         };
         let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
