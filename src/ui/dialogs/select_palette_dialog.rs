@@ -77,7 +77,7 @@ impl SelectPaletteDialog {
 
         let mut pal = editor.buffer_view.lock().get_buffer().palette.clone();
         let mut selected_palette = 0;
-        if let Some(idx) = palettes.iter().position(|p| p.0 == pal) {
+        if let Some(idx) = palettes.iter().position(|p| p.0.are_colors_equal(&pal)) {
             selected_palette = idx as i32;
         } else {
             if pal.title.is_empty() {
