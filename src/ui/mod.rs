@@ -41,9 +41,6 @@ pub use tools::*;
 mod commands;
 pub use commands::*;
 
-mod palette;
-pub use palette::*;
-
 pub type TerminalResult<T> = anyhow::Result<T>;
 
 pub trait ModalDialog {

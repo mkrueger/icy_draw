@@ -1,8 +1,7 @@
-use crate::{Message, Settings, SWAP_SVG};
-use eframe::egui::{self, color_picker, Sense, TextEdit, TextStyle, Ui};
+use crate::{Message, SWAP_SVG};
+use eframe::egui::{self, Sense,  TextStyle, Ui};
 use eframe::emath::Align2;
 use eframe::epaint::{Color32, FontId, Pos2, Rect, Rounding, Stroke, Vec2};
-use i18n_embed_fl::fl;
 use icy_engine::{BufferType, Palette, TextAttribute, XTERM_256_PALETTE};
 use std::cmp::min;
 
@@ -364,7 +363,7 @@ pub fn show_extended_palette(ui: &mut Ui) -> Option<Message> {
         });
     result
 }
-
+/* 
 static mut CUR_COLOR: [u8; 3] = [0xFF, 0xFF, 0xFF];
 static mut RENAME_INDEX: Option<usize> = None;
 static mut EDIT_INDEX: Option<usize> = None;
@@ -576,3 +575,4 @@ pub fn show_custom_palette(ui: &mut egui::Ui) -> Option<Message> {
         });
     result
 }
+*/

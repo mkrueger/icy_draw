@@ -35,7 +35,6 @@ pub struct MainWindow {
     dialog_open: bool,
     modal_dialog: Option<Box<dyn ModalDialog>>,
     id: usize,
-    palette_mode: usize,
     pub is_closed: bool,
     pub top_bar: TopBar,
     pub left_panel: bool,
@@ -201,7 +200,6 @@ impl MainWindow {
             left_panel: true,
             right_panel: true,
             bottom_panel: false,
-            palette_mode: 0,
             top_bar: TopBar::new(&cc.egui_ctx),
             commands: Commands::default(),
             is_closed: false,
@@ -569,7 +567,6 @@ impl eframe::App for MainWindow {
             .show_animated(ctx, self.left_panel, |ui| {
                 ui.add_space(8.0);
                 let mut msg = None;
-                let mut palette_mode: usize = self.palette_mode;
 
                 let mut caret_attr = TextAttribute::default();
                 let mut palette = Palette::default();
@@ -590,55 +587,9 @@ impl eframe::App for MainWindow {
                 ui.vertical_centered(|ui| {
                     msg = crate::palette_switcher(ctx, ui, &caret_attr, &palette);
                 });
-                ui.add_space(8.0);
-                if buffer_type.has_extended_colors() || buffer_type.has_rgb_colors() {
-                    ui.horizontal(|ui| {
-                        ui.add_space(8.0);
-                        if ui
-                            .selectable_label(
-                                palette_mode == 0,
-                                fl!(crate::LANGUAGE_LOADER, "color-dos"),
-                            )
-                            .clicked()
-                        {
-                            palette_mode = 0;
-                        }
-                        if buffer_type.has_extended_colors() {
-                            if ui
-                                .selectable_label(
-                                    palette_mode == 1,
-                                    fl!(crate::LANGUAGE_LOADER, "color-ext"),
-                                )
-                                .clicked()
-                            {
-                                palette_mode = 1;
-                            }
-                        } else if palette_mode == 1 {
-                            palette_mode = 0;
-                        }
-                        if buffer_type.has_rgb_colors() {
-                            if ui
-                                .selectable_label(
-                                    palette_mode == 2,
-                                    fl!(crate::LANGUAGE_LOADER, "color-custom"),
-                                )
-                                .clicked()
-                            {
-                                palette_mode = 2;
-                            }
-                        } else if palette_mode == 2 {
-                            palette_mode = 0;
-                        }
-                    });
-                } else {
-                    palette_mode = 0;
-                }
+              
                 ui.separator();
-                let msg2 = match palette_mode {
-                    0 => crate::palette_editor_16(ui, &caret_attr, &palette, buffer_type),
-                    1 => crate::show_extended_palette(ui),
-                    _ => crate::show_custom_palette(ui),
-                };
+                crate::palette_editor_16(ui, &caret_attr, &palette, buffer_type);
 
                 if buffer_type.has_blink()
                     && ui
@@ -660,12 +611,8 @@ impl eframe::App for MainWindow {
                     }
                 }
 
-                if msg.is_none() {
-                    msg = msg2;
-                }
                 ui.separator();
 
-                self.palette_mode = palette_mode;
                 self.handle_message(msg);
 
                 crate::add_tool_switcher(ctx, ui, self);

@@ -4,11 +4,12 @@ use eframe::{
     egui::{self, Response, Sense, TextEdit, WidgetText},
     epaint::{Color32, FontFamily, FontId, Pos2, Rect, Rounding, Stroke, Vec2},
 };
+use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{
     Palette, C64_DEFAULT_PALETTE, DOS_DEFAULT_PALETTE, EGA_PALETTE, VIEWDATA_PALETTE,
-    XTERM_256_PALETTE,
+    XTERM_256_PALETTE, PaletteFormat,
 };
 use walkdir::WalkDir;
 
@@ -31,6 +32,8 @@ pub struct SelectPaletteDialog {
 
     do_select: bool,
     edit_selected_font: bool,
+
+    export_dialog: Option<FileDialog>,
 }
 
 impl SelectPaletteDialog {
@@ -100,6 +103,7 @@ impl SelectPaletteDialog {
             show_library: true,
             show_file: true,
             edit_selected_font: false,
+            export_dialog: None,
         })
     }
 
@@ -303,6 +307,25 @@ impl SelectPaletteDialog {
 
 impl crate::ModalDialog for SelectPaletteDialog {
     fn show(&mut self, ctx: &egui::Context) -> bool {
+        if let Some(ed) = &mut self.export_dialog {
+            if ed.show(ctx).selected() {
+                if let Some(res) = ed.path() {
+                    let s  =self.selected_palette as usize;
+                    if s < self.palettes.len() {
+                        let res = res.with_extension("gpl");
+                        let data = self.palettes[s].0.export_palette(&PaletteFormat::Gpl);
+                        if let Err(err)= fs::write(res, data) {
+                            log::error!("Error exporting palette: {err}");
+                        }
+                    }
+                }
+                self.export_dialog = None
+            } else {
+                return false;
+            }
+        }
+
+
         let mut result = false;
         let modal = Modal::new(ctx, "select_font_dialog2");
         let palette_count = self.palettes.len();
@@ -416,10 +439,21 @@ impl crate::ModalDialog for SelectPaletteDialog {
                     result = true;
                 }
                 if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
+                .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
+                .clicked()
+            {
+                result = true;
+            }
+
+                if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "export-button-title"))
                     .clicked()
                 {
-                    result = true;
+                    let mut initial_path = None;
+                    crate::set_default_initial_directory_opt(&mut initial_path);
+                    let mut dialog = FileDialog::save_file(initial_path);
+                    dialog.open();
+                    self.export_dialog = Some(dialog);
                 }
             });
         });

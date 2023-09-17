@@ -169,9 +169,6 @@ anchor_layer_tooltip = Ebene verankern
 glyph-char-label=Zeichen
 glyph-font-label=Schriftart
 
-color-dos=DOS
-color-ext=ERW
-color-custom=USR
 color-is_blinking=Blinken
 
 export-title=Export

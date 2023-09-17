@@ -168,9 +168,6 @@ anchor_layer_tooltip = Anchor layer
 glyph-char-label=Char
 glyph-font-label=Font
 
-color-dos=DOS
-color-ext=EXT
-color-custom=USR
 color-is_blinking=Blink
 
 export-title=Export

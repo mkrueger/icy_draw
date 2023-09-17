@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{IcePalette, TerminalResult};
+use crate::TerminalResult;
 
 const MAX_RECENT_FILES: usize = 10;
 
@@ -15,8 +15,6 @@ const MAX_RECENT_FILES: usize = 10;
 pub struct Settings {
     font_outline_style: usize,
     character_set: usize,
-
-    custom_palette: IcePalette,
 
     recent_files: Vec<PathBuf>,
 }
@@ -40,16 +38,6 @@ impl Settings {
 
     pub fn get_font_outline_style() -> usize {
         unsafe { SETTINGS.font_outline_style }
-    }
-
-    pub fn get_custom_palette() -> &'static mut IcePalette {
-        unsafe { &mut SETTINGS.custom_palette }
-    }
-
-    pub fn set_custom_palette(pal: IcePalette) {
-        unsafe {
-            SETTINGS.custom_palette = pal;
-        }
     }
 
     pub fn add_recent_file(file: &Path) {
@@ -175,11 +163,6 @@ impl Settings {
 
 pub static mut SETTINGS: Settings = Settings {
     font_outline_style: 0,
-    custom_palette: IcePalette {
-        title: String::new(),
-        description: String::new(),
-        colors: Vec::new(),
-    },
     character_set: 5,
     recent_files: Vec::new(),
 };
