@@ -55,7 +55,7 @@ impl FontSelector {
         for (id, font) in editor.buffer_view.lock().get_buffer().font_iter() {
             let mut index = -1;
             (0..fonts.len()).for_each(|i| {
-                if fonts[i].0 == *font {
+                if fonts[i].0.glyphs == font.glyphs {
                     index = i as i32;
                 }
             });
@@ -283,6 +283,44 @@ impl FontSelector {
                 galley.galley,
                 text_color,
             );
+
+            let secondary_font_type = match font.1 {
+                BitfontSource::LibraryAndFile(_) => {
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-library_font")
+                }
+                _ => String::new(),
+            };
+
+            if !secondary_font_type.is_empty() {
+                let font_id = FontId::new(12.0, FontFamily::Proportional);
+                let text: WidgetText = secondary_font_type.into();
+                let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
+
+                let rect = Rect::from_min_size(
+                    Pos2::new(
+                        (rect.right() - galley.size().x - 30.0).floor(),
+                        rect.top().floor(),
+                    ),
+                    galley.size(),
+                );
+
+                ui.painter().rect_filled(
+                    rect.expand(2.0),
+                    Rounding::same(4.0),
+                    ui.style().visuals.widgets.active.bg_fill,
+                );
+
+                ui.painter()
+                    .rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
+
+                ui.painter().galley_with_color(
+                    egui::Align2::CENTER_CENTER
+                        .align_size_within_rect(galley.size(), rect)
+                        .min,
+                    galley.galley,
+                    text_color,
+                );
+            }
         }
         response
     }

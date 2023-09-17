@@ -243,11 +243,4 @@ fn replace_font_usage(buffer_view: &mut BufferView, from: usize, to: usize) {
             }
         }
     }
-
-    for y in 0..buffer_view.get_buffer_mut().get_height() {
-        for x in 0..buffer_view.get_buffer_mut().get_width() {
-            let mut ch = buffer_view.get_buffer_mut().get_char((x, y));
-            println!("{}", ch.get_font_page());
-        }
-    }
 }
