@@ -193,6 +193,7 @@ impl Document for AnsiEditor {
             raster: self.raster,
             guide: self.guide,
             show_layer_borders: unsafe { SETTINGS.show_layer_borders },
+            show_line_numbers: unsafe { SETTINGS.show_line_numbers },
             ..Default::default()
         };
         let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);

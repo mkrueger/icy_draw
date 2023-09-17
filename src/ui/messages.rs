@@ -136,7 +136,8 @@ pub enum Message {
     UpdateFont(Box<(BitFont, BitFont)>),
 
     SelectPalette,
-    ToggleLayerBorders
+    ToggleLayerBorders,
+    ToggleLineNumbers,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -1012,11 +1013,12 @@ impl MainWindow {
                 });
             }
 
-            Message::ToggleLayerBorders => {
-                unsafe {
-                    SETTINGS.show_layer_borders = !SETTINGS.show_layer_borders;
-                }
-            }
+            Message::ToggleLayerBorders => unsafe {
+                SETTINGS.show_layer_borders = !SETTINGS.show_layer_borders;
+            },
+            Message::ToggleLineNumbers => unsafe {
+                SETTINGS.show_line_numbers = !SETTINGS.show_line_numbers;
+            },
         }
     }
 }

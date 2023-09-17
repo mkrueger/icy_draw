@@ -353,5 +353,14 @@ keys![
         NONE
     ),
     (select_palette, "menu-select_palette", SelectPalette),
-    (show_layer_borders, "menu-show_layer_borders", ToggleLayerBorders),
+    (
+        show_layer_borders,
+        "menu-show_layer_borders",
+        ToggleLayerBorders
+    ),
+    (
+        show_line_numbers,
+        "menu-show_line_numbers",
+        ToggleLineNumbers
+    ),
 ];

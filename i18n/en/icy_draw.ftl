@@ -85,6 +85,7 @@ menu-raster=Grid
 menu-guides-off=Off
 menu-zoom-fit_size=Fit Size
 menu-show_layer_borders=Show Layer Borders
+menu-show_line_numbers=Show Line Numbers
 
 menu-pick_attribute_under_caret=Use Attribute Under Caret
 menu-default_color=Default Color

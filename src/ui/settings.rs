@@ -17,6 +17,7 @@ pub struct Settings {
     character_set: usize,
 
     pub show_layer_borders: bool,
+    pub show_line_numbers: bool,
 
     recent_files: Vec<PathBuf>,
 }
@@ -167,6 +168,7 @@ pub static mut SETTINGS: Settings = Settings {
     font_outline_style: 0,
     character_set: 5,
     show_layer_borders: true,
+    show_line_numbers: false,
     recent_files: Vec::new(),
 };
 

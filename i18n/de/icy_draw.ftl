@@ -86,6 +86,7 @@ menu-raster=Gitter
 menu-guides-off=Aus
 menu-zoom-fit_size=Größe anpassen
 menu-show_layer_borders=Ebenenrahmen anzeigen
+menu-show_line_numbers=Zeilennummern anzeigen
 
 menu-pick_attribute_under_caret=Attribut unter Cursor aufhebn
 menu-default_color=Standardfarbe
