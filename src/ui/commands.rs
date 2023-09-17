@@ -352,4 +352,5 @@ keys![
         Escape,
         NONE
     ),
+    (select_palette, "menu-select_palette", SelectPalette),
 ];

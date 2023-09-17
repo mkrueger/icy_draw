@@ -368,6 +368,14 @@ impl MainWindow {
                         }
                     }
                 }
+                ui.separator();
+                self.commands
+                    .select_palette
+                    .ui_enabled(ui, has_buffer, &mut result);
+                self.commands
+                    .open_palettes_directory
+                    .ui_enabled(ui, has_buffer, &mut result);
+                ui.separator();
 
                 self.commands
                     .pick_attribute_under_caret

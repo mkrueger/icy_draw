@@ -134,6 +134,8 @@ pub enum Message {
     SetBackgroundRgb(u8, u8, u8),
     ClearSelection,
     UpdateFont(Box<(BitFont, BitFont)>),
+
+    SelectPalette,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -989,6 +991,23 @@ impl MainWindow {
                             });
                         editor.buffer_view.lock().redraw_font();
                     }
+                });
+            }
+
+            Message::SelectPalette => {
+                self.run_editor_command(0, |window, editor, _| {
+                    let mut msg = None;
+
+                    match crate::SelectPaletteDialog::new(editor) {
+                        Ok(dialog) => {
+                            window.open_dialog(dialog);
+                        }
+                        Err(err) => {
+                            log::error!("Failed to open palette dialog: {err}");
+                            msg = Some(Message::ShowError(format!("{err}")));
+                        }
+                    }
+                    msg
                 });
             }
         }

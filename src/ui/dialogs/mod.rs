@@ -45,3 +45,6 @@ pub use ask_close_file_dialog::*;
 
 mod open_referenceimage_dialog;
 pub use open_referenceimage_dialog::*;
+
+mod select_palette_dialog;
+pub use select_palette_dialog::*;

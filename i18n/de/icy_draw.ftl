@@ -62,6 +62,15 @@ menu-select_nothing=Nichts
 menu-inverse_selection=Invertieren
 
 menu-colors=Farben
+menu-color-mode=Farbmodus
+menu-color-mode-unrestricted=Unbegrenzt
+menu-color-mode-dos=16 Farben, blink
+menu-color-mode-ice=16 Farben, ice
+menu-color-mode-ext-colors=256 Farben
+menu-color-mode-ext-font=16 Farben, ext font, blink
+menu-color-mode-ext-font-ice=16 Farben, ext font, ice
+menu-select_palette=Palette auswählen
+menu-open_palette_directory=Öffne Palettenverzeichnis…
 
 menu-view=Ansicht
 menu-reference-image=Referenzbild setzen…
@@ -330,3 +339,10 @@ new-file-template-thedraw-ui-label=
     TheDraw definiert drei Font-Typen: Farbe, Block und Outline.
 
     Eine große Font-Sammlung kann hier heruntergeladen werden:
+
+palette_selector-dos_default_palette=VGA 16 Farben
+palette_selector-c64_default_palette=C64 Farben
+palette_selector-ega_default_palette=EGA 64 Farben
+palette_selector-xterm_default_palette=XTerm erweiterte Palette
+palette_selector-viewdata_default_palette=Viewdata
+palette_selector-extracted_from_buffer_default_label=Erzeugt aus offener Datei

@@ -69,6 +69,7 @@ menu-color-mode-ice=16 Colors, ice
 menu-color-mode-ext-colors=256 Colors
 menu-color-mode-ext-font=16 Colors, ext font, blink
 menu-color-mode-ext-font-ice=16 Colors, ext font, ice
+menu-select_palette=Select Palette
 
 menu-view=View
 menu-reference-image=Open Reference Image…
@@ -92,13 +93,14 @@ menu-open_font_selector=Fonts…
 menu-open_font_manager=Edit Buffer Fonts…
 menu-open_font_directoy=Open Font Directory…
 menu-open_tdf_directoy=Open TDF Directory…
-menu-open_palettes_directoy=Open Palettes Directory…
+menu-open_palettes_directoy=Open Palette Directory…
 
 menu-help=Help
 menu-discuss=Discuss
 menu-open_log_file=Open log file
 menu-report-bug=Report Bug
 menu-about=About…
+
 
 tool-fg=Fg
 tool-bg=Bg
@@ -341,3 +343,10 @@ new-file-template-thedraw-ui-label=
     A big font archive can be downloaded from:
 
 manage-font-dialog-title=Manage Fonts
+
+palette_selector-dos_default_palette=VGA 16 colors
+palette_selector-c64_default_palette=C64 colors
+palette_selector-ega_default_palette=EGA 64 colors
+palette_selector-xterm_default_palette=XTerm extended colors
+palette_selector-viewdata_default_palette=Viewdata
+palette_selector-extracted_from_buffer_default_label=Extracted from buffer

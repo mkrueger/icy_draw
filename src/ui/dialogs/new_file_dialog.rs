@@ -277,6 +277,7 @@ impl crate::ModalDialog for NewFileDialog {
             modal.frame(ui, |ui| {
                 SidePanel::left("new_file_side_panel")
                     .exact_width(280.0)
+                    .resizable(false)
                     .show_inside(ui, |ui| {
                         let row_height = 58.0;
                         egui::ScrollArea::vertical()
