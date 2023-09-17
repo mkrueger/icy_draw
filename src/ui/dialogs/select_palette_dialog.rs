@@ -65,7 +65,7 @@ impl SelectPaletteDialog {
         );
         palettes.push((dos, PaletteSource::BuiltIn));
 
-        let mut dos = Palette::from_colors(VIEWDATA_PALETTE.to_vec());
+        let mut dos = Palette::from_colors(VIEWDATA_PALETTE[0..8].to_vec());
         dos.title = fl!(
             crate::LANGUAGE_LOADER,
             "palette_selector-viewdata_default_palette"

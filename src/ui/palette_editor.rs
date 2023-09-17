@@ -161,24 +161,30 @@ pub fn palette_editor_16(
     ui.horizontal(|ui| {
         ui.add_space(4.0);
         let right_border = 4.0;
-        let height = (ui.available_width() - right_border) / 8.0;
-        let (id, stroke_rect) =
-            ui.allocate_space(Vec2::new(ui.available_width() - right_border, height * 2.0));
-        let mut response = ui.interact(stroke_rect, id, Sense::click());
+        let items_per_row = if palette.len() < 64 { 8 } else { 16 };
 
-        let painter = ui.painter_at(stroke_rect);
         let upper_limit = if buffer_type == BufferType::ExtendedFont {
-            8
+            items_per_row
         } else {
-            16
+            (palette.len() as f32 / items_per_row as f32).ceil() as usize * items_per_row
         };
+
+        let height = (ui.available_width() - right_border) / items_per_row as f32;
+
+        let (id, stroke_rect) = ui.allocate_space(Vec2::new(
+            ui.available_width() - right_border,
+            height * upper_limit as f32 / items_per_row as f32,
+        ));
+        let mut response = ui.interact(stroke_rect, id, Sense::click());
+        let painter = ui.painter_at(stroke_rect);
+
         for i in 0..upper_limit {
             let (r, g, b) = palette.get_rgb(i);
             painter.rect_filled(
                 Rect::from_min_size(
                     Pos2::new(
-                        stroke_rect.left() + (i % 8) as f32 * height,
-                        stroke_rect.top() + (i / 8) as f32 * height,
+                        stroke_rect.left() + (i % items_per_row) as f32 * height,
+                        stroke_rect.top() + (i / items_per_row) as f32 * height,
                     ),
                     Vec2::new(height, height),
                 ),
@@ -191,8 +197,10 @@ pub fn palette_editor_16(
         // paint fg marker
         let stroke = Stroke::new(1., Color32::WHITE);
         let origin = Pos2::new(
-            stroke_rect.left() + (caret_attr.get_foreground() % 8) as f32 * height,
-            stroke_rect.top() + (caret_attr.get_foreground() / 8) as f32 * height,
+            stroke_rect.left()
+                + (caret_attr.get_foreground() % items_per_row as u32) as f32 * height,
+            stroke_rect.top()
+                + (caret_attr.get_foreground() / items_per_row as u32) as f32 * height,
         );
         painter.line_segment([origin, origin + Vec2::new(marker_len, 0.)], stroke);
         painter.line_segment([origin, origin + Vec2::new(0., marker_len)], stroke);
@@ -219,8 +227,10 @@ pub fn palette_editor_16(
         // paint bg marker
         let stroke = Stroke::new(1., Color32::WHITE);
         let origin = Pos2::new(
-            stroke_rect.left() + (1 + caret_attr.get_background() % 8) as f32 * height,
-            stroke_rect.top() + (1 + caret_attr.get_background() / 8) as f32 * height,
+            stroke_rect.left()
+                + (1 + caret_attr.get_background() % items_per_row as u32) as f32 * height,
+            stroke_rect.top()
+                + (1 + caret_attr.get_background() / items_per_row as u32) as f32 * height,
         );
         painter.line_segment([origin, origin - Vec2::new(marker_len, 0.)], stroke);
         painter.line_segment([origin, origin - Vec2::new(0., marker_len)], stroke);
@@ -245,7 +255,10 @@ pub fn palette_editor_16(
         );
         if let Some(hp) = response.hover_pos() {
             let pos = (hp.to_vec2() - stroke_rect.left_top().to_vec2()) / Vec2::new(height, height);
-            let color = min(palette.len() as u32 - 1, pos.x as u32 + pos.y as u32 * 8);
+            let color = min(
+                palette.len() as u32 - 1,
+                pos.x as u32 + pos.y as u32 * items_per_row as u32,
+            );
             if response.clicked() {
                 if color < 8 || buffer_type.has_high_fg_colors() {
                     result = Some(Message::SetForeground(color));
