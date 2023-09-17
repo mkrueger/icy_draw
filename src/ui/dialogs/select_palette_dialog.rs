@@ -466,7 +466,12 @@ impl crate::ModalDialog for SelectPaletteDialog {
 
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
         if let Some((palette, _)) = self.palettes.get(self.selected_palette as usize) {
-            editor.buffer_view.lock().get_buffer_mut().palette = palette.clone();
+            editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .switch_to_palette(palette.clone());
+            editor.buffer_view.lock().redraw_palette();
         }
         Ok(None)
     }
