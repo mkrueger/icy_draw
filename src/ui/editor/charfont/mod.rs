@@ -348,10 +348,10 @@ impl Document for CharFontEditor {
                     .exact_height(50.)
                     .show_inside(ui, |ui| {
                         if self.opt_cheat_sheet.is_none() {
-                            let mut buffer = Buffer::new((59, 3));
-                            let s  = " Key: F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 1 2  3  4  5  6  7  8 ";
-                            let s2 = "Code: A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  @  &  \u{F7} ";
-                            let s3 = " Res: \u{CD}  \u{C4}  \u{B3}  \u{BA}  \u{D5}  \u{BB}  \u{D5}  \u{BF}  \u{C8}  \u{BE}  \u{C0}  \u{BD}  \u{B5}  \u{C7}  SP    &  \u{F7}";
+                            let mut buffer = Buffer::new((60, 3));
+                            let s  = " Key: F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 1  2  3  4  5  6  7  8 ";
+                            let s2 = "Code: A  B  C  D  E  F  G  H  I  J   K  L  M  N  O  @  &  \u{F7} ";
+                            let s3 = " Res: \u{CD}  \u{C4}  \u{B3}  \u{BA}  \u{D5}  \u{BB}  \u{D5}  \u{BF}  \u{C8}  \u{BE}   \u{C0}  \u{BD}  \u{B5}  \u{C7}  SP    &  \u{F7}";
 
                             let mut attr  = TextAttribute::default();
                             attr.set_foreground(0);
@@ -367,7 +367,7 @@ impl Document for CharFontEditor {
                             for (i, c) in s2.chars().enumerate() {
                                 buffer.layers[0].set_char((i, 1), AttributedChar::new(c, attr));
                             }
-                            attr.set_foreground(15);
+                            attr.set_foreground(14);
                             attr.set_background(0);
 
                             for (i, c) in s3.chars().enumerate() {
