@@ -47,7 +47,7 @@ pub struct AnsiEditor {
     // pub outline_changed: std::boxed::Box<dyn Fn(&Editor)>,
     //pub request_refresh: Box<dyn Fn ()>,
     pub egui_id: Id,
-
+    pub next_scroll_position: Option<f32>,
     pub guide: Option<Vec2>,
     pub raster: Option<Vec2>, //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
                               //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
@@ -191,6 +191,7 @@ impl Document for AnsiEditor {
             id: Some(Id::new(self.id + 10000)),
             raster: self.raster,
             guide: self.guide,
+            scroll_offset: self.next_scroll_position.take(),
             show_layer_borders: unsafe { SETTINGS.show_layer_borders },
             show_line_numbers: unsafe { SETTINGS.show_line_numbers },
             ..Default::default()
@@ -238,6 +239,7 @@ impl AnsiEditor {
             guide: None,
             raster: None,
             outline_font_mode: false,
+            next_scroll_position: None
         }
     }
 
@@ -346,7 +348,26 @@ impl AnsiEditor {
         let old = self.buffer_view.lock().get_caret().get_position();
         let w = self.buffer_view.lock().get_buffer().get_width() - 1;
         let h = self.buffer_view.lock().get_buffer().get_height() - 1;
-        self.set_caret_position(Position::new(min(max(0, x), w), min(max(0, y), h)));
+
+        let char_scroll_position = self.buffer_view.lock().calc.char_scroll_positon;
+        let terminal_height = self.buffer_view.lock().calc.terminal_rect.height();
+        let buffer_height = self.buffer_view.lock().calc.buffer_rect.height().min(terminal_height);
+        let buffer_char_height = buffer_height / self.buffer_view.lock().calc.scale.y;
+
+        let y = min(max(0, y), h);
+        self.set_caret_position(Position::new(min(max(0, x), w), y));
+
+        let char_height = self.buffer_view.lock().get_buffer().get_font_dimensions().height as f32;
+        let y = y as f32 * char_height;
+
+        if y  < char_scroll_position  {
+            self.next_scroll_position = Some(y);
+        }
+        
+        if y  > (char_scroll_position + buffer_char_height  - char_height)  {
+            self.next_scroll_position = Some((y - buffer_char_height + char_height) .max(0.0));
+        }
+
         Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())
     }
 

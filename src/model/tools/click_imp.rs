@@ -222,94 +222,28 @@ impl Tool for ClickTool {
         let pos = editor.buffer_view.lock().get_caret().get_position();
         match key {
             MKey::Down => {
-                if let MModifiers::Control = modifier {
-                    let fg = (editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .get_foreground()
-                        + 14)
-                        % 16;
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .set_foreground(fg);
-                } else {
-                    editor.set_caret(pos.x, pos.y + 1);
-                }
+                editor.set_caret(pos.x, pos.y + 1);
             }
             MKey::Up => {
-                if let MModifiers::Control = modifier {
-                    let fg = (editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .get_foreground()
-                        + 1)
-                        % 16;
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .set_foreground(fg);
-                } else {
-                    editor.set_caret(pos.x, pos.y - 1);
-                }
+                editor.set_caret(pos.x, pos.y - 1);
             }
             MKey::Left => {
-                // TODO: ICE Colors
-                if let MModifiers::Control = modifier {
-                    let bg = (editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .get_background()
-                        + 7)
-                        % 8;
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .set_background(bg);
-                } else {
-                    editor.set_caret(pos.x - 1, pos.y);
-                }
+                editor.set_caret(pos.x - 1, pos.y);
             }
             MKey::Right => {
-                // TODO: ICE Colors
-                if let MModifiers::Control = modifier {
-                    let bg = (editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .get_background()
-                        + 1)
-                        % 8;
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .set_background(bg);
-                } else {
-                    editor.set_caret(pos.x + 1, pos.y);
-                }
+                editor.set_caret(pos.x + 1, pos.y);
             }
             MKey::PageDown => {
-                // TODO
-                println!("pgdn");
+                let height = editor.buffer_view.lock().calc.buffer_rect.height();
+                let char_height = editor.buffer_view.lock().calc.char_height;
+                let pg_size = (height / char_height) as i32;
+                editor.set_caret(pos.x, pos.y + pg_size);
             }
             MKey::PageUp => {
-                // TODO
-                println!("pgup");
+                let height = editor.buffer_view.lock().calc.buffer_rect.height();
+                let char_height = editor.buffer_view.lock().calc.char_height;
+                let pg_size = (height / char_height) as i32;
+                editor.set_caret(pos.x, pos.y - pg_size);
             }
 
             MKey::Escape => {
