@@ -274,6 +274,7 @@ impl AnsiEditor {
             min(buffer_view.get_buffer().get_height() - 1, max(0, pos.y)),
         );
         buffer_view.get_caret_mut().set_position(pos);
+        buffer_view.reset_caret_blink();
         //(self.pos_changed)(self, pos);
     }
 
