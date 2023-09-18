@@ -125,8 +125,8 @@ pub trait Tool {
         _pos: Position,
         _pos_abs: Position,
         _response: &Response,
-    ) -> Event {
-        Event::None
+    ) -> Option<Message> {
+        None
     }
 
     fn handle_drag_begin(&mut self, _editor: &mut AnsiEditor, _response: &egui::Response) -> Event {

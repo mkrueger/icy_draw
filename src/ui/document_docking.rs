@@ -112,7 +112,8 @@ impl DocumentTab {
 
 pub struct DocumentBehavior {
     pub tools: Arc<Mutex<Vec<Box<dyn Tool>>>>,
-    pub selected_tool: usize,
+    selected_tool: usize,
+    prev_tool: usize,
     pub document_options: DocumentOptions,
 
     char_set_img: Option<RetainedImage>,
@@ -134,6 +135,7 @@ impl DocumentBehavior {
         Self {
             tools,
             selected_tool: FIRST_TOOL,
+            prev_tool: FIRST_TOOL,
             document_options: DocumentOptions::default(),
             char_set_img: None,
             cur_char_set: usize::MAX,
@@ -145,6 +147,22 @@ impl DocumentBehavior {
             cur_pos: Position::new(i32::MAX, i32::MAX),
             cur_selection: None,
         }
+    }
+
+    pub fn get_selected_tool(&self) -> usize {
+        self.selected_tool
+    }
+
+    pub(crate) fn set_selected_tool(&mut self, tool: usize) {
+        if self.selected_tool == tool {
+            return;
+        }
+        self.prev_tool = self.selected_tool;
+        self.selected_tool = tool;
+    }
+
+    pub(crate) fn select_prev_tool(&mut self) {
+        self.selected_tool = self.prev_tool;
     }
 }
 

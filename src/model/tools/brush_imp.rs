@@ -263,14 +263,14 @@ impl Tool for BrushTool {
         pos: Position,
         _pos_abs: Position,
         _response: &Response,
-    ) -> super::Event {
+    ) -> Option<Message> {
         if button == 1 {
             let _op: AtomicUndoGuard =
                 editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush"));
 
             self.paint_brush(editor, pos);
         }
-        super::Event::None
+        None
     }
 
     fn handle_drag(

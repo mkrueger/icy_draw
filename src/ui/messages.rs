@@ -140,6 +140,7 @@ pub enum Message {
     ToggleLineNumbers,
     RunPlugin(usize),
     OpenPluginDirectory,
+    SelectPreviousTool,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -486,7 +487,11 @@ impl MainWindow {
             }
 
             Message::SelectTool(tool) => {
-                self.document_behavior.selected_tool = tool;
+                self.document_behavior.set_selected_tool(tool);
+            }
+
+            Message::SelectPreviousTool => {
+                self.document_behavior.select_prev_tool();
             }
 
             Message::ShowAboutDialog => {
@@ -589,7 +594,7 @@ impl MainWindow {
                     if let Some(layer) = Layer::from_clipboard_data(&data) {
                         unsafe {
                             crate::model::brush_imp::CUSTOM_BRUSH = Some(layer);
-                            self.document_behavior.selected_tool = crate::BRUSH_TOOL;
+                            self.document_behavior.set_selected_tool(crate::BRUSH_TOOL);
                         }
                     }
                 }

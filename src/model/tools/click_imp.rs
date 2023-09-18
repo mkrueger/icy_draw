@@ -56,12 +56,12 @@ impl Tool for ClickTool {
         pos: Position,
         cur_abs: Position,
         _response: &egui::Response,
-    ) -> Event {
+    ) -> Option<Message> {
         if button == 1 && !is_inside_selection(editor, cur_abs) {
             editor.set_caret_position(pos);
             editor.buffer_view.lock().clear_selection();
         }
-        Event::None
+        None
     }
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {

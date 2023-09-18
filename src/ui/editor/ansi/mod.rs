@@ -203,7 +203,7 @@ impl Document for AnsiEditor {
         let response = response.context_menu(|ui| {
             message = terminal_context_menu(self, &options.commands, ui);
         });
-        self.handle_response(ui, response, calc, cur_tool);
+        self.handle_response(ui, response, calc, cur_tool, &mut message);
 
         message
     }
@@ -525,6 +525,7 @@ impl AnsiEditor {
         mut response: Response,
         calc: TerminalCalc,
         cur_tool: &mut Box<dyn Tool>,
+        message: &mut Option<Message>,
     ) -> Response {
         if response.has_focus() {
             let events = ui.input(|i| i.events.clone());
@@ -607,7 +608,10 @@ impl AnsiEditor {
                                      PointerButton::Extra1 => 4,
                                      PointerButton::Extra2 => 5,
                                  }; */
-                    cur_tool.handle_click(self, 1, cp, cp_abs, &response);
+                    let msg = cur_tool.handle_click(self, 1, cp, cp_abs, &response);
+                    if message.is_none() {
+                        *message = msg;
+                    }
                     self.redraw_view();
                 }
             }

@@ -161,13 +161,13 @@ impl Tool for EraseTool {
         pos: Position,
         _pos_abs: Position,
         _response: &egui::Response,
-    ) -> super::Event {
+    ) -> Option<Message> {
         if button == 1 {
             let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser"));
 
             self.eraser(editor, pos);
         }
-        super::Event::None
+        None
     }
 
     fn handle_drag(

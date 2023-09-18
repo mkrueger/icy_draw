@@ -6,7 +6,7 @@ use icy_engine::{AttributedChar, Size, TextPane};
 
 use crate::{AnsiEditor, Message};
 
-use super::{brush_imp::draw_glyph, Event, Position, Tool};
+use super::{brush_imp::draw_glyph, Position, Tool};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum FillType {
@@ -246,10 +246,10 @@ impl Tool for FillTool {
         pos: Position,
         _pos_abs: Position,
         _response: &egui::Response,
-    ) -> Event {
+    ) -> Option<Message> {
         if button == 1 {
             if editor.get_cur_layer_index() >= editor.buffer_view.lock().get_buffer().layers.len() {
-                return Event::None;
+                return None;
             }
             let attr = editor.buffer_view.lock().get_caret().get_attribute();
             let ch = editor
@@ -271,6 +271,6 @@ impl Tool for FillTool {
                 op.fill(editor, pos);
             }
         }
-        Event::None
+        None
     }
 }

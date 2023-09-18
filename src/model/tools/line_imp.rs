@@ -235,11 +235,11 @@ impl Tool for LineTool {
         pos: Position,
         _pos_abs: Position,
         _response: &egui::Response,
-    ) -> Event {
+    ) -> Option<Message> {
         if button == 1 {
             editor.set_caret_position(pos);
         }
-        Event::None
+        None
     }
 
     fn handle_hover(

@@ -199,7 +199,7 @@ impl Tool for PencilTool {
         pos: Position,
         _pos_abs: Position,
         _response: &egui::Response,
-    ) -> super::Event {
+    ) -> Option<Message> {
         if button == 1 {
             self.last_pos = pos;
             let _op: AtomicUndoGuard =
@@ -208,7 +208,7 @@ impl Tool for PencilTool {
             self.paint_brush(editor, pos);
             editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
         }
-        super::Event::None
+        None
     }
     fn handle_hover(
         &mut self,

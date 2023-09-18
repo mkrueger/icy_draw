@@ -1,16 +1,21 @@
-use crate::MainWindow;
+use crate::{MainWindow, Message};
 use eframe::{
     egui::{self, Sense},
     epaint::{pos2, Rect, Rounding, Vec2},
 };
 
-pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainWindow) {
+pub fn add_tool_switcher(
+    ctx: &egui::Context,
+    ui: &mut egui::Ui,
+    arg: &MainWindow,
+) -> Option<Message> {
+    let mut msg = None;
     let spacing = 4.0;
     let icon_size = 28.0;
 
     if let Ok(tools) = arg.document_behavior.tools.lock() {
-        if tools[arg.document_behavior.selected_tool].is_exclusive() {
-            return;
+        if tools[arg.document_behavior.get_selected_tool()].is_exclusive() {
+            return msg;
         }
         let (id, back_rect) = ui.allocate_space(Vec2::new(200., 68.0));
         let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
@@ -25,7 +30,7 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
 
             let rect = Rect::from_min_size(pos.floor(), Vec2::new(icon_size, icon_size));
             let response = ui.interact(rect, id.with(i), Sense::click());
-            if i == arg.document_behavior.selected_tool {
+            if i == arg.document_behavior.get_selected_tool() {
                 ui.painter().rect_filled(
                     rect.expand(2.0),
                     Rounding::same(4.0),
@@ -52,7 +57,7 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
             }
 
             let painter = ui.painter_at(rect);
-            let tint = if i == arg.document_behavior.selected_tool {
+            let tint = if i == arg.document_behavior.get_selected_tool() {
                 ui.visuals().widgets.active.fg_stroke.color
             } else {
                 ui.visuals().widgets.inactive.fg_stroke.color
@@ -66,8 +71,9 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &mut MainW
             }
 
             if response.clicked() {
-                arg.document_behavior.selected_tool = i;
+                msg = Some(Message::SelectTool(i));
             }
         }
     }
+    msg
 }

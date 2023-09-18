@@ -14,7 +14,7 @@ use crate::{
     ToolTab, TopBar,
 };
 use directories::UserDirs;
-use eframe::egui::Button;
+use eframe::egui::{Button, PointerButton};
 use eframe::{
     egui::{self, Key, Response, SidePanel, Ui},
     epaint::FontId,
@@ -52,6 +52,7 @@ pub struct MainWindow {
 pub const PASTE_TOOL: usize = 0;
 pub const FIRST_TOOL: usize = 1;
 pub const BRUSH_TOOL: usize = 3;
+pub const PIPETTE_TOOL: usize = 6;
 
 impl MainWindow {
     pub fn create_id(&mut self) -> usize {
@@ -639,7 +640,9 @@ impl eframe::App for MainWindow {
 
                 self.handle_message(msg);
 
-                crate::add_tool_switcher(ctx, ui, self);
+                let msg = crate::add_tool_switcher(ctx, ui, self);
+                self.handle_message(msg);
+
                 let mut tool_result = None;
                 if let Some(tool) = self
                     .document_behavior
@@ -647,7 +650,7 @@ impl eframe::App for MainWindow {
                     .clone()
                     .lock()
                     .unwrap()
-                    .get_mut(self.document_behavior.selected_tool)
+                    .get_mut(self.document_behavior.get_selected_tool())
                 {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
@@ -701,13 +704,13 @@ impl eframe::App for MainWindow {
                         let last = lock.get_buffer().layers.len().saturating_sub(1);
                         if let Some(layer) = lock.get_buffer().layers.last() {
                             if layer.role.is_paste()
-                                && self.document_behavior.selected_tool != PASTE_TOOL
+                                && self.document_behavior.get_selected_tool() != PASTE_TOOL
                             {
                                 self.document_behavior.tools.lock().unwrap()[PASTE_TOOL] =
                                     Box::new(crate::model::paste_tool::PasteTool::new(
-                                        self.document_behavior.selected_tool,
+                                        self.document_behavior.get_selected_tool(),
                                     ));
-                                self.document_behavior.selected_tool = PASTE_TOOL;
+                                self.document_behavior.set_selected_tool(PASTE_TOOL);
 
                                 lock.get_edit_state_mut().set_current_layer(last);
                             }
@@ -803,9 +806,19 @@ impl eframe::App for MainWindow {
                 }
             }
             for evt in &i.events.clone() {
-                if let eframe::egui::Event::Zoom(vec) = evt {
-                    let scale = self.document_behavior.document_options.get_scale() * *vec;
-                    self.document_behavior.document_options.set_scale(scale);
+                match evt {
+                    eframe::egui::Event::PointerButton {
+                        button: PointerButton::Middle,
+                        pressed: true,
+                        ..
+                    } => {
+                        self.handle_message(Some(Message::SelectTool(PIPETTE_TOOL)));
+                    }
+                    eframe::egui::Event::Zoom(vec) => {
+                        let scale = self.document_behavior.document_options.get_scale() * *vec;
+                        self.document_behavior.document_options.set_scale(scale);
+                    }
+                    _ => (),
                 }
             }
         });

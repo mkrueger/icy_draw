@@ -2,7 +2,7 @@ use eframe::egui;
 
 use crate::{AnsiEditor, Message};
 
-use super::{Event, Position, Tool};
+use super::{Position, Tool};
 pub struct FlipTool {}
 
 impl Tool for FlipTool {
@@ -41,7 +41,7 @@ impl Tool for FlipTool {
         pos: Position,
         _pos_abs: Position,
         _response: &egui::Response,
-    ) -> Event {
+    ) -> Option<Message> {
         if button == 1 {
             let mut ch = editor.get_char(pos);
 
@@ -55,6 +55,6 @@ impl Tool for FlipTool {
 
             editor.set_char(pos, ch);
         }
-        Event::None
+        None
     }
 } //   [176, 177, 178, 219, 223, 220, 221, 222, 254, 250 ],

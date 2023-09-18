@@ -125,7 +125,7 @@ impl Tool for SelectTool {
         pos: Position,
         cur_abs: Position,
         response: &egui::Response,
-    ) -> Event {
+    ) -> Option<Message> {
         let cur_ch = editor.get_char_from_cur_layer(pos);
 
         let selection_mode = if response.ctx.input(|i| i.modifiers.shift_only()) {
@@ -174,7 +174,7 @@ impl Tool for SelectTool {
                     )
                 }),
         }
-        Event::None
+        None
     }
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, response: &egui::Response) -> Event {
