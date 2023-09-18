@@ -348,10 +348,26 @@ impl Document for CharFontEditor {
                     .exact_height(50.)
                     .show_inside(ui, |ui| {
                         if self.opt_cheat_sheet.is_none() {
-                            let mut buffer = Buffer::new((60, 3));
-                            let s  = " Key: F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 1  2  3  4  5  6  7  8 ";
-                            let s2 = "Code: A  B  C  D  E  F  G  H  I  J   K  L  M  N  O  @  &  \u{F7} ";
-                            let s3 = " Res: \u{CD}  \u{C4}  \u{B3}  \u{BA}  \u{D5}  \u{BB}  \u{D5}  \u{BF}  \u{C8}  \u{BE}   \u{C0}  \u{BD}  \u{B5}  \u{C7}  SP    &  \u{F7}";
+
+                            let mut key = fl!(crate::LANGUAGE_LOADER, "tdf-editor-cheat_sheet_key");
+                            let mut code = fl!(crate::LANGUAGE_LOADER, "tdf-editor-cheat_sheet_code");
+                            let mut res = fl!(crate::LANGUAGE_LOADER, "tdf-editor-cheat_sheet_res");
+
+                             let m = key.len().max(code.len()).max(res.len());
+                             let mut buffer = Buffer::new((56 + m, 3));
+                             while key.len() < m {
+                                key.insert(0, ' ');
+                             }
+                             while code.len() < m {
+                                code.insert(0, ' ');
+                             }
+                             while res.len() < m {
+                                res.insert(0, ' ');
+                             }
+
+                            let s  = format!("{key}: F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 1  2  3  4  5  6  7  8 ");
+                            let s2 = format!("{code}: A  B  C  D  E  F  G  H  I  J   K  L  M  N  O  @  &  \u{F7} ");
+                            let s3 = format!("{res}: \u{CD}  \u{C4}  \u{B3}  \u{BA}  \u{D5}  \u{BB}  \u{D5}  \u{BF}  \u{C8}  \u{BE}   \u{C0}  \u{BD}  \u{B5}  \u{C7}  SP    &  \u{F7}");
 
                             let mut attr  = TextAttribute::default();
                             attr.set_foreground(0);

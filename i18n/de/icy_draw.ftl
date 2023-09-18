@@ -361,3 +361,6 @@ tdf-editor-font_type_color=Farbe
 tdf-editor-font_type_block=Block
 tdf-editor-font_type_outline=Outline
 tdf-editor-clear_char_button=Zeichen Löschen
+tdf-editor-cheat_sheet_key=Taste
+tdf-editor-cheat_sheet_code=Code
+tdf-editor-cheat_sheet_res=Res
