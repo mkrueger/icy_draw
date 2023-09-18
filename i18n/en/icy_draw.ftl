@@ -247,6 +247,10 @@ font_tool_no_fonts_label=
     Install new fonts in the font directory
 font_tool_open_directory_button=Open font directory
 
+pipette_tool_char_code=Code { $code }
+pipette_tool_foreground=Foreground { $fg }
+pipette_tool_background=Background { $bg }
+
 char_table_tool_title=Char table
 minimap_tool_title=Preview
 

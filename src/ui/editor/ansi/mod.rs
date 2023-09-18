@@ -652,7 +652,11 @@ impl AnsiEditor {
             }
             self.redraw_view();
         }
-
+        self.buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .get_tool_overlay_mask_mut()
+            .clear();
         if response.hovered() {
             if let Some(mouse_pos) = response.hover_pos() {
                 if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)

@@ -238,6 +238,7 @@ impl Tool for PencilTool {
         self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil")));
         self.last_pos = editor.drag_pos.cur;
         editor.clear_overlay_layer();
+        self.paint_brush(editor, editor.drag_pos.cur);
 
         Event::None
     }

@@ -1,9 +1,14 @@
 use eframe::egui;
+use i18n_embed_fl::fl;
+use icy_engine::AttributedChar;
 
 use crate::{AnsiEditor, Message};
 
 use super::{Event, Position, Tool};
-pub struct PipetteTool {}
+#[derive(Default)]
+pub struct PipetteTool {
+    cur_char: Option<AttributedChar>,
+}
 
 impl Tool for PipetteTool {
     fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
@@ -21,9 +26,26 @@ impl Tool for PipetteTool {
     fn show_ui(
         &mut self,
         _ctx: &egui::Context,
-        _ui: &mut egui::Ui,
+        ui: &mut egui::Ui,
         _editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
+        if let Some(ch) = self.cur_char {
+            ui.label(fl!(
+                crate::LANGUAGE_LOADER,
+                "pipette_tool_char_code",
+                code = (ch.ch as u32)
+            ));
+            ui.label(fl!(
+                crate::LANGUAGE_LOADER,
+                "pipette_tool_foreground",
+                fg = ch.attribute.get_foreground()
+            ));
+            ui.label(fl!(
+                crate::LANGUAGE_LOADER,
+                "pipette_tool_background",
+                bg = ch.attribute.get_background()
+            ));
+        }
         None
     }
 
@@ -31,10 +53,11 @@ impl Tool for PipetteTool {
         &mut self,
         _ui: &egui::Ui,
         response: egui::Response,
-        _editor: &mut AnsiEditor,
-        _cur: Position,
+        editor: &mut AnsiEditor,
+        cur: Position,
         _cur_abs: Position,
     ) -> egui::Response {
+        self.cur_char = Some(editor.get_char(cur));
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 

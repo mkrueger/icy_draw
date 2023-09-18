@@ -213,8 +213,21 @@ impl Tool for BrushTool {
         response: egui::Response,
         editor: &mut AnsiEditor,
         cur: Position,
-        _cur_abs: Position,
+        cur_abs: Position,
     ) -> egui::Response {
+        let mid = Position::new(-(self.size / 2), -(self.size / 2));
+        for y in 0..self.size {
+            for x in 0..self.size {
+                let pos = cur_abs + Position::new(x, y) + mid;
+                editor
+                    .buffer_view
+                    .lock()
+                    .get_edit_state_mut()
+                    .get_tool_overlay_mask_mut()
+                    .set_is_selected(pos, true);
+            }
+        }
+
         if matches!(self.brush_type, BrushType::Custom) {
             editor.clear_overlay_layer();
             if let Some(layer) = editor
@@ -274,6 +287,7 @@ impl Tool for BrushTool {
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.undo_op =
             Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-paint-brush")));
+        self.paint_brush(editor, editor.drag_pos.cur);
         Event::None
     }
 
