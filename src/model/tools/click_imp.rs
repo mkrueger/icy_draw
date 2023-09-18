@@ -33,6 +33,7 @@ pub struct ClickTool {
     selection_drag: SelectionDrag,
     undo_op: Option<AtomicUndoGuard>,
 }
+pub const VALID_OUTLINE_CHARS: &str = "ABCDEFGHIJKLMNO@&\u{F7} ";
 
 impl Tool for ClickTool {
     fn get_icon_name(&self) -> &'static RetainedImage {
@@ -377,47 +378,93 @@ impl Tool for ClickTool {
 
             MKey::Character(ch) => {
                 editor.buffer_view.lock().clear_selection();
-                /*        if let MModifiers::Alt = modifier {
-                    match key_code {
-                        MKeyCode::KeyI => editor.insert_line(pos.y),
-                        MKeyCode::KeyU => editor.pickup_color(pos),
-                        MKeyCode::KeyY => editor.delete_line(pos.y),
-                        MKeyCode::Unknown => {}
+                let typed_char = unsafe { char::from_u32_unchecked(ch as u32) };
+                if editor.outline_font_mode {
+                    let typed_char = typed_char.to_ascii_uppercase();
+                    if VALID_OUTLINE_CHARS.contains(typed_char) {
+                        editor.type_key(typed_char);
+                    } else if let '1'..='8' = typed_char {
+                        editor.type_key(
+                            VALID_OUTLINE_CHARS
+                                .chars()
+                                .nth(10 + typed_char as usize - b'1' as usize)
+                                .unwrap(),
+                        );
                     }
-                    return Event::None;
-                }*/
-                editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
+                } else {
+                    editor.type_key(typed_char);
+                }
             }
 
             MKey::F1 => {
-                handle_outline_insertion(editor, modifier, 0);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(0).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 0);
+                }
             }
             MKey::F2 => {
-                handle_outline_insertion(editor, modifier, 1);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(1).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 1);
+                }
             }
             MKey::F3 => {
-                handle_outline_insertion(editor, modifier, 2);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(2).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 2);
+                }
             }
             MKey::F4 => {
-                handle_outline_insertion(editor, modifier, 3);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(3).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 3);
+                }
             }
             MKey::F5 => {
-                handle_outline_insertion(editor, modifier, 4);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(4).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 4);
+                }
             }
             MKey::F6 => {
-                handle_outline_insertion(editor, modifier, 5);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(5).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 5);
+                }
             }
             MKey::F7 => {
-                handle_outline_insertion(editor, modifier, 6);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(6).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 6);
+                }
             }
             MKey::F8 => {
-                handle_outline_insertion(editor, modifier, 7);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(7).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 7);
+                }
             }
             MKey::F9 => {
-                handle_outline_insertion(editor, modifier, 8);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(8).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 8);
+                }
             }
             MKey::F10 => {
-                handle_outline_insertion(editor, modifier, 9);
+                if editor.outline_font_mode {
+                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(9).unwrap());
+                } else {
+                    handle_outline_insertion(editor, modifier, 9);
+                }
             }
             _ => {}
         }

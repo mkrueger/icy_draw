@@ -25,6 +25,10 @@ impl Default for SelectOutlineDialog {
 }
 
 impl SelectOutlineDialog {
+    pub fn get_outline_style(&self) -> usize {
+        self.selected_outline
+    }
+
     fn draw_outline_glyph(&mut self, ui: &mut egui::Ui, outline_style: usize) {
         let scale = 1.;
         let border = 4.0;
@@ -89,6 +93,22 @@ impl SelectOutlineDialog {
             }
         }
     }
+
+    pub fn show_outline_ui(&mut self, ui: &mut egui::Ui, item_per_row: usize, spacing: Vec2) {
+        for style in 0..TheDrawFont::OUTLINE_STYLES / item_per_row {
+            ui.horizontal(|ui| {
+                ui.add_space(4.0);
+                for i in 0..item_per_row {
+                    self.draw_outline_glyph(ui, style * item_per_row + i);
+                    if i < item_per_row - 1 {
+                        ui.add_space(spacing.x);
+                    }
+                }
+            });
+            ui.end_row();
+            ui.add_space(spacing.y);
+        }
+    }
 }
 
 const OUTLINE_WIDTH: usize = 8;
@@ -111,19 +131,7 @@ impl ModalDialog for SelectOutlineDialog {
 
             modal.frame(ui, |ui| {
                 ui.add_space(8.0);
-                for style in 0..TheDrawFont::OUTLINE_STYLES / 4 {
-                    ui.horizontal(|ui| {
-                        ui.add_space(4.0);
-                        for i in 0..4 {
-                            self.draw_outline_glyph(ui, style * 4 + i);
-                            if i < 3 {
-                                ui.add_space(8.0);
-                            }
-                        }
-                    });
-                    ui.end_row();
-                    ui.add_space(8.0);
-                }
+                self.show_outline_ui(ui, 4, Vec2::new(8.0, 8.0));
             });
 
             modal.buttons(ui, |ui| {

@@ -1,21 +1,39 @@
 use std::{path::Path, sync::Arc};
 
-use eframe::egui::{self, RichText, SidePanel, TextEdit, TopBottomPanel};
-use icy_engine::{BitFont, Buffer, EngineResult, FontGlyph, Layer, Size, TextPane, TheDrawFont};
+use eframe::{
+    egui::{self, Button, RichText, ScrollArea, SidePanel, TextEdit, TopBottomPanel},
+    epaint::{mutex::Mutex, Vec2},
+};
+use egui_extras::RetainedImage;
+use i18n_embed_fl::fl;
+use icy_engine::{
+    AttributedChar, BitFont, Buffer, EngineResult, FontGlyph, Layer, Size, TextAttribute, TextPane,
+    TheDrawFont,
+};
+use icy_engine_egui::{show_terminal_area, BufferView, MonitorSettings};
 
 use crate::{
-    model::Tool, AnsiEditor, BitFontEditor, ClipboardHandler, Document, DocumentOptions,
-    DrawGlyphStyle, Message, TerminalResult, UndoHandler,
+    model::{click_imp::VALID_OUTLINE_CHARS, Tool},
+    AnsiEditor, BitFontEditor, ClipboardHandler, Document, DocumentOptions, DrawGlyphStyle,
+    Message, SelectOutlineDialog, TerminalResult, UndoHandler,
 };
 
 pub struct CharFontEditor {
+    id: usize,
     font: BitFont,
     selected_char_opt: Option<char>,
     old_selected_char_opt: Option<char>,
+
+    outline_previewbuffer_view: Arc<Mutex<BufferView>>,
+
     ansi_editor: AnsiEditor,
     selected_font: usize,
     fonts: Vec<TheDrawFont>,
     undostack_len: usize,
+    last_update_preview: usize,
+    outline_selection: crate::SelectOutlineDialog,
+    draw_outline_bg: bool,
+    opt_cheat_sheet: Option<RetainedImage>,
 }
 
 impl ClipboardHandler for CharFontEditor {
@@ -96,35 +114,30 @@ impl Document for CharFontEditor {
         SidePanel::left("side_panel")
             .default_width(200.0)
             .show_inside(ui, |ui| {
+                ui.add_space(4.0);
+
                 if self.selected_font < self.fonts.len() {
-                    egui::ComboBox::from_id_source("combobox1")
-                        .selected_text(RichText::new(
-                            self.fonts[self.selected_font].name.to_string(),
-                        ))
-                        .show_ui(ui, |ui| {
-                            let mut changed = false;
-                            let mut select_font = 0;
-                            for (i, font) in self.fonts.iter().enumerate() {
-                                if ui
-                                    .selectable_value(&mut self.selected_font, i, &font.name)
-                                    .clicked()
-                                {
-                                    select_font = i;
-                                    changed = true;
-                                }
-                            }
-                            if changed {
+                    ScrollArea::vertical().show(ui, |ui| {
+                        ui.style_mut().wrap = Some(false);
+
+                        for i in 0..self.fonts.len() {
+                            if ui
+                                .selectable_value(&mut self.selected_font, i, &self.fonts[i].name)
+                                .clicked()
+                            {
                                 self.save_old_selected_char();
-                                self.selected_font = select_font;
+                                self.selected_font = i;
                                 self.old_selected_char_opt = None;
                                 self.selected_char_opt = None;
                                 self.show_selected_char();
                             }
-                        });
+                        }
+                    });
                 }
+                ui.separator();
 
                 ui.horizontal(|ui| {
-                    if ui.button("+").clicked() {
+                    /*if ui.button("+").clicked() {
                         self.fonts.push(TheDrawFont::new(
                             "New Font",
                             icy_engine::FontType::Color,
@@ -135,9 +148,12 @@ impl Document for CharFontEditor {
                         self.old_selected_char_opt = None;
                         self.show_selected_char();
                         self.undostack_len += 1;
-                    }
+                    }*/
 
-                    if ui.button("🗑").clicked() {
+                    if ui
+                        .add_enabled(self.fonts.len() > 1, Button::new("🗑"))
+                        .clicked()
+                    {
                         self.fonts.remove(self.selected_font);
                         self.selected_font = 0;
                         self.selected_char_opt = None;
@@ -146,7 +162,10 @@ impl Document for CharFontEditor {
                         self.undostack_len += 1;
                     }
 
-                    if ui.button("Clone").clicked() {
+                    if ui
+                        .button(fl!(crate::LANGUAGE_LOADER, "tdf-editor-clone_button"))
+                        .clicked()
+                    {
                         self.fonts.push(self.fonts[self.selected_font].clone());
                         self.selected_font = self.fonts.len() - 1;
                         self.selected_char_opt = None;
@@ -160,21 +179,50 @@ impl Document for CharFontEditor {
         TopBottomPanel::top("char_top_panel")
             .exact_height(60.)
             .show_inside(ui, |ui| {
+                ui.add_space(4.0);
                 if self.selected_font < self.fonts.len() {
-                    ui.horizontal(|ui| {
-                        ui.label("Font Name:");
+                    egui::Grid::new(
+                        "font_grid
+                    ",
+                    )
+                    .num_columns(4)
+                    .spacing([4.0, 4.0])
+                    .show(ui, |ui| {
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "tdf-editor-font_name_label"));
+                        });
                         if ui
                             .add(
                                 TextEdit::singleline(&mut self.fonts[self.selected_font].name)
+                                    .min_size(Vec2::new(200.0, 22.))
                                     .char_limit(12),
                             )
                             .changed()
                         {
                             self.undostack_len += 1;
                         }
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Spacing:");
+
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "tdf-editor-font_type_label"));
+                        });
+
+                        let text = match self.fonts[self.selected_font].font_type {
+                            icy_engine::FontType::Outline => {
+                                fl!(crate::LANGUAGE_LOADER, "tdf-editor-font_type_outline")
+                            }
+                            icy_engine::FontType::Block => {
+                                fl!(crate::LANGUAGE_LOADER, "tdf-editor-font_type_block")
+                            }
+                            icy_engine::FontType::Color => {
+                                fl!(crate::LANGUAGE_LOADER, "tdf-editor-font_type_color")
+                            }
+                        };
+                        ui.label(text);
+
+                        ui.end_row();
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "tdf-editor-spacing_label"));
+                        });
                         if ui
                             .add(
                                 egui::DragValue::new(&mut self.fonts[self.selected_font].spaces)
@@ -184,9 +232,15 @@ impl Document for CharFontEditor {
                         {
                             self.undostack_len += 1;
                         }
+                        ui.label("");
+                        ui.label("");
+                        ui.end_row();
                     });
                 } else {
-                    ui.heading("No font selected");
+                    ui.heading(fl!(
+                        crate::LANGUAGE_LOADER,
+                        "tdf-editor-no_font_selected_label"
+                    ));
                 }
             });
 
@@ -195,8 +249,12 @@ impl Document for CharFontEditor {
             .show_inside(ui, |ui| {
                 if self.selected_font < self.fonts.len() {
                     self.show_char_selector(ui);
-
-                    if self.selected_char_opt.is_some() && ui.button("Clear char").clicked() {
+                    ui.add_space(4.0);
+                    if self.selected_char_opt.is_some()
+                        && ui
+                            .button(fl!(crate::LANGUAGE_LOADER, "tdf-editor-clear_char_button"))
+                            .clicked()
+                    {
                         self.fonts[self.selected_font].clear_glyph(self.selected_char_opt.unwrap());
                         self.selected_char_opt = None;
                         self.old_selected_char_opt = None;
@@ -216,7 +274,7 @@ impl Document for CharFontEditor {
                     .get_caret()
                     .get_attribute();
 
-                let mut show_color = false;
+                let mut is_outline = false;
                 for layer in &mut self
                     .ansi_editor
                     .buffer_view
@@ -226,22 +284,127 @@ impl Document for CharFontEditor {
                     .layers
                 {
                     match self.fonts[self.selected_font].font_type {
-                        icy_engine::FontType::Outline | icy_engine::FontType::Block => {
+                        icy_engine::FontType::Outline => {
+                            layer.forced_output_attribute = Some(attr);
+                            is_outline = true;
+                        }
+                        icy_engine::FontType::Block => {
                             layer.forced_output_attribute = Some(attr);
                         }
                         icy_engine::FontType::Color => {
                             layer.forced_output_attribute = None;
-                            show_color = true;
                         }
                     }
                 }
 
-                self.ansi_editor.buffer_view.lock().use_bg = show_color;
-                self.ansi_editor.buffer_view.lock().use_fg = show_color;
-                self.ansi_editor
-                    .show_ui(ui, cur_tool, selected_tool, options);
+                if is_outline {
+                    SidePanel::right("outline…_side_panel")
+                        .default_width(290.)
+                        .show_inside(ui, |ui| {
+                            TopBottomPanel::bottom("outline_style_bottom_panel")
+                                .exact_height(220.)
+                                .show_inside(ui, |ui| {
+                                    self.outline_selection.show_outline_ui(ui, 8, Vec2::new(4.0, 4.0));
+                                    let outline_style = self.outline_selection.get_outline_style();
+                                    let old_style = self.outline_previewbuffer_view.lock().get_edit_state_mut().get_outline_style();
+                                    self.outline_previewbuffer_view.lock().get_edit_state_mut().set_outline_style(outline_style);
+                                    if outline_style != old_style {
+                                        self.show_selected_char();
+                                    }
+                                });
+
+                            let opt = icy_engine_egui::TerminalOptions {
+                                focus_lock: false,
+                                stick_to_bottom: false,
+                                scale: Some(Vec2::new(2.0, 2.0)),
+                                settings: MonitorSettings {
+                                    ..Default::default()
+                                },
+                                id: Some(egui::Id::new(self.id + 20000)),
+                                ..Default::default()
+                            };
+
+                            self.outline_previewbuffer_view
+                                .lock()
+                                .get_caret_mut()
+                                .is_visible = false;
+                            ui.horizontal(|ui|  {
+                                ui.label(fl!(crate::LANGUAGE_LOADER, "tdf-editor-outline_preview_label"));
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    if ui.checkbox(&mut self.draw_outline_bg, fl!(crate::LANGUAGE_LOADER, "tdf-editor-draw_bg_checkbox")).changed() {
+                                        self.render_outline_preview();
+                                    }
+                                });
+                            });
+                            let (_, _) = show_terminal_area(
+                                ui,
+                                self.outline_previewbuffer_view.clone(),
+                                opt,
+                            );
+                        });
+
+
+                    TopBottomPanel::top("cheat_sheet_top_panel")
+                    .exact_height(50.)
+                    .show_inside(ui, |ui| {
+                        if self.opt_cheat_sheet.is_none() {
+                            let mut buffer = Buffer::new((59, 3));
+                            let s  = " Key: F1 F2 F3 F4 F5 F6 F7 F8 F9 F10 1 2  3  4  5  6  7  8 ";
+                            let s2 = "Code: A  B  C  D  E  F  G  H  I  J  K  L  M  N  O  @  &  \u{F7} ";
+                            let s3 = " Res: \u{CD}  \u{C4}  \u{B3}  \u{BA}  \u{D5}  \u{BB}  \u{D5}  \u{BF}  \u{C8}  \u{BE}  \u{C0}  \u{BD}  \u{B5}  \u{C7}  SP    &  \u{F7}";
+
+                            let mut attr  = TextAttribute::default();
+                            attr.set_foreground(0);
+                            attr.set_background(4);
+
+                            for (i, c) in s.chars().enumerate() {
+                                buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
+                            }
+
+                            attr.set_foreground(15);
+                            attr.set_background(4);
+
+                            for (i, c) in s2.chars().enumerate() {
+                                buffer.layers[0].set_char((i, 1), AttributedChar::new(c, attr));
+                            }
+                            attr.set_foreground(15);
+                            attr.set_background(0);
+
+                            for (i, c) in s3.chars().enumerate() {
+                                buffer.layers[0].set_char((i, 2), AttributedChar::new(c, attr));
+                            }
+                            self.opt_cheat_sheet = Some(crate::create_retained_image(&buffer));
+                        }
+
+                        if let Some(cheat_sheet) = & self.opt_cheat_sheet {
+                            ui.vertical_centered(|ui| {
+                            cheat_sheet.show(ui);
+                            });
+                        }
+                    });
+
+                    egui::CentralPanel::default().show_inside(ui, |ui| {
+                        self.ansi_editor
+                            .show_ui(ui, cur_tool, selected_tool, options);
+                    });
+                } else {
+                    self.ansi_editor
+                        .show_ui(ui, cur_tool, selected_tool, options);
+                }
             }
         });
+        let u = self
+            .ansi_editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .undo_stack_len();
+        if self.last_update_preview != u {
+            self.last_update_preview = u;
+            self.save_old_selected_char();
+            self.render_outline_preview();
+        }
+
         None
     }
 
@@ -265,7 +428,16 @@ impl CharFontEditor {
         set_up_layers(&mut buffer);
         let ansi_editor = AnsiEditor::new(gl, id, buffer);
 
+        let mut buffer = Buffer::new(Size::new(30, 12));
+        buffer.is_terminal_buffer = true;
+        let outline_previewbuffer_view = Arc::new(Mutex::new(BufferView::from_buffer(
+            gl,
+            buffer,
+            glow::NEAREST as i32,
+        )));
+
         let mut res = Self {
+            id,
             font: BitFont::default(),
             ansi_editor,
             selected_char_opt: Some('A'),
@@ -273,6 +445,11 @@ impl CharFontEditor {
             fonts,
             selected_font: 0,
             undostack_len: 0,
+            outline_previewbuffer_view,
+            outline_selection: SelectOutlineDialog::default(),
+            last_update_preview: 0,
+            opt_cheat_sheet: None,
+            draw_outline_bg: true,
         };
         res.show_selected_char();
         res
@@ -303,21 +480,74 @@ impl CharFontEditor {
         });
     }
 
-    fn show_selected_char(&mut self) {
-        println!("show selected!");
-        self.save_old_selected_char();
+    fn render_outline_preview(&mut self) {
+        let font = &self.fonts[self.selected_font];
+        if matches!(font.font_type, icy_engine::FontType::Outline) {
+            let lock = &mut self.ansi_editor.buffer_view.lock();
+            let mut attr = lock.get_caret().get_attribute();
 
-        let lock = &mut self.ansi_editor.buffer_view.lock();
-        let edit_state = &mut lock.get_edit_state_mut();
-        set_up_layers(edit_state.get_buffer_mut());
-        edit_state.set_current_layer(1);
-        edit_state.get_caret_mut().set_position((0, 0).into());
-        if let Some(ch) = self.selected_char_opt {
-            let font = &self.fonts[self.selected_font];
-            font.render(edit_state, ch as u8);
+            let _ = self
+                .outline_previewbuffer_view
+                .lock()
+                .get_edit_state_mut()
+                .clear_layer(0);
+            self.outline_previewbuffer_view
+                .lock()
+                .get_caret_mut()
+                .set_attr(attr);
+            if let Some(ch) = self.selected_char_opt {
+                let size = self
+                    .outline_previewbuffer_view
+                    .lock()
+                    .get_edit_state_mut()
+                    .get_buffer()
+                    .get_size();
+
+                if self.draw_outline_bg {
+                    attr.set_foreground(8);
+                    attr.set_background(0);
+                    for y in 0..size.height {
+                        for x in 0..size.width {
+                            self.outline_previewbuffer_view
+                                .lock()
+                                .get_edit_state_mut()
+                                .get_buffer_mut()
+                                .layers[0]
+                                .set_char((x, y), AttributedChar::new('\u{B1}', attr));
+                        }
+                    }
+                }
+
+                font.render(
+                    self.outline_previewbuffer_view.lock().get_edit_state_mut(),
+                    ch as u8,
+                );
+            }
         }
-        edit_state.get_undo_stack().lock().unwrap().clear();
-        self.old_selected_char_opt = self.selected_char_opt;
+    }
+
+    fn show_selected_char(&mut self) {
+        {
+            self.save_old_selected_char();
+            let font = &self.fonts[self.selected_font];
+            self.ansi_editor.outline_font_mode =
+                matches!(font.font_type, icy_engine::FontType::Outline);
+            let lock = &mut self.ansi_editor.buffer_view.lock();
+
+            let edit_state = &mut lock.get_edit_state_mut();
+            set_up_layers(edit_state.get_buffer_mut());
+            edit_state.set_current_layer(1);
+            edit_state.get_caret_mut().set_position((0, 0).into());
+            edit_state.set_outline_style(usize::MAX);
+
+            if let Some(ch) = self.selected_char_opt {
+                font.render(edit_state, ch as u8);
+            }
+
+            edit_state.get_undo_stack().lock().unwrap().clear();
+            self.old_selected_char_opt = self.selected_char_opt;
+        }
+        self.render_outline_preview();
     }
 
     fn save_old_selected_char(&mut self) {
@@ -336,7 +566,33 @@ impl CharFontEditor {
             if let Some(ch) = self.old_selected_char_opt {
                 match font.font_type {
                     icy_engine::FontType::Outline => {
-                        log::warn!("TODO: save old selected char for outline fonts");
+                        let lock = &mut self.ansi_editor.buffer_view.lock();
+                        let buf = lock.get_buffer();
+                        let mut data = Vec::new();
+                        let mut w = 0;
+                        let mut h = 0;
+                        for y in 0..buf.get_line_count() {
+                            if y > 0 {
+                                data.push(13);
+                            }
+                            let lw = buf.get_line_length(y);
+                            for x in 0..lw {
+                                let ch = buf.get_char((x, y));
+                                if VALID_OUTLINE_CHARS.contains(ch.ch) {
+                                    data.push(ch.ch as u8);
+                                }
+                            }
+                            w = w.max(lw);
+                            h = y;
+                        }
+
+                        font.set_glyph(
+                            ch,
+                            FontGlyph {
+                                size: Size::new(w, h),
+                                data,
+                            },
+                        );
                     }
                     icy_engine::FontType::Block => {
                         let lock = &mut self.ansi_editor.buffer_view.lock();

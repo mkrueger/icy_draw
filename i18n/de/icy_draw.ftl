@@ -349,3 +349,15 @@ palette_selector-ega_default_palette=EGA 64 Farben
 palette_selector-xterm_default_palette=XTerm erweiterte Palette
 palette_selector-viewdata_default_palette=Viewdata
 palette_selector-extracted_from_buffer_default_label=Erzeugt aus offener Datei
+
+tdf-editor-outline_preview_label=Outline Vorschau
+tdf-editor-draw_bg_checkbox=Zeichne Hintergrund
+tdf-editor-clone_button=Klonen
+tdf-editor-font_name_label=Font-Name:
+tdf-editor-spacing_label=Zeichenabstand:
+tdf-editor-no_font_selected_label=Kein Font ausgewählt
+tdf-editor-font_type_label=Font-Typ:
+tdf-editor-font_type_color=Farbe
+tdf-editor-font_type_block=Block
+tdf-editor-font_type_outline=Outline
+tdf-editor-clear_char_button=Zeichen Löschen

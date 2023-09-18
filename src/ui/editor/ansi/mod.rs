@@ -41,6 +41,8 @@ pub struct AnsiEditor {
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
     pub is_inactive: bool,
 
+    pub outline_font_mode: bool,
+
     pub reference_image: Option<PathBuf>,
     // pub outline_changed: std::boxed::Box<dyn Fn(&Editor)>,
     //pub request_refresh: Box<dyn Fn ()>,
@@ -238,6 +240,7 @@ impl AnsiEditor {
             egui_id: Id::new(id),
             guide: None,
             raster: None,
+            outline_font_mode: false,
         }
     }
 
