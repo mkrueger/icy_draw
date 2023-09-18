@@ -18,7 +18,7 @@ impl ResizeLayerDialog {
         ResizeLayerDialog {
             should_commit: false,
             width: buf.layers[layer].get_width(),
-            height: buf.layers[layer].get_line_count(),
+            height: buf.layers[layer].get_height(),
             layer,
         }
     }
