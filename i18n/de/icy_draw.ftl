@@ -88,7 +88,7 @@ menu-zoom-fit_size=Größe anpassen
 menu-show_layer_borders=Ebenenrahmen anzeigen
 menu-show_line_numbers=Zeilennummern anzeigen
 
-menu-pick_attribute_under_caret=Attribut unter Cursor aufhebn
+menu-pick_attribute_under_caret=Attribut aufheben
 menu-default_color=Standardfarbe
 menu-toggle_color=Farbe umschalten
 

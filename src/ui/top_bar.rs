@@ -58,11 +58,15 @@ impl MainWindow {
             }
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
+                ui.set_min_width(300.0);
+
                 self.commands.new_file.ui(ui, &mut result);
                 self.commands.open_file.ui(ui, &mut result);
                 ui.menu_button(
                     fl!(crate::LANGUAGE_LOADER, "menu-open_recent"),
                     |ui| unsafe {
+                        ui.style_mut().wrap = Some(false);
+
                         let get_recent_files = SETTINGS.get_recent_files();
                         if !get_recent_files.is_empty() {
                             for file in get_recent_files.iter().rev() {
@@ -92,7 +96,8 @@ impl MainWindow {
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
-                ui.set_width(250.0);
+                ui.style_mut().wrap = Some(false);
+                ui.set_min_width(200.0);
                 if let Some(doc) = self.get_active_document() {
                     if doc.lock().unwrap().can_undo() {
                         let enabled = doc.lock().unwrap().can_undo();
@@ -153,6 +158,9 @@ impl MainWindow {
                 }
 
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-paste-as"), |ui| {
+                    ui.style_mut().wrap = Some(false);
+                    ui.set_min_width(200.0);
+
                     let button = button_with_shortcut(
                         ui,
                         pop_data(BUFFER_DATA).is_some(),
@@ -177,6 +185,9 @@ impl MainWindow {
                 });
                 ui.separator();
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-area_operations"), |ui| {
+                    ui.style_mut().wrap = Some(false);
+                    ui.set_min_width(300.0);
+
                     self.commands
                         .justify_line_left
                         .ui_enabled(ui, has_buffer, &mut result);
@@ -265,6 +276,8 @@ impl MainWindow {
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-selection"), |ui| {
+                ui.style_mut().wrap = Some(false);
+                ui.set_min_width(200.0);
                 self.commands
                     .select_all
                     .ui_enabled(ui, has_buffer, &mut result);
@@ -292,6 +305,8 @@ impl MainWindow {
                 self.commands.crop.ui_enabled(ui, has_buffer, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-colors"), |ui| {
+                ui.style_mut().wrap = Some(false);
+                ui.set_min_width(300.0);
                 if has_buffer {
                     if let Some(pane) = self.get_active_pane() {
                         if let Ok(doc) = &mut pane.doc.lock() {
@@ -299,6 +314,9 @@ impl MainWindow {
                             let lock = &mut editor.buffer_view.lock();
 
                             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-color-mode"), |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(240.0);
+
                                 if ui
                                     .selectable_label(
                                         lock.get_buffer().buffer_type == BufferType::NoLimits,
@@ -367,8 +385,8 @@ impl MainWindow {
                             });
                         }
                     }
+                    ui.separator();
                 }
-                ui.separator();
                 self.commands
                     .select_palette
                     .ui_enabled(ui, has_buffer, &mut result);
@@ -388,6 +406,8 @@ impl MainWindow {
                     .ui_enabled(ui, has_buffer, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-fonts"), |ui| {
+                ui.style_mut().wrap = Some(false);
+                ui.set_min_width(220.0);
                 self.commands
                     .open_font_selector
                     .ui_enabled(ui, has_buffer, &mut result);
@@ -399,7 +419,8 @@ impl MainWindow {
                 self.commands.open_tdf_directory.ui(ui, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-view"), |ui| {
-                ui.set_width(250.);
+                ui.style_mut().wrap = Some(false);
+                ui.set_min_width(320.0);
                 ui.menu_button(
                     fl!(
                         crate::LANGUAGE_LOADER,
@@ -410,6 +431,9 @@ impl MainWindow {
                         )
                     ),
                     |ui| {
+                        ui.style_mut().wrap = Some(false);
+                        ui.set_min_width(270.0);
+
                         self.commands.zoom_reset.ui(ui, &mut result);
                         self.commands.zoom_in.ui(ui, &mut result);
 
@@ -465,6 +489,8 @@ impl MainWindow {
                 );
 
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-guides"), |ui| {
+                    ui.style_mut().wrap = Some(false);
+                    ui.set_min_width(200.0);
                     if ui.button("Smallscale 80x25").clicked() {
                         result = Some(Message::SetGuide(80, 25));
                         ui.close_menu();
@@ -492,6 +518,8 @@ impl MainWindow {
                 });
 
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-raster"), |ui| {
+                    ui.style_mut().wrap = Some(false);
+                    ui.set_min_width(100.0);
                     if ui.button("1x1").clicked() {
                         result = Some(Message::SetRaster(1, 1));
                         ui.close_menu();
@@ -547,6 +575,8 @@ impl MainWindow {
             unsafe {
                 if !PLUGINS.is_empty() {
                     ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-plugins"), |ui| {
+                        ui.style_mut().wrap = Some(false);
+                        ui.set_min_width(250.0);
                         for (i, p) in PLUGINS.iter().enumerate() {
                             if ui
                                 .add_enabled(
@@ -567,6 +597,8 @@ impl MainWindow {
             }
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-help"), |ui| {
+                ui.style_mut().wrap = Some(false);
+                ui.set_min_width(170.0);
                 let r = ui.hyperlink_to(
                     fl!(crate::LANGUAGE_LOADER, "menu-discuss"),
                     "https://github.com/mkrueger/icy_draw/discussions",

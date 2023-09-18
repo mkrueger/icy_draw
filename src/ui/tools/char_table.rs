@@ -38,8 +38,7 @@ impl CharTableToolWindow {
         if let Some(cur_font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
             if cur_font.name != self.font.name {
                 self.font = cur_font.clone();
-                self.char_table =
-                    create_font_image(&self.font).with_options(TextureOptions::NEAREST);
+                self.char_table = create_font_image(&self.font);
                 self.hover_char = None;
             }
         }
@@ -62,7 +61,10 @@ impl CharTableToolWindow {
                     let response = ui.interact(rect, id, Sense::click());
                     ui.painter().image(
                         self.char_table.texture_id(ui.ctx()),
-                        rect,
+                        Rect::from_min_size(
+                            Pos2::new(rect.left(), rect.top()),
+                            Vec2::new(width, height),
+                        ),
                         Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
                         Color32::WHITE,
                     );
@@ -150,7 +152,7 @@ fn create_font_image(font: &BitFont) -> RetainedImage {
             ),
         );
     }
-    create_retained_image(&buffer)
+    create_retained_image(&buffer).with_options(TextureOptions::NEAREST)
 }
 
 fn create_hover_image(font: &BitFont, ch: char) -> RetainedImage {

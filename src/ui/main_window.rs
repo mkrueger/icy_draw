@@ -14,6 +14,8 @@ use crate::{
     ToolTab, TopBar,
 };
 use directories::UserDirs;
+use eframe::egui::accesskit::Role::MenuItem;
+use eframe::egui::{Button, Sense};
 use eframe::{
     egui::{self, Key, Response, SidePanel, TextStyle, Ui},
     epaint::{pos2, FontId},
@@ -496,28 +498,9 @@ pub fn button_with_shortcut(
     label: impl Into<String>,
     shortcut: impl Into<String>,
 ) -> Response {
-    ui.set_width(280.0);
-    let btn_re = ui.add_enabled(enabled, egui::Button::new(label.into()));
-    let font_id = TextStyle::Body.resolve(ui.style());
-    let color = ui.style().visuals.noninteractive().fg_stroke.color;
-
-    let galley = ui.fonts(|f| {
-        f.layout_job(egui::text::LayoutJob::simple_singleline(
-            shortcut.into(),
-            font_id,
-            color,
-        ))
-    });
-
-    ui.painter().galley(
-        pos2(
-            btn_re.rect.right() - galley.size().x - 2.0,
-            btn_re.rect.top() + 2.0,
-        ),
-        galley,
-    );
-
-    btn_re
+    let title = label.into();
+    let mut button = Button::new(title).shortcut_text(shortcut.into());
+    ui.add_enabled(enabled, button)
 }
 
 impl eframe::App for MainWindow {

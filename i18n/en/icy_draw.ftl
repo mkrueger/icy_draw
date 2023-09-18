@@ -87,7 +87,7 @@ menu-zoom-fit_size=Fit Size
 menu-show_layer_borders=Show Layer Borders
 menu-show_line_numbers=Show Line Numbers
 
-menu-pick_attribute_under_caret=Use Attribute Under Caret
+menu-pick_attribute_under_caret=Pick up Attribute
 menu-default_color=Default Color
 menu-toggle_color=Switch Foreground/Background
 menu-fonts=Fonts
