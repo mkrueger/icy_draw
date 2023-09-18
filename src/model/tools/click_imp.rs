@@ -234,14 +234,14 @@ impl Tool for ClickTool {
                 editor.set_caret(pos.x + 1, pos.y);
             }
             MKey::PageDown => {
-                let height = editor.buffer_view.lock().calc.buffer_rect.height();
-                let char_height = editor.buffer_view.lock().calc.char_height;
+                let height = editor.buffer_view.lock().calc.terminal_rect.height();
+                let char_height = editor.buffer_view.lock().calc.font_height;
                 let pg_size = (height / char_height) as i32;
                 editor.set_caret(pos.x, pos.y + pg_size);
             }
             MKey::PageUp => {
-                let height = editor.buffer_view.lock().calc.buffer_rect.height();
-                let char_height = editor.buffer_view.lock().calc.char_height;
+                let height = editor.buffer_view.lock().calc.terminal_rect.height();
+                let char_height = editor.buffer_view.lock().calc.font_height;
                 let pg_size = (height / char_height) as i32;
                 editor.set_caret(pos.x, pos.y - pg_size);
             }
@@ -284,12 +284,19 @@ impl Tool for ClickTool {
             MKey::Home => {
                 let mut pos = editor.get_caret_position();
                 pos.x = 0;
-                editor.set_caret_position(pos);
+
+                if let MModifiers::Control = modifier {
+                    pos.y = 0;
+                }
+                editor.set_caret(pos.x, pos.y);
             }
             MKey::End => {
                 let mut pos = editor.get_caret_position();
                 pos.x = i32::MAX;
-                editor.set_caret_position(pos);
+                if let MModifiers::Control = modifier {
+                    pos.y = i32::MAX;
+                }
+                editor.set_caret(pos.x, pos.y);
             }
 
             MKey::Character(ch) => {

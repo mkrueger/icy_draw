@@ -239,7 +239,7 @@ impl AnsiEditor {
             guide: None,
             raster: None,
             outline_font_mode: false,
-            next_scroll_position: None
+            next_scroll_position: None,
         }
     }
 
@@ -352,21 +352,32 @@ impl AnsiEditor {
 
         let char_scroll_position = self.buffer_view.lock().calc.char_scroll_positon;
         let terminal_height = self.buffer_view.lock().calc.terminal_rect.height();
-        let buffer_height = self.buffer_view.lock().calc.buffer_rect.height().min(terminal_height);
+        let buffer_height = self
+            .buffer_view
+            .lock()
+            .calc
+            .buffer_rect
+            .height()
+            .min(terminal_height);
         let buffer_char_height = buffer_height / self.buffer_view.lock().calc.scale.y;
 
         let y = min(max(0, y), h);
         self.set_caret_position(Position::new(min(max(0, x), w), y));
 
-        let char_height = self.buffer_view.lock().get_buffer().get_font_dimensions().height as f32;
+        let char_height = self
+            .buffer_view
+            .lock()
+            .get_buffer()
+            .get_font_dimensions()
+            .height as f32;
         let y = y as f32 * char_height;
 
-        if y  < char_scroll_position  {
+        if y < char_scroll_position {
             self.next_scroll_position = Some(y);
         }
-        
-        if y  > (char_scroll_position + buffer_char_height  - char_height)  {
-            self.next_scroll_position = Some((y - buffer_char_height + char_height) .max(0.0));
+
+        if y > (char_scroll_position + buffer_char_height - char_height) {
+            self.next_scroll_position = Some((y - buffer_char_height + char_height).max(0.0));
         }
 
         Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())
@@ -584,26 +595,24 @@ impl AnsiEditor {
                         ..
                     } => {
                         let mut key_code = *key as u32;
-                        if !(modifiers.ctrl || modifiers.command || modifiers.alt) {
-                            if modifiers.shift {
-                                key_code |= SHIFT_MOD;
-                            }
+                        if modifiers.shift {
+                            key_code |= SHIFT_MOD;
+                        }
 
-                            let mut modifier: MModifiers = MModifiers::None;
-                            if modifiers.ctrl || modifiers.command {
-                                modifier = MModifiers::Control;
-                            }
+                        let mut modifier: MModifiers = MModifiers::None;
+                        if modifiers.ctrl || modifiers.command {
+                            modifier = MModifiers::Control;
+                        }
 
-                            if modifiers.shift {
-                                modifier = MModifiers::Shift;
-                            }
-                            for (k, m) in ANSI_KEY_MAP {
-                                if *k == key_code {
-                                    cur_tool.handle_key(self, *m, modifier);
-                                    self.buffer_view.lock().redraw_view();
-                                    self.redraw_view();
-                                    break;
-                                }
+                        if modifiers.shift {
+                            modifier = MModifiers::Shift;
+                        }
+                        for (k, m) in ANSI_KEY_MAP {
+                            if *k == key_code {
+                                cur_tool.handle_key(self, *m, modifier);
+                                self.buffer_view.lock().redraw_view();
+                                self.redraw_view();
+                                break;
                             }
                         }
                     }
@@ -807,61 +816,19 @@ pub const SHIFT_MOD: u32 = 0b0100_0000_0000_0000_0000;
 pub static ANSI_KEY_MAP: &[(u32, MKey)] = &[
     (Key::Escape as u32, MKey::Escape),
     (Key::Home as u32, MKey::Home),
+    (Key::End as u32, MKey::End),
+    (Key::Home as u32 | CTRL_MOD, MKey::Home),
+    (Key::End as u32 | CTRL_MOD, MKey::End),
     (Key::Insert as u32, MKey::Insert),
     (Key::Backspace as u32, MKey::Backspace),
     (Key::Enter as u32, MKey::Return),
     (Key::Tab as u32, MKey::Tab),
     (Key::Tab as u32 | SHIFT_MOD, MKey::Tab),
     (Key::Delete as u32, MKey::Delete),
-    (Key::End as u32, MKey::End),
     (Key::PageUp as u32, MKey::PageUp),
     (Key::PageDown as u32, MKey::PageDown),
-    (Key::F1 as u32, MKey::F1),
-    (Key::F2 as u32, MKey::F2),
-    (Key::F3 as u32, MKey::F3),
-    (Key::F4 as u32, MKey::F4),
-    (Key::F5 as u32, MKey::F5),
-    (Key::F6 as u32, MKey::F6),
-    (Key::F7 as u32, MKey::F7),
-    (Key::F8 as u32, MKey::F8),
-    (Key::F9 as u32, MKey::F9),
-    (Key::F10 as u32, MKey::F10),
-    (Key::F11 as u32, MKey::F11),
-    (Key::F12 as u32, MKey::F12),
     (Key::ArrowUp as u32, MKey::Up),
     (Key::ArrowDown as u32, MKey::Down),
     (Key::ArrowRight as u32, MKey::Right),
     (Key::ArrowLeft as u32, MKey::Left),
-    (Key::A as u32 | CTRL_MOD, MKey::Character(1)),
-    (Key::B as u32 | CTRL_MOD, MKey::Character(2)),
-    (Key::C as u32 | CTRL_MOD, MKey::Character(3)),
-    (Key::D as u32 | CTRL_MOD, MKey::Character(4)),
-    (Key::E as u32 | CTRL_MOD, MKey::Character(5)),
-    (Key::F as u32 | CTRL_MOD, MKey::Character(6)),
-    (Key::G as u32 | CTRL_MOD, MKey::Character(7)),
-    (Key::H as u32 | CTRL_MOD, MKey::Character(8)),
-    (Key::I as u32 | CTRL_MOD, MKey::Character(9)),
-    (Key::J as u32 | CTRL_MOD, MKey::Character(10)),
-    (Key::K as u32 | CTRL_MOD, MKey::Character(11)),
-    (Key::L as u32 | CTRL_MOD, MKey::Character(12)),
-    (Key::M as u32 | CTRL_MOD, MKey::Character(13)),
-    (Key::N as u32 | CTRL_MOD, MKey::Character(14)),
-    (Key::O as u32 | CTRL_MOD, MKey::Character(15)),
-    (Key::P as u32 | CTRL_MOD, MKey::Character(16)),
-    (Key::Q as u32 | CTRL_MOD, MKey::Character(17)),
-    (Key::R as u32 | CTRL_MOD, MKey::Character(18)),
-    (Key::S as u32 | CTRL_MOD, MKey::Character(19)),
-    (Key::T as u32 | CTRL_MOD, MKey::Character(20)),
-    (Key::U as u32 | CTRL_MOD, MKey::Character(21)),
-    (Key::V as u32 | CTRL_MOD, MKey::Character(22)),
-    (Key::W as u32 | CTRL_MOD, MKey::Character(23)),
-    (Key::X as u32 | CTRL_MOD, MKey::Character(24)),
-    (Key::Y as u32 | CTRL_MOD, MKey::Character(25)),
-    (Key::Z as u32 | CTRL_MOD, MKey::Character(26)),
-    (Key::Num2 as u32 | CTRL_MOD, MKey::Character(0)),
-    (Key::Num3 as u32 | CTRL_MOD, MKey::Character(0x1B)),
-    (Key::Num4 as u32 | CTRL_MOD, MKey::Character(0x1C)),
-    (Key::Num5 as u32 | CTRL_MOD, MKey::Character(0x1D)),
-    (Key::Num6 as u32 | CTRL_MOD, MKey::Character(0x1E)),
-    (Key::Num7 as u32 | CTRL_MOD, MKey::Character(0x1F)),
 ];
