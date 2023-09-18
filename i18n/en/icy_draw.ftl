@@ -70,6 +70,10 @@ menu-color-mode-ext-colors=256 Colors
 menu-color-mode-ext-font=16 Colors, ext font, blink
 menu-color-mode-ext-font-ice=16 Colors, ext font, ice
 menu-select_palette=Select Palette
+menu-next_fg_color=Next Foreground Color
+menu-next_bg_color=Next Background Color
+menu-prev_fg_color=Previous Foreground Color
+menu-prev_bg_color=Previous Background Color
 
 menu-view=View
 menu-reference-image=Open Reference Image…

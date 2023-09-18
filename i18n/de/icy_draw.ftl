@@ -71,6 +71,10 @@ menu-color-mode-ext-font=16 Farben, ext font, blink
 menu-color-mode-ext-font-ice=16 Farben, ext font, ice
 menu-select_palette=Palette auswählen
 menu-open_palette_directory=Öffne Palettenverzeichnis…
+menu-next_fg_color=Nächste Vordergrundfarbe
+menu-next_bg_color=Nächste Hintergrundfarbe
+menu-prev_fg_color=Vorherige Vordergrundfarbe
+menu-prev_bg_color=Vorherige Hintergrundfarbe
 
 menu-view=Ansicht
 menu-reference-image=Referenzbild setzen…

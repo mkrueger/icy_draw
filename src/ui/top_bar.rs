@@ -456,6 +456,30 @@ impl MainWindow {
                 self.commands
                     .as_ref()
                     .unwrap()
+                    .next_fg_color
+                    .ui(ui, &mut result);
+                self.commands
+                    .as_ref()
+                    .unwrap()
+                    .prev_fg_color
+                    .ui(ui, &mut result);
+
+                ui.separator();
+
+                self.commands
+                    .as_ref()
+                    .unwrap()
+                    .next_bg_color
+                    .ui(ui, &mut result);
+                self.commands
+                    .as_ref()
+                    .unwrap()
+                    .prev_bg_color
+                    .ui(ui, &mut result);
+
+                self.commands
+                    .as_ref()
+                    .unwrap()
                     .pick_attribute_under_caret
                     .ui(ui, &mut result);
                 self.commands

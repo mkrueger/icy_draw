@@ -440,7 +440,7 @@ keys![
         InsertRow,
         BufferOpenState,
         ArrowUp,
-        CTRL
+        ALT
     ),
     (
         delete_row,
@@ -448,7 +448,7 @@ keys![
         DeleteRow,
         BufferOpenState,
         ArrowDown,
-        CTRL
+        ALT
     ),
     (
         insert_column,
@@ -456,7 +456,7 @@ keys![
         InsertColumn,
         BufferOpenState,
         ArrowRight,
-        CTRL
+        ALT
     ),
     (
         delete_column,
@@ -464,7 +464,7 @@ keys![
         DeleteColumn,
         BufferOpenState,
         ArrowLeft,
-        CTRL
+        ALT
     ),
     (
         erase_row,
@@ -703,5 +703,37 @@ keys![
         "menu-open_plugin_directory",
         OpenPluginDirectory,
         AlwaysEnabledState
+    ),
+    (
+        next_fg_color,
+        "menu-next_fg_color",
+        NextFgColor,
+        BufferOpenState,
+        ArrowDown,
+        CTRL
+    ),
+    (
+        prev_fg_color,
+        "menu-prev_fg_color",
+        PreviousFgColor,
+        BufferOpenState,
+        ArrowUp,
+        CTRL
+    ),
+    (
+        next_bg_color,
+        "menu-next_bg_color",
+        NextBgColor,
+        BufferOpenState,
+        ArrowRight,
+        CTRL
+    ),
+    (
+        prev_bg_color,
+        "menu-prev_bg_color",
+        PreviousBgColor,
+        BufferOpenState,
+        ArrowLeft,
+        CTRL
     ),
 ];

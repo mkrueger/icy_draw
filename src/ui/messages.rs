@@ -141,6 +141,10 @@ pub enum Message {
     RunPlugin(usize),
     OpenPluginDirectory,
     SelectPreviousTool,
+    NextFgColor,
+    PreviousFgColor,
+    NextBgColor,
+    PreviousBgColor,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -1049,6 +1053,83 @@ impl MainWindow {
                     self.handle_message(Some(Message::ShowError(format!("{err}"))));
                 }
             },
+
+            Message::NextFgColor => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let palette_len =
+                        editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let fg = editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .get_attribute()
+                        .get_foreground();
+
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_foreground((fg + 1) % palette_len);
+                    None
+                });
+            }
+            Message::PreviousFgColor => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let palette_len =
+                        editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let fg = editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .get_attribute()
+                        .get_foreground();
+
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_foreground((fg + palette_len - 1) % palette_len);
+                    None
+                });
+            }
+            Message::NextBgColor => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let palette_len =
+                        editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let bg = editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .get_attribute()
+                        .get_background();
+
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_background((bg + 1) % palette_len);
+                    None
+                });
+            }
+            Message::PreviousBgColor => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let palette_len =
+                        editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let bg = editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .get_attribute()
+                        .get_background();
+
+                    editor
+                        .buffer_view
+                        .lock()
+                        .get_caret_mut()
+                        .set_background((bg + palette_len - 1) % palette_len);
+                    None
+                });
+            }
         }
     }
 }
