@@ -1,7 +1,7 @@
 use eframe::egui;
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle};
+use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle, TextPane};
 use icy_engine_egui::TerminalCalc;
 
 use crate::{
@@ -216,9 +216,6 @@ impl Tool for ClickTool {
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
         // TODO Keys:
 
-        // Tab - Next tab
-        // Shift+Tab - Prev tab
-
         // ctrl+pgup  - upper left corner
         // ctrl+pgdn  - lower left corner
 
@@ -318,42 +315,21 @@ impl Tool for ClickTool {
             MKey::Escape => {
                 editor.buffer_view.lock().clear_selection();
             }
-            /*
+
             MKey::Tab => {
-                let tab_size = unsafe { crate::WORKSPACE.settings.tab_size } ;
-                if let MModifiers::Control = modifier {
-                    let tabs = max(0, (pos.x / tab_size) - 1);
+                let tab_size = 8;
+                if let MModifiers::Shift = modifier {
+                    let tabs = ((pos.x / tab_size) - 1).max(0);
                     let next_tab = tabs * tab_size;
                     editor.set_caret(next_tab, pos.y);
                 } else {
                     let tabs = 1 + pos.x / tab_size;
-                    let next_tab = min(editor.get_buffer().width as i32 - 1, tabs * tab_size);
+                    let next_tab = (editor.buffer_view.lock().get_buffer().get_width() - 1)
+                        .min(tabs * tab_size);
                     editor.set_caret(next_tab, pos.y);
                 }
             }
-            MKey::Home  => {
-                if let MModifiers::Control = modifier {
-                    for i in 0..editor.get_buffer().width {
-                        if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
-                            editor.set_caret(i as i32, pos.y);
-                            return Event::None;
-                        }
-                    }
-                }
-                editor.set_caret(0, pos.y);
-            }
-            MKey::End => {
-                if let MModifiers::Control = modifier {
-                    for i in (0..editor.get_buffer().width).rev()  {
-                        if !editor.get_char_from_cur_layer(pos.with_x(i as i32)).unwrap_or_default().is_transparent() {
-                            editor.set_caret(i as i32, pos.y);
-                            return Event::None;
-                        }
-                    }
-                }
-                let w = editor.get_buffer().width as i32;
-                editor.set_caret(w - 1, pos.y);
-            }*/
+
             MKey::Return => {
                 editor.set_caret(0, pos.y + 1);
             }
@@ -363,6 +339,12 @@ impl Tool for ClickTool {
             }
             MKey::Backspace => {
                 editor.backspace();
+            }
+
+            MKey::Delete => {
+                if editor.buffer_view.lock().get_selection().is_none() {
+                    editor.delete();
+                }
             }
 
             MKey::Home => {

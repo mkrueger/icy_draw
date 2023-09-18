@@ -74,7 +74,6 @@ impl MinimapToolWindow {
         };
 
         let opt = icy_engine_egui::TerminalOptions {
-            focus_lock: false,
             stick_to_bottom: false,
             scale: Some(Vec2::new(scalex, scaley)),
             use_terminal_height: false,
@@ -86,6 +85,7 @@ impl MinimapToolWindow {
 
     pub(crate) fn new(gl: Arc<glow::Context>) -> Self {
         let mut buffer_view = BufferView::new(&gl, glow::NEAREST as i32);
+        buffer_view.interactive = false;
         buffer_view.get_buffer_mut().is_terminal_buffer = true;
         buffer_view.get_caret_mut().is_visible = false;
         Self {

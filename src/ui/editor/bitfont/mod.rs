@@ -47,11 +47,9 @@ impl BitFontEditor {
     pub fn new(gl: &Arc<glow::Context>, id: usize, font: BitFont) -> Self {
         let mut buffer = Buffer::new(Size::new(10, 10));
         buffer.is_terminal_buffer = true;
-        let buffer_view = Arc::new(Mutex::new(BufferView::from_buffer(
-            gl,
-            buffer,
-            glow::NEAREST as i32,
-        )));
+        let mut buffer_view = BufferView::from_buffer(gl, buffer, glow::NEAREST as i32);
+        buffer_view.interactive = false;
+        let buffer_view = Arc::new(Mutex::new(buffer_view));
 
         let last_updated_font = font.clone();
         Self {
@@ -596,7 +594,6 @@ impl Document for BitFontEditor {
                         scale.y *= 1.35;
                     }
                     let opt = icy_engine_egui::TerminalOptions {
-                        focus_lock: false,
                         stick_to_bottom: false,
                         scale: Some(Vec2::new(2.0, 2.0)),
                         settings: MonitorSettings {

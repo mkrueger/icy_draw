@@ -158,14 +158,12 @@ impl Document for AnsiEditor {
         } else {
             ICED_EXT.to_string()
         };
-        println!("extension:{}", ext);
         let options = SaveOptions::new();
         let bytes = self
             .buffer_view
             .lock()
             .get_buffer()
             .to_bytes(&ext, &options)?;
-        println!("return2 : {}", bytes.len());
         Ok(bytes)
     }
 
@@ -183,7 +181,6 @@ impl Document for AnsiEditor {
             scale.y *= 1.35;
         }
         let opt = icy_engine_egui::TerminalOptions {
-            focus_lock: false,
             stick_to_bottom: false,
             scale: Some(scale),
             fit_width: options.fit_width,
@@ -446,8 +443,8 @@ impl AnsiEditor {
     pub fn type_key(&mut self, char_code: char) {
         let pos = self.buffer_view.lock().get_caret().get_position();
         if self.buffer_view.lock().get_caret().insert_mode {
-            let start = self.buffer_view.lock().get_buffer().get_width() - 1;
-            for i in start..=pos.x {
+            let end = self.buffer_view.lock().get_buffer().get_width();
+            for i in (pos.x..end).rev() {
                 let next = self.get_char_from_cur_layer(Position::new(i - 1, pos.y));
                 self.set_char(Position::new(i, pos.y), next);
             }
@@ -704,19 +701,10 @@ impl AnsiEditor {
         }
     }
 
-    pub(crate) fn backspace(&mut self) {
+    pub fn backspace(&mut self) {
         self.buffer_view.lock().clear_selection();
         let pos = self.get_caret_position();
         if pos.x > 0 {
-            /* if (caret.fontMode() && FontTyped && cpos > 0)  {
-                caret.getX() -= CursorPos[cpos] - 1;
-                for (a=0;a<=CursorPos[cpos];a++)
-                for (b=0;b<=FontLibrary::getInstance().maxY;b++) {
-                    getCurrentBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getCharacter(caret.getLogicalY() + b, caret.getLogicalX()+a);
-                    getCurrentBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a) = getUndoBuffer()->getAttribute(caret.getLogicalY() + b, caret.getLogicalX()+a);
-                }
-                cpos--;
-            } else {*/
             self.set_caret_position(pos + Position::new(-1, 0));
             if self.buffer_view.lock().get_caret().insert_mode {
                 let end = self.buffer_view.lock().get_width() - 1;
@@ -730,6 +718,19 @@ impl AnsiEditor {
                 let pos = self.get_caret_position();
                 self.set_char(pos, AttributedChar::invisible());
             }
+        }
+    }
+    pub fn delete(&mut self) {
+        self.buffer_view.lock().clear_selection();
+        let pos = self.get_caret_position();
+        if pos.x > 0 {
+            let end = self.buffer_view.lock().get_width() - 1;
+            for i in pos.x..end {
+                let next = self.get_char_from_cur_layer(Position::new(i + 1, pos.y));
+                self.set_char(Position::new(i, pos.y), next);
+            }
+            let last_pos = Position::new(self.buffer_view.lock().get_width() - 1, pos.y);
+            self.set_char(last_pos, AttributedChar::invisible());
         }
     }
 }
@@ -788,6 +789,7 @@ pub static ANSI_KEY_MAP: &[(u32, MKey)] = &[
     (Key::Backspace as u32, MKey::Backspace),
     (Key::Enter as u32, MKey::Return),
     (Key::Tab as u32, MKey::Tab),
+    (Key::Tab as u32 | SHIFT_MOD, MKey::Tab),
     (Key::Delete as u32, MKey::Delete),
     (Key::End as u32, MKey::End),
     (Key::PageUp as u32, MKey::PageUp),

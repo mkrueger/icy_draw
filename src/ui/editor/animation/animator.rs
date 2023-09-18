@@ -265,7 +265,6 @@ impl UserData for LuaBuffer {
             |_, this, (layer, is_visible): (i32, bool)| {
                 let layer = layer as usize;
                 if layer < this.buffer.layers.len() {
-                    println!("set layer {} visible {}", layer, is_visible);
                     this.buffer.layers[layer].is_visible = is_visible;
                     Ok(())
                 } else {
@@ -349,8 +348,6 @@ impl Animator {
             })
             .to_string();
         //  txt.push_str(&in_txt[last_pos..]);
-
-        println!("{}", txt);
 
         globals
             .set(

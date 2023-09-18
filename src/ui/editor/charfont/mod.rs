@@ -314,7 +314,6 @@ impl Document for CharFontEditor {
                                 });
 
                             let opt = icy_engine_egui::TerminalOptions {
-                                focus_lock: false,
                                 stick_to_bottom: false,
                                 scale: Some(Vec2::new(2.0, 2.0)),
                                 settings: MonitorSettings {
@@ -446,11 +445,9 @@ impl CharFontEditor {
 
         let mut buffer = Buffer::new(Size::new(30, 12));
         buffer.is_terminal_buffer = true;
-        let outline_previewbuffer_view = Arc::new(Mutex::new(BufferView::from_buffer(
-            gl,
-            buffer,
-            glow::NEAREST as i32,
-        )));
+        let mut buffer_view = BufferView::from_buffer(gl, buffer, glow::NEAREST as i32);
+        buffer_view.interactive = false;
+        let outline_previewbuffer_view = Arc::new(Mutex::new(buffer_view));
 
         let mut res = Self {
             id,
