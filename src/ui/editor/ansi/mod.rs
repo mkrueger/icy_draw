@@ -269,7 +269,7 @@ impl AnsiEditor {
         let buffer_view = &mut self.buffer_view.lock();
         let pos = Position::new(
             min(buffer_view.get_width() - 1, max(0, pos.x)),
-            min(buffer_view.get_buffer().get_line_count() - 1, max(0, pos.y)),
+            min(buffer_view.get_buffer().get_height() - 1, max(0, pos.y)),
         );
         buffer_view.get_caret_mut().set_position(pos);
         //(self.pos_changed)(self, pos);
@@ -345,7 +345,7 @@ impl AnsiEditor {
     pub fn set_caret(&mut self, x: i32, y: i32) -> Event {
         let old = self.buffer_view.lock().get_caret().get_position();
         let w = self.buffer_view.lock().get_buffer().get_width() - 1;
-        let h = self.buffer_view.lock().get_buffer().get_line_count() - 1;
+        let h = self.buffer_view.lock().get_buffer().get_height() - 1;
         self.set_caret_position(Position::new(min(max(0, x), w), min(max(0, y), h)));
         Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())
     }

@@ -2,9 +2,23 @@ use eframe::egui::{self, Modifiers};
 use egui_bind::{BindTarget, KeyOrPointer};
 use i18n_embed_fl::fl;
 
-use crate::{button_with_shortcut, Message};
+use crate::{button_with_shortcut, MainWindow, Message};
 
-pub struct Command {
+trait Command {
+    fn is_pressed(&self, ctx: &egui::Context) -> bool;
+    fn is_enabled(&self, _window: &MainWindow) -> bool {
+        true
+    }
+    fn is_checked(&self, _window: &MainWindow) -> Option<bool> {
+        None
+    }
+    fn run(&self, _window: &MainWindow) -> Option<Message> {
+        None
+    }
+    fn ui(&self, ui: &mut egui::Ui, message: &mut Option<Message>);
+}
+
+pub struct BasicCommand {
     key: Option<(KeyOrPointer, Modifiers)>,
     message: Message,
     description: String,
@@ -67,7 +81,7 @@ macro_rules! keys {
     ($( ($l:ident, $translation: expr, $message:ident$(, $key:ident, $modifier: ident)? ) ),* $(,)? ) => {
         pub struct Commands {
             $(
-                pub $l: Command,
+                pub $l: BasicCommand,
             )*
         }
 
@@ -75,7 +89,7 @@ macro_rules! keys {
             fn default() -> Self {
                 Self {
                     $(
-                        $l: Command::new(key!($($key, $modifier)?), Message::$message, fl!(crate::LANGUAGE_LOADER, $translation)),
+                        $l: BasicCommand::new(key!($($key, $modifier)?), Message::$message, fl!(crate::LANGUAGE_LOADER, $translation)),
                     )*
                 }
             }
@@ -94,7 +108,7 @@ macro_rules! keys {
     };
 }
 
-impl Command {
+impl BasicCommand {
     pub fn new(
         key: Option<(KeyOrPointer, Modifiers)>,
         message: Message,

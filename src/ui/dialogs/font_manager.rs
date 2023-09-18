@@ -202,6 +202,16 @@ impl crate::ModalDialog for FontManager {
                         self.replace_with = 0;
                         self.do_select = true;
                     }
+
+                    if ui
+                        .add_enabled(self.selected > 0, Button::new("Copy Font as Ansi"))
+                        .clicked()
+                    {
+                        let lock = &self.buffer_view.lock();
+                        if let Some(font) = lock.get_buffer().get_font(self.selected) {
+                            ui.output_mut(|o| o.copied_text = font.encode_as_ansi(self.selected));
+                        }
+                    }
                 });
             });
 
@@ -232,6 +242,9 @@ fn replace_font_usage(buffer_view: &mut BufferView, from: usize, to: usize) {
         buffer_view.get_caret_mut().set_font_page(to);
     }
     for layer in &mut buffer_view.get_buffer_mut().layers {
+        if layer.default_font_page == from {
+            layer.default_font_page = to;
+        }
         for y in 0..layer.get_height() {
             for x in 0..layer.get_width() {
                 let mut ch = layer.get_char((x, y));
