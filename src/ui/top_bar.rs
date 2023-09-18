@@ -560,9 +560,6 @@ impl MainWindow {
                             )
                             .clicked()
                         {
-                            self.document_behavior
-                                .document_options
-                                .set_scale(Vec2::new(3.0, 3.0));
                             ui.close_menu();
                         }
                     },
