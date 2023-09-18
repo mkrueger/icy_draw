@@ -14,11 +14,10 @@ use crate::{
     ToolTab, TopBar,
 };
 use directories::UserDirs;
-use eframe::egui::accesskit::Role::MenuItem;
-use eframe::egui::{Button, Sense};
+use eframe::egui::Button;
 use eframe::{
-    egui::{self, Key, Response, SidePanel, TextStyle, Ui},
-    epaint::{pos2, FontId},
+    egui::{self, Key, Response, SidePanel, Ui},
+    epaint::FontId,
 };
 use egui_tiles::{Container, TileId};
 use glow::Context;
@@ -43,7 +42,7 @@ pub struct MainWindow {
     pub right_panel: bool,
     pub bottom_panel: bool,
 
-    pub commands: Commands,
+    pub commands: Option<Commands>,
     pub is_fullscreen: bool,
 
     pub in_open_file_mode: bool,
@@ -203,7 +202,7 @@ impl MainWindow {
             right_panel: true,
             bottom_panel: false,
             top_bar: TopBar::new(&cc.egui_ctx),
-            commands: Commands::default(),
+            commands: Some(Commands::default()),
             is_closed: false,
             is_fullscreen: false,
             in_open_file_mode: false,
@@ -318,7 +317,46 @@ impl MainWindow {
         }
     }
 
-    pub fn get_active_pane(&mut self) -> Option<&mut DocumentTab> {
+    pub fn get_active_pane_mut(&mut self) -> Option<&mut DocumentTab> {
+        let mut stack = vec![];
+
+        if let Some(root) = self.document_tree.root {
+            stack.push(root);
+        }
+        while let Some(id) = stack.pop() {
+            match self.document_tree.tiles.get(id) {
+                Some(egui_tiles::Tile::Pane(_)) => {
+                    if let Some(egui_tiles::Tile::Pane(p)) = self.document_tree.tiles.get_mut(id) {
+                        return Some(p);
+                    } else {
+                        return None;
+                    }
+                }
+                Some(egui_tiles::Tile::Container(container)) => match container {
+                    egui_tiles::Container::Tabs(tabs) => {
+                        if let Some(active) = tabs.active {
+                            stack.push(active);
+                        }
+                    }
+                    egui_tiles::Container::Linear(l) => {
+                        for child in l.children.iter() {
+                            stack.push(*child);
+                        }
+                    }
+                    egui_tiles::Container::Grid(g) => {
+                        for child in g.children() {
+                            stack.push(*child);
+                        }
+                    }
+                },
+                None => {}
+            }
+        }
+
+        None
+    }
+
+    pub fn get_active_pane(&mut self) -> Option<&DocumentTab> {
         let mut stack = vec![];
 
         if let Some(root) = self.document_tree.root {
@@ -432,7 +470,7 @@ impl MainWindow {
     }
 
     pub fn get_active_document(&mut self) -> Option<Arc<Mutex<Box<dyn Document>>>> {
-        if let Some(pane) = self.get_active_pane() {
+        if let Some(pane) = self.get_active_pane_mut() {
             return Some(pane.doc.clone());
         }
         None
@@ -499,7 +537,7 @@ pub fn button_with_shortcut(
     shortcut: impl Into<String>,
 ) -> Response {
     let title = label.into();
-    let mut button = Button::new(title).shortcut_text(shortcut.into());
+    let button = Button::new(title).shortcut_text(shortcut.into());
     ui.add_enabled(enabled, button)
 }
 
@@ -754,7 +792,7 @@ impl eframe::App for MainWindow {
         }
 
         let mut msg = self.document_behavior.message.take();
-        self.commands.check(ctx, &mut msg);
+        self.commands.as_ref().unwrap().check(ctx, &mut msg);
         self.handle_message(msg);
         self.handle_message(read_outline_keys(ctx));
 

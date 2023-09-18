@@ -346,6 +346,7 @@ new-file-template-thedraw-ui-label=
 manage-font-dialog-title=Manage Fonts
 
 palette_selector-dos_default_palette=VGA 16 colors
+palette_selector-dos_default_low_palette=VGA 8 colors
 palette_selector-c64_default_palette=C64 colors
 palette_selector-ega_default_palette=EGA 64 colors
 palette_selector-xterm_default_palette=XTerm extended colors

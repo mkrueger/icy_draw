@@ -749,37 +749,20 @@ pub fn terminal_context_menu(
     let mut result = None;
     ui.input_mut(|i| i.events.clear());
 
-    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-cut")).clicked() {
-        result = Some(Message::Cut);
-        ui.close_menu();
-    }
-
-    if ui
-        .button(fl!(crate::LANGUAGE_LOADER, "menu-copy"))
-        .clicked()
-    {
-        result = Some(Message::Copy);
-        ui.close_menu();
-    }
-
-    if ui
-        .button(fl!(crate::LANGUAGE_LOADER, "menu-paste"))
-        .clicked()
-    {
-        result = Some(Message::Paste);
-        ui.close_menu();
-    }
+    commands.cut.ui(ui, &mut result);
+    commands.copy.ui(ui, &mut result);
+    commands.paste.ui(ui, &mut result);
 
     let sel = editor.buffer_view.lock().get_selection();
 
     if let Some(_sel) = sel {
-        commands.erase_selection.ui_enabled(ui, true, &mut result);
-        commands.flip_x.ui_enabled(ui, true, &mut result);
-        commands.flip_y.ui_enabled(ui, true, &mut result);
-        commands.justifycenter.ui_enabled(ui, true, &mut result);
-        commands.justifyleft.ui_enabled(ui, true, &mut result);
-        commands.justifyright.ui_enabled(ui, true, &mut result);
-        commands.crop.ui_enabled(ui, true, &mut result);
+        commands.erase_selection.ui(ui, &mut result);
+        commands.flip_x.ui(ui, &mut result);
+        commands.flip_y.ui(ui, &mut result);
+        commands.justifycenter.ui(ui, &mut result);
+        commands.justifyleft.ui(ui, &mut result);
+        commands.justifyright.ui(ui, &mut result);
+        commands.crop.ui(ui, &mut result);
     }
     result
 }

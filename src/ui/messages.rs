@@ -160,7 +160,7 @@ impl MainWindow {
                 self.open_dialog(NewFileDialog::default());
             }
             Message::OpenFileDialog => {
-                let mut initial_directory = if let Some(d) = self.get_active_pane() {
+                let mut initial_directory = if let Some(d) = self.get_active_pane_mut() {
                     d.get_path()
                 } else {
                     None
@@ -190,7 +190,7 @@ impl MainWindow {
             }
 
             Message::SaveFile => {
-                let msg = if let Some(pane) = self.get_active_pane() {
+                let msg = if let Some(pane) = self.get_active_pane_mut() {
                     if pane.is_untitled() {
                         Some(Message::SaveFileAs)
                     } else {

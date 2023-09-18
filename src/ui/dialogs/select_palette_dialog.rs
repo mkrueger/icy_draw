@@ -47,6 +47,13 @@ impl SelectPaletteDialog {
         );
         palettes.push((dos, PaletteSource::BuiltIn));
 
+        let mut dos = Palette::from_colors(DOS_DEFAULT_PALETTE[0..8].to_vec());
+        dos.title = fl!(
+            crate::LANGUAGE_LOADER,
+            "palette_selector-dos_default_low_palette"
+        );
+        palettes.push((dos, PaletteSource::BuiltIn));
+
         let mut dos = Palette::from_colors(C64_DEFAULT_PALETTE.to_vec());
         dos.title = fl!(
             crate::LANGUAGE_LOADER,

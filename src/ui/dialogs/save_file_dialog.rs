@@ -44,7 +44,7 @@ impl crate::ModalDialog for SaveFileDialog {
 
     fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         if let Some(file) = &self.opened_file.clone() {
-            if let Some(pane) = window.get_active_pane() {
+            if let Some(pane) = window.get_active_pane_mut() {
                 pane.set_path(file.clone());
                 pane.save();
             }

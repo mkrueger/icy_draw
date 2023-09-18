@@ -343,6 +343,7 @@ new-file-template-thedraw-ui-label=
     Eine große Font-Sammlung kann hier heruntergeladen werden:
 
 palette_selector-dos_default_palette=VGA 16 Farben
+palette_selector-dos_default_low_palette=VGA 8 Farben
 palette_selector-c64_default_palette=C64 Farben
 palette_selector-ega_default_palette=EGA 64 Farben
 palette_selector-xterm_default_palette=XTerm erweiterte Palette
