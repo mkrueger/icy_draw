@@ -607,7 +607,7 @@ impl AnsiEditor {
                         if modifiers.shift {
                             modifier = MModifiers::Shift;
                         }
-                        for (k, m) in ANSI_KEY_MAP {
+                        for (k, m) in EDITOR_KEY_MAP {
                             if *k == key_code {
                                 cur_tool.handle_key(self, *m, modifier);
                                 self.buffer_view.lock().redraw_view();
@@ -813,7 +813,7 @@ pub fn terminal_context_menu(
 pub const CTRL_MOD: u32 = 0b1000_0000_0000_0000_0000;
 pub const SHIFT_MOD: u32 = 0b0100_0000_0000_0000_0000;
 
-pub static ANSI_KEY_MAP: &[(u32, MKey)] = &[
+pub static EDITOR_KEY_MAP: &[(u32, MKey)] = &[
     (Key::Escape as u32, MKey::Escape),
     (Key::Home as u32, MKey::Home),
     (Key::End as u32, MKey::End),
@@ -843,5 +843,4 @@ pub static ANSI_KEY_MAP: &[(u32, MKey)] = &[
     (Key::F10 as u32, MKey::F10),
     (Key::F11 as u32, MKey::F11),
     (Key::F12 as u32, MKey::F12),
-    
 ];
