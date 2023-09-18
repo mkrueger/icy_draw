@@ -135,7 +135,6 @@ impl FillOperation {
                     }
                 }
             }
-
             if self.use_fore {
                 repl_ch
                     .attribute
@@ -159,6 +158,7 @@ impl FillOperation {
                     .get_attribute()
                     .get_font_page(),
             );
+            repl_ch.attribute.attr &= !icy_engine::attribute::INVISIBLE;
             editor.set_char(pos, repl_ch);
         }
 
@@ -259,7 +259,6 @@ impl Tool for FillTool {
                 .get_cur_layer()
                 .unwrap()
                 .get_char(pos);
-
             if self.use_back || self.use_fore || matches!(self.fill_type, FillType::Character) {
                 let _undo =
                     editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-bucket-fill"));

@@ -1,7 +1,7 @@
 use std::{path::Path, sync::Arc};
 
 use eframe::{
-    egui::{self, Button, RichText, ScrollArea, SidePanel, TextEdit, TopBottomPanel},
+    egui::{self, Button, ScrollArea, SidePanel, TextEdit, TopBottomPanel},
     epaint::{mutex::Mutex, Vec2},
 };
 use egui_extras::RetainedImage;
