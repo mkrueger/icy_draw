@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use eframe::egui::{self, Modifiers};
 use egui_bind::{BindTarget, KeyOrPointer};
 use i18n_embed_fl::fl;
@@ -161,9 +163,9 @@ pub struct CommandWrapper {
     key: Option<(KeyOrPointer, Modifiers)>,
     message: Message,
     label: String,
-    is_enabled: bool,
-    is_checked: Option<bool>,
-    state: Box<dyn CommandState>,
+    pub is_enabled: bool,
+    pub is_checked: Option<bool>,
+    state: String,
 }
 
 mod modifier_keys {
@@ -222,6 +224,7 @@ macro_rules! key {
 macro_rules! keys {
     ($( ($l:ident, $translation: expr, $message:ident, $cmd_state: ident$(, $key:ident, $modifier: ident)? ) ),* $(,)? ) => {
         pub struct Commands {
+            state_map: HashMap<String, Box<dyn CommandState>>,
             $(
                 pub $l: CommandWrapper,
             )*
@@ -229,9 +232,15 @@ macro_rules! keys {
 
         impl Default for Commands {
             fn default() -> Self {
+                let mut state_map = HashMap::<String, Box<dyn CommandState>>::new();
+                $(
+                    state_map.insert(stringify!($cmd_state).into(), Box::<$cmd_state>::default());
+                )*
+                
                 Self {
+                    state_map,
                     $(
-                        $l: CommandWrapper::new(key!($($key, $modifier)?), Message::$message, fl!(crate::LANGUAGE_LOADER, $translation), Box::<$cmd_state>::default()),
+                        $l: CommandWrapper::new(key!($($key, $modifier)?), Message::$message, fl!(crate::LANGUAGE_LOADER, $translation), stringify!($cmd_state).into()),
                     )*
                 }
             }
@@ -248,8 +257,15 @@ macro_rules! keys {
             }
 
             pub fn update_states(&mut self, open_tab_opt: Option<&DocumentTab>) {
+                let mut result_map = HashMap::new();
+                for (k, v) in &self.state_map {
+                    let is_enabled = v.is_enabled(open_tab_opt);
+                    let is_checked = v.is_checked(open_tab_opt);
+                    result_map.insert(k, (is_enabled, is_checked));
+                }
+
                 $(
-                    self.$l.update_state(open_tab_opt);
+                    self.$l.update_state(&result_map);
                 )*
             }
 
@@ -262,8 +278,9 @@ impl CommandWrapper {
         key: Option<(KeyOrPointer, Modifiers)>,
         message: Message,
         description: String,
-        state: Box<dyn CommandState>,
+        state: String,
     ) -> Self {
+
         Self {
             key,
             message,
@@ -274,9 +291,10 @@ impl CommandWrapper {
         }
     }
 
-    pub fn update_state(&mut self, open_tab: Option<&DocumentTab>) {
-        self.is_enabled = self.state.is_enabled(open_tab);
-        self.is_checked = self.state.is_checked(open_tab);
+    pub fn update_state(&mut self, result_map: &HashMap::<&String, (bool, Option<bool>)>) {
+        let (is_enabled, is_checked) = result_map.get(&self.state).unwrap();
+        self.is_enabled = *is_enabled;
+        self.is_checked = *is_checked;
     }
 
     pub fn is_pressed(&self, ctx: &egui::Context) -> bool {
