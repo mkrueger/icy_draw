@@ -831,4 +831,17 @@ pub static ANSI_KEY_MAP: &[(u32, MKey)] = &[
     (Key::ArrowDown as u32, MKey::Down),
     (Key::ArrowRight as u32, MKey::Right),
     (Key::ArrowLeft as u32, MKey::Left),
+    (Key::F1 as u32, MKey::F1),
+    (Key::F2 as u32, MKey::F2),
+    (Key::F3 as u32, MKey::F3),
+    (Key::F4 as u32, MKey::F4),
+    (Key::F5 as u32, MKey::F5),
+    (Key::F6 as u32, MKey::F6),
+    (Key::F7 as u32, MKey::F7),
+    (Key::F8 as u32, MKey::F8),
+    (Key::F9 as u32, MKey::F9),
+    (Key::F10 as u32, MKey::F10),
+    (Key::F11 as u32, MKey::F11),
+    (Key::F12 as u32, MKey::F12),
+    
 ];
