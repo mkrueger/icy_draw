@@ -165,7 +165,7 @@ pub struct CommandWrapper {
     label: String,
     pub is_enabled: bool,
     pub is_checked: Option<bool>,
-    state: String,
+    state_key: u32,
 }
 
 mod modifier_keys {
@@ -224,7 +224,7 @@ macro_rules! key {
 macro_rules! keys {
     ($( ($l:ident, $translation: expr, $message:ident, $cmd_state: ident$(, $key:ident, $modifier: ident)? ) ),* $(,)? ) => {
         pub struct Commands {
-            state_map: HashMap<String, Box<dyn CommandState>>,
+            state_map: HashMap<u32, Box<dyn CommandState>>,
             $(
                 pub $l: CommandWrapper,
             )*
@@ -232,15 +232,15 @@ macro_rules! keys {
 
         impl Default for Commands {
             fn default() -> Self {
-                let mut state_map = HashMap::<String, Box<dyn CommandState>>::new();
+                let mut state_map = HashMap::<u32, Box<dyn CommandState>>::new();
                 $(
-                    state_map.insert(stringify!($cmd_state).into(), Box::<$cmd_state>::default());
+                    state_map.insert(hash(stringify!($cmd_state)), Box::<$cmd_state>::default());
                 )*
-                
+
                 Self {
                     state_map,
                     $(
-                        $l: CommandWrapper::new(key!($($key, $modifier)?), Message::$message, fl!(crate::LANGUAGE_LOADER, $translation), stringify!($cmd_state).into()),
+                        $l: CommandWrapper::new(key!($($key, $modifier)?), Message::$message, fl!(crate::LANGUAGE_LOADER, $translation), hash(stringify!($cmd_state))),
                     )*
                 }
             }
@@ -273,26 +273,34 @@ macro_rules! keys {
     };
 }
 
+fn hash(str: impl Into<String>) -> u32 {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut hasher = DefaultHasher::new();
+    str.into().hash(&mut hasher);
+    hasher.finish() as u32
+}
+
 impl CommandWrapper {
     pub fn new(
         key: Option<(KeyOrPointer, Modifiers)>,
         message: Message,
         description: String,
-        state: String,
+        state_key: u32,
     ) -> Self {
-
         Self {
             key,
             message,
             label: description,
-            state,
+            state_key,
             is_enabled: true,
             is_checked: None,
         }
     }
 
-    pub fn update_state(&mut self, result_map: &HashMap::<&String, (bool, Option<bool>)>) {
-        let (is_enabled, is_checked) = result_map.get(&self.state).unwrap();
+    pub fn update_state(&mut self, result_map: &HashMap<&u32, (bool, Option<bool>)>) {
+        let (is_enabled, is_checked) = result_map.get(&self.state_key).unwrap();
         self.is_enabled = *is_enabled;
         self.is_checked = *is_checked;
     }

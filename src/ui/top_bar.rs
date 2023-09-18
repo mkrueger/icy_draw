@@ -49,11 +49,10 @@ impl MainWindow {
 
         menu::bar(ui, |ui| {
             let mut has_buffer = false;
-            /*if let Some(mut cmd) = self.commands.take() {
-                let pane = self.get_active_pane();
-                cmd.update_states(pane);
-                self.commands = Some(cmd);
-            }*/
+            let mut c = self.commands.pop().unwrap();
+            let pane = self.get_active_pane();
+            c.update_states(pane);
+            self.commands.push(c);
 
             if let Some(pane) = self.get_active_pane_mut() {
                 if let Ok(doc) = pane.doc.lock() {
@@ -64,10 +63,8 @@ impl MainWindow {
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-file"), |ui| {
                 ui.set_min_width(300.0);
 
-                self.commands.new_file.ui(ui, &mut result);
-                self.commands
-                    .open_file
-                    .ui(ui, &mut result);
+                self.commands[0].new_file.ui(ui, &mut result);
+                self.commands[0].open_file.ui(ui, &mut result);
                 ui.menu_button(
                     fl!(crate::LANGUAGE_LOADER, "menu-open_recent"),
                     |ui| unsafe {
@@ -84,23 +81,17 @@ impl MainWindow {
                             }
                             ui.separator();
                         }
-                        self.commands
-                            .clear_recent_open
-                            .ui(ui, &mut result);
+                        self.commands[0].clear_recent_open.ui(ui, &mut result);
                     },
                 );
                 ui.separator();
-                self.commands.save.ui(ui, &mut result);
-                self.commands.save_as.ui(ui, &mut result);
-                self.commands.export.ui(ui, &mut result);
+                self.commands[0].save.ui(ui, &mut result);
+                self.commands[0].save_as.ui(ui, &mut result);
+                self.commands[0].export.ui(ui, &mut result);
                 ui.separator();
-                self.commands
-                    .edit_font_outline
-                    .ui(ui, &mut result);
+                self.commands[0].edit_font_outline.ui(ui, &mut result);
                 ui.separator();
-                self.commands
-                    .close_window
-                    .ui(ui, &mut result);
+                self.commands[0].close_window.ui(ui, &mut result);
             });
 
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-edit"), |ui| {
@@ -125,7 +116,7 @@ impl MainWindow {
                             ui.close_menu();
                         }
                     } else {
-                        self.commands.undo.ui(ui, &mut result);
+                        self.commands[0].undo.ui(ui, &mut result);
                     }
 
                     if doc.lock().unwrap().can_redo() {
@@ -144,17 +135,17 @@ impl MainWindow {
                             ui.close_menu();
                         }
                     } else {
-                        self.commands.redo.ui(ui, &mut result);
+                        self.commands[0].redo.ui(ui, &mut result);
                     }
                 } else {
-                    self.commands.undo.ui(ui, &mut result);
-                    self.commands.redo.ui(ui, &mut result);
+                    self.commands[0].undo.ui(ui, &mut result);
+                    self.commands[0].redo.ui(ui, &mut result);
                 }
                 ui.separator();
                 if self.get_active_document().is_some() {
-                    self.commands.cut.ui(ui, &mut result);
-                    self.commands.copy.ui(ui, &mut result);
-                    self.commands.paste.ui(ui, &mut result);
+                    self.commands[0].cut.ui(ui, &mut result);
+                    self.commands[0].copy.ui(ui, &mut result);
+                    self.commands[0].paste.ui(ui, &mut result);
                 }
 
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-paste-as"), |ui| {
@@ -188,66 +179,30 @@ impl MainWindow {
                     ui.style_mut().wrap = Some(false);
                     ui.set_min_width(300.0);
 
-                    self.commands
-                        .justify_line_left
-                        .ui(ui, &mut result);
-                    self.commands
-                        .justify_line_right
-                        .ui(ui, &mut result);
-                    self.commands
-                        .justify_line_center
-                        .ui(ui, &mut result);
+                    self.commands[0].justify_line_left.ui(ui, &mut result);
+                    self.commands[0].justify_line_right.ui(ui, &mut result);
+                    self.commands[0].justify_line_center.ui(ui, &mut result);
                     ui.separator();
-                    self.commands
-                        .insert_row
-                        .ui(ui, &mut result);
-                    self.commands
-                        .delete_row
-                        .ui(ui, &mut result);
+                    self.commands[0].insert_row.ui(ui, &mut result);
+                    self.commands[0].delete_row.ui(ui, &mut result);
                     ui.separator();
-                    self.commands
-                        .insert_column
-                        .ui(ui, &mut result);
-                    self.commands
-                        .delete_column
-                        .ui(ui, &mut result);
+                    self.commands[0].insert_column.ui(ui, &mut result);
+                    self.commands[0].delete_column.ui(ui, &mut result);
                     ui.separator();
-                    self.commands
-                        .erase_row
-                        .ui(ui, &mut result);
-                    self.commands
-                        .erase_row_to_start
-                        .ui(ui, &mut result);
-                    self.commands
-                        .erase_row_to_end
-                        .ui(ui, &mut result);
+                    self.commands[0].erase_row.ui(ui, &mut result);
+                    self.commands[0].erase_row_to_start.ui(ui, &mut result);
+                    self.commands[0].erase_row_to_end.ui(ui, &mut result);
                     ui.separator();
-                    self.commands
-                        .erase_column
-                        .ui(ui, &mut result);
-                    self.commands
-                        .erase_column_to_end
-                        .ui(ui, &mut result);
-                    self.commands
-                        .erase_column_to_start
-                        .ui(ui, &mut result);
+                    self.commands[0].erase_column.ui(ui, &mut result);
+                    self.commands[0].erase_column_to_end.ui(ui, &mut result);
+                    self.commands[0].erase_column_to_start.ui(ui, &mut result);
                     ui.separator();
-                    self.commands
-                        .scroll_area_up
-                        .ui(ui, &mut result);
-                    self.commands
-                        .scroll_area_down
-                        .ui(ui, &mut result);
-                    self.commands
-                        .scroll_area_left
-                        .ui(ui, &mut result);
-                    self.commands
-                        .scroll_area_right
-                        .ui(ui, &mut result);
+                    self.commands[0].scroll_area_up.ui(ui, &mut result);
+                    self.commands[0].scroll_area_down.ui(ui, &mut result);
+                    self.commands[0].scroll_area_left.ui(ui, &mut result);
+                    self.commands[0].scroll_area_right.ui(ui, &mut result);
                 });
-                self.commands
-                    .mirror_mode
-                    .ui(ui, &mut result);
+                self.commands[0].mirror_mode.ui(ui, &mut result);
 
                 ui.separator();
                 if ui
@@ -278,29 +233,17 @@ impl MainWindow {
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-selection"), |ui| {
                 ui.style_mut().wrap = Some(false);
                 ui.set_min_width(200.0);
-                self.commands
-                    .select_all
-                    .ui(ui, &mut result);
-                self.commands.deselect.ui(ui, &mut result);
-                self.commands
-                    .inverse_selection
-                    .ui(ui, &mut result);
+                self.commands[0].select_all.ui(ui, &mut result);
+                self.commands[0].deselect.ui(ui, &mut result);
+                self.commands[0].inverse_selection.ui(ui, &mut result);
                 ui.separator();
-                self.commands
-                    .erase_selection
-                    .ui(ui, &mut result);
-                self.commands.flip_x.ui(ui, &mut result);
-                self.commands.flip_y.ui(ui, &mut result);
-                self.commands
-                    .justifycenter
-                    .ui(ui, &mut result);
-                self.commands
-                    .justifyleft
-                    .ui(ui, &mut result);
-                self.commands
-                    .justifyright
-                    .ui(ui, &mut result);
-                self.commands.crop.ui(ui, &mut result);
+                self.commands[0].erase_selection.ui(ui, &mut result);
+                self.commands[0].flip_x.ui(ui, &mut result);
+                self.commands[0].flip_y.ui(ui, &mut result);
+                self.commands[0].justifycenter.ui(ui, &mut result);
+                self.commands[0].justifyleft.ui(ui, &mut result);
+                self.commands[0].justifyright.ui(ui, &mut result);
+                self.commands[0].crop.ui(ui, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-colors"), |ui| {
                 ui.style_mut().wrap = Some(false);
@@ -385,56 +328,32 @@ impl MainWindow {
                     }
                     ui.separator();
                 }
-                self.commands
-                    .select_palette
-                    .ui(ui, &mut result);
-                self.commands
-                    .open_palettes_directory
-                    .ui(ui, &mut result);
+                self.commands[0].select_palette.ui(ui, &mut result);
+                self.commands[0].open_palettes_directory.ui(ui, &mut result);
                 ui.separator();
 
-                self.commands
-                    .next_fg_color
-                    .ui(ui, &mut result);
-                self.commands
-                    .prev_fg_color
-                    .ui(ui, &mut result);
+                self.commands[0].next_fg_color.ui(ui, &mut result);
+                self.commands[0].prev_fg_color.ui(ui, &mut result);
 
                 ui.separator();
 
-                self.commands
-                    .next_bg_color
-                    .ui(ui, &mut result);
-                self.commands
-                    .prev_bg_color
-                    .ui(ui, &mut result);
+                self.commands[0].next_bg_color.ui(ui, &mut result);
+                self.commands[0].prev_bg_color.ui(ui, &mut result);
 
-                self.commands
+                self.commands[0]
                     .pick_attribute_under_caret
                     .ui(ui, &mut result);
-                self.commands
-                    .toggle_color
-                    .ui(ui, &mut result);
-                self.commands
-                    .switch_to_default_color
-                    .ui(ui, &mut result);
+                self.commands[0].toggle_color.ui(ui, &mut result);
+                self.commands[0].switch_to_default_color.ui(ui, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-fonts"), |ui| {
                 ui.style_mut().wrap = Some(false);
                 ui.set_min_width(220.0);
-                self.commands
-                    .open_font_selector
-                    .ui(ui, &mut result);
-                self.commands
-                    .open_font_manager
-                    .ui(ui, &mut result);
+                self.commands[0].open_font_selector.ui(ui, &mut result);
+                self.commands[0].open_font_manager.ui(ui, &mut result);
                 ui.separator();
-                self.commands
-                    .open_font_directory
-                    .ui(ui, &mut result);
-                self.commands
-                    .open_tdf_directory
-                    .ui(ui, &mut result);
+                self.commands[0].open_font_directory.ui(ui, &mut result);
+                self.commands[0].open_tdf_directory.ui(ui, &mut result);
             });
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-view"), |ui| {
                 ui.style_mut().wrap = Some(false);
@@ -452,12 +371,10 @@ impl MainWindow {
                         ui.style_mut().wrap = Some(false);
                         ui.set_min_width(270.0);
 
-                        self.commands
-                            .zoom_reset
-                            .ui(ui, &mut result);
-                        self.commands.zoom_in.ui(ui, &mut result);
+                        self.commands[0].zoom_reset.ui(ui, &mut result);
+                        self.commands[0].zoom_in.ui(ui, &mut result);
 
-                        self.commands.zoom_out.ui(ui, &mut result);
+                        self.commands[0].zoom_out.ui(ui, &mut result);
                         ui.separator();
 
                         if ui.button("4:1 400%").clicked() {
@@ -572,27 +489,15 @@ impl MainWindow {
                     }
                 });
 
-                self.commands
-                    .show_layer_borders
-                    .ui(ui, &mut result);
-                self.commands
-                    .show_line_numbers
-                    .ui(ui, &mut result);
+                self.commands[0].show_layer_borders.ui(ui, &mut result);
+                self.commands[0].show_line_numbers.ui(ui, &mut result);
 
-                self.commands
-                    .fullscreen
-                    .ui(ui, &mut result);
+                self.commands[0].fullscreen.ui(ui, &mut result);
 
                 ui.separator();
-                self.commands
-                    .set_reference_image
-                    .ui(ui, &mut result);
-                self.commands
-                    .toggle_reference_image
-                    .ui(ui, &mut result);
-                self.commands
-                    .clear_reference_image
-                    .ui(ui, &mut result);
+                self.commands[0].set_reference_image.ui(ui, &mut result);
+                self.commands[0].toggle_reference_image.ui(ui, &mut result);
+                self.commands[0].clear_reference_image.ui(ui, &mut result);
             });
 
             unsafe {
@@ -614,9 +519,7 @@ impl MainWindow {
                         }
 
                         ui.separator();
-                        self.commands
-                            .open_plugin_directory
-                            .ui(ui, &mut result);
+                        self.commands[0].open_plugin_directory.ui(ui, &mut result);
                     });
                 }
             }
@@ -646,7 +549,7 @@ impl MainWindow {
                     ui.close_menu();
                 }
                 ui.separator();
-                self.commands.about.ui(ui, &mut result);
+                self.commands[0].about.ui(ui, &mut result);
             });
             self.top_bar_ui(ui, frame);
         });

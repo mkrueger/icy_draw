@@ -42,7 +42,7 @@ pub struct MainWindow {
     pub right_panel: bool,
     pub bottom_panel: bool,
 
-    pub commands: Commands,
+    pub commands: Vec<Box<Commands>>,
     pub is_fullscreen: bool,
 
     pub in_open_file_mode: bool,
@@ -203,7 +203,7 @@ impl MainWindow {
             right_panel: true,
             bottom_panel: false,
             top_bar: TopBar::new(&cc.egui_ctx),
-            commands: Commands::default(),
+            commands: vec![Box::<Commands>::default()],
             is_closed: false,
             is_fullscreen: false,
             in_open_file_mode: false,
@@ -795,7 +795,7 @@ impl eframe::App for MainWindow {
         }
 
         let mut msg = self.document_behavior.message.take();
-        self.commands.check(ctx, &mut msg);
+        self.commands[0].check(ctx, &mut msg);
         self.handle_message(msg);
         self.handle_message(read_outline_keys(ctx));
 
