@@ -616,6 +616,10 @@ impl AnsiEditor {
                         if modifiers.shift {
                             modifier = MModifiers::Shift;
                         }
+
+                        if modifiers.alt {
+                            modifier = MModifiers::Alt;
+                        }
                         for (k, m) in EDITOR_KEY_MAP {
                             if *k == key_code {
                                 cur_tool.handle_key(self, *m, modifier);

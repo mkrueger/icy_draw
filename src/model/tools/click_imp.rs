@@ -218,20 +218,27 @@ impl Tool for ClickTool {
 
         // ctrl+pgup  - upper left corner
         // ctrl+pgdn  - lower left corner
-
         let pos = editor.buffer_view.lock().get_caret().get_position();
         match key {
             MKey::Down => {
-                editor.set_caret(pos.x, pos.y + 1);
+                if matches!(modifier, MModifiers::None) {
+                    editor.set_caret(pos.x, pos.y + 1);
+                }
             }
             MKey::Up => {
-                editor.set_caret(pos.x, pos.y - 1);
+                if matches!(modifier, MModifiers::None) {
+                    editor.set_caret(pos.x, pos.y - 1);
+                }
             }
             MKey::Left => {
-                editor.set_caret(pos.x - 1, pos.y);
+                if matches!(modifier, MModifiers::None) {
+                    editor.set_caret(pos.x - 1, pos.y);
+                }
             }
             MKey::Right => {
-                editor.set_caret(pos.x + 1, pos.y);
+                if matches!(modifier, MModifiers::None) {
+                    editor.set_caret(pos.x + 1, pos.y);
+                }
             }
             MKey::PageDown => {
                 let height = editor.buffer_view.lock().calc.terminal_rect.height();

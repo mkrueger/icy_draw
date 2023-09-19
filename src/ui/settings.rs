@@ -1,12 +1,12 @@
 use directories::ProjectDirs;
-use eframe::{epaint::Color32, egui::Modifiers};
+use eframe::{egui::Modifiers, epaint::Color32};
 use icy_engine_egui::{BackgroundEffect, MarkerSettings, MonitorSettings};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
     fs::{self, File},
     io::{self, BufReader, BufWriter},
-    path::{Path, PathBuf}, 
+    path::{Path, PathBuf},
 };
 
 use crate::{plugins::Plugin, TerminalResult};

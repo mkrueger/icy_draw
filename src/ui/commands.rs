@@ -309,11 +309,11 @@ macro_rules! keys {
                             "select-font-dialog-filter-text"
                         )),
                     );
-                }); 
+                });
                 egui::ScrollArea::vertical()
                     .max_height(240.0)
                     .show(ui, |ui| {
-           
+
                     $(
                         let label = fl!(crate::LANGUAGE_LOADER, $translation);
                         if filter.is_empty() || label.to_lowercase().contains(filter.to_lowercase().as_str()) {
@@ -327,7 +327,7 @@ macro_rules! keys {
                                         keys.insert(stringify!($l).into(), bind);
                                     }  else {
                                         keys.remove(stringify!($l));
-                                    } 
+                                    }
                                     changed_bindings = true;
                                 }
                                 ui.label(label);

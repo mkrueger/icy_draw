@@ -13,7 +13,6 @@ use super::{Position, Tool};
 
 pub static mut CUR_CHAR: Option<AttributedChar> = None;
 
-
 #[derive(Default)]
 pub struct PipetteTool {
     ch: Option<char>,
@@ -43,7 +42,7 @@ impl Tool for PipetteTool {
             return None;
         };
 
-        if let Some(ch) = unsafe { CUR_CHAR} {
+        if let Some(ch) = unsafe { CUR_CHAR } {
             ui.vertical_centered(|ui| {
                 ui.label(fl!(
                     crate::LANGUAGE_LOADER,
@@ -122,7 +121,6 @@ impl Tool for PipetteTool {
         }
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
-
 
     fn handle_no_hover(&mut self, _editor: &mut AnsiEditor) {
         unsafe {
