@@ -10,9 +10,12 @@ use icy_engine::{AttributedChar, Buffer, TextAttribute};
 use crate::{create_retained_image, AnsiEditor, Message};
 
 use super::{Position, Tool};
+
+pub static mut CUR_CHAR: Option<AttributedChar> = None;
+
+
 #[derive(Default)]
 pub struct PipetteTool {
-    cur_char: Option<AttributedChar>,
     ch: Option<char>,
     char_image: Option<RetainedImage>,
 }
@@ -40,7 +43,7 @@ impl Tool for PipetteTool {
             return None;
         };
 
-        if let Some(ch) = self.cur_char {
+        if let Some(ch) = unsafe { CUR_CHAR} {
             ui.vertical_centered(|ui| {
                 ui.label(fl!(
                     crate::LANGUAGE_LOADER,
@@ -114,8 +117,17 @@ impl Tool for PipetteTool {
         cur: Position,
         _cur_abs: Position,
     ) -> egui::Response {
-        self.cur_char = Some(editor.get_char(cur));
+        unsafe {
+            CUR_CHAR = Some(editor.get_char(cur));
+        }
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
+    }
+
+
+    fn handle_no_hover(&mut self, _editor: &mut AnsiEditor) {
+        unsafe {
+            CUR_CHAR = None;
+        }
     }
 
     fn handle_click(
@@ -155,8 +167,8 @@ fn paint_color(ui: &mut egui::Ui, color: icy_engine::Color) {
     let text = format!("#{r:02x}{g:02x}{b:02x}");
     let font_id: eframe::epaint::FontId = FontId::monospace(16.0);
     painter.text(
-        stroke_rect.left_center() + Vec2::new(4., 0.),
-        Align2::LEFT_CENTER,
+        stroke_rect.center(),
+        Align2::CENTER_CENTER,
         text,
         font_id,
         text_color,

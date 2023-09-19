@@ -154,6 +154,10 @@ pub trait Tool {
         response
     }
 
+    fn handle_no_hover(&mut self, _editor: &mut AnsiEditor) {
+
+    }
+
     fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         Event::None
     }

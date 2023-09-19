@@ -706,8 +706,14 @@ impl AnsiEditor {
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
                     let cp = cp_abs - self.get_cur_click_offset();
                     response = cur_tool.handle_hover(ui, response, self, cp, cp_abs);
+                } else {
+                    cur_tool.handle_no_hover(self);
                 }
+            } else {
+                cur_tool.handle_no_hover(self);
             }
+        } else {
+            cur_tool.handle_no_hover(self);
         }
 
         if response.drag_released_by(egui::PointerButton::Primary) {

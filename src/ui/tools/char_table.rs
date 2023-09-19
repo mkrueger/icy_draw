@@ -23,7 +23,7 @@ impl CharTableToolWindow {
     pub fn new() -> Self {
         let font = BitFont::default();
         let char_table = create_font_image(&font);
-        let hover_char_image = create_hover_image(&font, ' ');
+        let hover_char_image = create_hover_image(&font, ' ', 14);
         Self {
             font,
             char_table,
@@ -71,6 +71,7 @@ impl CharTableToolWindow {
                     let fw = scale * self.font.size.width as f32;
                     let fh = scale * self.font.size.height as f32;
 
+                   
                     if response.hovered() {
                         if let Some(pos) = response.hover_pos() {
                             let pos = pos - response.rect.min;
@@ -79,7 +80,7 @@ impl CharTableToolWindow {
                             hover_char = Some(ch);
                             if self.hover_char != hover_char {
                                 self.hover_char = hover_char;
-                                self.hover_char_image = create_hover_image(&self.font, ch);
+                                self.hover_char_image = create_hover_image(&self.font, ch, 14);
                             }
 
                             let x = (ch as usize) % BUFFER_WIDTH;
@@ -97,7 +98,34 @@ impl CharTableToolWindow {
                                 Color32::WHITE,
                             );
                         }
-                    }
+                    }/* TODO: Font should swap on pipette tool as well.
+                     else {
+                        unsafe {
+                            if let Some(pipete_char) = crate::model::pipette_imp::CUR_CHAR {
+                                let ch = pipete_char.ch;
+                                hover_char = Some(ch);
+                                if self.hover_char != hover_char {
+                                    self.hover_char = hover_char;
+                                    self.hover_char_image = create_hover_image(&self.font, ch, 12);
+                                }
+    
+                                let x = (ch as usize) % BUFFER_WIDTH;
+                                let y = (ch as usize) / BUFFER_WIDTH;
+    
+                                let rect = Rect::from_min_size(
+                                    rect.min + Vec2::new(x as f32 * fw, y as f32 * fh),
+                                    Vec2::new(fw, fh),
+                                );
+    
+                                ui.painter().image(
+                                    self.hover_char_image.texture_id(ui.ctx()),
+                                    rect.expand(2.0),
+                                    Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
+                                    Color32::WHITE,
+                                );
+                            }
+                        }
+                    }*/
 
                     if response.clicked() {
                         if let Some(ch) = hover_char {
@@ -155,11 +183,11 @@ fn create_font_image(font: &BitFont) -> RetainedImage {
     create_retained_image(&buffer).with_options(TextureOptions::NEAREST)
 }
 
-fn create_hover_image(font: &BitFont, ch: char) -> RetainedImage {
+fn create_hover_image(font: &BitFont, ch: char, color: u32) -> RetainedImage {
     let mut buffer = Buffer::new((1, 1));
     buffer.set_font(0, font.clone());
     let mut attr = TextAttribute::default();
-    attr.set_foreground(14);
+    attr.set_foreground(color);
 
     buffer.layers[0].set_char(
         (0, 0),
