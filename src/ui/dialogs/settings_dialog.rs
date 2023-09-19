@@ -17,7 +17,7 @@ pub struct SettingsDialog {
     key_filter: String,
     key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
 
-}
+} 
 const MONITOR_CAT: usize = 0 ;
 const MARKER_CAT: usize = 1 ;
 const OUTLINE_CAT: usize = 2;

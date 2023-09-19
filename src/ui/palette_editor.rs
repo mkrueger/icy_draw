@@ -161,11 +161,7 @@ pub fn palette_editor_16(
         let right_border = 4.0;
         let items_per_row = if palette.len() < 64 { 8 } else { 16 };
 
-        let upper_limit = if buffer_type == BufferType::ExtendedFont {
-            items_per_row
-        } else {
-            (palette.len() as f32 / items_per_row as f32).ceil() as usize * items_per_row
-        };
+        let upper_limit = (palette.len() as f32 / items_per_row as f32).ceil() as usize * items_per_row;
 
         let height = (ui.available_width() - right_border) / items_per_row as f32;
 
@@ -258,7 +254,7 @@ pub fn palette_editor_16(
                 pos.x as u32 + pos.y as u32 * items_per_row as u32,
             );
             if response.clicked() {
-                if color < 8 || buffer_type.has_high_fg_colors() {
+                if color < 8  {
                     result = Some(Message::SetForeground(color));
                 }
                 response.mark_changed();

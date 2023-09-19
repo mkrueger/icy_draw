@@ -290,39 +290,6 @@ impl MainWindow {
                                     lock.get_buffer_mut().buffer_type = BufferType::LegacyIce;
                                     ui.close_menu();
                                 }
-
-                                if ui
-                                    .selectable_label(
-                                        lock.get_buffer().buffer_type == BufferType::ExtendedColors,
-                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ext-colors"),
-                                    )
-                                    .clicked()
-                                {
-                                    lock.get_buffer_mut().buffer_type = BufferType::ExtendedColors;
-                                    ui.close_menu();
-                                }
-                                if ui
-                                    .selectable_label(
-                                        lock.get_buffer().buffer_type == BufferType::ExtendedFont,
-                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ext-font"),
-                                    )
-                                    .clicked()
-                                {
-                                    lock.get_buffer_mut().buffer_type = BufferType::ExtendedFont;
-                                    ui.close_menu();
-                                }
-                                if ui
-                                    .selectable_label(
-                                        lock.get_buffer().buffer_type
-                                            == BufferType::ExtendedFontAndIce,
-                                        fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ext-font-ice"),
-                                    )
-                                    .clicked()
-                                {
-                                    lock.get_buffer_mut().buffer_type =
-                                        BufferType::ExtendedFontAndIce;
-                                    ui.close_menu();
-                                }
                             });
                         }
                     }

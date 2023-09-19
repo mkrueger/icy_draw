@@ -108,7 +108,7 @@ impl CharTableToolWindow {
                                     self.hover_char = hover_char;
                                     self.hover_char_image = create_hover_image(&self.font, ch, 12);
                                 }
-    
+     
                                 let x = (ch as usize) % BUFFER_WIDTH;
                                 let y = (ch as usize) / BUFFER_WIDTH;
     
