@@ -255,13 +255,11 @@ pub fn palette_editor_16(
                 pos.x as u32 + pos.y as u32 * items_per_row as u32,
             );
             if response.clicked() {
-                if color < 8 {
-                    result = Some(Message::SetForeground(color));
-                }
+                result = Some(Message::SetForeground(color));
                 response.mark_changed();
             }
             if response.secondary_clicked() {
-                if color < 8 || buffer_type.has_high_bg_colors() {
+                if color < 8 || buffer_type.has_high_bg_colors() || palette.len() > 16 {
                     result = Some(Message::SetBackground(color));
                 }
                 response.mark_changed();
