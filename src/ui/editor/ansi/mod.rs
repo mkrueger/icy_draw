@@ -147,7 +147,20 @@ impl Document for AnsiEditor {
     }
 
     fn undo_stack_len(&self) -> usize {
-        self.buffer_view.lock().get_edit_state().undo_stack_len()
+        if let Ok(stack) = self
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .get_undo_stack()
+            .lock()
+        {
+            for i in (0..stack.len()).rev() {
+                if stack[i].changes_data() {
+                    return i + 1;
+                }
+            }
+        }
+        0
     }
 
     fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>> {
