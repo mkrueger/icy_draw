@@ -189,7 +189,11 @@ impl Document for AnsiEditor {
 
         let mut scale = options.get_scale();
         if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
-            scale.y *= 1.35;
+            if self.buffer_view.lock().get_buffer().use_letter_spacing() {
+                scale.y *= 1.2;
+            } else {
+                scale.y *= 1.35;
+            }
         }
         let opt = icy_engine_egui::TerminalOptions {
             stick_to_bottom: false,
