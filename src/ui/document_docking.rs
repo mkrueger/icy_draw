@@ -9,7 +9,7 @@ use crate::{
     create_retained_image,
     model::Tool,
     util::autosave::{remove_autosave, store_auto_save},
-    Document, DocumentOptions, Message, Settings, DEFAULT_OUTLINE_TABLE, FIRST_TOOL,
+    Document, DocumentOptions, Message, Settings, FIRST_TOOL,
 };
 use eframe::{
     egui::{self, Response, Ui},
@@ -285,85 +285,69 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         _tile_id: TileId,
         tabs: &Tabs,
     ) {
-        let mut show = false;
-        if let Some(active_id) = tabs.active {
-            if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(active_id) {
-                if pane.doc.lock().unwrap().get_ansi_editor().is_some() {
-                    show = true;
-                }
-            }
-        }
-        if !show {
-            return;
-        }
-
-        ui.add_space(4.0);
-        let mut buffer = Buffer::new((48, 1));
-        let char_set = Settings::get_character_set();
-        if self.cur_char_set != char_set || self.dark_mode != ui.style().visuals.dark_mode {
-            let c = if ui.style().visuals.dark_mode {
-                ui.style().visuals.extreme_bg_color
-            } else {
-                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8)).into()
-            };
-
-            let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
-
-            let c = ui.style().visuals.strong_text_color();
-            let fg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
-
-            let mut attr: TextAttribute = TextAttribute::default();
-            attr.set_background(bg_color);
-            attr.set_foreground(fg_color);
-            let s = format!("Set {:2} ", char_set + 1);
-            let mut i = 0;
-            for c in s.chars() {
-                buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
-                i += 1;
-            }
-            attr.set_foreground(15);
-            attr.set_background(4);
-
-            for j in i..buffer.get_width() {
-                buffer.layers[0].set_char((j, 0), AttributedChar::new(' ', attr));
-            }
-
-            for j in 0..10 {
-                if j == 9 {
-                    i += 1;
-                }
-                let s = format!("{:-2}=", j + 1);
-                attr.set_foreground(0);
-                for c in s.chars() {
-                    buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
-                    i += 1;
-                }
-                attr.set_foreground(15);
-                buffer.layers[0].set_char(
-                    (i, 0),
-                    AttributedChar::new(
-                        unsafe {
-                            char::from_u32_unchecked(
-                                DEFAULT_OUTLINE_TABLE[char_set][j as usize] as u32,
-                            )
-                        },
-                        attr,
-                    ),
-                );
-                i += 1;
-            }
-
-            self.char_set_img = Some(create_retained_image(&buffer));
-        }
-
-        if let Some(img) = &self.char_set_img {
-            img.show(ui);
-        }
-
         if let Some(id) = tabs.active {
             if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(id) {
                 if let Ok(doc) = &mut pane.doc.lock() {
                     if let Some(editor) = doc.get_ansi_editor() {
+                        ui.add_space(4.0);
+                        let mut buffer = Buffer::new((48, 1));
+                        let char_set = Settings::get_character_set();
+                        if self.cur_char_set != char_set
+                            || self.dark_mode != ui.style().visuals.dark_mode
+                        {
+                            let c = if ui.style().visuals.dark_mode {
+                                ui.style().visuals.extreme_bg_color
+                            } else {
+                                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8))
+                                    .into()
+                            };
+
+                            let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+
+                            let c = ui.style().visuals.strong_text_color();
+                            let fg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+
+                            let mut attr: TextAttribute = TextAttribute::default();
+                            attr.set_background(bg_color);
+                            attr.set_foreground(fg_color);
+                            let s = format!("Set {:2} ", char_set + 1);
+                            let mut i = 0;
+                            for c in s.chars() {
+                                buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
+                                i += 1;
+                            }
+                            attr.set_foreground(15);
+                            attr.set_background(4);
+
+                            for j in i..buffer.get_width() {
+                                buffer.layers[0].set_char((j, 0), AttributedChar::new(' ', attr));
+                            }
+
+                            for j in 0..10 {
+                                if j == 9 {
+                                    i += 1;
+                                }
+                                let s = format!("{:-2}=", j + 1);
+                                attr.set_foreground(0);
+                                for c in s.chars() {
+                                    buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
+                                    i += 1;
+                                }
+                                attr.set_foreground(15);
+                                buffer.layers[0].set_char(
+                                    (i, 0),
+                                    AttributedChar::new(editor.get_char_set_key(j), attr),
+                                );
+                                i += 1;
+                            }
+
+                            self.char_set_img = Some(create_retained_image(&buffer));
+                        }
+
+                        if let Some(img) = &self.char_set_img {
+                            img.show(ui);
+                        }
+
                         let pos = editor.get_caret_position();
                         let sel = editor.buffer_view.lock().get_selection();
                         if pos != self.cur_pos

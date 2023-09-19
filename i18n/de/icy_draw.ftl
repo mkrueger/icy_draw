@@ -369,3 +369,17 @@ tdf-editor-clear_char_button=Zeichen Löschen
 tdf-editor-cheat_sheet_key=Taste
 tdf-editor-cheat_sheet_code=Code
 tdf-editor-cheat_sheet_res=Res
+
+settings-heading=Einstellungen
+settings-reset_button=Reset
+settings-monitor-category=Monitor
+settings-char-set-category=Zeichensätze
+settings-font-outline-category=Font Outline
+settings-markers-guides-category=Markierungen
+settings-keybindings-category=Tasten
+settings-reference-alpha=Referenzbild Alpha
+settings-raster-label=Gitterfarbe:
+settings-alpha=alpha
+settings-guide-label=Hilfslinienfarbe:
+settings-background_color-label=Hintergrundfarbe:
+settings-set-label=Set { $set }

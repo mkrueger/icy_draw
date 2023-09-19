@@ -253,44 +253,56 @@ impl MainWindow {
                         if let Ok(doc) = &mut pane.doc.lock() {
                             let editor = doc.get_ansi_editor_mut().unwrap();
                             let lock = &mut editor.buffer_view.lock();
-                            if !matches!(lock.get_buffer().buffer_type, BufferType::Unicode) { 
-                                ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-color-mode"), |ui| {
-                                    ui.style_mut().wrap = Some(false);
-                                    ui.set_min_width(240.0);
+                            if !matches!(lock.get_buffer().buffer_type, BufferType::Unicode) {
+                                ui.menu_button(
+                                    fl!(crate::LANGUAGE_LOADER, "menu-color-mode"),
+                                    |ui| {
+                                        ui.style_mut().wrap = Some(false);
+                                        ui.set_min_width(240.0);
 
-                                    if ui
-                                        .selectable_label(
-                                            lock.get_buffer().buffer_type == BufferType::NoLimits,
-                                            fl!(crate::LANGUAGE_LOADER, "menu-color-mode-unrestricted"),
-                                        )
-                                        .clicked()
-                                    {
-                                        lock.get_buffer_mut().buffer_type = BufferType::NoLimits;
-                                        ui.close_menu();
-                                    }
+                                        if ui
+                                            .selectable_label(
+                                                lock.get_buffer().buffer_type
+                                                    == BufferType::NoLimits,
+                                                fl!(
+                                                    crate::LANGUAGE_LOADER,
+                                                    "menu-color-mode-unrestricted"
+                                                ),
+                                            )
+                                            .clicked()
+                                        {
+                                            lock.get_buffer_mut().buffer_type =
+                                                BufferType::NoLimits;
+                                            ui.close_menu();
+                                        }
 
-                                    if ui
-                                        .selectable_label(
-                                            lock.get_buffer().buffer_type == BufferType::LegacyDos,
-                                            fl!(crate::LANGUAGE_LOADER, "menu-color-mode-dos"),
-                                        )
-                                        .clicked()
-                                    {
-                                        lock.get_buffer_mut().buffer_type = BufferType::LegacyDos;
-                                        ui.close_menu();
-                                    }
+                                        if ui
+                                            .selectable_label(
+                                                lock.get_buffer().buffer_type
+                                                    == BufferType::LegacyDos,
+                                                fl!(crate::LANGUAGE_LOADER, "menu-color-mode-dos"),
+                                            )
+                                            .clicked()
+                                        {
+                                            lock.get_buffer_mut().buffer_type =
+                                                BufferType::LegacyDos;
+                                            ui.close_menu();
+                                        }
 
-                                    if ui
-                                        .selectable_label(
-                                            lock.get_buffer().buffer_type == BufferType::LegacyIce,
-                                            fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ice"),
-                                        )
-                                        .clicked()
-                                    {
-                                        lock.get_buffer_mut().buffer_type = BufferType::LegacyIce;
-                                        ui.close_menu();
-                                    }
-                                });
+                                        if ui
+                                            .selectable_label(
+                                                lock.get_buffer().buffer_type
+                                                    == BufferType::LegacyIce,
+                                                fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ice"),
+                                            )
+                                            .clicked()
+                                        {
+                                            lock.get_buffer_mut().buffer_type =
+                                                BufferType::LegacyIce;
+                                            ui.close_menu();
+                                        }
+                                    },
+                                );
                                 ui.separator();
                             }
                         }

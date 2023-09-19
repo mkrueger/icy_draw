@@ -23,7 +23,7 @@ use icy_engine::{AttributedChar, Position, TextAttribute};
 use icy_engine_egui::TerminalCalc;
 pub use scan_lines::*;
 
-use crate::{AnsiEditor, Event, Message, Settings};
+use crate::{AnsiEditor, Event, Message};
 
 pub mod scan_lines;
 
@@ -158,25 +158,6 @@ pub trait Tool {
 
     fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         Event::None
-    }
-}
-
-fn handle_outline_insertion(editor: &mut AnsiEditor, modifier: MModifiers, outline: usize) {
-    if let MModifiers::Control = modifier {
-        Settings::set_character_set(outline);
-        return;
-    }
-
-    if outline < 5 {
-        if let MModifiers::Shift = modifier {
-            Settings::set_character_set(10 + outline);
-            return;
-        }
-    }
-    editor.buffer_view.lock().clear_selection();
-    let ch = editor.get_outline_char_code(outline);
-    if let Ok(ch) = ch {
-        editor.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
     }
 }
 

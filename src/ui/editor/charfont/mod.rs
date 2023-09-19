@@ -313,14 +313,14 @@ impl Document for CharFontEditor {
                                     }
                                 });
 
-                            let opt = icy_engine_egui::TerminalOptions {
-                                stick_to_bottom: false,
-                                scale: Some(Vec2::new(2.0, 2.0)),
-                                monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
-                                marker_settings: unsafe { SETTINGS.marker_settings.clone() },
-                                id: Some(egui::Id::new(self.id + 20000)),
-                                ..Default::default()
-                            };
+                                let opt = icy_engine_egui::TerminalOptions {
+                                    stick_to_bottom: false,
+                                    scale: Some(Vec2::new(2.0, 2.0)),
+                                    monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
+                                    marker_settings: unsafe { SETTINGS.marker_settings.clone() },
+                                    id: Some(egui::Id::new(self.id + 20000)),
+                                    ..Default::default()
+                                };
 
                             self.outline_previewbuffer_view
                                 .lock()

@@ -27,9 +27,49 @@ pub struct Settings {
     pub key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
 
     recent_files: Vec<PathBuf>,
+
+    pub character_sets: Vec<CharacterSet>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CharacterSet {
+    pub font_name: String,
+    pub table: Vec<Vec<char>>,
+}
+
+impl Default for CharacterSet {
+    fn default() -> Self {
+        let mut default_char_set = CharacterSet {
+            font_name: "".to_string(),
+            table: Vec::new(),
+        };
+        for i in crate::DEFAULT_CHAR_SET_TABLE {
+            default_char_set
+                .table
+                .push(i.iter().fold(Vec::new(), |mut s, c| {
+                    s.push(char::from_u32(*c as u32).unwrap());
+                    s
+                }));
+        }
+        default_char_set
+    }
 }
 
 impl Settings {
+    pub fn get_character_set_char(&self, _font_name: &str, ch: usize) -> char {
+        let table_idx = 0;
+        if table_idx >= self.character_sets.len() {
+            return ' ';
+        }
+        let char_set = &self.character_sets[table_idx];
+        if self.character_set >= char_set.table.len()
+            || ch >= char_set.table[self.character_set].len()
+        {
+            return ' ';
+        }
+        char_set.table[self.character_set][ch]
+    }
+
     pub fn set_character_set(character_set: usize) {
         unsafe {
             SETTINGS.character_set = character_set;
@@ -198,6 +238,7 @@ pub static mut SETTINGS: Settings = Settings {
     show_line_numbers: false,
     recent_files: Vec::new(),
     key_bindings: Vec::new(),
+    character_sets: Vec::new(),
     monitor_settings: MonitorSettings {
         use_filter: false,
         monitor_type: 0,

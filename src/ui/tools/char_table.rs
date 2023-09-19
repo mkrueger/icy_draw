@@ -15,37 +15,27 @@ pub struct CharTableToolWindow {
     hover_char: Option<char>,
     hover_char_image: RetainedImage,
     char_table: RetainedImage,
+    buffer_width: usize,
 }
 
-const BUFFER_WIDTH: usize = 16;
-
 impl CharTableToolWindow {
-    pub fn new() -> Self {
+    pub fn new(buffer_width: usize) -> Self {
         let font = BitFont::default();
-        let char_table = create_font_image(&font);
+        let char_table = create_font_image(&font, buffer_width);
         let hover_char_image = create_hover_image(&font, ' ', 14);
         Self {
             font,
             char_table,
             hover_char: None,
             hover_char_image,
+            buffer_width,
         }
     }
-    pub fn show_char_table(&mut self, ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
+    pub fn show_plain_char_table(&mut self, ui: &mut egui::Ui) -> Option<char> {
+        let mut something_hovered = false;
         let mut result = None;
 
-        let font_page = editor.buffer_view.lock().get_caret().get_font_page();
-        if let Some(cur_font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
-            if cur_font.name != self.font.name {
-                self.font = cur_font.clone();
-                self.char_table = create_font_image(&self.font);
-                self.hover_char = None;
-            }
-        }
-
-        let mut hover_char = None;
-
-        egui::ScrollArea::vertical()
+        let response = egui::ScrollArea::vertical()
             .id_source("char_table_scroll_area")
             .show(ui, |ui| {
                 ui.add_space(4.0);
@@ -70,20 +60,24 @@ impl CharTableToolWindow {
                     );
                     let fw = scale * self.font.size.width as f32;
                     let fh = scale * self.font.size.height as f32;
-
+                    if response.clicked() {
+                        result = self.hover_char.clone();
+                    }
                     if response.hovered() {
                         if let Some(pos) = response.hover_pos() {
+                            something_hovered = true;
                             let pos = pos - response.rect.min;
-                            let ch = (pos.x / fw) as usize + BUFFER_WIDTH * (pos.y / fh) as usize;
+                            let ch =
+                                (pos.x / fw) as usize + self.buffer_width * (pos.y / fh) as usize;
                             let ch = unsafe { char::from_u32_unchecked(ch as u32) };
-                            hover_char = Some(ch);
+                            let hover_char = Some(ch);
                             if self.hover_char != hover_char {
                                 self.hover_char = hover_char;
                                 self.hover_char_image = create_hover_image(&self.font, ch, 14);
                             }
 
-                            let x = (ch as usize) % BUFFER_WIDTH;
-                            let y = (ch as usize) / BUFFER_WIDTH;
+                            let x = (ch as usize) % self.buffer_width;
+                            let y = (ch as usize) / self.buffer_width;
 
                             let rect = Rect::from_min_size(
                                 rect.min + Vec2::new(x as f32 * fw, y as f32 * fh),
@@ -97,43 +91,11 @@ impl CharTableToolWindow {
                                 Color32::WHITE,
                             );
                         }
-                    } /* TODO: Font should swap on pipette tool as well.
-                       else {
-                          unsafe {
-                              if let Some(pipete_char) = crate::model::pipette_imp::CUR_CHAR {
-                                  let ch = pipete_char.ch;
-                                  hover_char = Some(ch);
-                                  if self.hover_char != hover_char {
-                                      self.hover_char = hover_char;
-                                      self.hover_char_image = create_hover_image(&self.font, ch, 12);
-                                  }
-
-                                  let x = (ch as usize) % BUFFER_WIDTH;
-                                  let y = (ch as usize) / BUFFER_WIDTH;
-
-                                  let rect = Rect::from_min_size(
-                                      rect.min + Vec2::new(x as f32 * fw, y as f32 * fh),
-                                      Vec2::new(fw, fh),
-                                  );
-
-                                  ui.painter().image(
-                                      self.hover_char_image.texture_id(ui.ctx()),
-                                      rect.expand(2.0),
-                                      Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
-                                      Color32::WHITE,
-                                  );
-                              }
-                          }
-                      }*/
-
-                    if response.clicked() {
-                        if let Some(ch) = hover_char {
-                            result = Some(Message::CharTable(ch));
-                        }
                     }
                 });
             });
-        if let Some(ch) = hover_char {
+
+        if let Some(ch) = self.hover_char {
             ui.horizontal(|ui| {
                 ui.add_space(4.0);
                 ui.label(
@@ -156,23 +118,45 @@ impl CharTableToolWindow {
                         .color(Color32::WHITE),
                 );
             });
+        } else {
+            ui.horizontal(|ui| {
+                ui.label("   ");
+            });
+            ui.horizontal(|ui| {
+                ui.label("   ");
+            });
         }
+        if !something_hovered {
+            self.hover_char = None;
+        }
+        result
+    }
+    pub fn show_char_table(&mut self, ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
+        let mut result = None;
+
+        let font_page = editor.buffer_view.lock().get_caret().get_font_page();
+        if let Some(cur_font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
+            if cur_font.name != self.font.name {
+                self.font = cur_font.clone();
+                self.char_table = create_font_image(&self.font, self.buffer_width);
+                self.hover_char = None;
+            }
+        }
+        let response = self.show_plain_char_table(ui);
+        if let Some(ch) = response {
+            result = Some(Message::CharTable(ch));
+        }
+
         result
     }
 }
 
-impl Default for CharTableToolWindow {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-fn create_font_image(font: &BitFont) -> RetainedImage {
-    let mut buffer = Buffer::new((BUFFER_WIDTH, 256 / BUFFER_WIDTH));
+fn create_font_image(font: &BitFont, buffer_width: usize) -> RetainedImage {
+    let mut buffer = Buffer::new((buffer_width, 256 / buffer_width));
     buffer.set_font(0, font.clone());
     for ch in 0..256 {
         buffer.layers[0].set_char(
-            (ch % BUFFER_WIDTH, ch / BUFFER_WIDTH),
+            (ch % buffer_width, ch / buffer_width),
             AttributedChar::new(
                 unsafe { char::from_u32_unchecked(ch as u32) },
                 TextAttribute::default(),

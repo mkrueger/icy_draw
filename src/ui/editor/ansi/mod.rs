@@ -23,8 +23,8 @@ use icy_engine_egui::{show_terminal_area, BufferView, TerminalCalc};
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
-    ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, Settings,
-    TerminalResult, UndoHandler, SETTINGS,
+    ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, TerminalResult,
+    UndoHandler, SETTINGS,
 };
 
 pub enum Event {
@@ -419,26 +419,14 @@ impl AnsiEditor {
         Ok(true)
     }
 
-    pub fn get_outline_char_code(&self, i: usize) -> Result<u16, &str> {
-        let outline = Settings::get_character_set();
-        if outline >= DEFAULT_OUTLINE_TABLE.len() {
-            return Err("current outline out of range.");
-        }
-        if !(0..=10).contains(&i) {
-            return Err("outline char# out of range.");
-        }
-
-        Ok(DEFAULT_OUTLINE_TABLE[outline][i] as u16)
+    pub fn get_char_set_key(&self, i: usize) -> char {
+        unsafe { SETTINGS.get_character_set_char("", i) }
     }
 
-    pub fn get_outline_char_code_from(outline: usize, i: usize) -> Result<u16, &'static str> {
-        if outline >= DEFAULT_OUTLINE_TABLE.len() {
-            return Err("current outline out of range.");
-        }
-        if !(0..=10).contains(&i) {
-            return Err("outline char# out of range.");
-        }
-        Ok(DEFAULT_OUTLINE_TABLE[outline][i] as u16)
+    pub fn type_char_set_key(&mut self, character_set: usize) {
+        self.buffer_view.lock().clear_selection();
+        let ch = self.get_char_set_key(character_set);
+        self.type_key(unsafe { char::from_u32_unchecked(ch as u32) });
     }
 
     pub fn get_char(&self, pos: Position) -> AttributedChar {
@@ -785,7 +773,7 @@ impl AnsiEditor {
     }
 }
 
-pub const DEFAULT_OUTLINE_TABLE: [[u8; 10]; 15] = [
+pub const DEFAULT_CHAR_SET_TABLE: [[u8; 10]; 15] = [
     [218, 191, 192, 217, 196, 179, 195, 180, 193, 194],
     [201, 187, 200, 188, 205, 186, 204, 185, 202, 203],
     [213, 184, 212, 190, 205, 179, 198, 181, 207, 209],

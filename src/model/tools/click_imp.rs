@@ -4,10 +4,7 @@ use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle, TextPane};
 use icy_engine_egui::TerminalCalc;
 
-use crate::{
-    model::{tools::handle_outline_insertion, MKey},
-    AnsiEditor, Message,
-};
+use crate::{model::MKey, AnsiEditor, Message};
 
 use super::{Event, MModifiers, Position, Tool};
 
@@ -327,73 +324,93 @@ impl Tool for ClickTool {
             }
 
             MKey::F1 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(0).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 0);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(0).unwrap());
+                    } else {
+                        editor.type_char_set_key(0);
+                    }
                 }
             }
             MKey::F2 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(1).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 1);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(1).unwrap());
+                    } else {
+                        editor.type_char_set_key(1);
+                    }
                 }
             }
             MKey::F3 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(2).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 2);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(2).unwrap());
+                    } else {
+                        editor.type_char_set_key(2);
+                    }
                 }
             }
             MKey::F4 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(3).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 3);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(3).unwrap());
+                    } else {
+                        editor.type_char_set_key(3);
+                    }
                 }
             }
             MKey::F5 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(4).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 4);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(4).unwrap());
+                    } else {
+                        editor.type_char_set_key(4);
+                    }
                 }
             }
             MKey::F6 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(5).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 5);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(5).unwrap());
+                    } else {
+                        editor.type_char_set_key(5);
+                    }
                 }
             }
             MKey::F7 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(6).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 6);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(6).unwrap());
+                    } else {
+                        editor.type_char_set_key(6);
+                    }
                 }
             }
             MKey::F8 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(7).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 7);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(7).unwrap());
+                    } else {
+                        editor.type_char_set_key(7);
+                    }
                 }
             }
             MKey::F9 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(8).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 8);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(8).unwrap());
+                    } else {
+                        editor.type_char_set_key(8);
+                    }
                 }
             }
             MKey::F10 => {
-                if editor.outline_font_mode {
-                    editor.type_key(VALID_OUTLINE_CHARS.chars().nth(9).unwrap());
-                } else {
-                    handle_outline_insertion(editor, modifier, 9);
+                if matches!(modifier, MModifiers::None) {
+                    if editor.outline_font_mode {
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(9).unwrap());
+                    } else {
+                        editor.type_char_set_key(9);
+                    }
                 }
             }
             _ => {}

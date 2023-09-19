@@ -1,13 +1,16 @@
+use std::sync::Arc;
+
 use eframe::{
     egui::{self, color_picker, Layout, Modifiers, RichText},
-    epaint::Vec2,
+    epaint::{mutex::Mutex, Vec2},
 };
 use i18n_embed_fl::fl;
-use icy_engine_egui::{show_monitor_settings, MarkerSettings, MonitorSettings};
+use icy_engine::{AttributedChar, Buffer, Size, TextAttribute};
+use icy_engine_egui::{
+    show_monitor_settings, show_terminal_area, BufferView, MarkerSettings, MonitorSettings,
+};
 
-use crate::{Commands, SelectOutlineDialog, SETTINGS};
-
-#[derive(Default)]
+use crate::{CharTableToolWindow, CharacterSet, Commands, SelectOutlineDialog, SETTINGS};
 pub struct SettingsDialog {
     settings_category: usize,
     select_outline_dialog: SelectOutlineDialog,
@@ -16,18 +19,48 @@ pub struct SettingsDialog {
     marker_settings: MarkerSettings,
     key_filter: String,
     key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
+    char_set: CharacterSet,
+    views: Vec<Arc<Mutex<BufferView>>>,
+    char_view: CharTableToolWindow,
 }
 const MONITOR_CAT: usize = 0;
 const MARKER_CAT: usize = 1;
 const OUTLINE_CAT: usize = 2;
-const KEYBIND_CAT: usize = 3;
+const CHAR_SET_CAT: usize = 3;
+const KEYBIND_CAT: usize = 4;
 
 impl SettingsDialog {
+    pub fn new(gl: &Arc<glow::Context>) -> Self {
+        let mut views = Vec::new();
+
+        for _ in 0..15 {
+            let mut buffer = Buffer::new(Size::new(10, 1));
+            buffer.is_terminal_buffer = true;
+            let mut buffer_view = BufferView::from_buffer(gl, buffer, glow::NEAREST as i32);
+            buffer_view.interactive = true;
+            views.push(Arc::new(Mutex::new(buffer_view)));
+        }
+        let char_view = CharTableToolWindow::new(32);
+        Self {
+            settings_category: MONITOR_CAT,
+            select_outline_dialog: SelectOutlineDialog::default(),
+            monitor_settings: Default::default(),
+            marker_settings: Default::default(),
+            key_filter: String::new(),
+            key_bindings: Commands::default_keybindings(),
+            char_set: Default::default(),
+            views,
+            char_view,
+        }
+    }
+
     pub(crate) fn init(&mut self) {
         self.monitor_settings = unsafe { SETTINGS.monitor_settings.clone() };
         self.marker_settings = unsafe { SETTINGS.marker_settings.clone() };
         self.key_bindings = unsafe { SETTINGS.key_bindings.clone() };
+        self.char_set = unsafe { SETTINGS.character_sets[0].clone() };
     }
+
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut open = true;
         let mut dialog_open = true;
@@ -76,6 +109,15 @@ impl SettingsDialog {
                     {
                         self.settings_category = OUTLINE_CAT;
                     }
+                    if ui
+                        .selectable_label(
+                            settings_category == CHAR_SET_CAT,
+                            fl!(crate::LANGUAGE_LOADER, "settings-char-set-category"),
+                        )
+                        .clicked()
+                    {
+                        self.settings_category = CHAR_SET_CAT;
+                    }
 
                     if ui
                         .selectable_label(
@@ -107,6 +149,11 @@ impl SettingsDialog {
                         }
                     }
 
+                    CHAR_SET_CAT => {
+                        ui.add_space(8.0);
+                        self.show_charset_editor(ui);
+                    }
+
                     OUTLINE_CAT => {
                         ui.add_space(8.0);
                         self.select_outline_dialog
@@ -136,6 +183,8 @@ impl SettingsDialog {
                     {
                         unsafe {
                             SETTINGS.key_bindings = self.key_bindings.clone();
+                            SETTINGS.character_sets.clear();
+                            SETTINGS.character_sets.push(self.char_set.clone());
                         }
                         dialog_open = false;
                     }
@@ -153,8 +202,9 @@ impl SettingsDialog {
                     }
 
                     if (self.settings_category == MONITOR_CAT
-                        || self.settings_category == 1
-                        || self.settings_category == 3)
+                        || self.settings_category == MARKER_CAT
+                        || self.settings_category == CHAR_SET_CAT
+                        || self.settings_category == KEYBIND_CAT)
                         && ui
                             .button(fl!(crate::LANGUAGE_LOADER, "settings-reset_button"))
                             .clicked()
@@ -163,6 +213,7 @@ impl SettingsDialog {
                             match self.settings_category {
                                 MONITOR_CAT => SETTINGS.monitor_settings = Default::default(),
                                 MARKER_CAT => SETTINGS.marker_settings = Default::default(),
+                                CHAR_SET_CAT => self.char_set = Default::default(),
                                 KEYBIND_CAT => {
                                     self.key_bindings = Commands::default_keybindings();
                                 }
@@ -174,6 +225,46 @@ impl SettingsDialog {
             });
 
         open && dialog_open
+    }
+
+    pub fn show_charset_editor(&mut self, ui: &mut egui::Ui) {
+        ui.set_height(540.);
+        let mut id = 0;
+        ui.add_space(48.0);
+        egui::Grid::new("paste_mode_grid")
+            .num_columns(6)
+            .spacing([8.0, 8.0])
+            .show(ui, |ui| {
+                for view in &self.views {
+                    let opt = icy_engine_egui::TerminalOptions {
+                        stick_to_bottom: false,
+                        scale: Some(Vec2::new(2.0, 2.0)),
+                        id: Some(egui::Id::new(200 + id)),
+                        terminal_size: Some(Vec2::new(8. * 10. * 2.0, 16.0 * 2.0)),
+                        ..Default::default()
+                    };
+
+                    for x in 0..10 {
+                        let ch = self.char_set.table[id][x];
+                        view.lock().get_buffer_mut().layers[0]
+                            .set_char((x, 0), AttributedChar::new(ch, TextAttribute::default()));
+                    }
+                    if id % 3 == 0 {
+                        ui.end_row();
+                    }
+                    id += 1;
+
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if view.lock().calc.has_focus {
+                            ui.strong(fl!(crate::LANGUAGE_LOADER, "settings-set-label", set = id));
+                        } else {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "settings-set-label", set = id));
+                        }
+                    });
+                    show_terminal_area(ui, view.clone(), opt);
+                }
+            });
+        self.char_view.show_plain_char_table(ui);
     }
 }
 
