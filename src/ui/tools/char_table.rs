@@ -35,7 +35,7 @@ impl CharTableToolWindow {
         let mut something_hovered = false;
         let mut result = None;
 
-        let response = egui::ScrollArea::vertical()
+        egui::ScrollArea::vertical()
             .id_source("char_table_scroll_area")
             .show(ui, |ui| {
                 ui.add_space(4.0);
@@ -61,7 +61,7 @@ impl CharTableToolWindow {
                     let fw = scale * self.font.size.width as f32;
                     let fh = scale * self.font.size.height as f32;
                     if response.clicked() {
-                        result = self.hover_char.clone();
+                        result = self.hover_char;
                     }
                     if response.hovered() {
                         if let Some(pos) = response.hover_pos() {

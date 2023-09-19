@@ -3,7 +3,7 @@ use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{SauceData, SauceString};
 
-use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
+use crate::{to_message, AnsiEditor, Message, ModalDialog, TerminalResult};
 
 pub struct EditSauceDialog {
     pub should_commit: bool,
@@ -141,8 +141,9 @@ impl ModalDialog for EditSauceDialog {
 
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
         let bv = &mut editor.buffer_view.lock();
-        let buf = bv.get_buffer_mut();
-        buf.sauce_data = Some(self.sauce_data.clone());
-        Ok(None)
+        Ok(to_message(
+            bv.get_edit_state_mut()
+                .update_sauce_data(Some(self.sauce_data.clone())),
+        ))
     }
 }
