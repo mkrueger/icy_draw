@@ -11,7 +11,10 @@ use crate::{
     util::autosave::{remove_autosave, store_auto_save},
     Document, DocumentOptions, Message, Settings, DEFAULT_OUTLINE_TABLE, FIRST_TOOL,
 };
-use eframe::egui::{self, Response, Ui};
+use eframe::{
+    egui::{self, Response, Ui},
+    epaint::Rgba,
+};
 use egui_extras::RetainedImage;
 use egui_tiles::{Tabs, TileId, Tiles};
 use i18n_embed_fl::fl;
@@ -118,6 +121,7 @@ pub struct DocumentBehavior {
 
     char_set_img: Option<RetainedImage>,
     cur_char_set: usize,
+    dark_mode: bool,
 
     pos_img: Option<RetainedImage>,
     cur_pos: Position,
@@ -146,6 +150,7 @@ impl DocumentBehavior {
             pos_img: None,
             cur_pos: Position::new(i32::MAX, i32::MAX),
             cur_selection: None,
+            dark_mode: true,
         }
     }
 
@@ -295,10 +300,21 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         ui.add_space(4.0);
         let mut buffer = Buffer::new((48, 1));
         let char_set = Settings::get_character_set();
-        if self.cur_char_set != char_set {
-            self.cur_char_set = char_set;
+        if self.cur_char_set != char_set || self.dark_mode != ui.style().visuals.dark_mode {
+            let c = if ui.style().visuals.dark_mode {
+                ui.style().visuals.extreme_bg_color
+            } else {
+                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8)).into()
+            };
+
+            let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+
+            let c = ui.style().visuals.strong_text_color();
+            let fg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+
             let mut attr: TextAttribute = TextAttribute::default();
-            attr.set_foreground(9);
+            attr.set_background(bg_color);
+            attr.set_foreground(fg_color);
             let s = format!("Set {:2} ", char_set + 1);
             let mut i = 0;
             for c in s.chars() {
@@ -350,8 +366,12 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                     if let Some(editor) = doc.get_ansi_editor() {
                         let pos = editor.get_caret_position();
                         let sel = editor.buffer_view.lock().get_selection();
-                        if pos != self.cur_pos || sel != self.cur_selection {
+                        if pos != self.cur_pos
+                            || sel != self.cur_selection
+                            || self.dark_mode != ui.style().visuals.dark_mode
+                        {
                             self.cur_pos = pos;
+                            self.dark_mode = ui.style().visuals.dark_mode;
                             self.cur_selection = sel;
                             let txt = if let Some(sel) = sel {
                                 let r = sel.as_rectangle();
@@ -381,7 +401,19 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                             let mut buffer = Buffer::new((char_count, 1));
                             buffer.is_terminal_buffer = true;
                             let mut attr: TextAttribute = TextAttribute::default();
-                            attr.set_foreground(15);
+                            let c = if ui.style().visuals.dark_mode {
+                                ui.style().visuals.extreme_bg_color
+                            } else {
+                                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8))
+                                    .into()
+                            };
+
+                            let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+                            attr.set_background(bg_color);
+
+                            let c = ui.style().visuals.text_color();
+                            let fg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+                            attr.set_foreground(fg_color);
 
                             for (i, mut c) in txt2.chars().enumerate() {
                                 if c as u32 > 255 {
@@ -400,11 +432,6 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
             }
         }
     }
-
-    /*
-
-
-    */
 }
 
 pub fn add_child(
