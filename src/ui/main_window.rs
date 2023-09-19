@@ -11,7 +11,7 @@ use crate::{
     add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor,
     ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands, Document, DocumentBehavior,
     DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings,
-    SettingsDialog, ToolBehavior, ToolTab, TopBar,
+    SettingsDialog, ToolBehavior, ToolTab, TopBar, SETTINGS,
 };
 use directories::UserDirs;
 use eframe::egui::{Button, PointerButton};
@@ -43,7 +43,7 @@ pub struct MainWindow {
     pub bottom_panel: bool,
 
     pub show_settings: bool,
-    settings_dialog: SettingsDialog,
+    pub settings_dialog: SettingsDialog,
     pub commands: Vec<Box<Commands>>,
     pub is_fullscreen: bool,
 
@@ -191,6 +191,10 @@ impl MainWindow {
 
         tool_tree.root = Some(vert_id);
         let open_file_window = view_library::MainWindow::new(&gl, None);
+        let mut c = Box::<Commands>::default();
+        unsafe {
+            c.apply_key_bindings(&SETTINGS.key_bindings);
+        }
         MainWindow {
             document_behavior: DocumentBehavior::new(Arc::new(Mutex::new(tools))),
             tool_behavior: ToolBehavior::default(),
@@ -205,7 +209,7 @@ impl MainWindow {
             right_panel: true,
             bottom_panel: false,
             top_bar: TopBar::new(&cc.egui_ctx),
-            commands: vec![Box::<Commands>::default()],
+            commands: vec![c],
             is_closed: false,
             is_fullscreen: false,
             in_open_file_mode: false,
@@ -831,6 +835,11 @@ impl eframe::App for MainWindow {
 
         if self.show_settings {
             self.show_settings = self.settings_dialog.show(ctx);
+            if !self.show_settings {
+                unsafe {
+                    self.commands[0].apply_key_bindings(&SETTINGS.key_bindings);
+                }
+            }
         }
 
         ctx.request_repaint_after(Duration::from_millis(150));

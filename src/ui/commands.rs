@@ -217,12 +217,13 @@ macro_rules! key {
         None
     };
     ($key:ident, $modifier: ident) => {
-        Some((KeyOrPointer::Key(egui::Key::$key), modifier_keys::$modifier))
+        Some((egui::Key::$key, modifier_keys::$modifier))
     };
 }
 
 macro_rules! keys {
     ($( ($l:ident, $translation: expr, $message:ident, $cmd_state: ident$(, $key:ident, $modifier: ident)? ) ),* $(,)? ) => {
+
         pub struct Commands {
             state_map: HashMap<u32, Box<dyn CommandState>>,
             $(
@@ -247,6 +248,16 @@ macro_rules! keys {
         }
 
         impl Commands {
+            pub fn default_keybindings() -> Vec<(String, egui::Key, Modifiers)> {
+                let mut result = Vec::new();
+                $(
+                    let key = key!($($key, $modifier)?);
+                    if let Some((key, modifier)) = key  {
+                        result.push((stringify!($l).to_string(), key, modifier));
+                    }
+                )*
+                result
+            }
             pub fn check(&self, ctx: &egui::Context, message: &mut Option<Message>) {
                 $(
                     if self.$l.is_pressed(ctx) {
@@ -269,6 +280,64 @@ macro_rules! keys {
                 )*
             }
 
+            pub fn apply_key_bindings(&mut self, key_bindings: &Vec<(String, egui::Key, Modifiers)> ) {
+                for (binding, key, modifier) in key_bindings {
+                    match binding.as_str() {
+                        $(
+                            stringify!($l) => {
+                                self.$l.key = Some((KeyOrPointer::Key(*key), *modifier));
+                            }
+                        )*
+
+                        _ => {}
+                    }
+                }
+            }
+
+            pub(crate) fn show_keybinds_settings(ui: &mut egui::Ui, filter: &mut String, keys: &mut HashMap<String, (egui::Key, Modifiers)>) -> bool {
+                let mut changed_bindings = false;
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                    let response = ui.button("🗙");
+                    if response.clicked() {
+                        filter.clear();
+                    }
+
+                    ui.add(
+                        egui::TextEdit::singleline(filter).hint_text(fl!(
+                            crate::LANGUAGE_LOADER,
+                            "select-font-dialog-filter-text"
+                        )),
+                    );
+                }); 
+                egui::ScrollArea::vertical()
+                    .max_height(240.0)
+                    .show(ui, |ui| {
+           
+                    $(
+                        let label = fl!(crate::LANGUAGE_LOADER, $translation);
+                        if filter.is_empty() || label.to_lowercase().contains(filter.to_lowercase().as_str()) {
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                                let mut bind = if let Some(x) = keys.get(stringify!($l)) { Some(x.clone ()) } else {None };
+                                if ui.add(egui_bind::Bind::new(
+                                    stringify!($l).to_string(),
+                                    &mut bind,
+                                )).changed() {
+                                    if let Some(bind) = bind {
+                                        keys.insert(stringify!($l).into(), bind);
+                                    }  else {
+                                        keys.remove(stringify!($l));
+                                    } 
+                                    changed_bindings = true;
+                                }
+                                ui.label(label);
+                            });
+                        }
+                    )*
+                });
+                changed_bindings
+            }
+
         }
     };
 }
@@ -284,11 +353,12 @@ fn hash(str: impl Into<String>) -> u32 {
 
 impl CommandWrapper {
     pub fn new(
-        key: Option<(KeyOrPointer, Modifiers)>,
+        key: Option<(egui::Key, Modifiers)>,
         message: Message,
         description: String,
         state_key: u32,
     ) -> Self {
+        let key = key.map(|(k, m)| (KeyOrPointer::Key(k), m));
         Self {
             key,
             message,
@@ -388,7 +458,7 @@ keys![
         close_window,
         "menu-close",
         CloseWindow,
-        BufferOpenState,
+        AlwaysEnabledState,
         Q,
         CTRL
     ),

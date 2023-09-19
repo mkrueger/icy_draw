@@ -1,19 +1,35 @@
 use eframe::{
-    egui::{self, color_picker, Layout, RichText},
+    egui::{self, color_picker, Layout, RichText, Modifiers},
     epaint::Vec2,
 };
 use i18n_embed_fl::fl;
-use icy_engine_egui::{show_monitor_settings, MarkerSettings};
+use icy_engine_egui::{show_monitor_settings, MarkerSettings, MonitorSettings};
 
-use crate::{SelectOutlineDialog, SETTINGS};
+use crate::{SelectOutlineDialog, SETTINGS, Commands};
 
 #[derive(Default)]
 pub struct SettingsDialog {
     settings_category: usize,
     select_outline_dialog: SelectOutlineDialog,
+
+    monitor_settings: MonitorSettings,
+    marker_settings: MarkerSettings,
+    key_filter: String,
+    key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
+
 }
+const MONITOR_CAT: usize = 0 ;
+const MARKER_CAT: usize = 1 ;
+const OUTLINE_CAT: usize = 2;
+const KEYBIND_CAT: usize = 3 ;
 
 impl SettingsDialog {
+
+    pub(crate) fn init(&mut self) {
+        self.monitor_settings = unsafe { SETTINGS.monitor_settings.clone() };
+        self.marker_settings = unsafe { SETTINGS.marker_settings.clone() };
+        self.key_bindings = unsafe { SETTINGS.key_bindings.clone() };
+    }
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
         let mut open = true;
         let mut dialog_open = true;
@@ -35,44 +51,55 @@ impl SettingsDialog {
 
                     if ui
                         .selectable_label(
-                            settings_category == 0,
+                            settings_category == MONITOR_CAT,
                             fl!(crate::LANGUAGE_LOADER, "settings-monitor-category"),
                         )
                         .clicked()
                     {
-                        self.settings_category = 0;
+                        self.settings_category = MONITOR_CAT;
                     }
 
                     if ui
                         .selectable_label(
-                            settings_category == 1,
+                            settings_category == MARKER_CAT,
                             fl!(crate::LANGUAGE_LOADER, "settings-markers-guides-category"),
                         )
                         .clicked()
                     {
-                        self.settings_category = 1;
+                        self.settings_category = MARKER_CAT;
                     }
 
                     if ui
                         .selectable_label(
-                            settings_category == 2,
+                            settings_category == OUTLINE_CAT,
                             fl!(crate::LANGUAGE_LOADER, "settings-font-outline-category"),
                         )
                         .clicked()
                     {
-                        self.settings_category = 2;
+                        self.settings_category = OUTLINE_CAT;
+                    }
+
+
+                    if ui
+                        .selectable_label(
+                            settings_category == KEYBIND_CAT,
+                            fl!(crate::LANGUAGE_LOADER, "settings-keybindings-category"),
+                        )
+                        .clicked()
+                    {
+                        self.settings_category = KEYBIND_CAT;
                     }
                 });
                 ui.separator();
                 match self.settings_category {
-                    0 => unsafe {
+                    MONITOR_CAT => unsafe {
                         if let Some(new_settings) =
                             show_monitor_settings(ui, &SETTINGS.monitor_settings)
                         {
                             SETTINGS.monitor_settings = new_settings;
                         }
                     },
-                    1 => {
+                    MARKER_CAT => {
                         ui.add_space(8.0);
                         unsafe {
                             if let Some(new_settings) =
@@ -83,11 +110,23 @@ impl SettingsDialog {
                         }
                     }
 
-                    2 => {
+                    OUTLINE_CAT => {
                         ui.add_space(8.0);
                         self.select_outline_dialog
                             .show_outline_ui(ui, 4, Vec2::new(8.0, 8.0));
                     }
+
+                    KEYBIND_CAT => {
+                        let mut map = std::collections::HashMap::new();
+                        for (s, key, modifier) in &self.key_bindings {
+                            map.insert(s.clone(), (*key, *modifier));
+                        }
+                        crate::Commands::show_keybinds_settings(ui, &mut self.key_filter, &mut map);
+                        self.key_bindings.clear();
+                        for (s, (key, modifier)) in map {
+                            self.key_bindings.push((s, key, modifier));
+                        }
+                    },
                     _ => {}
                 }
 
@@ -98,18 +137,37 @@ impl SettingsDialog {
                         .button(fl!(crate::LANGUAGE_LOADER, "new-file-ok"))
                         .clicked()
                     {
+                        unsafe {
+                            SETTINGS.key_bindings = self.key_bindings.clone();
+                        }
                         dialog_open = false;
                     }
 
-                    if (self.settings_category == 0 || self.settings_category == 1)
+                    if ui
+                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
+                    .clicked()
+                    {
+                        unsafe {
+                            SETTINGS.monitor_settings = self.monitor_settings.clone();
+                            SETTINGS.marker_settings = self.marker_settings.clone();
+                            SETTINGS.key_bindings = self.key_bindings.clone();
+                        }
+                        dialog_open = false;
+                    }
+
+
+                    if (self.settings_category == MONITOR_CAT || self.settings_category == 1|| self.settings_category == 3)
                         && ui
                             .button(fl!(crate::LANGUAGE_LOADER, "settings-reset_button"))
                             .clicked()
                     {
                         unsafe {
                             match self.settings_category {
-                                0 => SETTINGS.monitor_settings = Default::default(),
-                                1 => SETTINGS.marker_settings = Default::default(),
+                                MONITOR_CAT => SETTINGS.monitor_settings = Default::default(),
+                                MARKER_CAT => SETTINGS.marker_settings = Default::default(),
+                                KEYBIND_CAT => {
+                                    self.key_bindings = Commands::default_keybindings();
+                                },
                                 _ => {}
                             }
                         }
@@ -119,6 +177,7 @@ impl SettingsDialog {
 
         open && dialog_open
     }
+
 }
 
 pub fn show_marker_settings(

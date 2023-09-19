@@ -1,12 +1,12 @@
 use directories::ProjectDirs;
-use eframe::epaint::Color32;
+use eframe::{epaint::Color32, egui::Modifiers};
 use icy_engine_egui::{BackgroundEffect, MarkerSettings, MonitorSettings};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
     fs::{self, File},
     io::{self, BufReader, BufWriter},
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, 
 };
 
 use crate::{plugins::Plugin, TerminalResult};
@@ -23,6 +23,8 @@ pub struct Settings {
 
     pub monitor_settings: MonitorSettings,
     pub marker_settings: MarkerSettings,
+
+    pub key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
 
     recent_files: Vec<PathBuf>,
 }
@@ -195,6 +197,7 @@ pub static mut SETTINGS: Settings = Settings {
     show_layer_borders: true,
     show_line_numbers: false,
     recent_files: Vec::new(),
+    key_bindings: Vec::new(),
     monitor_settings: MonitorSettings {
         use_filter: false,
         monitor_type: 0,

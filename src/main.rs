@@ -105,6 +105,7 @@ fn main() {
         if settings_file.exists() {
             if let Ok(settings) = Settings::load(&settings_file) {
                 unsafe {
+                    SETTINGS.key_bindings = Commands::default_keybindings();
                     SETTINGS = settings;
                 }
             }

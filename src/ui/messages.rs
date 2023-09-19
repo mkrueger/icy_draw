@@ -1133,6 +1133,7 @@ impl MainWindow {
             }
             Message::ShowSettings => {
                 self.show_settings = true;
+                self.settings_dialog.init();
             }
         }
     }

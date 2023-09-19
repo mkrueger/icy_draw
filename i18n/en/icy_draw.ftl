@@ -382,6 +382,7 @@ settings-reset_button=Reset
 settings-monitor-category=Monitor
 settings-font-outline-category=Font Outline
 settings-markers-guides-category=Markers & Guides
+settings-keybindings-category=Keys
 settings-reference-alpha=Reference image alpha
 settings-raster-label=Grid color:
 settings-alpha=alpha
