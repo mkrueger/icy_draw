@@ -773,7 +773,7 @@ impl AnsiEditor {
     pub fn delete(&mut self) {
         self.buffer_view.lock().clear_selection();
         let pos = self.get_caret_position();
-        if pos.x > 0 {
+        if pos.x >= 0 {
             let end = self.buffer_view.lock().get_width() - 1;
             for i in pos.x..end {
                 let next = self.get_char_from_cur_layer(Position::new(i + 1, pos.y));
