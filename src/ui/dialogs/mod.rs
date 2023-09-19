@@ -48,3 +48,6 @@ pub use open_referenceimage_dialog::*;
 
 mod select_palette_dialog;
 pub use select_palette_dialog::*;
+
+mod settings_dialog;
+pub use settings_dialog::*;

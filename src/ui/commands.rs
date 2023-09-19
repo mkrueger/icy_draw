@@ -398,6 +398,12 @@ keys![
     (copy, "menu-copy", Copy, CanCopyState, C, CTRL),
     (paste, "menu-paste", Paste, CanPasteState, V, CTRL),
     (
+        show_settings,
+        "menu-show_settings",
+        ShowSettings,
+        AlwaysEnabledState
+    ),
+    (
         select_all,
         "menu-select-all",
         SelectAll,

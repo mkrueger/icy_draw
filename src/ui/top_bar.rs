@@ -89,7 +89,7 @@ impl MainWindow {
                 self.commands[0].save_as.ui(ui, &mut result);
                 self.commands[0].export.ui(ui, &mut result);
                 ui.separator();
-                self.commands[0].edit_font_outline.ui(ui, &mut result);
+                self.commands[0].show_settings.ui(ui, &mut result);
                 ui.separator();
                 self.commands[0].close_window.ui(ui, &mut result);
             });

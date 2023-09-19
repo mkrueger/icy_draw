@@ -10,8 +10,8 @@ use std::{
 use crate::{
     add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor,
     ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands, Document, DocumentBehavior,
-    DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, ToolBehavior,
-    ToolTab, TopBar,
+    DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings,
+    SettingsDialog, ToolBehavior, ToolTab, TopBar,
 };
 use directories::UserDirs;
 use eframe::egui::{Button, PointerButton};
@@ -42,6 +42,8 @@ pub struct MainWindow {
     pub right_panel: bool,
     pub bottom_panel: bool,
 
+    pub show_settings: bool,
+    settings_dialog: SettingsDialog,
     pub commands: Vec<Box<Commands>>,
     pub is_fullscreen: bool,
 
@@ -208,6 +210,8 @@ impl MainWindow {
             is_fullscreen: false,
             in_open_file_mode: false,
             open_file_window,
+            show_settings: false,
+            settings_dialog: SettingsDialog::default(),
         }
     }
 
@@ -824,6 +828,10 @@ impl eframe::App for MainWindow {
         });
 
         frame.set_fullscreen(self.is_fullscreen);
+
+        if self.show_settings {
+            self.show_settings = self.settings_dialog.show(ctx);
+        }
 
         ctx.request_repaint_after(Duration::from_millis(150));
     }

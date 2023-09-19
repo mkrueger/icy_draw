@@ -14,6 +14,7 @@ menu-close=Close
 menu-save-as=Save As…
 menu-export=Export…
 menu-edit-font-outline=Font Outline…
+menu-show_settings=Settings…
 
 menu-edit=Edit
 menu-undo=Undo
@@ -375,3 +376,14 @@ tdf-editor-clear_char_button=Clear Char
 tdf-editor-cheat_sheet_key=Key
 tdf-editor-cheat_sheet_code=Code
 tdf-editor-cheat_sheet_res=Res
+
+settings-heading=Settings
+settings-reset_button=Reset
+settings-monitor-category=Monitor
+settings-font-outline-category=Font Outline
+settings-markers-guides-category=Markers & Guides
+settings-reference-alpha=Reference image alpha
+settings-raster-label=Grid color:
+settings-alpha=alpha
+settings-guide-label=Guide color:
+settings-background_color-label=Border color:

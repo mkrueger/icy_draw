@@ -14,11 +14,11 @@ use eframe::{
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
 use icy_engine::{Buffer, EngineResult, SaveOptions, Size, TextPane};
-use icy_engine_egui::{show_terminal_area, BufferView, MonitorSettings};
+use icy_engine_egui::{show_terminal_area, BufferView};
 
 use crate::{
     model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
-    UndoHandler,
+    UndoHandler, SETTINGS,
 };
 
 use self::animator::Animator;
@@ -370,9 +370,9 @@ impl Document for AnimationEditor {
                     let opt = icy_engine_egui::TerminalOptions {
                         stick_to_bottom: false,
                         scale: Some(Vec2::new(1.0, 1.0)),
-                        settings: MonitorSettings {
-                            ..Default::default()
-                        },
+                        monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
+                        marker_settings: unsafe { SETTINGS.marker_settings.clone() },
+
                         id: Some(Id::new(self.id + 20000)),
                         ..Default::default()
                     };

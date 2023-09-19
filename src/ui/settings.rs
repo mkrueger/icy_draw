@@ -1,4 +1,6 @@
 use directories::ProjectDirs;
+use eframe::epaint::Color32;
+use icy_engine_egui::{BackgroundEffect, MarkerSettings, MonitorSettings};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
@@ -18,6 +20,9 @@ pub struct Settings {
 
     pub show_layer_borders: bool,
     pub show_line_numbers: bool,
+
+    pub monitor_settings: MonitorSettings,
+    pub marker_settings: MarkerSettings,
 
     recent_files: Vec<PathBuf>,
 }
@@ -190,6 +195,30 @@ pub static mut SETTINGS: Settings = Settings {
     show_layer_borders: true,
     show_line_numbers: false,
     recent_files: Vec::new(),
+    monitor_settings: MonitorSettings {
+        use_filter: false,
+        monitor_type: 0,
+        gamma: 50.,
+        contrast: 50.,
+        saturation: 50.,
+        brightness: 30.,
+        light: 40.,
+        blur: 30.,
+        curvature: 10.,
+        scanlines: 10.,
+        background_effect: BackgroundEffect::Checkers,
+        selection_fg: Color32::from_rgb(0xAB, 0x00, 0xAB),
+        selection_bg: Color32::from_rgb(0xAB, 0xAB, 0xAB),
+    },
+    marker_settings: MarkerSettings {
+        reference_image_alpha: 0.2,
+        raster_alpha: 0.2,
+        raster_color: Color32::from_rgb(0xAB, 0xAB, 0xAB),
+        guide_alpha: 0.2,
+        guide_color: Color32::from_rgb(0xAB, 0xAB, 0xAB),
+
+        border_color: Color32::from_rgb(64, 69, 74),
+    },
 };
 
 #[derive(Debug, Clone)]

@@ -19,9 +19,7 @@ use icy_engine::{
     TextPane,
 };
 
-use icy_engine_egui::{
-    show_terminal_area, BackgroundEffect, BufferView, MonitorSettings, TerminalCalc,
-};
+use icy_engine_egui::{show_terminal_area, BufferView, TerminalCalc};
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
@@ -184,10 +182,8 @@ impl Document for AnsiEditor {
             stick_to_bottom: false,
             scale: Some(scale),
             fit_width: options.fit_width,
-            settings: MonitorSettings {
-                background_effect: BackgroundEffect::Checkers,
-                ..Default::default()
-            },
+            monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
+            marker_settings: unsafe { SETTINGS.marker_settings.clone() },
             id: Some(Id::new(self.id + 10000)),
             raster: self.raster,
             guide: self.guide,

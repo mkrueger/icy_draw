@@ -145,6 +145,7 @@ pub enum Message {
     PreviousFgColor,
     NextBgColor,
     PreviousBgColor,
+    ShowSettings,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -1129,6 +1130,9 @@ impl MainWindow {
                         .set_background((bg + palette_len - 1) % palette_len);
                     None
                 });
+            }
+            Message::ShowSettings => {
+                self.show_settings = true;
             }
         }
     }

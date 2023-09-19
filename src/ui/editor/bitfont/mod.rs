@@ -12,11 +12,11 @@ use icy_engine::{
     util::{pop_data, push_data, BITFONT_GLYPH},
     BitFont, Buffer, EngineResult, Glyph, Size, TextAttribute, TextPane,
 };
-use icy_engine_egui::{show_terminal_area, BufferView, MonitorSettings};
+use icy_engine_egui::{show_terminal_area, BufferView};
 
 use crate::{
     model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message,
-    TerminalResult, UndoHandler,
+    TerminalResult, UndoHandler, SETTINGS,
 };
 
 use self::undo::UndoOperation;
@@ -596,9 +596,8 @@ impl Document for BitFontEditor {
                     let opt = icy_engine_egui::TerminalOptions {
                         stick_to_bottom: false,
                         scale: Some(Vec2::new(2.0, 2.0)),
-                        settings: MonitorSettings {
-                            ..Default::default()
-                        },
+                        monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
+                        marker_settings: unsafe { SETTINGS.marker_settings.clone() },
                         id: Some(Id::new(self.id + 20000)),
                         ..Default::default()
                     };
