@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use eframe::{
     egui::{self, menu, ImageButton, TopBottomPanel, Ui},
     epaint::Vec2,
@@ -49,10 +51,14 @@ impl MainWindow {
 
         menu::bar(ui, |ui| {
             let mut has_buffer = false;
-            let mut c = self.commands.pop().unwrap();
-            let pane = self.get_active_pane();
-            c.update_states(pane);
-            self.commands.push(c);
+
+            if self.last_command_update.elapsed().as_millis() > 250 {
+                let mut c = self.commands.pop().unwrap();
+                let pane = self.get_active_pane();
+                c.update_states(pane);
+                self.commands.push(c);
+                self.last_command_update = Instant::now();
+            }
 
             if let Some(pane) = self.get_active_pane_mut() {
                 if let Ok(doc) = pane.doc.lock() {

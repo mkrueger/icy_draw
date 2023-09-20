@@ -4,7 +4,7 @@ use std::{
     path::Path,
     rc::Rc,
     sync::{Arc, Mutex},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use crate::{
@@ -45,6 +45,7 @@ pub struct MainWindow {
     pub show_settings: bool,
     pub settings_dialog: SettingsDialog,
     pub commands: Vec<Box<Commands>>,
+    pub last_command_update: Instant,
     pub is_fullscreen: bool,
 
     pub in_open_file_mode: bool,
@@ -217,6 +218,7 @@ impl MainWindow {
             open_file_window,
             show_settings: false,
             settings_dialog,
+            last_command_update: Instant::now(),
         }
     }
 
