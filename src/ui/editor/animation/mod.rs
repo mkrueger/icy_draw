@@ -14,17 +14,14 @@ use eframe::{
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
 use icy_engine::{Buffer, EngineResult, SaveOptions, Size, TextPane};
-use icy_engine_egui::{show_terminal_area, BufferView};
+use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
 
 use crate::{
     model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
     UndoHandler, SETTINGS,
 };
 
-use self::animator::Animator;
 mod highlighting;
-
-mod animator;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ExportType {
@@ -32,6 +29,7 @@ pub enum ExportType {
     Ansi,
 }
 pub struct AnimationEditor {
+    gl: Arc<glow::Context>,
     id: usize,
 
     undostack: usize,
@@ -39,16 +37,13 @@ pub struct AnimationEditor {
     txt: String,
     buffer_view: Arc<Mutex<BufferView>>,
     animator: Option<Arc<Mutex<Animator>>>,
-    is_playing: bool,
-    is_loop: bool,
-    instant: Instant,
-    cur_frame: usize,
-    frame_count: usize,
     error: String,
 
     parent_path: Option<PathBuf>,
     export_path: PathBuf,
     export_type: ExportType,
+
+    current_monitor_settings: MonitorSettings,
 
     update_thread: Option<thread::JoinHandle<mlua::Result<Arc<Mutex<Animator>>>>>,
     shedule_update: bool,
@@ -62,58 +57,32 @@ impl AnimationEditor {
         let mut buffer_view = BufferView::from_buffer(gl, buffer, glow::NEAREST as i32);
         buffer_view.interactive = false;
         let buffer_view = Arc::new(Mutex::new(buffer_view));
-        let mut frame_count = 0;
         let parent_path = path.parent().map(|p| p.to_path_buf());
+        let mut monitor_settings = MonitorSettings::default();
         let animator = if let Ok(animator) = Animator::run(&parent_path, &txt) {
-            frame_count = animator.lock().frames.len();
+            monitor_settings = animator.lock().display_frame(buffer_view.clone());
             Some(animator)
         } else {
             None
         };
 
         let export_path = path.with_extension("gif");
-        let mut result = Self {
+        Self {
+            gl: gl.clone(),
             id,
             buffer_view,
-            is_playing: false,
             animator,
             txt,
-            is_loop: false,
-            instant: Instant::now(),
-            cur_frame: 0,
             undostack: 0,
-            frame_count,
             error: "".to_string(),
             export_path,
             export_type: ExportType::Gif,
             parent_path,
 
+            current_monitor_settings: monitor_settings,
             update_thread: None,
             shedule_update: false,
             last_update: Instant::now(),
-        };
-        result.show_frame();
-
-        result
-    }
-
-    fn show_frame(&mut self) {
-        if let Some(animator) = &self.animator {
-            let animator = animator.lock();
-            if let Some(scene) = animator.frames.get(self.cur_frame) {
-                let mut frame = Buffer::new(scene.get_size());
-                frame.is_terminal_buffer = true;
-                frame.layers = scene.layers.clone();
-                frame.terminal_state = scene.terminal_state.clone();
-                frame.palette = scene.palette.clone();
-                frame.layers = scene.layers.clone();
-                frame.clear_font_table();
-                for f in scene.font_iter() {
-                    frame.set_font(*f.0, f.1.clone());
-                }
-
-                self.buffer_view.lock().set_buffer(frame);
-            }
         }
     }
 
@@ -131,17 +100,32 @@ impl AnimationEditor {
                         return Err(anyhow::anyhow!("Could not create encoder"));
                     };
                     encoder.set_repeat(::gif::Repeat::Infinite).unwrap();
-                    if let Some(animator) = &self.animator {
-                        let animator = animator.lock();
-                        for frame in &animator.frames {
-                            let mut data = frame.render_to_rgba(frame.get_rectangle());
-                            let gif_frame = ::gif::Frame::from_rgba(
-                                data.0.width as u16,
-                                data.0.height as u16,
-                                &mut data.1,
-                            );
-                            encoder.write_frame(&gif_frame)?;
-                        }
+
+                    let frame_count = self.animator.as_ref().unwrap().lock().frames.len();
+
+                    for frame in 0..frame_count {
+                        self.animator.as_ref().unwrap().lock().set_cur_frame(frame);
+                        self.animator
+                            .as_ref()
+                            .unwrap()
+                            .lock()
+                            .display_frame(self.buffer_view.clone());
+                        let opt = icy_engine_egui::TerminalOptions {
+                            stick_to_bottom: false,
+                            scale: Some(Vec2::new(1.0, 1.0)),
+                            monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
+                            marker_settings: unsafe { SETTINGS.marker_settings.clone() },
+
+                            id: Some(Id::new(self.id + 20000)),
+                            ..Default::default()
+                        };
+
+                        let (size, mut data) =
+                            self.buffer_view.lock().render_buffer(&self.gl, &opt);
+
+                        let gif_frame =
+                            ::gif::Frame::from_rgba(size.x as u16, size.y as u16, &mut data);
+                        encoder.write_frame(&gif_frame)?;
                     }
                 } else {
                     return Err(anyhow::anyhow!("Could not create file"));
@@ -152,7 +136,7 @@ impl AnimationEditor {
                 if let Ok(mut image) = File::create(&self.export_path) {
                     if let Some(animator) = &self.animator {
                         let animator = animator.lock();
-                        for frame in &animator.frames {
+                        for (frame, _, _) in &animator.frames {
                             let _ = image.write_all(b"\x1BP0;1;0!z\x1b[2J\x1b[0; D");
                             let _ = image.write_all(&frame.to_bytes("ans", &opt)?);
                             let _ = image.write_all(b"\x1B\\ - next frame -  \x1b[0*z");
@@ -240,66 +224,71 @@ impl Document for AnimationEditor {
                                 ui.set_enabled(false);
                             }
                             let size_points = Vec2::new(22.0, 22.0);
-                            if self.is_playing {
+                            if let Some(animator) = &mut self.animator {
+                                let animator = &mut animator.lock();
+                                let frame_count = animator.frames.len();
+                                if animator.is_playing() {
+                                    if ui
+                                        .add(ImageButton::new(
+                                            crate::PAUSE_SVG.texture_id(ui.ctx()),
+                                            size_points,
+                                        ))
+                                        .clicked()
+                                    {
+                                        animator.set_is_playing(false);
+                                    }
+                                } else {
+                                    let id = if animator.get_cur_frame() + 1 < frame_count {
+                                        crate::PLAY_SVG.texture_id(ui.ctx())
+                                    } else {
+                                        crate::REPLAY_SVG.texture_id(ui.ctx())
+                                    };
+                                    if ui.add(ImageButton::new(id, size_points)).clicked() {
+                                        self.current_monitor_settings =
+                                            animator.start_playback(self.buffer_view.clone());
+                                    }
+                                }
                                 if ui
-                                    .add(ImageButton::new(
-                                        crate::PAUSE_SVG.texture_id(ui.ctx()),
-                                        size_points,
-                                    ))
+                                    .add_enabled(
+                                        animator.get_cur_frame() + 1 < frame_count,
+                                        ImageButton::new(
+                                            crate::SKIP_NEXT_SVG.texture_id(ui.ctx()),
+                                            size_points,
+                                        ),
+                                    )
                                     .clicked()
                                 {
-                                    self.is_playing = false;
+                                    animator.set_cur_frame(frame_count - 1);
+                                    self.current_monitor_settings =
+                                        animator.display_frame(self.buffer_view.clone());
                                 }
-                            } else {
-                                let id = if self.cur_frame + 1 < self.frame_count {
-                                    crate::PLAY_SVG.texture_id(ui.ctx())
-                                } else {
-                                    crate::REPLAY_SVG.texture_id(ui.ctx())
-                                };
-                                if ui.add(ImageButton::new(id, size_points)).clicked() {
-                                    self.is_playing = true;
-                                    self.instant = Instant::now();
-                                    self.cur_frame = 0;
-                                    self.show_frame();
-                                }
-                            }
-                            if ui
-                                .add_enabled(
-                                    self.cur_frame + 1 < self.frame_count,
-                                    ImageButton::new(
-                                        crate::SKIP_NEXT_SVG.texture_id(ui.ctx()),
-                                        size_points,
-                                    ),
-                                )
-                                .clicked()
-                            {
-                                self.cur_frame = self.frame_count - 1;
-                                self.show_frame();
-                            }
-                            if ui
-                                .add(
-                                    ImageButton::new(
-                                        crate::REPEAT_SVG.texture_id(ui.ctx()),
-                                        size_points,
-                                    )
-                                    .selected(self.is_loop),
-                                )
-                                .clicked()
-                            {
-                                self.is_loop = !self.is_loop;
-                            }
-
-                            let mut cf = self.cur_frame + 1;
-                            if self.frame_count > 0
-                                && ui
+                                let is_loop = animator.get_is_loop();
+                                if ui
                                     .add(
-                                        Slider::new(&mut cf, 1..=self.frame_count)
-                                            .text(format!("of {}", self.frame_count)),
+                                        ImageButton::new(
+                                            crate::REPEAT_SVG.texture_id(ui.ctx()),
+                                            size_points,
+                                        )
+                                        .selected(is_loop),
                                     )
-                                    .changed()
-                            {
-                                self.cur_frame = cf - 1;
-                                self.show_frame();
+                                    .clicked()
+                                {
+                                    animator.set_is_loop(!is_loop);
+                                }
+
+                                let mut cf = animator.get_cur_frame() + 1;
+                                if frame_count > 0
+                                    && ui
+                                        .add(
+                                            Slider::new(&mut cf, 1..=frame_count)
+                                                .text(format!("of {}", frame_count)),
+                                        )
+                                        .changed()
+                                {
+                                    animator.set_cur_frame(cf - 1);
+                                    self.current_monitor_settings =
+                                        animator.display_frame(self.buffer_view.clone());
+                                }
                             }
                         });
                     });
@@ -370,8 +359,7 @@ impl Document for AnimationEditor {
                     let opt = icy_engine_egui::TerminalOptions {
                         stick_to_bottom: false,
                         scale: Some(Vec2::new(1.0, 1.0)),
-                        monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
-                        marker_settings: unsafe { SETTINGS.marker_settings.clone() },
+                        monitor_settings: self.current_monitor_settings.clone(),
 
                         id: Some(Id::new(self.id + 20000)),
                         ..Default::default()
@@ -418,10 +406,9 @@ impl Document for AnimationEditor {
                     if let Ok(result) = self.update_thread.take().unwrap().join() {
                         match result {
                             Ok(animator) => {
-                                self.frame_count = animator.lock().frames.len();
-                                self.cur_frame = self.cur_frame.min(self.frame_count.max(1) - 1);
+                                self.current_monitor_settings =
+                                    animator.lock().display_frame(self.buffer_view.clone());
                                 self.animator = Some(animator);
-                                self.show_frame();
                                 self.error = "".to_string();
                             }
                             Err(e) => {
@@ -438,20 +425,9 @@ impl Document for AnimationEditor {
                 self.undostack += 1;
             }
         });
-
-        if self.is_playing && self.instant.elapsed().as_millis() > 100 {
-            self.cur_frame += 1;
-            if self.cur_frame >= self.frame_count {
-                if self.is_loop {
-                    self.cur_frame = 0;
-                } else {
-                    self.is_playing = false;
-                }
-            }
-            self.instant = Instant::now();
-            self.show_frame();
+        if let Some(animator) = &self.animator {
+            animator.lock().update_frame(self.buffer_view.clone());
         }
-
         message
     }
 

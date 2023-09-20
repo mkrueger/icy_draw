@@ -528,7 +528,9 @@ impl MainWindow {
         let mut msg = None;
         if let Some(egui_tiles::Tile::Pane(pane)) = self.document_tree.tiles.get(close_id) {
             if !pane.is_dirty() {
-                msg = pane.doc.lock().unwrap().destroy(&self.gl);
+                if let Some(egui_tiles::Tile::Pane(pane)) = self.document_tree.tiles.get_mut(close_id) {
+                    msg = pane.destroy(&self.gl);
+                }
                 self.document_tree.tiles.remove(close_id);
             } else {
                 self.open_dialog(AskCloseFileDialog::new(pane.get_path(), close_id));

@@ -98,7 +98,7 @@ impl crate::ModalDialog for AskCloseFileDialog {
             {
                 // TODO: potential message clash. Maybe we should return a Vec<Message> instead? OR a Vec MessageType?
                 msg = pane.save();
-                let msg2 = pane.doc.lock().unwrap().destroy(&window.gl);
+                let msg2 = pane.destroy(&window.gl);
                 if msg2.is_some() {
                     msg = msg2;
                 }
@@ -106,7 +106,7 @@ impl crate::ModalDialog for AskCloseFileDialog {
         } else if let Some(egui_tiles::Tile::Pane(pane)) =
             window.document_tree.tiles.get_mut(self.id)
         {
-            msg = pane.doc.lock().unwrap().destroy(&window.gl);
+            msg = pane.destroy(&window.gl);
         }
         window.document_tree.tiles.remove(self.id);
         if let Some(path) = &self.path {

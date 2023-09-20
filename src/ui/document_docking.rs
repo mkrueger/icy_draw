@@ -29,6 +29,7 @@ pub struct DocumentTab {
     auto_save_status: usize,
     instant: Instant,
     last_change_autosave_timer: usize,
+    destroyed: bool
 }
 impl DocumentTab {
     pub fn is_dirty(&self) -> bool {
@@ -111,6 +112,22 @@ impl DocumentTab {
     pub fn is_untitled(&self) -> bool {
         self.full_path.is_none()
     }
+
+    pub fn is_destroyed(&self) -> bool {
+        self.destroyed
+    }
+
+    pub fn destroy(&mut self, gl: &glow::Context) -> Option<Message> {
+        if self.destroyed {
+            return None;
+        }
+        self.destroyed = true;
+        if let Ok(doc) = self.doc.lock() {
+            doc.destroy(gl)
+        } else {
+            None
+        }
+    }
 }
 
 pub struct DocumentBehavior {
@@ -190,6 +207,10 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         _tile_id: egui_tiles::TileId,
         pane: &mut DocumentTab,
     ) -> egui_tiles::UiResponse {
+        if pane.is_destroyed() {
+            return egui_tiles::UiResponse::None;
+        }
+
         if let Ok(doc) = &mut pane.doc.lock() {
             self.message = doc.show_ui(
                 ui,
@@ -430,6 +451,7 @@ pub fn add_child(
         last_save: 0,
         instant: Instant::now(),
         last_change_autosave_timer: 0,
+        destroyed: false
     };
     let new_child = tree.tiles.insert_pane(tile);
 
