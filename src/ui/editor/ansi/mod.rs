@@ -800,6 +800,7 @@ pub fn terminal_context_menu(
     commands: &Commands,
     ui: &mut egui::Ui,
 ) -> Option<Message> {
+    ui.style_mut().wrap = Some(false);
     let mut result = None;
     ui.input_mut(|i| i.events.clear());
 

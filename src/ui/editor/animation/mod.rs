@@ -18,7 +18,7 @@ use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, Moni
 
 use crate::{
     model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
-    UndoHandler, SETTINGS,
+    UndoHandler,
 };
 
 mod highlighting;
@@ -43,8 +43,6 @@ pub struct AnimationEditor {
     export_path: PathBuf,
     export_type: ExportType,
 
-    current_monitor_settings: MonitorSettings,
-
     update_thread: Option<thread::JoinHandle<mlua::Result<Arc<Mutex<Animator>>>>>,
     shedule_update: bool,
     last_update: Instant,
@@ -58,9 +56,8 @@ impl AnimationEditor {
         buffer_view.interactive = false;
         let buffer_view = Arc::new(Mutex::new(buffer_view));
         let parent_path = path.parent().map(|p| p.to_path_buf());
-        let mut monitor_settings = MonitorSettings::default();
         let animator = if let Ok(animator) = Animator::run(&parent_path, &txt) {
-            monitor_settings = animator.lock().display_frame(buffer_view.clone());
+            animator.lock().display_frame(buffer_view.clone());
             Some(animator)
         } else {
             None
@@ -79,7 +76,6 @@ impl AnimationEditor {
             export_type: ExportType::Gif,
             parent_path,
 
-            current_monitor_settings: monitor_settings,
             update_thread: None,
             shedule_update: false,
             last_update: Instant::now(),
@@ -105,7 +101,8 @@ impl AnimationEditor {
 
                     for frame in 0..frame_count {
                         self.animator.as_ref().unwrap().lock().set_cur_frame(frame);
-                        self.animator
+                        let monitor_settings = self
+                            .animator
                             .as_ref()
                             .unwrap()
                             .lock()
@@ -113,8 +110,7 @@ impl AnimationEditor {
                         let opt = icy_engine_egui::TerminalOptions {
                             stick_to_bottom: false,
                             scale: Some(Vec2::new(1.0, 1.0)),
-                            monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
-                            marker_settings: unsafe { SETTINGS.marker_settings.clone() },
+                            monitor_settings,
 
                             id: Some(Id::new(self.id + 20000)),
                             ..Default::default()
@@ -244,8 +240,7 @@ impl Document for AnimationEditor {
                                         crate::REPLAY_SVG.texture_id(ui.ctx())
                                     };
                                     if ui.add(ImageButton::new(id, size_points)).clicked() {
-                                        self.current_monitor_settings =
-                                            animator.start_playback(self.buffer_view.clone());
+                                        animator.start_playback(self.buffer_view.clone());
                                     }
                                 }
                                 if ui
@@ -259,8 +254,7 @@ impl Document for AnimationEditor {
                                     .clicked()
                                 {
                                     animator.set_cur_frame(frame_count - 1);
-                                    self.current_monitor_settings =
-                                        animator.display_frame(self.buffer_view.clone());
+                                    animator.display_frame(self.buffer_view.clone());
                                 }
                                 let is_loop = animator.get_is_loop();
                                 if ui
@@ -286,8 +280,7 @@ impl Document for AnimationEditor {
                                         .changed()
                                 {
                                     animator.set_cur_frame(cf - 1);
-                                    self.current_monitor_settings =
-                                        animator.display_frame(self.buffer_view.clone());
+                                    animator.display_frame(self.buffer_view.clone());
                                 }
                             }
                         });
@@ -356,16 +349,27 @@ impl Document for AnimationEditor {
                     if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
                         scale.y *= 1.35;
                     }
-                    let opt = icy_engine_egui::TerminalOptions {
-                        stick_to_bottom: false,
-                        scale: Some(Vec2::new(1.0, 1.0)),
-                        monitor_settings: self.current_monitor_settings.clone(),
 
-                        id: Some(Id::new(self.id + 20000)),
-                        ..Default::default()
-                    };
-                    self.buffer_view.lock().get_caret_mut().is_visible = false;
-                    let (_, _) = show_terminal_area(ui, self.buffer_view.clone(), opt);
+                    if let Some(animator) = &self.animator {
+                        let cur_frame = animator.lock().get_cur_frame();
+
+                        let monitor_settings =
+                            if let Some((_, settings, _)) = animator.lock().frames.get(cur_frame) {
+                                settings.clone()
+                            } else {
+                                MonitorSettings::default()
+                            };
+
+                        let opt = icy_engine_egui::TerminalOptions {
+                            stick_to_bottom: false,
+                            scale: Some(Vec2::new(1.0, 1.0)),
+                            monitor_settings,
+                            id: Some(Id::new(self.id + 20000)),
+                            ..Default::default()
+                        };
+                        self.buffer_view.lock().get_caret_mut().is_visible = false;
+                        let (_, _) = show_terminal_area(ui, self.buffer_view.clone(), opt);
+                    }
                 });
             });
 
@@ -406,8 +410,7 @@ impl Document for AnimationEditor {
                     if let Ok(result) = self.update_thread.take().unwrap().join() {
                         match result {
                             Ok(animator) => {
-                                self.current_monitor_settings =
-                                    animator.lock().display_frame(self.buffer_view.clone());
+                                animator.lock().display_frame(self.buffer_view.clone());
                                 self.animator = Some(animator);
                                 self.error = "".to_string();
                             }
@@ -425,8 +428,9 @@ impl Document for AnimationEditor {
                 self.undostack += 1;
             }
         });
+        let buffer_view = self.buffer_view.clone();
         if let Some(animator) = &self.animator {
-            animator.lock().update_frame(self.buffer_view.clone());
+            animator.lock().update_frame(buffer_view);
         }
         message
     }
