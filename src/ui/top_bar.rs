@@ -216,6 +216,9 @@ impl MainWindow {
                     result = Some(Message::EditSauce);
                     ui.close_menu();
                 }
+                self.commands[0].lga_font.ui(ui, &mut result);
+                self.commands[0].aspect_ratio.ui(ui, &mut result);
+                ui.separator();
 
                 if ui
                     .add_enabled(

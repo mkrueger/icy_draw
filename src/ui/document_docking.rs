@@ -29,7 +29,7 @@ pub struct DocumentTab {
     auto_save_status: usize,
     instant: Instant,
     last_change_autosave_timer: usize,
-    destroyed: bool
+    destroyed: bool,
 }
 impl DocumentTab {
     pub fn is_dirty(&self) -> bool {
@@ -451,7 +451,7 @@ pub fn add_child(
         last_save: 0,
         instant: Instant::now(),
         last_change_autosave_timer: 0,
-        destroyed: false
+        destroyed: false,
     };
     let new_child = tree.tiles.insert_pane(tile);
 

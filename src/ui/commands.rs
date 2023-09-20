@@ -159,6 +159,53 @@ impl CommandState for CanPasteState {
     }
 }
 
+#[derive(Default)]
+pub struct LGAFontState {}
+
+impl CommandState for LGAFontState {
+    fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
+        if let Some(pane) = open_tab_opt {
+            if let Ok(doc) = pane.doc.lock() {
+                return doc.get_ansi_editor().is_some();
+            }
+        }
+        false
+    }
+    fn is_checked(&self, open_tab_opt: Option<&DocumentTab>) -> Option<bool> {
+        if let Some(pane) = open_tab_opt {
+            if let Ok(doc) = pane.doc.lock() {
+                if let Some(editor) = doc.get_ansi_editor() {
+                    return Some(editor.buffer_view.lock().get_buffer().use_letter_spacing());
+                }
+            }
+        }
+        Some(false)
+    }
+}
+#[derive(Default)]
+pub struct AspectRatioState {}
+
+impl CommandState for AspectRatioState {
+    fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
+        if let Some(pane) = open_tab_opt {
+            if let Ok(doc) = pane.doc.lock() {
+                return doc.get_ansi_editor().is_some();
+            }
+        }
+        false
+    }
+    fn is_checked(&self, open_tab_opt: Option<&DocumentTab>) -> Option<bool> {
+        if let Some(pane) = open_tab_opt {
+            if let Ok(doc) = pane.doc.lock() {
+                if let Some(editor) = doc.get_ansi_editor() {
+                    return Some(editor.buffer_view.lock().get_buffer().use_aspect_ratio());
+                }
+            }
+        }
+        Some(false)
+    }
+}
+
 pub struct CommandWrapper {
     key: Option<(KeyOrPointer, Modifiers)>,
     message: Message,
@@ -837,5 +884,12 @@ keys![
         BufferOpenState,
         ArrowLeft,
         CTRL
+    ),
+    (lga_font, "menu-9px-font", ToggleLGAFont, LGAFontState),
+    (
+        aspect_ratio,
+        "menu-aspect-ratio",
+        ToggleAspectRatio,
+        AspectRatioState
     ),
 ];

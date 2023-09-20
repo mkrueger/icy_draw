@@ -11,7 +11,8 @@ use eframe::{
     epaint::Vec2,
 };
 use icy_engine::{
-    util::pop_data, BitFont, EngineResult, Layer, Size, TextAttribute, TextPane, TheDrawFont,
+    util::pop_data, BitFont, EngineResult, Layer, SauceData, Size, TextAttribute, TextPane,
+    TheDrawFont,
 };
 
 use crate::{
@@ -146,6 +147,8 @@ pub enum Message {
     NextBgColor,
     PreviousBgColor,
     ShowSettings,
+    ToggleLGAFont,
+    ToggleAspectRatio,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -1134,6 +1137,58 @@ impl MainWindow {
             Message::ShowSettings => {
                 self.show_settings = true;
                 self.settings_dialog.init();
+            }
+
+            Message::ToggleLGAFont => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let use_lga = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .use_letter_spacing();
+                    let mut sauce_data = if let Some(data) =
+                        &editor.buffer_view.lock().get_buffer_mut().sauce_data
+                    {
+                        data.clone()
+                    } else {
+                        SauceData::default()
+                    };
+                    sauce_data.use_letter_spacing = !use_lga;
+
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .update_sauce_data(Some(sauce_data)),
+                    )
+                });
+            }
+
+            Message::ToggleAspectRatio => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let use_ar = editor
+                        .buffer_view
+                        .lock()
+                        .get_buffer_mut()
+                        .use_aspect_ratio();
+                    let mut sauce_data = if let Some(data) =
+                        &editor.buffer_view.lock().get_buffer_mut().sauce_data
+                    {
+                        data.clone()
+                    } else {
+                        SauceData::default()
+                    };
+                    sauce_data.use_aspect_ratio = !use_ar;
+
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .update_sauce_data(Some(sauce_data)),
+                    )
+                });
             }
         }
     }
