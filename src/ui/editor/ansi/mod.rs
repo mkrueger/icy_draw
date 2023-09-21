@@ -691,10 +691,10 @@ impl AnsiEditor {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
                 let layer_offset = self.get_cur_click_offset();
                 let click_pos2 = calc.calc_click_pos_half_block(mouse_pos);
-                let half_block_click_pos = Position::new(
-                    click_pos2.x as i32 - layer_offset.x,
-                    click_pos2.y as i32 - layer_offset.y,
-                );
+                let click_pos2 = Position::new(click_pos2.x as i32, click_pos2.y as i32);
+
+                let half_block_layer_offset = Position::new(layer_offset.x, layer_offset.y * 2);
+                let half_block_click_pos = click_pos2 - half_block_layer_offset;
 
                 let mut c_abs = self.half_block_click_pos;
                 while c_abs != half_block_click_pos {
