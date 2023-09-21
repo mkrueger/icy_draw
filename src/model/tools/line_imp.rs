@@ -264,8 +264,8 @@ impl Tool for LineTool {
         let mut lines = ScanLines::new(1);
         if self.draw_mode == DrawMode::Line {
             lines.add_line(
-                Position::new(editor.drag_pos.start.x, editor.drag_pos.start.y * 2),
-                Position::new(editor.drag_pos.cur.x, editor.drag_pos.cur.y * 2),
+                editor.drag_pos.start_half_block,
+                editor.half_block_click_pos,
             );
             let col = editor
                 .buffer_view
