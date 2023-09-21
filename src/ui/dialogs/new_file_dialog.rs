@@ -169,7 +169,7 @@ impl Template for XBExtTemplate {
         buf.ice_mode = icy_engine::IceMode::Ice;
         buf.palette_mode = icy_engine::PaletteMode::Free8;
         buf.font_mode = icy_engine::FontMode::Dual;
-
+        buf.set_font(1, BitFont::default());
         let id = window.create_id();
         let editor = AnsiEditor::new(&window.gl, id, buf);
         add_child(&mut window.document_tree, None, Box::new(editor));
@@ -320,8 +320,8 @@ end"#;
 }
 
 struct BitFontTemplate {
-    width : i32,
-    height : i32,
+    width: i32,
+    height: i32,
 }
 
 impl Template for BitFontTemplate {
@@ -342,14 +342,19 @@ impl Template for BitFontTemplate {
 
     fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         let id = window.create_id();
-        let font = if self.width == 8 && self.height == 16 { 
+        let font = if self.width == 8 && self.height == 16 {
             BitFont::default()
         } else if self.width == 8 && self.height == 8 {
             BitFont::from_sauce_name("IBM VGA50")?
         } else if self.width == 8 && self.height == 14 {
             BitFont::from_sauce_name("IBM EGA")?
         } else {
-            BitFont::create_8(format!("Empty {}x{}", self.width, self.height), self.width as u8, self.height as u8, &vec![0; 256 * self.height as usize])
+            BitFont::create_8(
+                format!("Empty {}x{}", self.width, self.height),
+                self.width as u8,
+                self.height as u8,
+                &vec![0; 256 * self.height as usize],
+            )
         };
         let editor = crate::BitFontEditor::new(&window.gl, id, font);
         add_child(&mut window.document_tree, None, Box::new(editor));
@@ -362,22 +367,21 @@ impl Template for BitFontTemplate {
         ));
         ui.add_space(8.0);
         egui::Grid::new("some_unique_id")
-        .num_columns(2)
-        .spacing([4.0, 8.0])
-        .show(ui, |ui| {
-            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-            });
-            ui.add(egui::Slider::new(&mut self.width, 2..=8));            
-            ui.end_row();
+            .num_columns(2)
+            .spacing([4.0, 8.0])
+            .show(ui, |ui| {
+                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
+                });
+                ui.add(egui::Slider::new(&mut self.width, 2..=8));
+                ui.end_row();
 
-            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+                });
+                ui.add(egui::Slider::new(&mut self.height, 2..=19));
+                ui.end_row();
             });
-            ui.add(egui::Slider::new(&mut self.height, 2..=19));
-            ui.end_row();
-        });
-
     }
 }
 
@@ -467,7 +471,10 @@ impl Default for NewFileDialog {
                 height: 25,
             }),
             Box::new(AnsiMationTemplate {}),
-            Box::new(BitFontTemplate { width: 8, height: 16 }),
+            Box::new(BitFontTemplate {
+                width: 8,
+                height: 16,
+            }),
             Box::new(TdfFontTemplate {
                 font_type: FontType::Color,
             }),

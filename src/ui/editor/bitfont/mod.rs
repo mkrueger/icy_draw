@@ -3,7 +3,7 @@ mod undo;
 use std::{path::Path, sync::Arc};
 
 use eframe::{
-    egui::{self, Id, RichText, Sense, Layout},
+    egui::{self, Id, Layout, RichText, Sense},
     emath::Align2,
     epaint::{mutex::Mutex, Color32, FontFamily, FontId, Pos2, Rect, Rounding, Vec2},
 };
@@ -424,7 +424,6 @@ impl BitFontEditor {
         self.push_undo(Box::new(op))?;
         Ok(())
     }
-    
 
     fn start_edit(&mut self) {
         if let Some(number) = self.selected_char_opt {
@@ -607,26 +606,27 @@ impl Document for BitFontEditor {
                     });
 
                     egui::Grid::new("some_unique_id")
-                    .num_columns(2)
-                    .spacing([4.0, 8.0])
-                    .show(ui, |ui| {
-                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-                        });
-                        ui.add(egui::Slider::new(&mut self.width, 2..=8));            
-                        ui.end_row();
-            
-                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
-                        });
-                        ui.add(egui::Slider::new(&mut self.height, 2..=19));
-                        ui.end_row();
-                    });
+                        .num_columns(2)
+                        .spacing([4.0, 8.0])
+                        .show(ui, |ui| {
+                            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
+                            });
+                            ui.add(egui::Slider::new(&mut self.width, 2..=8));
+                            ui.end_row();
 
-                    if (self.width != self.font.size.width || self.height != self.font.size.height) && ui.button("Resize").clicked() {
+                            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+                            });
+                            ui.add(egui::Slider::new(&mut self.height, 2..=19));
+                            ui.end_row();
+                        });
+
+                    if (self.width != self.font.size.width || self.height != self.font.size.height)
+                        && ui.button("Resize").clicked()
+                    {
                         message = to_message(self.resize_font());
                     }
-            
                 });
 
                 ui.vertical(|ui| {

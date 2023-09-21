@@ -272,7 +272,10 @@ impl SelectPaletteDialog {
         // paint palette tag
         let font_type = match palette.1 {
             PaletteSource::BuiltIn => {
-                fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font")
+                fl!(
+                    crate::LANGUAGE_LOADER,
+                    "select-palette-dialog-builtin_palette"
+                )
             }
             PaletteSource::Library => {
                 fl!(crate::LANGUAGE_LOADER, "font_selector-library_font")
@@ -361,8 +364,8 @@ impl crate::ModalDialog for SelectPaletteDialog {
                 ui,
                 fl!(
                     crate::LANGUAGE_LOADER,
-                    "select-font-dialog-title",
-                    fontcount = palette_count
+                    "select-palette-dialog-title",
+                    count = palette_count
                 ),
             );
             modal.frame(ui, |ui| {
@@ -390,7 +393,10 @@ impl crate::ModalDialog for SelectPaletteDialog {
 
                     let response = ui.selectable_label(
                         self.show_builtin,
-                        fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"),
+                        fl!(
+                            crate::LANGUAGE_LOADER,
+                            "select-palette-dialog-builtin_palette"
+                        ),
                     );
                     if response.clicked() {
                         self.show_builtin = !self.show_builtin;
@@ -425,7 +431,10 @@ impl crate::ModalDialog for SelectPaletteDialog {
                             "select-font-dialog-no-fonts-installed"
                         ));
                     } else {
-                        ui.label(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-no-fonts"));
+                        ui.label(fl!(
+                            crate::LANGUAGE_LOADER,
+                            "select-palette-dialog-no-matching-palettes"
+                        ));
                     }
                 } else {
                     egui::ScrollArea::vertical().max_height(300.).show_rows(

@@ -302,6 +302,10 @@ font_selector-library_font=LIBRARY
 font_selector-file_font=FILE
 font_selector-sauce_font=SAUCE
 
+select-palette-dialog-title=Select Palette ({ $count } available)
+select-palette-dialog-builtin_palette=BUILTIN
+select-palette-dialog-no-matching-palettes=No palettes found matching search critearia.
+
 autosave-dialog-title=Autosave
 autosave-dialog-description=Found an autosave for this file.
 autosave-dialog-question=Do you want to use the original file, or load the autosave?
