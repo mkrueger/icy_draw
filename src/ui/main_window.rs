@@ -77,16 +77,7 @@ impl MainWindow {
             Box::<crate::model::click_imp::ClickTool>::default(),
             Box::<crate::model::select_imp::SelectTool>::default(),
             Box::<crate::model::pencil_imp::PencilTool>::default(),
-            Box::new(crate::model::brush_imp::BrushTool {
-                size: 3,
-                use_back: true,
-                use_fore: true,
-                undo_op: None,
-                custom_brush: None,
-                image: None,
-                brush_type: crate::model::brush_imp::BrushType::Shade,
-                char_code: Rc::new(RefCell::new('\u{00B0}')),
-            }),
+            Box::<crate::model::brush_imp::BrushTool>::default(),
             Box::<crate::model::erase_imp::EraseTool>::default(),
             Box::<crate::model::pipette_imp::PipetteTool>::default(),
             Box::new(crate::model::line_imp::LineTool {

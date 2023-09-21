@@ -12,8 +12,9 @@ use crate::{create_retained_image, AnsiEditor, Event, Message};
 
 use super::{Position, Tool};
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Default)]
 pub enum BrushType {
+    #[default]
     Shade,
     Solid,
     Color,
@@ -23,18 +24,33 @@ pub enum BrushType {
 pub static mut CUSTOM_BRUSH: Option<Layer> = None;
 
 pub struct BrushTool {
-    pub use_fore: bool,
-    pub use_back: bool,
-    pub size: i32,
-    pub char_code: Rc<RefCell<char>>,
+    use_fore: bool,
+    use_back: bool,
+    size: i32,
+    char_code: Rc<RefCell<char>>,
 
-    pub undo_op: Option<AtomicUndoGuard>,
-
-    pub custom_brush: Option<Layer>,
-    pub image: Option<RetainedImage>,
-    pub brush_type: BrushType,
+    undo_op: Option<AtomicUndoGuard>,
+    cur_pos: Position,
+    custom_brush: Option<Layer>,
+    image: Option<RetainedImage>,
+    brush_type: BrushType,
 }
 
+impl Default for BrushTool {
+    fn default() -> Self {
+        Self {
+            size: 3,
+            use_back: true,
+            use_fore: true,
+            undo_op: None,
+            custom_brush: None,
+            image: None,
+            brush_type: crate::model::brush_imp::BrushType::Shade,
+            char_code: Rc::new(RefCell::new('\u{00B0}')),
+            cur_pos: Position::default(),
+        }
+    }
+}
 impl BrushTool {
     fn paint_brush(&self, editor: &mut AnsiEditor, pos: Position) {
         let mid = Position::new(-(self.size / 2), -(self.size / 2));
@@ -215,6 +231,7 @@ impl Tool for BrushTool {
         cur: Position,
         cur_abs: Position,
     ) -> egui::Response {
+        self.cur_pos = cur;
         let mid = Position::new(-(self.size / 2), -(self.size / 2));
         for y in 0..self.size {
             for x in 0..self.size {
@@ -280,6 +297,8 @@ impl Tool for BrushTool {
         editor: &mut AnsiEditor,
         _calc: &TerminalCalc,
     ) -> egui::Response {
+        self.cur_pos = editor.drag_pos.cur;
+
         self.paint_brush(editor, editor.drag_pos.cur);
         response
     }
@@ -294,6 +313,16 @@ impl Tool for BrushTool {
     fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         self.undo_op = None;
         Event::None
+    }
+
+    fn get_toolbar_location_text(&self, _editor: &AnsiEditor) -> String {
+        let pos = self.cur_pos;
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "toolbar-position",
+            line = (pos.y + 1),
+            column = (pos.x + 1)
+        )
     }
 }
 

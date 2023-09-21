@@ -17,6 +17,7 @@ pub struct EraseTool {
     size: i32,
     brush_type: EraseType,
     undo_op: Option<AtomicUndoGuard>,
+    cur_pos: Position,
 }
 
 impl Default for EraseTool {
@@ -25,6 +26,7 @@ impl Default for EraseTool {
             size: 3,
             brush_type: crate::model::erase_imp::EraseType::Solid,
             undo_op: None,
+            cur_pos: Position::default(),
         }
     }
 }
@@ -135,9 +137,11 @@ impl Tool for EraseTool {
         _ui: &egui::Ui,
         response: egui::Response,
         editor: &mut AnsiEditor,
-        _cur: Position,
+        cur: Position,
         cur_abs: Position,
     ) -> egui::Response {
+        self.cur_pos = cur;
+
         let mid = Position::new(-(self.size / 2), -(self.size / 2));
         for y in 0..self.size {
             for x in 0..self.size {
@@ -177,6 +181,8 @@ impl Tool for EraseTool {
         editor: &mut AnsiEditor,
         _calc: &TerminalCalc,
     ) -> egui::Response {
+        self.cur_pos = editor.drag_pos.cur;
+
         self.eraser(editor, editor.drag_pos.cur);
         response
     }
@@ -190,5 +196,15 @@ impl Tool for EraseTool {
     fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         self.undo_op = None;
         Event::None
+    }
+
+    fn get_toolbar_location_text(&self, _editor: &AnsiEditor) -> String {
+        let pos = self.cur_pos;
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "toolbar-position",
+            line = (pos.y + 1),
+            column = (pos.x + 1)
+        )
     }
 }
