@@ -14,7 +14,7 @@ impl EditSauceDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
         EditSauceDialog {
             should_commit: false,
-            sauce_data: buf.sauce_data.clone().unwrap_or_default(),
+            sauce_data: buf.get_sauce().clone().unwrap_or_default(),
         }
     }
 }

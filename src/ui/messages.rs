@@ -1147,7 +1147,7 @@ impl MainWindow {
                         .get_buffer_mut()
                         .use_letter_spacing();
                     let mut sauce_data = if let Some(data) =
-                        &editor.buffer_view.lock().get_buffer_mut().sauce_data
+                        &editor.buffer_view.lock().get_buffer_mut().get_sauce()
                     {
                         data.clone()
                     } else {
@@ -1173,7 +1173,7 @@ impl MainWindow {
                         .get_buffer_mut()
                         .use_aspect_ratio();
                     let mut sauce_data = if let Some(data) =
-                        &editor.buffer_view.lock().get_buffer_mut().sauce_data
+                        &editor.buffer_view.lock().get_buffer_mut().get_sauce()
                     {
                         data.clone()
                     } else {
