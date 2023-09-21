@@ -1,5 +1,5 @@
 use i18n_embed_fl::fl;
-use icy_engine::{EngineResult, Glyph};
+use icy_engine::{EngineResult, Glyph, BitFont};
 
 use crate::BitFontEditor;
 
@@ -371,3 +371,33 @@ impl UndoOperation for Edit {
         Ok(())
     }
 }
+
+
+pub struct ResizeFont {
+    old_font: BitFont,
+    new_font: BitFont
+}
+
+impl ResizeFont {
+    pub(crate) fn new(old_font: BitFont, new_font: BitFont) -> Self {
+        Self { old_font, new_font }
+    }
+}
+
+impl UndoOperation for ResizeFont {
+    fn get_description(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "undo-bitfont-resize")
+    }
+ 
+    fn undo(&mut self, edit_state: &mut BitFontEditor) -> EngineResult<()> {
+        edit_state.font = self.old_font.clone();
+        Ok(())
+    }
+
+    fn redo(&mut self, edit_state: &mut BitFontEditor) -> EngineResult<()> {
+        edit_state.font = self.new_font.clone();
+        Ok(())
+    }
+}
+
+

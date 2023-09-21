@@ -290,6 +290,8 @@ undo-bitfont-move-right=Move right
 undo-bitfont-inverse=Inverse
 undo-bitfont-clear=Clear
 undo-bitfont-edit=Edit
+undo-bitfont-resize=Resize
+
 undo-render_character=Render character
 undo-delete_character=Delete character
 undo-select=Select

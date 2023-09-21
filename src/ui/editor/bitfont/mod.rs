@@ -3,7 +3,7 @@ mod undo;
 use std::{path::Path, sync::Arc};
 
 use eframe::{
-    egui::{self, Id, RichText, Sense},
+    egui::{self, Id, RichText, Sense, Layout},
     emath::Align2,
     epaint::{mutex::Mutex, Color32, FontFamily, FontId, Pos2, Rect, Rounding, Vec2},
 };
@@ -26,6 +26,9 @@ pub struct BitFontEditor {
     original_font: BitFont,
     last_updated_font: BitFont,
     font: BitFont,
+
+    width: i32,
+    height: i32,
 
     buffer_view: Arc<Mutex<BufferView>>,
 
@@ -50,7 +53,7 @@ impl BitFontEditor {
         let mut buffer_view = BufferView::from_buffer(gl, buffer, glow::NEAREST as i32);
         buffer_view.interactive = false;
         let buffer_view = Arc::new(Mutex::new(buffer_view));
-
+        let size = font.size;
         let last_updated_font = font.clone();
         Self {
             id,
@@ -58,6 +61,8 @@ impl BitFontEditor {
             original_font: font.clone(),
             last_updated_font,
             font,
+            width: size.width,
+            height: size.height,
             selected_char_opt: Some('A'),
             undo_stack: Arc::new(Mutex::new(Vec::new())),
             redo_stack: Vec::new(),
@@ -406,6 +411,21 @@ impl BitFontEditor {
         Ok(())
     }
 
+    fn resize_font(&mut self) -> EngineResult<()> {
+        let old_font = self.font.clone();
+        let mut new_font = self.font.clone();
+
+        for (_, glyph) in &mut new_font.glyphs {
+            glyph.data.resize(self.height as usize, 0);
+        }
+        new_font.size = Size::new(self.width, self.height);
+
+        let op = undo::ResizeFont::new(old_font, new_font);
+        self.push_undo(Box::new(op))?;
+        Ok(())
+    }
+    
+
     fn start_edit(&mut self) {
         if let Some(number) = self.selected_char_opt {
             if let Some(glyph) = self.font.get_glyph_mut(number) {
@@ -585,6 +605,28 @@ impl Document for BitFontEditor {
                             message = to_message(self.flip_y_selected_glyph());
                         }
                     });
+
+                    egui::Grid::new("some_unique_id")
+                    .num_columns(2)
+                    .spacing([4.0, 8.0])
+                    .show(ui, |ui| {
+                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
+                        });
+                        ui.add(egui::Slider::new(&mut self.width, 2..=8));            
+                        ui.end_row();
+            
+                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+                        });
+                        ui.add(egui::Slider::new(&mut self.height, 2..=19));
+                        ui.end_row();
+                    });
+
+                    if (self.width != self.font.size.width || self.height != self.font.size.height) && ui.button("Resize").clicked() {
+                        message = to_message(self.resize_font());
+                    }
+            
                 });
 
                 ui.vertical(|ui| {
