@@ -312,6 +312,13 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                     if let Some(editor) = doc.get_ansi_editor() {
                         ui.add_space(4.0);
                         let mut buffer = Buffer::new((48, 1));
+                        let font_page = editor.buffer_view.lock().get_caret().get_font_page();
+                        if let Some(font) =
+                            editor.buffer_view.lock().get_buffer().get_font(font_page)
+                        {
+                            buffer.set_font(1, font.clone());
+                        }
+
                         let char_set = Settings::get_character_set();
                         if self.cur_char_set != char_set
                             || self.dark_mode != ui.style().visuals.dark_mode
@@ -355,10 +362,12 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                                     i += 1;
                                 }
                                 attr.set_foreground(15);
+                                attr.set_font_page(1);
                                 buffer.layers[0].set_char(
                                     (i, 0),
                                     AttributedChar::new(editor.get_char_set_key(j), attr),
                                 );
+                                attr.set_font_page(0);
                                 i += 1;
                             }
 

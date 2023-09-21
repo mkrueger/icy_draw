@@ -10,7 +10,9 @@ use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, TextAttribute, ANSI_FONTS};
 use walkdir::WalkDir;
 
-use crate::{create_retained_image, AnsiEditor, Message, Settings, TerminalResult};
+use crate::{
+    create_retained_image, is_font_extensions, AnsiEditor, Message, Settings, TerminalResult,
+};
 
 enum BitfontSource {
     BuiltIn(usize),
@@ -106,9 +108,9 @@ impl FontSelector {
             if extension.is_none() {
                 continue;
             }
-            let ext = extension.unwrap().to_lowercase();
+            let ext = extension.unwrap().to_lowercase().to_string();
 
-            if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext || "fon" == ext {
+            if is_font_extensions(&ext) {
                 if let Ok(font) = BitFont::load(path) {
                     fonts.push(font);
                 }
@@ -138,20 +140,16 @@ impl FontSelector {
                 for i in 0..archive.len() {
                     match archive.by_index(i) {
                         Ok(mut file) => {
-                            if let Some(name) = file.enclosed_name() {
-                                let name = name.to_string_lossy().to_ascii_lowercase();
-                                if name.ends_with(".psf")
-                                    || name.ends_with(".f16")
-                                    || name.ends_with(".f14")
-                                    || name.ends_with(".f8")
-                                    || name.ends_with(".fon")
-                                {
+                            if let Some(path) = file.enclosed_name() {
+                                let file_name = path.to_string_lossy().to_string();
+                                let ext = path.extension().unwrap().to_str().unwrap();
+                                if is_font_extensions(&ext.to_ascii_lowercase()) {
                                     let mut data = Vec::new();
                                     file.read_to_end(&mut data).unwrap_or_default();
-                                    if let Ok(font) = BitFont::from_bytes(name, &data) {
-                                        fonts.push(font);
+                                    if let Ok(font) = BitFont::from_bytes(file_name, &data) {
+                                        fonts.push(font)
                                     }
-                                } else if name.ends_with(".zip") {
+                                } else if ext == "zip" {
                                     let mut data = Vec::new();
                                     file.read_to_end(&mut data).unwrap_or_default();
                                     FontSelector::read_zip_archive(data, fonts);

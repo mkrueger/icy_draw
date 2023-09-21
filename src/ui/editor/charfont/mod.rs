@@ -647,7 +647,7 @@ impl CharFontEditor {
                             for x in 0..lw {
                                 let ch = buf.get_char((x, y));
                                 data.push(ch.ch as u8);
-                                data.push(ch.attribute.as_u8(icy_engine::BufferType::LegacyIce));
+                                data.push(ch.attribute.as_u8());
                             }
                             w = w.max(lw);
                             h = y;

@@ -1,7 +1,7 @@
 use crate::{Message, SWAP_SVG};
 use eframe::egui::{self, Sense};
 use eframe::epaint::{Color32, Pos2, Rect, Rounding, Stroke, Vec2};
-use icy_engine::{BufferType, Palette, TextAttribute};
+use icy_engine::{Palette, TextAttribute};
 use std::cmp::min;
 
 pub fn palette_switcher(
@@ -152,7 +152,8 @@ pub fn palette_editor_16(
     ui: &mut egui::Ui,
     caret_attr: &TextAttribute,
     palette: &Palette,
-    buffer_type: BufferType,
+    ice_mode: icy_engine::IceMode,
+    font_mode: icy_engine::FontMode,
 ) -> Option<Message> {
     let mut result = None;
 
@@ -255,11 +256,13 @@ pub fn palette_editor_16(
                 pos.x as u32 + pos.y as u32 * items_per_row as u32,
             );
             if response.clicked() {
-                result = Some(Message::SetForeground(color));
+                if color < 8 || font_mode.has_high_fg_colors() || palette.len() > 16 {
+                    result = Some(Message::SetForeground(color));
+                }
                 response.mark_changed();
             }
             if response.secondary_clicked() {
-                if color < 8 || buffer_type.has_high_bg_colors() || palette.len() > 16 {
+                if color < 8 || ice_mode.has_high_bg_colors() || palette.len() > 16 {
                     result = Some(Message::SetBackground(color));
                 }
                 response.mark_changed();

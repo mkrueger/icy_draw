@@ -29,11 +29,157 @@ pub struct NewFileDialog {
     templates: Vec<Box<dyn Template>>,
 }
 
+struct Dos16Template {
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Template for Dos16Template {
+    fn image(&self) -> &RetainedImage {
+        &crate::ANSI_TEMPLATE_IMG
+    }
+
+    fn title(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-cp437-title")
+    }
+
+    fn description(&self) -> String {
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "new-file-template-cp437-description"
+        )
+    }
+
+    fn show_ui(&mut self, ui: &mut Ui) {
+        show_file_ui(ui, &mut self.width, &mut self.height);
+    }
+
+    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+        let mut buf = Buffer::create((self.width, self.height));
+        buf.ice_mode = icy_engine::IceMode::Blink;
+        buf.palette_mode = icy_engine::PaletteMode::Fixed16;
+        buf.font_mode = icy_engine::FontMode::Sauce;
+
+        let id = window.create_id();
+        let editor = AnsiEditor::new(&window.gl, id, buf);
+        add_child(&mut window.document_tree, None, Box::new(editor));
+        Ok(None)
+    }
+}
+
+struct Ice16Template {
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Template for Ice16Template {
+    fn image(&self) -> &RetainedImage {
+        &crate::ANSI_TEMPLATE_IMG
+    }
+
+    fn title(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-ice-title")
+    }
+
+    fn description(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-ice-description")
+    }
+
+    fn show_ui(&mut self, ui: &mut Ui) {
+        show_file_ui(ui, &mut self.width, &mut self.height);
+    }
+
+    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+        let mut buf = Buffer::create((self.width, self.height));
+        buf.ice_mode = icy_engine::IceMode::Ice;
+        buf.palette_mode = icy_engine::PaletteMode::Fixed16;
+        buf.font_mode = icy_engine::FontMode::Sauce;
+
+        let id = window.create_id();
+        let editor = AnsiEditor::new(&window.gl, id, buf);
+        add_child(&mut window.document_tree, None, Box::new(editor));
+        Ok(None)
+    }
+}
+
+struct XB16Template {
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Template for XB16Template {
+    fn image(&self) -> &RetainedImage {
+        &crate::ANSI_TEMPLATE_IMG
+    }
+
+    fn title(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-xb-title")
+    }
+
+    fn description(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-xb-description")
+    }
+
+    fn show_ui(&mut self, ui: &mut Ui) {
+        show_file_ui(ui, &mut self.width, &mut self.height);
+    }
+
+    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+        let mut buf = Buffer::create((self.width, self.height));
+        buf.ice_mode = icy_engine::IceMode::Ice;
+        buf.palette_mode = icy_engine::PaletteMode::Free16;
+        buf.font_mode = icy_engine::FontMode::Single;
+
+        let id = window.create_id();
+        let editor = AnsiEditor::new(&window.gl, id, buf);
+        add_child(&mut window.document_tree, None, Box::new(editor));
+        Ok(None)
+    }
+}
+
+struct XBExtTemplate {
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Template for XBExtTemplate {
+    fn image(&self) -> &RetainedImage {
+        &crate::ANSI_TEMPLATE_IMG
+    }
+
+    fn title(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-xb-ext-title")
+    }
+
+    fn description(&self) -> String {
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "new-file-template-xb-ext-description"
+        )
+    }
+
+    fn show_ui(&mut self, ui: &mut Ui) {
+        show_file_ui(ui, &mut self.width, &mut self.height);
+    }
+
+    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+        let mut buf = Buffer::create((self.width, self.height));
+        buf.palette =
+            icy_engine::Palette::from_colors(icy_engine::DOS_DEFAULT_PALETTE[0..8].to_vec());
+        buf.ice_mode = icy_engine::IceMode::Ice;
+        buf.palette_mode = icy_engine::PaletteMode::Free8;
+        buf.font_mode = icy_engine::FontMode::Dual;
+
+        let id = window.create_id();
+        let editor = AnsiEditor::new(&window.gl, id, buf);
+        add_child(&mut window.document_tree, None, Box::new(editor));
+        Ok(None)
+    }
+}
+
 struct AnsiTemplate {
     pub width: i32,
     pub height: i32,
-
-    pub file_id: bool,
 }
 
 impl Template for AnsiTemplate {
@@ -42,58 +188,92 @@ impl Template for AnsiTemplate {
     }
 
     fn title(&self) -> String {
-        if self.file_id {
-            fl!(crate::LANGUAGE_LOADER, "new-file-template-file_id-title")
-        } else {
-            fl!(crate::LANGUAGE_LOADER, "new-file-template-ansi-title")
-        }
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-ansi-title")
     }
 
     fn description(&self) -> String {
-        if self.file_id {
-            fl!(
-                crate::LANGUAGE_LOADER,
-                "new-file-template-file_id-description"
-            )
-        } else {
-            fl!(crate::LANGUAGE_LOADER, "new-file-template-ansi-description")
-        }
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-ansi-description")
     }
 
     fn show_ui(&mut self, ui: &mut Ui) {
-        egui::Grid::new("some_unique_id")
-            .num_columns(2)
-            .spacing([4.0, 8.0])
-            .show(ui, |ui| {
-                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-                });
-                let mut tmp_str = self.width.to_string();
-                ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
-                if let Ok(new_width) = tmp_str.parse::<i32>() {
-                    self.width = new_width;
-                }
-                ui.end_row();
-
-                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
-                });
-                let mut tmp_str = self.height.to_string();
-                ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
-                if let Ok(new_height) = tmp_str.parse::<i32>() {
-                    self.height = new_height;
-                }
-                ui.end_row();
-            });
+        show_file_ui(ui, &mut self.width, &mut self.height);
     }
 
     fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
-        let buf = Buffer::create((self.width, self.height));
+        let mut buf = Buffer::create((self.width, self.height));
+        buf.ice_mode = icy_engine::IceMode::Unlimited;
+        buf.palette_mode = icy_engine::PaletteMode::RGB;
+        buf.font_mode = icy_engine::FontMode::Unlimited;
+
         let id = window.create_id();
         let editor = AnsiEditor::new(&window.gl, id, buf);
         add_child(&mut window.document_tree, None, Box::new(editor));
         Ok(None)
     }
+}
+
+struct FileIdTemplate {
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Template for FileIdTemplate {
+    fn image(&self) -> &RetainedImage {
+        &crate::ANSI_TEMPLATE_IMG
+    }
+
+    fn title(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-file_id-title")
+    }
+
+    fn description(&self) -> String {
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "new-file-template-file_id-description"
+        )
+    }
+
+    fn show_ui(&mut self, ui: &mut Ui) {
+        show_file_ui(ui, &mut self.width, &mut self.height);
+    }
+
+    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+        let mut buf = Buffer::create((self.width, self.height));
+        buf.ice_mode = icy_engine::IceMode::Blink;
+        buf.palette_mode = icy_engine::PaletteMode::Fixed16;
+        buf.font_mode = icy_engine::FontMode::Sauce;
+        let id = window.create_id();
+        let editor = AnsiEditor::new(&window.gl, id, buf);
+        add_child(&mut window.document_tree, None, Box::new(editor));
+        Ok(None)
+    }
+}
+
+fn show_file_ui(ui: &mut Ui, width: &mut i32, height: &mut i32) {
+    egui::Grid::new("some_unique_id")
+        .num_columns(2)
+        .spacing([4.0, 8.0])
+        .show(ui, |ui| {
+            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
+            });
+            let mut tmp_str = width.to_string();
+            ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
+            if let Ok(new_width) = tmp_str.parse::<i32>() {
+                *width = new_width;
+            }
+            ui.end_row();
+
+            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+            });
+            let mut tmp_str = height.to_string();
+            ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
+            if let Ok(new_height) = tmp_str.parse::<i32>() {
+                *height = new_height;
+            }
+            ui.end_row();
+        });
 }
 
 struct AnsiMationTemplate {}
@@ -235,12 +415,26 @@ impl Default for NewFileDialog {
             Box::new(AnsiTemplate {
                 width: 80,
                 height: 25,
-                file_id: false,
             }),
-            Box::new(AnsiTemplate {
+            Box::new(XB16Template {
+                width: 80,
+                height: 25,
+            }),
+            Box::new(Dos16Template {
+                width: 80,
+                height: 25,
+            }),
+            Box::new(Ice16Template {
+                width: 80,
+                height: 25,
+            }),
+            Box::new(XBExtTemplate {
+                width: 80,
+                height: 25,
+            }),
+            Box::new(FileIdTemplate {
                 width: 44,
                 height: 25,
-                file_id: true,
             }),
             Box::new(AnsiMationTemplate {}),
             Box::new(BitFontTemplate {}),
@@ -342,7 +536,12 @@ impl crate::ModalDialog for NewFileDialog {
 
                                     let font_id =
                                         FontId::new(14.0, eframe::epaint::FontFamily::Proportional);
-                                    let text: WidgetText = template.description().into();
+                                    let text: WidgetText = template
+                                        .description()
+                                        .lines()
+                                        .next()
+                                        .unwrap_or_default()
+                                        .into();
                                     let galley =
                                         text.into_galley(ui, Some(false), f32::INFINITY, font_id);
                                     let mut descr_rect = rect;

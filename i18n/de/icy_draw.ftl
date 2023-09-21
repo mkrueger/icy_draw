@@ -65,10 +65,16 @@ menu-select_nothing=Nichts
 menu-inverse_selection=Invertieren
 
 menu-colors=Farben
-menu-color-mode=Farbmodus
-menu-color-mode-unrestricted=Unbegrenzt
-menu-color-mode-dos=16 Farben, blink
-menu-color-mode-ice=16 Farben, ice
+menu-ice-mode=Ice-Modus
+menu-ice-mode-unrestricted=Unbegrenzt
+menu-ice-mode-blink=Blinken
+menu-ice-mode-ice=Ice
+menu-palette-mode=Palette
+menu-palette-mode-unrestricted=Unbegrenzt
+menu-palette-mode-dos=Dos 16
+menu-palette-mode-free=Frei 16
+menu-palette-mode-free8=Frei 8
+
 menu-color-mode-ext-colors=256 Farben
 menu-color-mode-ext-font=16 Farben, ext font, blink
 menu-color-mode-ext-font-ice=16 Farben, ext font, ice
@@ -100,6 +106,11 @@ menu-default_color=Standardfarbe
 menu-toggle_color=Farbe umschalten
 
 menu-fonts=Fonts
+menu-font-mode=Font Modus
+menu-font-mode-unrestricted=Unbegrenzt
+menu-font-mode-sauce=Sauce
+menu-font-mode-single=Einer
+menu-font-mode-dual=Zwei
 menu-open_font_selector=Schriften…
 menu-open_font_manager=Bufferfonts bearbeiten…
 menu-open_font_directoy=Fontverzeichnis öffnen…

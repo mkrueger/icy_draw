@@ -227,7 +227,7 @@ impl MainWindow {
         Settings::add_recent_file(path);
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap().to_ascii_lowercase();
-            if "psf" == ext || "f16" == ext || "f14" == ext || "f8" == ext || "fon" == ext {
+            if is_font_extensions(&ext) {
                 let file_name = path.file_name();
                 if file_name.is_none() {
                     return;
@@ -546,6 +546,30 @@ impl MainWindow {
     }
 }
 
+pub fn is_font_extensions(ext: &str) -> bool {
+    "psf" == ext
+        || "f19" == ext
+        || "f18" == ext
+        || "f17" == ext
+        || "f16" == ext
+        || "f15" == ext
+        || "f14" == ext
+        || "f13" == ext
+        || "f12" == ext
+        || "f11" == ext
+        || "f10" == ext
+        || "f09" == ext
+        || "f08" == ext
+        || "f07" == ext
+        || "f06" == ext
+        || "f05" == ext
+        || "f04" == ext
+        || "f03" == ext
+        || "f02" == ext
+        || "f01" == ext
+        || "fon" == ext
+}
+
 pub fn button_with_shortcut(
     ui: &mut Ui,
     enabled: bool,
@@ -607,13 +631,15 @@ impl eframe::App for MainWindow {
 
                 let mut caret_attr = TextAttribute::default();
                 let mut palette = Palette::default();
-                let mut buffer_type = icy_engine::BufferType::NoLimits;
+                let mut ice_mode = icy_engine::IceMode::Unlimited;
+                let mut font_mode = icy_engine::FontMode::Unlimited;
 
                 if let Some(doc) = self.get_active_document() {
                     if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
                         caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
                         palette = editor.buffer_view.lock().get_buffer().palette.clone();
-                        buffer_type = editor.buffer_view.lock().get_buffer().buffer_type;
+                        ice_mode = editor.buffer_view.lock().get_buffer().ice_mode;
+                        font_mode = editor.buffer_view.lock().get_buffer().font_mode;
                     }
                 }
 
@@ -626,12 +652,12 @@ impl eframe::App for MainWindow {
                 });
 
                 ui.separator();
-                let msg2 = crate::palette_editor_16(ui, &caret_attr, &palette, buffer_type);
+                let msg2 = crate::palette_editor_16(ui, &caret_attr, &palette, ice_mode, font_mode);
                 if msg.is_none() {
                     msg = msg2;
                 }
 
-                if buffer_type.has_blink()
+                if ice_mode.has_blink()
                     && ui
                         .selectable_label(
                             caret_attr.is_blinking(),

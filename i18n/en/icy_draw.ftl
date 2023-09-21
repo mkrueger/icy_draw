@@ -65,10 +65,16 @@ menu-select_nothing=Deselect
 menu-inverse_selection=Inverse
 
 menu-colors=Colors
-menu-color-mode=Color Mode
-menu-color-mode-unrestricted=Unrestricted
-menu-color-mode-dos=16 Colors, blink
-menu-color-mode-ice=16 Colors, ice
+menu-ice-mode=Ice Mode
+menu-ice-mode-unrestricted=Unrestricted
+menu-ice-mode-blink=Blink
+menu-ice-mode-ice=Ice
+menu-palette-mode=Palette Mode
+menu-palette-mode-unrestricted=Unrestricted
+menu-palette-mode-dos=Dos 16
+menu-palette-mode-free=Free 16
+menu-palette-mode-free8=Free 8
+
 menu-select_palette=Select Palette
 menu-next_fg_color=Next Foreground Color
 menu-next_bg_color=Next Background Color
@@ -95,6 +101,12 @@ menu-pick_attribute_under_caret=Pick up Attribute
 menu-default_color=Default Color
 menu-toggle_color=Switch Foreground/Background
 menu-fonts=Fonts
+menu-font-mode=Font Mode
+menu-font-mode-unrestricted=Unrestricted
+menu-font-mode-sauce=Sauce
+menu-font-mode-single=Single
+menu-font-mode-dual=Dual
+
 menu-open_font_selector=Fonts…
 menu-open_font_manager=Edit Buffer Fonts…
 menu-open_font_directoy=Open Font Directory…

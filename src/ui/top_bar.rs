@@ -8,7 +8,7 @@ use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{
     util::{pop_data, BUFFER_DATA},
-    BufferType,
+    FontMode, IceMode, PaletteMode,
 };
 
 use crate::{button_with_shortcut, MainWindow, Message, Settings, PLUGINS, SETTINGS};
@@ -262,58 +262,100 @@ impl MainWindow {
                         if let Ok(doc) = &mut pane.doc.lock() {
                             let editor = doc.get_ansi_editor_mut().unwrap();
                             let lock = &mut editor.buffer_view.lock();
-                            if !matches!(lock.get_buffer().buffer_type, BufferType::Unicode) {
-                                ui.menu_button(
-                                    fl!(crate::LANGUAGE_LOADER, "menu-color-mode"),
-                                    |ui| {
-                                        ui.style_mut().wrap = Some(false);
-                                        ui.set_min_width(240.0);
+                            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-ice-mode"), |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(240.0);
 
-                                        if ui
-                                            .selectable_label(
-                                                lock.get_buffer().buffer_type
-                                                    == BufferType::NoLimits,
-                                                fl!(
-                                                    crate::LANGUAGE_LOADER,
-                                                    "menu-color-mode-unrestricted"
-                                                ),
-                                            )
-                                            .clicked()
-                                        {
-                                            lock.get_buffer_mut().buffer_type =
-                                                BufferType::NoLimits;
-                                            ui.close_menu();
-                                        }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().ice_mode == IceMode::Unlimited,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-unrestricted"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().ice_mode = IceMode::Unlimited;
+                                    ui.close_menu();
+                                }
 
-                                        if ui
-                                            .selectable_label(
-                                                lock.get_buffer().buffer_type
-                                                    == BufferType::LegacyDos,
-                                                fl!(crate::LANGUAGE_LOADER, "menu-color-mode-dos"),
-                                            )
-                                            .clicked()
-                                        {
-                                            lock.get_buffer_mut().buffer_type =
-                                                BufferType::LegacyDos;
-                                            ui.close_menu();
-                                        }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().ice_mode == IceMode::Blink,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-blink"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().ice_mode = IceMode::Blink;
+                                    ui.close_menu();
+                                }
 
-                                        if ui
-                                            .selectable_label(
-                                                lock.get_buffer().buffer_type
-                                                    == BufferType::LegacyIce,
-                                                fl!(crate::LANGUAGE_LOADER, "menu-color-mode-ice"),
-                                            )
-                                            .clicked()
-                                        {
-                                            lock.get_buffer_mut().buffer_type =
-                                                BufferType::LegacyIce;
-                                            ui.close_menu();
-                                        }
-                                    },
-                                );
-                                ui.separator();
-                            }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().ice_mode == IceMode::Ice,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-ice"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().ice_mode = IceMode::Ice;
+                                    ui.close_menu();
+                                }
+                            });
+
+                            ui.menu_button(
+                                fl!(crate::LANGUAGE_LOADER, "menu-palette-mode"),
+                                |ui| {
+                                    ui.style_mut().wrap = Some(false);
+                                    ui.set_min_width(240.0);
+
+                                    if ui
+                                        .selectable_label(
+                                            lock.get_buffer().palette_mode == PaletteMode::RGB,
+                                            fl!(
+                                                crate::LANGUAGE_LOADER,
+                                                "menu-palette-mode-unrestricted"
+                                            ),
+                                        )
+                                        .clicked()
+                                    {
+                                        lock.get_buffer_mut().palette_mode = PaletteMode::RGB;
+                                        ui.close_menu();
+                                    }
+
+                                    if ui
+                                        .selectable_label(
+                                            lock.get_buffer().palette_mode == PaletteMode::Fixed16,
+                                            fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-dos"),
+                                        )
+                                        .clicked()
+                                    {
+                                        lock.get_buffer_mut().palette_mode = PaletteMode::Fixed16;
+                                        ui.close_menu();
+                                    }
+
+                                    if ui
+                                        .selectable_label(
+                                            lock.get_buffer().palette_mode == PaletteMode::Free16,
+                                            fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free"),
+                                        )
+                                        .clicked()
+                                    {
+                                        lock.get_buffer_mut().palette_mode = PaletteMode::Free16;
+                                        ui.close_menu();
+                                    }
+
+                                    if ui
+                                        .selectable_label(
+                                            lock.get_buffer().palette_mode == PaletteMode::Free8,
+                                            fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free8"),
+                                        )
+                                        .clicked()
+                                    {
+                                        lock.get_buffer_mut().palette_mode = PaletteMode::Free8;
+                                        ui.close_menu();
+                                    }
+                                },
+                            );
+
+                            ui.separator();
                         }
                     }
                 }
@@ -338,6 +380,61 @@ impl MainWindow {
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-fonts"), |ui| {
                 ui.style_mut().wrap = Some(false);
                 ui.set_min_width(220.0);
+                if let Some(pane) = self.get_active_pane_mut() {
+                    if let Ok(doc) = &mut pane.doc.lock() {
+                        ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-font-mode"), |ui| {
+                            ui.style_mut().wrap = Some(false);
+                            ui.set_min_width(240.0);
+                            let editor = doc.get_ansi_editor_mut().unwrap();
+
+                            let lock = &mut editor.buffer_view.lock();
+
+                            if ui
+                                .selectable_label(
+                                    lock.get_buffer().font_mode == FontMode::Unlimited,
+                                    fl!(crate::LANGUAGE_LOADER, "menu-font-mode-unrestricted"),
+                                )
+                                .clicked()
+                            {
+                                lock.get_buffer_mut().font_mode = FontMode::Unlimited;
+                                ui.close_menu();
+                            }
+
+                            if ui
+                                .selectable_label(
+                                    lock.get_buffer().font_mode == FontMode::Single,
+                                    fl!(crate::LANGUAGE_LOADER, "menu-font-mode-single"),
+                                )
+                                .clicked()
+                            {
+                                lock.get_buffer_mut().font_mode = FontMode::Single;
+                                ui.close_menu();
+                            }
+
+                            if ui
+                                .selectable_label(
+                                    lock.get_buffer().font_mode == FontMode::Sauce,
+                                    fl!(crate::LANGUAGE_LOADER, "menu-font-mode-sauce"),
+                                )
+                                .clicked()
+                            {
+                                lock.get_buffer_mut().font_mode = FontMode::Sauce;
+                                ui.close_menu();
+                            }
+
+                            if ui
+                                .selectable_label(
+                                    lock.get_buffer().font_mode == FontMode::Dual,
+                                    fl!(crate::LANGUAGE_LOADER, "menu-font-mode-dual"),
+                                )
+                                .clicked()
+                            {
+                                lock.get_buffer_mut().font_mode = FontMode::Dual;
+                                ui.close_menu();
+                            }
+                        });
+                    }
+                }
                 self.commands[0].open_font_selector.ui(ui, &mut result);
                 self.commands[0].open_font_manager.ui(ui, &mut result);
                 ui.separator();
