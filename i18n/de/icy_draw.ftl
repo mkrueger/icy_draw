@@ -182,6 +182,7 @@ toolbar-size = {$colums ->
 }
 
 toolbar-position = Zeile { $line }, Spalte { $column }
+toolbar-layer_offset = Ebenen-Offset: { $line }x{ $column }
 
 add_layer_tooltip = Neue Ebene
 move_layer_up_tooltip = Ebene hoch

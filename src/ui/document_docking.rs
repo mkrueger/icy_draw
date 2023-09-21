@@ -18,7 +18,7 @@ use eframe::{
 use egui_extras::RetainedImage;
 use egui_tiles::{Tabs, TileId, Tiles};
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Buffer, Position, Selection, TextAttribute, TextPane};
+use icy_engine::{AttributedChar, Buffer, TextAttribute, TextPane};
 
 pub struct DocumentTab {
     full_path: Option<PathBuf>,
@@ -141,8 +141,7 @@ pub struct DocumentBehavior {
     dark_mode: bool,
 
     pos_img: Option<RetainedImage>,
-    cur_pos: Position,
-    cur_selection: Option<Selection>,
+    cur_line_col_txt: String,
 
     pub request_close: Option<TileId>,
     pub request_close_others: Option<TileId>,
@@ -165,8 +164,7 @@ impl DocumentBehavior {
             request_close_all: None,
             message: None,
             pos_img: None,
-            cur_pos: Position::new(i32::MAX, i32::MAX),
-            cur_selection: None,
+            cur_line_col_txt: String::new(),
             dark_mode: true,
         }
     }
@@ -378,34 +376,16 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                             img.show(ui);
                         }
 
-                        let pos = editor.get_caret_position();
-                        let sel = editor.buffer_view.lock().get_selection();
-                        if pos != self.cur_pos
-                            || sel != self.cur_selection
+                        let txt = self.tools.lock().unwrap()[self.selected_tool]
+                            .get_toolbar_location_text(editor);
+                        if txt != self.cur_line_col_txt
                             || self.dark_mode != ui.style().visuals.dark_mode
                         {
-                            self.cur_pos = pos;
+                            self.cur_line_col_txt = txt;
                             self.dark_mode = ui.style().visuals.dark_mode;
-                            self.cur_selection = sel;
-                            let txt = if let Some(sel) = sel {
-                                let r = sel.as_rectangle();
-                                fl!(
-                                    crate::LANGUAGE_LOADER,
-                                    "toolbar-size",
-                                    colums = r.size.height,
-                                    rows = r.size.width
-                                )
-                            } else {
-                                fl!(
-                                    crate::LANGUAGE_LOADER,
-                                    "toolbar-position",
-                                    line = (pos.y + 1),
-                                    column = (pos.x + 1)
-                                )
-                            };
                             let mut txt2 = String::new();
                             let mut char_count = 0;
-                            for c in txt.chars() {
+                            for c in self.cur_line_col_txt.chars() {
                                 if (c as u32) < 255 {
                                     txt2.push(c);
                                     char_count += 1;

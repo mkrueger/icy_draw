@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use eframe::egui::{self};
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
@@ -8,8 +10,9 @@ use crate::{model::ScanLines, AnsiEditor, Event, Message};
 
 use super::{brush_imp::draw_glyph, line_imp::set_half_block, Position, Tool};
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Default)]
 pub enum PencilType {
+    #[default]
     HalfBlock,
     Shade,
     Solid,
@@ -17,13 +20,28 @@ pub enum PencilType {
 }
 
 pub struct PencilTool {
-    pub use_fore: bool,
-    pub use_back: bool,
-    pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
-    pub undo_op: Option<AtomicUndoGuard>,
+    use_fore: bool,
+    use_back: bool,
+    char_code: std::rc::Rc<std::cell::RefCell<char>>,
+    undo_op: Option<AtomicUndoGuard>,
 
-    pub last_pos: Position,
-    pub brush_type: PencilType,
+    last_pos: Position,
+    cur_pos: Position,
+    brush_type: PencilType,
+}
+
+impl Default for PencilTool {
+    fn default() -> Self {
+        Self {
+            use_back: true,
+            use_fore: true,
+            undo_op: None,
+            brush_type: crate::model::pencil_imp::PencilType::Shade,
+            char_code: Rc::new(RefCell::new('\u{00B0}')),
+            last_pos: Position::default(),
+            cur_pos: Position::default(),
+        }
+    }
 }
 
 impl PencilTool {
@@ -213,9 +231,10 @@ impl Tool for PencilTool {
         _ui: &egui::Ui,
         response: egui::Response,
         _editor: &mut AnsiEditor,
-        _cur: Position,
+        cur: Position,
         _cur_abs: Position,
     ) -> egui::Response {
+        self.cur_pos = cur;
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
@@ -228,6 +247,7 @@ impl Tool for PencilTool {
     ) -> egui::Response {
         self.paint_brush(editor, editor.drag_pos.cur);
         self.last_pos = editor.drag_pos.cur;
+        self.cur_pos = editor.drag_pos.cur;
 
         response
     }
@@ -235,6 +255,7 @@ impl Tool for PencilTool {
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil")));
         self.last_pos = editor.drag_pos.cur;
+        self.cur_pos = editor.drag_pos.cur;
         editor.clear_overlay_layer();
         self.paint_brush(editor, editor.drag_pos.cur);
 
@@ -245,5 +266,15 @@ impl Tool for PencilTool {
         editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
         self.undo_op = None;
         Event::None
+    }
+
+    fn get_toolbar_location_text(&self, _editor: &AnsiEditor) -> String {
+        let pos = self.cur_pos;
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "toolbar-position",
+            line = (pos.y + 1),
+            column = (pos.x + 1)
+        )
     }
 }

@@ -178,7 +178,7 @@ toolbar-size = { $colums ->
 }
 
 toolbar-position = Ln { $line }, Col { $column }
-
+toolbar-layer_offset = Layer offset: { $line }x{ $column }
 add_layer_tooltip = Add new layer
 move_layer_up_tooltip = Move layer up
 move_layer_down_tooltip = Move layer down

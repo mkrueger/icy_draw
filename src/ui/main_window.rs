@@ -22,7 +22,7 @@ use eframe::{
 use egui_tiles::{Container, TileId};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, EngineResult, Palette, Position, TextAttribute, TheDrawFont};
+use icy_engine::{BitFont, Buffer, EngineResult, Palette, TextAttribute, TheDrawFont};
 
 pub struct MainWindow {
     pub document_tree: egui_tiles::Tree<DocumentTab>,
@@ -76,14 +76,7 @@ impl MainWindow {
             Box::<crate::model::paste_tool::PasteTool>::default(),
             Box::<crate::model::click_imp::ClickTool>::default(),
             Box::<crate::model::select_imp::SelectTool>::default(),
-            Box::new(crate::model::pencil_imp::PencilTool {
-                use_back: true,
-                use_fore: true,
-                undo_op: None,
-                brush_type: crate::model::pencil_imp::PencilType::Shade,
-                char_code: Rc::new(RefCell::new('\u{00B0}')),
-                last_pos: Position::default(),
-            }),
+            Box::<crate::model::pencil_imp::PencilTool>::default(),
             Box::new(crate::model::brush_imp::BrushTool {
                 size: 3,
                 use_back: true,

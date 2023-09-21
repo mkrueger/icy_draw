@@ -1,6 +1,7 @@
 use super::{Event, Position, Tool};
 use crate::{AnsiEditor, Message};
 use eframe::egui;
+use i18n_embed_fl::fl;
 use icy_engine_egui::TerminalCalc;
 
 #[derive(Default)]
@@ -69,6 +70,10 @@ impl Tool for MoveLayer {
         response.on_hover_cursor(egui::CursorIcon::Grabbing)
     }
 
+    fn get_toolbar_location_text(&self, editor: &AnsiEditor) -> String {
+        get_layer_offset_text(editor)
+    }
+
     fn handle_hover(
         &mut self,
         _ui: &egui::Ui,
@@ -91,5 +96,24 @@ impl Tool for MoveLayer {
             .move_layer(self.drag_offset)
             .unwrap();
         Event::None
+    }
+}
+
+pub(super) fn get_layer_offset_text(editor: &AnsiEditor) -> String {
+    if let Some(layer) = editor
+        .buffer_view
+        .lock()
+        .get_edit_state_mut()
+        .get_cur_layer()
+    {
+        let pos = layer.get_offset();
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "toolbar-layer_offset",
+            line = pos.y,
+            column = pos.x
+        )
+    } else {
+        String::new()
     }
 }

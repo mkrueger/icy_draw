@@ -17,6 +17,7 @@ pub static mut CUR_CHAR: Option<AttributedChar> = None;
 pub struct PipetteTool {
     ch: Option<char>,
     char_image: Option<RetainedImage>,
+    cur_pos: Option<Position>,
 }
 
 impl Tool for PipetteTool {
@@ -119,13 +120,29 @@ impl Tool for PipetteTool {
         unsafe {
             CUR_CHAR = Some(editor.get_char(cur));
         }
+        self.cur_pos = Some(cur);
+
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
+    }
+
+    fn get_toolbar_location_text(&self, _editor: &AnsiEditor) -> String {
+        if let Some(pos) = self.cur_pos {
+            fl!(
+                crate::LANGUAGE_LOADER,
+                "toolbar-position",
+                line = (pos.y + 1),
+                column = (pos.x + 1)
+            )
+        } else {
+            String::new()
+        }
     }
 
     fn handle_no_hover(&mut self, _editor: &mut AnsiEditor) {
         unsafe {
             CUR_CHAR = None;
         }
+        self.cur_pos = None;
     }
 
     fn handle_click(

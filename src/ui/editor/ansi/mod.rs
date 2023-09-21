@@ -702,7 +702,7 @@ impl AnsiEditor {
                     c_abs += s;
                     self.half_block_click_pos = c_abs;
 
-                    self.drag_pos.cur_abs = Position::new(c_abs.x, c_abs.y / 2);
+                    self.drag_pos.cur_abs = Position::new(c_abs.x, c_abs.y / 2) + layer_offset;
                     self.drag_pos.cur = self.drag_pos.cur_abs - layer_offset;
                     response = cur_tool.handle_drag(ui, response, self, &calc);
                 }

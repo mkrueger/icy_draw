@@ -19,6 +19,7 @@ mod icons;
 
 use eframe::egui::{self, Response};
 use egui_extras::RetainedImage;
+use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Position, TextAttribute};
 use icy_engine_egui::TerminalCalc;
 pub use scan_lines::*;
@@ -160,6 +161,36 @@ pub trait Tool {
 
     fn handle_drag_end(&mut self, _editor: &mut AnsiEditor) -> Event {
         Event::None
+    }
+
+    fn get_toolbar_location_text(&self, editor: &AnsiEditor) -> String {
+        toolbar_pos_sel_text(editor, true)
+    }
+}
+
+fn toolbar_pos_sel_text(editor: &AnsiEditor, show_selection: bool) -> String {
+    let pos = editor.get_caret_position();
+    let sel = if show_selection {
+        editor.buffer_view.lock().get_selection()
+    } else {
+        None
+    };
+
+    if let Some(sel) = sel {
+        let r = sel.as_rectangle();
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "toolbar-size",
+            colums = r.size.height,
+            rows = r.size.width
+        )
+    } else {
+        fl!(
+            crate::LANGUAGE_LOADER,
+            "toolbar-position",
+            line = (pos.y + 1),
+            column = (pos.x + 1)
+        )
     }
 }
 

@@ -1,4 +1,4 @@
-use super::{Event, Position, Tool};
+use super::{move_layer_imp::get_layer_offset_text, Event, Position, Tool};
 use crate::{AnsiEditor, Message};
 use eframe::egui::{self, Key};
 use i18n_embed_fl::fl;
@@ -225,5 +225,9 @@ impl Tool for PasteTool {
             .move_layer(self.drag_offset)
             .unwrap();
         Event::None
+    }
+
+    fn get_toolbar_location_text(&self, editor: &AnsiEditor) -> String {
+        get_layer_offset_text(editor)
     }
 }
