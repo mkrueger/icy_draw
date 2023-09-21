@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use eframe::{
     egui::{self, RichText, Sense, TextureOptions},
-    epaint::{Color32, Pos2, Rect, Vec2},
+    epaint::{Color32, FontId, Pos2, Rect, Vec2},
 };
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
@@ -34,7 +34,6 @@ impl CharTableToolWindow {
     pub fn show_plain_char_table(&mut self, ui: &mut egui::Ui) -> Option<char> {
         let mut something_hovered = false;
         let mut result = None;
-
         egui::ScrollArea::vertical()
             .id_source("char_table_scroll_area")
             .show(ui, |ui| {
@@ -94,6 +93,15 @@ impl CharTableToolWindow {
                     }
                 });
             });
+        ui.horizontal(|ui| {
+            ui.add_space(4.0);
+            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-font_label")).small());
+            ui.label(
+                RichText::new(self.font.name.to_string())
+                    .small()
+                    .color(Color32::WHITE),
+            );
+        });
 
         if let Some(ch) = self.hover_char {
             ui.horizontal(|ui| {
@@ -103,17 +111,6 @@ impl CharTableToolWindow {
                 );
                 ui.label(
                     RichText::new(format!("{0}/0x{0:02X}", ch as u32))
-                        .small()
-                        .color(Color32::WHITE),
-                );
-            });
-            ui.horizontal(|ui| {
-                ui.add_space(4.0);
-                ui.label(
-                    RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-font_label")).small(),
-                );
-                ui.label(
-                    RichText::new(self.font.name.to_string())
                         .small()
                         .color(Color32::WHITE),
                 );
@@ -135,6 +132,7 @@ impl CharTableToolWindow {
         let mut result = None;
 
         let font_page = editor.buffer_view.lock().get_caret().get_font_page();
+        let font_count = editor.buffer_view.lock().get_buffer().font_count();
         if let Some(cur_font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
             if cur_font.name != self.font.name {
                 self.font = cur_font.clone();
@@ -142,7 +140,65 @@ impl CharTableToolWindow {
                 self.hover_char = None;
             }
         }
+
+        if font_count > 1 {
+            ui.add_space(8.0);
+
+            ui.horizontal(|ui| {
+                ui.add_space(12.0);
+
+                ui.label(fl!(crate::LANGUAGE_LOADER, "font-view-font_page_label"));
+                if ui
+                    .selectable_label(false, RichText::new("◀").font(FontId::proportional(14.)))
+                    .clicked()
+                {
+                    let mut prev = font_page;
+                    let mut last = 0;
+                    for (page, _) in editor.buffer_view.lock().get_buffer().font_iter() {
+                        last = last.max(*page);
+                        if *page < font_page {
+                            if prev == font_page {
+                                prev = *page;
+                            } else {
+                                prev = prev.max(*page);
+                            }
+                        }
+                    }
+                    if prev == font_page {
+                        result = Some(Message::SetFontPage(last));
+                    } else {
+                        result = Some(Message::SetFontPage(prev));
+                    }
+                }
+                ui.label(RichText::new(font_page.to_string()));
+
+                if ui
+                    .selectable_label(false, RichText::new("▶").font(FontId::proportional(14.)))
+                    .clicked()
+                {
+                    let mut next = font_page;
+                    let mut first = usize::MAX;
+                    for (page, _) in editor.buffer_view.lock().get_buffer().font_iter() {
+                        first = first.min(*page);
+                        if *page > font_page {
+                            if next == font_page {
+                                next = *page;
+                            } else {
+                                next = next.min(*page);
+                            }
+                        }
+                    }
+                    if next == font_page {
+                        result = Some(Message::SetFontPage(first));
+                    } else {
+                        result = Some(Message::SetFontPage(next));
+                    }
+                }
+            });
+        }
+
         let response = self.show_plain_char_table(ui);
+
         if let Some(ch) = response {
             result = Some(Message::CharTable(ch));
         }

@@ -115,6 +115,7 @@ pub enum Message {
     ZoomOut,
 
     OpenFontSelector,
+    OpenAddFonts,
     OpenFontManager,
     OpenFontDirectory,
     OpenTdfDirectory,
@@ -150,11 +151,13 @@ pub enum Message {
     ToggleLGAFont,
     ToggleAspectRatio,
     SwitchToFontPage(usize),
-    SwitchToAnsiFont(usize),
+    SetAnsiFont(usize),
     SetFont(Box<BitFont>),
-    SwitchToSauceFont(String),
     SwitchPaletteMode(PaletteMode),
     SwitchIceMode(IceMode),
+    AddFont(Box<BitFont>),
+    AddAnsiFont(usize),
+    SetSauceFont(String),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -881,10 +884,18 @@ impl MainWindow {
             },
             Message::OpenFontSelector => {
                 self.run_editor_command(0, |window, editor, _| {
-                    window.open_dialog(crate::FontSelector::new(editor));
+                    window.open_dialog(crate::FontSelector::new(editor, false));
                     None
                 });
             }
+
+            Message::OpenAddFonts => {
+                self.run_editor_command(0, |window, editor, _| {
+                    window.open_dialog(crate::FontSelector::new(editor, true));
+                    None
+                });
+            }
+
             Message::OpenFontManager => {
                 self.run_editor_command(0, |window, editor, _| {
                     window.open_dialog(crate::FontManager::new(editor));
@@ -1208,28 +1219,30 @@ impl MainWindow {
                     )
                 });
             }
-            Message::SwitchToAnsiFont(page) => {
+            Message::SetAnsiFont(page) => {
                 self.run_editor_command(page, |_, editor, page| {
                     to_message(
                         editor
                             .buffer_view
                             .lock()
                             .get_edit_state_mut()
-                            .switch_to_ansi_font(page),
+                            .set_ansi_font(page),
                     )
                 });
             }
-            Message::SwitchToSauceFont(name) => {
+
+            Message::SetSauceFont(name) => {
                 self.run_editor_command(name, |_, editor, name| {
                     to_message(
                         editor
                             .buffer_view
                             .lock()
                             .get_edit_state_mut()
-                            .switch_to_sauce_font(&name),
+                            .set_sauce_font(&name),
                     )
                 });
             }
+
             Message::SetFont(fnt) => {
                 self.run_editor_command(fnt, |_, editor, fnt| {
                     to_message(
@@ -1238,6 +1251,28 @@ impl MainWindow {
                             .lock()
                             .get_edit_state_mut()
                             .set_font(*fnt),
+                    )
+                });
+            }
+            Message::AddAnsiFont(page) => {
+                self.run_editor_command(page, |_, editor, page| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .add_ansi_font(page),
+                    )
+                });
+            }
+            Message::AddFont(fnt) => {
+                self.run_editor_command(fnt, |_, editor, fnt| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .add_font(*fnt),
                     )
                 });
             }

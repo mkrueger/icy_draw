@@ -111,7 +111,8 @@ menu-font-mode-unrestricted=Unbegrenzt
 menu-font-mode-sauce=Sauce
 menu-font-mode-single=Einer
 menu-font-mode-dual=Zwei
-menu-open_font_selector=Schriften…
+menu-open_font_selector=Schrift wählen…
+menu-add_fonts=Schrift hinzufügen…
 menu-open_font_manager=Bufferfonts bearbeiten…
 menu-open_font_directoy=Fontverzeichnis öffnen…
 menu-open_tdf_directoy=TDF Verzeichnis öffnen…
@@ -236,7 +237,9 @@ edit-layer-dialog-is-alpha-locked-checkbox=Alphakanal gesperrt
 error-load-file=Fehler während des Dateiladens: { $error }
 
 select-font-dialog-title=Font auswählen ({ $fontcount} verfügbar)
+add-font-dialog-title=Font hinzufügen ({ $fontcount} verfügbar)
 select-font-dialog-select=Auswählen
+add-font-dialog-select=Hinzufügen
 select-font-dialog-filter-text=Filter
 select-font-dialog-no-fonts=Keine Fonts gefunden
 select-font-dialog-no-fonts-installed=Keine Fonts installiert
@@ -332,6 +335,7 @@ tab-context-menu-copy_path=Pfad kopieren
 font-view-char_label=Zeichen
 font-view-ascii_label=ASCII
 font-view-font_label=Font
+font-view-font_page_label=Font Seite:
 
 font-editor-tile_area=Kacheln
 font-editor-clear=Löschen

@@ -383,63 +383,71 @@ impl MainWindow {
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-fonts"), |ui| {
                 ui.style_mut().wrap = Some(false);
                 ui.set_min_width(220.0);
+                let mut font_mode = FontMode::Single;
                 if let Some(pane) = self.get_active_pane_mut() {
                     if let Ok(doc) = &mut pane.doc.lock() {
-                        ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-font-mode"), |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(240.0);
-                            let editor = doc.get_ansi_editor_mut().unwrap();
+                        if let Some(editor) = doc.get_ansi_editor_mut() {
+                            font_mode = editor.buffer_view.lock().get_buffer().font_mode;
 
-                            let lock = &mut editor.buffer_view.lock();
+                            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-font-mode"), |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(240.0);
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().font_mode == FontMode::Unlimited,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-font-mode-unrestricted"),
-                                )
-                                .clicked()
-                            {
-                                lock.get_buffer_mut().font_mode = FontMode::Unlimited;
-                                ui.close_menu();
-                            }
+                                let lock = &mut editor.buffer_view.lock();
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().font_mode == FontMode::Single,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-font-mode-single"),
-                                )
-                                .clicked()
-                            {
-                                lock.get_buffer_mut().font_mode = FontMode::Single;
-                                ui.close_menu();
-                            }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().font_mode == FontMode::Unlimited,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-font-mode-unrestricted"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().font_mode = FontMode::Unlimited;
+                                    ui.close_menu();
+                                }
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().font_mode == FontMode::Sauce,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-font-mode-sauce"),
-                                )
-                                .clicked()
-                            {
-                                lock.get_buffer_mut().font_mode = FontMode::Sauce;
-                                ui.close_menu();
-                            }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().font_mode == FontMode::Single,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-font-mode-single"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().font_mode = FontMode::Single;
+                                    ui.close_menu();
+                                }
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().font_mode == FontMode::Dual,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-font-mode-dual"),
-                                )
-                                .clicked()
-                            {
-                                lock.get_buffer_mut().font_mode = FontMode::Dual;
-                                ui.close_menu();
-                            }
-                        });
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().font_mode == FontMode::Sauce,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-font-mode-sauce"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().font_mode = FontMode::Sauce;
+                                    ui.close_menu();
+                                }
+
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().font_mode == FontMode::Dual,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-font-mode-dual"),
+                                    )
+                                    .clicked()
+                                {
+                                    lock.get_buffer_mut().font_mode = FontMode::Dual;
+                                    ui.close_menu();
+                                }
+                            });
+                        }
                     }
                 }
                 self.commands[0].open_font_selector.ui(ui, &mut result);
+                if matches!(font_mode, FontMode::Unlimited) {
+                    self.commands[0].add_fonts.ui(ui, &mut result);
+                }
                 self.commands[0].open_font_manager.ui(ui, &mut result);
+
                 ui.separator();
                 self.commands[0].open_font_directory.ui(ui, &mut result);
                 self.commands[0].open_tdf_directory.ui(ui, &mut result);

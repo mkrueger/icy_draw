@@ -415,7 +415,7 @@ impl BitFontEditor {
         let old_font = self.font.clone();
         let mut new_font = self.font.clone();
 
-        for (_, glyph) in &mut new_font.glyphs {
+        for glyph in new_font.glyphs.values_mut() {
             glyph.data.resize(self.height as usize, 0);
         }
         new_font.size = Size::new(self.width, self.height);

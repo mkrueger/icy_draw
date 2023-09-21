@@ -100,14 +100,15 @@ menu-show_line_numbers=Show Line Numbers
 menu-pick_attribute_under_caret=Pick up Attribute
 menu-default_color=Default Color
 menu-toggle_color=Switch Foreground/Background
+
 menu-fonts=Fonts
 menu-font-mode=Font Mode
 menu-font-mode-unrestricted=Unrestricted
 menu-font-mode-sauce=Sauce
 menu-font-mode-single=Single
 menu-font-mode-dual=Dual
-
-menu-open_font_selector=Fonts…
+menu-open_font_selector=Select Font…
+menu-add_fonts=Add Fonts…
 menu-open_font_manager=Edit Buffer Fonts…
 menu-open_font_directoy=Open Font Directory…
 menu-open_tdf_directoy=Open TDF Directory…
@@ -232,7 +233,9 @@ edit-layer-dialog-is-alpha-locked-checkbox=Alpha locked
 error-load-file=Error loading file: { $error }
 
 select-font-dialog-title=Select Font ({ $fontcount} available)
+add-font-dialog-title=Add Font ({ $fontcount} available)
 select-font-dialog-select=Select
+add-font-dialog-select=Add
 select-font-dialog-filter-text=Filter fonts
 select-font-dialog-no-fonts=No fonts matches the filter
 select-font-dialog-no-fonts-installed=No fonts installed
@@ -332,6 +335,7 @@ tab-context-menu-copy_path=Copy path
 font-view-char_label=Char
 font-view-ascii_label=ASCII
 font-view-font_label=Font
+font-view-font_page_label=Font Page:
 
 font-editor-tile_area=Tile area
 font-editor-clear=Clear

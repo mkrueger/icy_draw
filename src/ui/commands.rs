@@ -805,6 +805,7 @@ keys![
         OpenFontSelector,
         BufferOpenState
     ),
+    (add_fonts, "menu-add_fonts", OpenAddFonts, BufferOpenState),
     (
         open_font_manager,
         "menu-open_font_manager",

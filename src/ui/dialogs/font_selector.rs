@@ -31,6 +31,7 @@ pub struct FontSelector {
     show_library: bool,
     show_file: bool,
     show_sauce: bool,
+    should_add: bool,
 
     image_cache: HashMap<usize, RetainedImage>,
     do_select: bool,
@@ -38,7 +39,7 @@ pub struct FontSelector {
 }
 
 impl FontSelector {
-    pub fn new(editor: &AnsiEditor) -> Self {
+    pub fn new(editor: &AnsiEditor, should_add: bool) -> Self {
         let mut fonts = Vec::new();
         for f in SAUCE_FONT_NAMES {
             fonts.push((
@@ -102,6 +103,7 @@ impl FontSelector {
             show_file: true,
             show_sauce: true,
             edit_selected_font: false,
+            should_add,
         }
     }
 
@@ -354,11 +356,19 @@ impl crate::ModalDialog for FontSelector {
         modal.show(|ui| {
             modal.title(
                 ui,
-                fl!(
-                    crate::LANGUAGE_LOADER,
-                    "select-font-dialog-title",
-                    fontcount = font_count
-                ),
+                if self.should_add {
+                    fl!(
+                        crate::LANGUAGE_LOADER,
+                        "add-font-dialog-title",
+                        fontcount = font_count
+                    )
+                } else {
+                    fl!(
+                        crate::LANGUAGE_LOADER,
+                        "select-font-dialog-title",
+                        fontcount = font_count
+                    )
+                },
             );
             modal.frame(ui, |ui| {
                 let row_height = 200.0 / 2.0;
@@ -397,6 +407,13 @@ impl crate::ModalDialog for FontSelector {
                     );
                     if response.clicked() {
                         self.show_builtin = !self.show_builtin;
+                    }
+                    let response = ui.selectable_label(
+                        self.show_sauce,
+                        fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font"),
+                    );
+                    if response.clicked() {
+                        self.show_sauce = !self.show_sauce;
                     }
                 });
                 ui.add_space(4.0);
@@ -462,10 +479,13 @@ impl crate::ModalDialog for FontSelector {
             });
 
             modal.buttons(ui, |ui| {
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-select"))
-                    .clicked()
-                {
+                let text = if self.should_add {
+                    fl!(crate::LANGUAGE_LOADER, "add-font-dialog-select")
+                } else {
+                    fl!(crate::LANGUAGE_LOADER, "select-font-dialog-select")
+                };
+
+                if ui.button(text).clicked() {
                     self.do_select = true;
                     result = true;
                 }
@@ -512,22 +532,23 @@ impl crate::ModalDialog for FontSelector {
         if let Some((font, src)) = self.fonts.get(self.selected_font as usize) {
             match src {
                 BitfontSource::AnsiSlot(id) => {
-                    return Ok(Some(Message::SwitchToAnsiFont(*id)));
-                    /*
-                    editor.buffer_view.lock().get_caret_mut().set_font_page(*id);
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .set_font(*id, font.clone());
-                    */
+                    if self.should_add {
+                        return Ok(Some(Message::AddAnsiFont(*id)));
+                    } else {
+                        return Ok(Some(Message::SetAnsiFont(*id)));
+                    }
                 }
                 BitfontSource::LibraryAndFile(id) | BitfontSource::File(id) => {
                     return Ok(Some(Message::SwitchToFontPage(*id)));
                 }
-                BitfontSource::Sauce(id) => {
-                    return Ok(Some(Message::SwitchToSauceFont(id.clone())));
+                BitfontSource::Sauce(name) => {
+                    if self.should_add {
+                        return Ok(Some(Message::AddFont(Box::new(font.clone()))));
+                    } else {
+                        return Ok(Some(Message::SetSauceFont(name.clone())));
+                    }
                 }
+
                 BitfontSource::Library => {
                     let mut font_set = false;
                     let mut font_slot = 0;
@@ -547,20 +568,11 @@ impl crate::ModalDialog for FontSelector {
                     }
 
                     if !font_set {
-                        return Ok(Some(Message::SetFont(Box::new(font.clone()))));
-                        /*
-                        for i in 100.. {
-
-                            if !editor.buffer_view.lock().get_buffer().has_font(i) {
-                                editor.buffer_view.lock().get_caret_mut().set_font_page(i);
-                                editor
-                                    .buffer_view
-                                    .lock()
-                                    .get_buffer_mut()
-                                    .set_font(i, font.clone());
-                                break;
-                            }
-                        }*/
+                        if self.should_add {
+                            return Ok(Some(Message::AddFont(Box::new(font.clone()))));
+                        } else {
+                            return Ok(Some(Message::SetFont(Box::new(font.clone()))));
+                        }
                     }
                 }
             }
