@@ -125,8 +125,8 @@ impl Tool for DrawRectangleTool {
         let mut start = editor.drag_pos.start;
         let mut cur = editor.drag_pos.cur;
         if self.draw_mode == DrawMode::Line {
-            start.y *= 2;
-            cur.y *= 2;
+            start = editor.drag_pos.start_half_block;
+            cur = editor.half_block_click_pos;
         }
 
         let mut lines = ScanLines::new(1);

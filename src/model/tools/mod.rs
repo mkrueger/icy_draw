@@ -86,6 +86,8 @@ pub struct DragPos {
     pub cur_abs: Position,
     pub start: Position,
     pub cur: Position,
+
+    pub start_half_block: Position,
 }
 
 pub trait Tool {

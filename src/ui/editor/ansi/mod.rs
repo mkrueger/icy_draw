@@ -35,6 +35,7 @@ pub enum Event {
 pub struct AnsiEditor {
     pub id: usize,
     pub drag_pos: DragPos,
+    pub half_block_click_pos: Position,
     drag_started: bool,
     pub buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
     pub is_inactive: bool,
@@ -253,6 +254,7 @@ impl AnsiEditor {
             raster: None,
             outline_font_mode: false,
             next_scroll_position: None,
+            half_block_click_pos: Position::default(),
         }
     }
 
@@ -632,7 +634,14 @@ impl AnsiEditor {
                 {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
-                    let cp = cp_abs - self.get_cur_click_offset();
+                    let layer_offset = self.get_cur_click_offset();
+                    let cp = cp_abs - layer_offset;
+                    let click_pos2 = calc.calc_click_pos_half_block(mouse_pos);
+                    self.half_block_click_pos = Position::new(
+                        click_pos2.x as i32 - layer_offset.x,
+                        click_pos2.y as i32 - layer_offset.y,
+                    );
+
                     /*
                     let b: i32 = match responsee.b {
                                      PointerButton::Primary => 1,
@@ -655,15 +664,23 @@ impl AnsiEditor {
                 if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
                 {
                     let click_pos = calc.calc_click_pos(mouse_pos);
-                    let click_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
+                    let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
 
-                    let cp: Position = click_pos - self.get_cur_click_offset();
-                    self.drag_pos.start_abs = click_pos;
+                    let layer_offset = self.get_cur_click_offset();
+                    let cp = cp_abs - layer_offset;
+                    let click_pos2 = calc.calc_click_pos_half_block(mouse_pos);
+                    self.half_block_click_pos = Position::new(
+                        click_pos2.x as i32 - layer_offset.x,
+                        click_pos2.y as i32 - layer_offset.y,
+                    );
+                    self.drag_pos.start_abs = cp_abs;
                     self.drag_pos.start = cp;
 
-                    self.drag_pos.cur_abs = click_pos;
+                    self.drag_pos.cur_abs = cp_abs;
                     self.drag_pos.cur = cp;
+                    self.drag_pos.start_half_block = self.half_block_click_pos;
                     self.drag_started = true;
+
                     cur_tool.handle_drag_begin(self, &response);
                 }
             }
@@ -672,18 +689,21 @@ impl AnsiEditor {
 
         if response.dragged_by(egui::PointerButton::Primary) && self.drag_started {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
-                let click_pos = calc.calc_click_pos(mouse_pos);
-                let click_pos = Position::new(click_pos.x as i32, click_pos.y as i32);
+                let layer_offset = self.get_cur_click_offset();
+                let click_pos2 = calc.calc_click_pos_half_block(mouse_pos);
+                let half_block_click_pos = Position::new(
+                    click_pos2.x as i32 - layer_offset.x,
+                    click_pos2.y as i32 - layer_offset.y,
+                );
 
-                let mut c = self.drag_pos.cur;
-                let mut c_abs = self.drag_pos.cur_abs;
-                while c_abs != click_pos {
-                    let s = (click_pos - c_abs).signum();
-                    c += s;
+                let mut c_abs = self.half_block_click_pos;
+                while c_abs != half_block_click_pos {
+                    let s = (half_block_click_pos - c_abs).signum();
                     c_abs += s;
-                    self.drag_pos.cur_abs = c_abs;
-                    self.drag_pos.cur = c;
+                    self.half_block_click_pos = c_abs;
 
+                    self.drag_pos.cur_abs = Position::new(c_abs.x, c_abs.y / 2);
+                    self.drag_pos.cur = self.drag_pos.cur_abs - layer_offset;
                     response = cur_tool.handle_drag(ui, response, self, &calc);
                 }
             }

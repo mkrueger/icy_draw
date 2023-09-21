@@ -56,10 +56,8 @@ impl PencilTool {
         match self.brush_type {
             PencilType::HalfBlock => {
                 let mut lines = ScanLines::new(1);
-                lines.add_line(
-                    Position::new(self.last_pos.x, self.last_pos.y * 2),
-                    Position::new(pos.x, pos.y * 2),
-                );
+                let pos = editor.half_block_click_pos;
+                lines.add_line(Position::new(pos.x, pos.y), Position::new(pos.x, pos.y));
                 let draw = move |rect: Rectangle| {
                     let col = editor
                         .buffer_view
