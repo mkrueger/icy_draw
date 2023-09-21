@@ -8,7 +8,7 @@ use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{
-    Palette, PaletteFormat, C64_DEFAULT_PALETTE, DOS_DEFAULT_PALETTE, EGA_PALETTE,
+    Palette, PaletteFormat, PaletteMode, C64_DEFAULT_PALETTE, DOS_DEFAULT_PALETTE, EGA_PALETTE,
     VIEWDATA_PALETTE, XTERM_256_PALETTE,
 };
 use walkdir::WalkDir;
@@ -39,48 +39,49 @@ pub struct SelectPaletteDialog {
 impl SelectPaletteDialog {
     pub fn new(editor: &AnsiEditor) -> anyhow::Result<Self> {
         let mut palettes = Vec::new();
+        let mode = editor.buffer_view.lock().get_buffer().palette_mode;
 
         let mut dos = Palette::from_colors(DOS_DEFAULT_PALETTE.to_vec());
         dos.title = fl!(
             crate::LANGUAGE_LOADER,
             "palette_selector-dos_default_palette"
         );
-        palettes.push((dos, PaletteSource::BuiltIn));
+        add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
         let mut dos = Palette::from_colors(DOS_DEFAULT_PALETTE[0..8].to_vec());
         dos.title = fl!(
             crate::LANGUAGE_LOADER,
             "palette_selector-dos_default_low_palette"
         );
-        palettes.push((dos, PaletteSource::BuiltIn));
+        add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
         let mut dos = Palette::from_colors(C64_DEFAULT_PALETTE.to_vec());
         dos.title = fl!(
             crate::LANGUAGE_LOADER,
             "palette_selector-c64_default_palette"
         );
-        palettes.push((dos, PaletteSource::BuiltIn));
+        add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
         let mut dos = Palette::from_colors(EGA_PALETTE.to_vec());
         dos.title = fl!(
             crate::LANGUAGE_LOADER,
             "palette_selector-ega_default_palette"
         );
-        palettes.push((dos, PaletteSource::BuiltIn));
+        add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
         let mut dos = Palette::from_colors(XTERM_256_PALETTE.map(|p| p.1).to_vec());
         dos.title = fl!(
             crate::LANGUAGE_LOADER,
             "palette_selector-xterm_default_palette"
         );
-        palettes.push((dos, PaletteSource::BuiltIn));
+        add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
         let mut dos = Palette::from_colors(VIEWDATA_PALETTE[0..8].to_vec());
         dos.title = fl!(
             crate::LANGUAGE_LOADER,
             "palette_selector-viewdata_default_palette"
         );
-        palettes.push((dos, PaletteSource::BuiltIn));
+        add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
         let mut pal = editor.buffer_view.lock().get_buffer().palette.clone();
         let mut selected_palette = 0;
@@ -96,8 +97,8 @@ impl SelectPaletteDialog {
             palettes.insert(0, (pal, PaletteSource::File));
         }
         if let Ok(palette_dir) = Settings::get_palettes_diretory() {
-            for palette in SelectPaletteDialog::load_palettes(palette_dir.as_path())? {
-                palettes.push((palette, PaletteSource::Library));
+            for palette in SelectPaletteDialog::load_palettes(palette_dir.as_path(), mode)? {
+                add_palette(&mut palettes, mode, palette);
             }
         }
 
@@ -114,7 +115,10 @@ impl SelectPaletteDialog {
         })
     }
 
-    fn load_palettes(tdf_dir: &Path) -> anyhow::Result<Vec<Palette>> {
+    fn load_palettes(
+        tdf_dir: &Path,
+        mode: PaletteMode,
+    ) -> anyhow::Result<Vec<(Palette, PaletteSource)>> {
         let mut palettes = Vec::new();
         let walker = WalkDir::new(tdf_dir).into_iter();
         for entry in walker.filter_entry(|e| !crate::model::font_imp::FontTool::is_hidden(e)) {
@@ -138,7 +142,7 @@ impl SelectPaletteDialog {
             }
 
             if let Ok(palette) = Palette::import_palette(path, &fs::read(path)?) {
-                palettes.push(palette);
+                add_palette(&mut palettes, mode, (palette, PaletteSource::Library));
             }
             let ext = extension.unwrap().to_lowercase();
             if ext == "zip" {
@@ -146,7 +150,7 @@ impl SelectPaletteDialog {
                     Ok(mut file) => {
                         let mut data = Vec::new();
                         file.read_to_end(&mut data).unwrap_or_default();
-                        SelectPaletteDialog::read_zip_archive(data, &mut palettes);
+                        SelectPaletteDialog::read_zip_archive(data, &mut palettes, mode);
                     }
 
                     Err(err) => {
@@ -159,7 +163,11 @@ impl SelectPaletteDialog {
         Ok(palettes)
     }
 
-    fn read_zip_archive(data: Vec<u8>, palettes: &mut Vec<Palette>) {
+    fn read_zip_archive(
+        data: Vec<u8>,
+        palettes: &mut Vec<(Palette, PaletteSource)>,
+        mode: PaletteMode,
+    ) {
         let file = std::io::Cursor::new(data);
         match zip::ZipArchive::new(file) {
             Ok(mut archive) => {
@@ -174,11 +182,11 @@ impl SelectPaletteDialog {
                                 file.read_to_end(&mut data).unwrap_or_default();
 
                                 if file_name.ends_with(".zip") {
-                                    SelectPaletteDialog::read_zip_archive(data, palettes);
+                                    SelectPaletteDialog::read_zip_archive(data, palettes, mode);
                                 } else if let Ok(palette) =
                                     Palette::import_palette(&file_name_buf, &data)
                                 {
-                                    palettes.push(palette);
+                                    add_palette(palettes, mode, (palette, PaletteSource::Library));
                                 }
                             }
                         }
@@ -264,7 +272,7 @@ impl SelectPaletteDialog {
         // paint palette tag
         let font_type = match palette.1 {
             PaletteSource::BuiltIn => {
-                fl!(crate::LANGUAGE_LOADER, "font_selector-builtin_font")
+                fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font")
             }
             PaletteSource::Library => {
                 fl!(crate::LANGUAGE_LOADER, "font_selector-library_font")
@@ -310,6 +318,19 @@ impl SelectPaletteDialog {
             })
         }
     }
+}
+
+fn add_palette(
+    palettes: &mut Vec<(Palette, PaletteSource)>,
+    mode: icy_engine::PaletteMode,
+    mut palette: (Palette, PaletteSource),
+) {
+    match mode {
+        icy_engine::PaletteMode::RGB => {}
+        icy_engine::PaletteMode::Free16 | icy_engine::PaletteMode::Fixed16 => palette.0.resize(16),
+        icy_engine::PaletteMode::Free8 => palette.0.resize(8),
+    };
+    palettes.push(palette);
 }
 
 impl crate::ModalDialog for SelectPaletteDialog {
@@ -369,7 +390,7 @@ impl crate::ModalDialog for SelectPaletteDialog {
 
                     let response = ui.selectable_label(
                         self.show_builtin,
-                        fl!(crate::LANGUAGE_LOADER, "font_selector-builtin_font"),
+                        fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"),
                     );
                     if response.clicked() {
                         self.show_builtin = !self.show_builtin;

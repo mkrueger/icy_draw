@@ -295,6 +295,11 @@ undo-delete_character=Zeichen löschen
 undo-select=Auswahl
 undo-plugin=Erweiterung { $title }
 
+font_selector-ansi_font=ANSI
+font_selector-library_font=LIBRARY
+font_selector-file_font=FILE
+font_selector-sauce_font=SAUCE
+
 autosave-dialog-title=Autosave
 autosave-dialog-description=Icy Draw hat eine Autosave Datei gefunden.
 autosave-dialog-question=Was möchtest du tun?
@@ -333,8 +338,28 @@ animation_editor_export_button=Export
 animation_editor_gif_label=Gif
 animation_editor_ansi_label=Ansimation
 
-new-file-template-ansi-title=CP437 ANSI
-new-file-template-ansi-description=Ein neues DOS Ansi erstellen
+
+new-file-template-cp437-title=CP437 ANSI
+new-file-template-cp437-description=
+    Ein neues DOS Ansi erstellen
+    Limitiert zu 16 DOS Farben, Sauce Font, Blinken (kann umgestellt werden)
+new-file-template-ice-title=CP437 Ice ANSI
+new-file-template-ice-description=
+    Ein neues DOS Ansi erstellen
+    Limitiert zu 16 DOS Farben, Sauce Font, kein Blinken (kann umgestellt werden)
+new-file-template-xb-title=XB 16 Colors
+new-file-template-xb-description=
+    Ein neues XB File erstellen
+    Freie 16 Farben, 1 Font, kein Blinken (kann umgestellt werden)
+new-file-template-xb-ext-title=XB Extended Font
+new-file-template-xb-ext-description=
+    Ein neues XB File mit 2 Fonts erstellen
+    Freie 8 Farben, 2 Font, kein Blinken
+new-file-template-ansi-title=Modernes ANSI
+new-file-template-ansi-description=
+    Ein neues Ansi erstellen, ohne Restriktionen
+    Freie Palette, mehrere Fonts, Blinken
+
 new-file-template-file_id-title=FILE_ID.DIZ
 new-file-template-file_id-description=FILE_ID.DIZ erstellen
 new-file-template-ansimation-title=Ansimation

@@ -273,7 +273,7 @@ impl MainWindow {
                                     )
                                     .clicked()
                                 {
-                                    lock.get_buffer_mut().ice_mode = IceMode::Unlimited;
+                                    result = Some(Message::SwitchIceMode(IceMode::Unlimited));
                                     ui.close_menu();
                                 }
 
@@ -284,7 +284,7 @@ impl MainWindow {
                                     )
                                     .clicked()
                                 {
-                                    lock.get_buffer_mut().ice_mode = IceMode::Blink;
+                                    result = Some(Message::SwitchIceMode(IceMode::Blink));
                                     ui.close_menu();
                                 }
 
@@ -295,7 +295,7 @@ impl MainWindow {
                                     )
                                     .clicked()
                                 {
-                                    lock.get_buffer_mut().ice_mode = IceMode::Ice;
+                                    result = Some(Message::SwitchIceMode(IceMode::Ice));
                                     ui.close_menu();
                                 }
                             });
@@ -316,7 +316,7 @@ impl MainWindow {
                                         )
                                         .clicked()
                                     {
-                                        lock.get_buffer_mut().palette_mode = PaletteMode::RGB;
+                                        result = Some(Message::SwitchPaletteMode(PaletteMode::RGB));
                                         ui.close_menu();
                                     }
 
@@ -327,7 +327,8 @@ impl MainWindow {
                                         )
                                         .clicked()
                                     {
-                                        lock.get_buffer_mut().palette_mode = PaletteMode::Fixed16;
+                                        result =
+                                            Some(Message::SwitchPaletteMode(PaletteMode::Fixed16));
                                         ui.close_menu();
                                     }
 
@@ -338,7 +339,8 @@ impl MainWindow {
                                         )
                                         .clicked()
                                     {
-                                        lock.get_buffer_mut().palette_mode = PaletteMode::Free16;
+                                        result =
+                                            Some(Message::SwitchPaletteMode(PaletteMode::Free16));
                                         ui.close_menu();
                                     }
 
@@ -349,7 +351,8 @@ impl MainWindow {
                                         )
                                         .clicked()
                                     {
-                                        lock.get_buffer_mut().palette_mode = PaletteMode::Free8;
+                                        result =
+                                            Some(Message::SwitchPaletteMode(PaletteMode::Free8));
                                         ui.close_menu();
                                     }
                                 },

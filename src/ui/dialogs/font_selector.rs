@@ -7,7 +7,7 @@ use eframe::{
 use egui_extras::RetainedImage;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, BitFont, Buffer, TextAttribute, ANSI_FONTS};
+use icy_engine::{AttributedChar, BitFont, Buffer, TextAttribute, ANSI_FONTS, SAUCE_FONT_NAMES};
 use walkdir::WalkDir;
 
 use crate::{
@@ -15,7 +15,8 @@ use crate::{
 };
 
 enum BitfontSource {
-    BuiltIn(usize),
+    AnsiSlot(usize),
+    Sauce(String),
     File(usize),
     Library,
     LibraryAndFile(usize),
@@ -29,6 +30,7 @@ pub struct FontSelector {
     show_builtin: bool,
     show_library: bool,
     show_file: bool,
+    show_sauce: bool,
 
     image_cache: HashMap<usize, RetainedImage>,
     do_select: bool,
@@ -38,21 +40,35 @@ pub struct FontSelector {
 impl FontSelector {
     pub fn new(editor: &AnsiEditor) -> Self {
         let mut fonts = Vec::new();
-        for f in 0..ANSI_FONTS {
+        for f in SAUCE_FONT_NAMES {
             fonts.push((
-                BitFont::from_ansi_font_page(f).unwrap(),
-                BitfontSource::BuiltIn(f),
+                BitFont::from_sauce_name(f).unwrap(),
+                BitfontSource::Sauce(f.to_string()),
             ));
         }
 
-        if let Ok(font_dir) = Settings::get_font_diretory() {
-            for font in FontSelector::load_fonts(font_dir.as_path()) {
-                fonts.push((font, BitfontSource::Library));
+        let only_sauce_fonts = matches!(
+            editor.buffer_view.lock().get_buffer().font_mode,
+            icy_engine::FontMode::Sauce
+        );
+
+        if !only_sauce_fonts {
+            for f in 0..ANSI_FONTS {
+                fonts.push((
+                    BitFont::from_ansi_font_page(f).unwrap(),
+                    BitfontSource::AnsiSlot(f),
+                ));
+            }
+
+            if let Ok(font_dir) = Settings::get_font_diretory() {
+                for font in FontSelector::load_fonts(font_dir.as_path()) {
+                    fonts.push((font, BitfontSource::Library));
+                }
             }
         }
 
-        let cur_font = editor.buffer_view.lock().get_caret().get_font_page();
         let mut selected_font = 0;
+        let cur_font = editor.buffer_view.lock().get_caret().get_font_page();
 
         for (id, font) in editor.buffer_view.lock().get_buffer().font_iter() {
             let mut index = -1;
@@ -61,11 +77,13 @@ impl FontSelector {
                     index = i as i32;
                 }
             });
-            if index < 0 {
-                index = fonts.len() as i32;
-                fonts.push((font.clone(), BitfontSource::File(*id)));
-            } else {
-                fonts[index as usize].1 = BitfontSource::LibraryAndFile(*id);
+            if !only_sauce_fonts {
+                if index < 0 {
+                    index = fonts.len() as i32;
+                    fonts.push((font.clone(), BitfontSource::File(*id)));
+                } else {
+                    fonts[index as usize].1 = BitfontSource::LibraryAndFile(*id);
+                }
             }
 
             if *id == cur_font {
@@ -82,6 +100,7 @@ impl FontSelector {
             show_builtin: true,
             show_library: true,
             show_file: true,
+            show_sauce: true,
             edit_selected_font: false,
         }
     }
@@ -242,14 +261,17 @@ impl FontSelector {
             );
 
             let font_type = match font.1 {
-                BitfontSource::BuiltIn(_) => {
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-builtin_font")
+                BitfontSource::AnsiSlot(_) => {
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font")
                 }
                 BitfontSource::Library => {
                     fl!(crate::LANGUAGE_LOADER, "font_selector-library_font")
                 }
                 BitfontSource::LibraryAndFile(_) | BitfontSource::File(_) => {
                     fl!(crate::LANGUAGE_LOADER, "font_selector-file_font")
+                }
+                BitfontSource::Sauce(_) => {
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font")
                 }
             };
 
@@ -371,7 +393,7 @@ impl crate::ModalDialog for FontSelector {
 
                     let response = ui.selectable_label(
                         self.show_builtin,
-                        fl!(crate::LANGUAGE_LOADER, "font_selector-builtin_font"),
+                        fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"),
                     );
                     if response.clicked() {
                         self.show_builtin = !self.show_builtin;
@@ -384,9 +406,10 @@ impl crate::ModalDialog for FontSelector {
                 for i in 0..font_count {
                     let font = &self.fonts[i];
                     let match_filter = match font.1 {
-                        BitfontSource::BuiltIn(_) => self.show_builtin,
+                        BitfontSource::AnsiSlot(_) => self.show_builtin,
                         BitfontSource::File(_) => self.show_file,
                         BitfontSource::Library => self.show_library,
+                        BitfontSource::Sauce(_) => self.show_sauce,
                         BitfontSource::LibraryAndFile(_) => self.show_file || self.show_library,
                     };
 
@@ -488,19 +511,26 @@ impl crate::ModalDialog for FontSelector {
 
         if let Some((font, src)) = self.fonts.get(self.selected_font as usize) {
             match src {
-                BitfontSource::BuiltIn(id) => {
+                BitfontSource::AnsiSlot(id) => {
+                    return Ok(Some(Message::SwitchToAnsiFont(*id)));
+                    /*
                     editor.buffer_view.lock().get_caret_mut().set_font_page(*id);
                     editor
                         .buffer_view
                         .lock()
                         .get_buffer_mut()
                         .set_font(*id, font.clone());
+                    */
                 }
                 BitfontSource::LibraryAndFile(id) | BitfontSource::File(id) => {
-                    editor.buffer_view.lock().get_caret_mut().set_font_page(*id);
+                    return Ok(Some(Message::SwitchToFontPage(*id)));
+                }
+                BitfontSource::Sauce(id) => {
+                    return Ok(Some(Message::SwitchToSauceFont(id.clone())));
                 }
                 BitfontSource::Library => {
                     let mut font_set = false;
+                    let mut font_slot = 0;
                     editor
                         .buffer_view
                         .lock()
@@ -508,13 +538,19 @@ impl crate::ModalDialog for FontSelector {
                         .font_iter()
                         .for_each(|(id, f)| {
                             if f == font {
-                                editor.buffer_view.lock().get_caret_mut().set_font_page(*id);
+                                font_slot = *id;
                                 font_set = true;
                             }
                         });
+                    if font_set {
+                        return Ok(Some(Message::SwitchToFontPage(font_slot)));
+                    }
 
                     if !font_set {
+                        return Ok(Some(Message::SetFont(Box::new(font.clone()))));
+                        /*
                         for i in 100.. {
+
                             if !editor.buffer_view.lock().get_buffer().has_font(i) {
                                 editor.buffer_view.lock().get_caret_mut().set_font_page(i);
                                 editor
@@ -524,7 +560,7 @@ impl crate::ModalDialog for FontSelector {
                                     .set_font(i, font.clone());
                                 break;
                             }
-                        }
+                        }*/
                     }
                 }
             }

@@ -11,8 +11,8 @@ use eframe::{
     epaint::Vec2,
 };
 use icy_engine::{
-    util::pop_data, BitFont, EngineResult, Layer, SauceData, Size, TextAttribute, TextPane,
-    TheDrawFont,
+    util::pop_data, BitFont, EngineResult, IceMode, Layer, PaletteMode, SauceData, Size,
+    TextAttribute, TextPane, TheDrawFont,
 };
 
 use crate::{
@@ -149,6 +149,12 @@ pub enum Message {
     ShowSettings,
     ToggleLGAFont,
     ToggleAspectRatio,
+    SwitchToFontPage(usize),
+    SwitchToAnsiFont(usize),
+    SetFont(Box<BitFont>),
+    SwitchToSauceFont(String),
+    SwitchPaletteMode(PaletteMode),
+    SwitchIceMode(IceMode),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -1187,6 +1193,75 @@ impl MainWindow {
                             .lock()
                             .get_edit_state_mut()
                             .update_sauce_data(Some(sauce_data)),
+                    )
+                });
+            }
+
+            Message::SwitchToFontPage(page) => {
+                self.run_editor_command(page, |_, editor, page| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .switch_to_font_page(page),
+                    )
+                });
+            }
+            Message::SwitchToAnsiFont(page) => {
+                self.run_editor_command(page, |_, editor, page| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .switch_to_ansi_font(page),
+                    )
+                });
+            }
+            Message::SwitchToSauceFont(name) => {
+                self.run_editor_command(name, |_, editor, name| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .switch_to_sauce_font(&name),
+                    )
+                });
+            }
+            Message::SetFont(fnt) => {
+                self.run_editor_command(fnt, |_, editor, fnt| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .set_font(*fnt),
+                    )
+                });
+            }
+
+            Message::SwitchPaletteMode(mode) => {
+                self.run_editor_command(mode, |_, editor, mode| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .set_palette_mode(mode),
+                    )
+                });
+            }
+
+            Message::SwitchIceMode(mode) => {
+                self.run_editor_command(mode, |_, editor, mode| {
+                    to_message(
+                        editor
+                            .buffer_view
+                            .lock()
+                            .get_edit_state_mut()
+                            .set_ice_mode(mode),
                     )
                 });
             }

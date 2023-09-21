@@ -295,9 +295,10 @@ undo-delete_character=Delete character
 undo-select=Select
 undo-plugin=Plugin { $title }
 
-font_selector-builtin_font=BUILTIN
+font_selector-ansi_font=ANSI
 font_selector-library_font=LIBRARY
 font_selector-file_font=FILE
+font_selector-sauce_font=SAUCE
 
 autosave-dialog-title=Autosave
 autosave-dialog-description=Found an autosave for this file.
@@ -337,8 +338,27 @@ animation_editor_export_button=Export
 animation_editor_gif_label=Gif
 animation_editor_ansi_label=Ansimation
 
-new-file-template-ansi-title=CP437 ANSI
-new-file-template-ansi-description=Create a new DOS ANSI file
+new-file-template-cp437-title=CP437 ANSI
+new-file-template-cp437-description=
+    Create a new DOS 16 color ANSI file
+    Limited to 16 DOS colors and Sauce font, has blink (can be switched)
+new-file-template-ice-title=CP437 Ice ANSI
+new-file-template-ice-description=
+    Create a new DOS 16 color ice ANSI file
+    Limited to 16 DOS colors and Sauce font, no blink (can be switched)
+new-file-template-xb-title=XB 16 Colors
+new-file-template-xb-description=
+    Create a new XB file
+    Free 16 color palette, 1 font, no blink (can be switched)
+new-file-template-xb-ext-title=XB Extended Font
+new-file-template-xb-ext-description=
+    Create a new XB file containing two fonts
+    Free 8 color palette, 2 fonts, no blink
+new-file-template-ansi-title=Modern ANSI
+new-file-template-ansi-description=
+    Create a new Ansi file without restrictions
+    Unlimited palette, multiple fonts, blink
+
 new-file-template-file_id-title=FILE_ID.DIZ
 new-file-template-file_id-description=Create a new FILE_ID.DIZ file
 new-file-template-ansimation-title=Ansimation

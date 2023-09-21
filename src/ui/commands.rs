@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use eframe::egui::{self, Modifiers};
 use egui_bind::{BindTarget, KeyOrPointer};
 use i18n_embed_fl::fl;
+use icy_engine::PaletteMode;
 
 use crate::{button_with_shortcut, DocumentTab, Message, SETTINGS};
 
@@ -27,6 +28,25 @@ impl CommandState for BufferOpenState {
         if let Some(pane) = open_tab_opt {
             if let Ok(doc) = pane.doc.lock() {
                 return doc.get_ansi_editor().is_some();
+            }
+        }
+        false
+    }
+}
+
+#[derive(Default)]
+pub struct CanSwitchPaletteState {}
+
+impl CommandState for CanSwitchPaletteState {
+    fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
+        if let Some(pane) = open_tab_opt {
+            if let Ok(doc) = pane.doc.lock() {
+                if let Some(editor) = doc.get_ansi_editor() {
+                    return !matches!(
+                        editor.buffer_view.lock().get_buffer().palette_mode,
+                        PaletteMode::Fixed16
+                    );
+                }
             }
         }
         false
@@ -833,7 +853,7 @@ keys![
         select_palette,
         "menu-select_palette",
         SelectPalette,
-        BufferOpenState
+        CanSwitchPaletteState
     ),
     (
         show_layer_borders,
