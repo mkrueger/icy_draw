@@ -167,8 +167,8 @@ impl Template for XBExtTemplate {
         buf.palette =
             icy_engine::Palette::from_colors(icy_engine::DOS_DEFAULT_PALETTE[0..8].to_vec());
         buf.ice_mode = icy_engine::IceMode::Ice;
-        buf.palette_mode = icy_engine::PaletteMode::Free8;
-        buf.font_mode = icy_engine::FontMode::Dual;
+        buf.palette_mode = icy_engine::PaletteMode::Free16;
+        buf.font_mode = icy_engine::FontMode::FixedSize;
         buf.set_font(1, BitFont::default());
         let id = window.create_id();
         let editor = AnsiEditor::new(&window.gl, id, buf);

@@ -430,12 +430,12 @@ impl MainWindow {
 
                                 if ui
                                     .selectable_label(
-                                        lock.get_buffer().font_mode == FontMode::Dual,
+                                        lock.get_buffer().font_mode == FontMode::FixedSize,
                                         fl!(crate::LANGUAGE_LOADER, "menu-font-mode-dual"),
                                     )
                                     .clicked()
                                 {
-                                    lock.get_buffer_mut().font_mode = FontMode::Dual;
+                                    lock.get_buffer_mut().font_mode = FontMode::FixedSize;
                                     ui.close_menu();
                                 }
                             });
