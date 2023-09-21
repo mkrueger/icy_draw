@@ -365,7 +365,7 @@ new-file-template-xb-description=
 new-file-template-xb-ext-title=XB Extended Font
 new-file-template-xb-ext-description=
     Ein neues XB File mit 2 Fonts erstellen
-    Freie 8 Farben, 2 Font, kein Blinken
+    Freie 16 Farben, 8 Vordergrund, 16 Hintergrund, 2 Font, kein Blinken
 new-file-template-ansi-title=Modernes ANSI
 new-file-template-ansi-description=
     Ein neues Ansi erstellen, ohne Restriktionen

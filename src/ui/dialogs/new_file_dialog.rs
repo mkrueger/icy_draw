@@ -164,8 +164,6 @@ impl Template for XBExtTemplate {
 
     fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
         let mut buf = Buffer::create((self.width, self.height));
-        buf.palette =
-            icy_engine::Palette::from_colors(icy_engine::DOS_DEFAULT_PALETTE[0..8].to_vec());
         buf.ice_mode = icy_engine::IceMode::Ice;
         buf.palette_mode = icy_engine::PaletteMode::Free16;
         buf.font_mode = icy_engine::FontMode::FixedSize;
