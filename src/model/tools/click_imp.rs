@@ -190,11 +190,11 @@ impl Tool for ClickTool {
         response
     }
 
-    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Option<Message> {
         if !matches!(self.selection_drag, SelectionDrag::None) {
             self.selection_drag = SelectionDrag::None;
             self.undo_op = None;
-            return Event::None;
+            return None;
         }
 
         let mut cur = editor.drag_pos.cur;
@@ -207,7 +207,7 @@ impl Tool for ClickTool {
         }
         self.undo_op = None;
 
-        Event::None
+        None
     }
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {

@@ -733,7 +733,11 @@ impl AnsiEditor {
         }
 
         if response.drag_released_by(egui::PointerButton::Primary) {
-            cur_tool.handle_drag_end(self);
+            let msg = cur_tool.handle_drag_end(self);
+            if msg.is_some() {
+                *message = msg;
+            }
+
             self.drag_started = false;
             self.redraw_view();
         }

@@ -6,8 +6,8 @@ use icy_engine_egui::TerminalCalc;
 use crate::{AnsiEditor, Message};
 
 use super::{
-    brush_imp::draw_glyph, line_imp::set_half_block, plot_point, DrawMode, Event, Plottable,
-    Position, ScanLines, Tool,
+    brush_imp::draw_glyph, line_imp::set_half_block, plot_point, DrawMode, Plottable, Position,
+    ScanLines, Tool,
 };
 
 pub struct DrawEllipseTool {
@@ -160,12 +160,12 @@ impl Tool for DrawEllipseTool {
         response
     }
 
-    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Option<Message> {
         if editor.drag_pos.start == editor.drag_pos.cur {
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {
             editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-draw-ellipse"));
         }
-        Event::None
+        None
     }
 }

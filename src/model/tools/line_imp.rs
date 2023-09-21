@@ -5,7 +5,7 @@ use icy_engine_egui::TerminalCalc;
 
 use crate::{model::ScanLines, AnsiEditor, Message};
 
-use super::{brush_imp::draw_glyph, plot_point, DrawMode, Event, Plottable, Position, Tool};
+use super::{brush_imp::draw_glyph, plot_point, DrawMode, Plottable, Position, Tool};
 
 pub struct LineTool {
     pub draw_mode: DrawMode,
@@ -304,13 +304,13 @@ impl Tool for LineTool {
         response
     }
 
-    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Option<Message> {
         if editor.drag_pos.start == editor.drag_pos.cur {
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         } else {
             editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-line"));
         }
-        Event::None
+        None
     }
 }
 

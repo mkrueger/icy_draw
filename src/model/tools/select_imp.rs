@@ -4,7 +4,7 @@ use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle};
 use icy_engine_egui::TerminalCalc;
 
-use crate::{AnsiEditor, Message};
+use crate::{to_message, AnsiEditor, Message};
 
 use super::{Event, Position, Tool};
 
@@ -324,16 +324,16 @@ impl Tool for SelectTool {
         response
     }
 
-    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Option<Message> {
         if self.mode != SelectionMode::Normal {
             self.undo_op = None;
-            return Event::None;
+            return None;
         }
 
         if !matches!(self.selection_drag, SelectionDrag::None) {
             self.selection_drag = SelectionDrag::None;
             self.undo_op = None;
-            return Event::None;
+            return None;
         }
 
         let mut cur = editor.drag_pos.cur;
@@ -346,10 +346,9 @@ impl Tool for SelectTool {
         }
 
         let lock = &mut editor.buffer_view.lock();
-        let _ = lock.get_edit_state_mut().add_selection_to_mask();
         self.undo_op = None;
 
-        Event::None
+        to_message(lock.get_edit_state_mut().add_selection_to_mask())
     }
 }
 

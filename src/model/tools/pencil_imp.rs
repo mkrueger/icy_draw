@@ -262,10 +262,10 @@ impl Tool for PencilTool {
         Event::None
     }
 
-    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Option<Message> {
         editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
         self.undo_op = None;
-        Event::None
+        None
     }
 
     fn get_toolbar_location_text(&self, _editor: &AnsiEditor) -> String {

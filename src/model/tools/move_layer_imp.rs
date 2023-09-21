@@ -1,5 +1,5 @@
 use super::{Event, Position, Tool};
-use crate::{AnsiEditor, Message};
+use crate::{to_message, AnsiEditor, Message};
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine_egui::TerminalCalc;
@@ -85,17 +85,17 @@ impl Tool for MoveLayer {
         response.on_hover_cursor(egui::CursorIcon::Move)
     }
 
-    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Option<Message> {
         if !self.drag_started {
-            return Event::None;
+            return None;
         }
-        editor
-            .buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .move_layer(self.drag_offset)
-            .unwrap();
-        Event::None
+        to_message(
+            editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .move_layer(self.drag_offset),
+        )
     }
 }
 

@@ -214,9 +214,9 @@ impl Tool for PasteTool {
         response.on_hover_cursor(egui::CursorIcon::Move)
     }
 
-    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Event {
+    fn handle_drag_end(&mut self, editor: &mut AnsiEditor) -> Option<Message> {
         if !self.drag_started {
-            return Event::None;
+            return None;
         }
         editor
             .buffer_view
@@ -224,7 +224,7 @@ impl Tool for PasteTool {
             .get_edit_state_mut()
             .move_layer(self.drag_offset)
             .unwrap();
-        Event::None
+        None
     }
 
     fn get_toolbar_location_text(&self, editor: &AnsiEditor) -> String {
