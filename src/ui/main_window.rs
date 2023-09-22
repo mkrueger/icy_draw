@@ -615,7 +615,7 @@ impl eframe::App for MainWindow {
                 let mut msg = None;
 
                 let mut caret_attr = TextAttribute::default();
-                let mut palette = Palette::default();
+                let mut palette = Palette::dos_default();
                 let mut ice_mode = icy_engine::IceMode::Unlimited;
                 let mut font_mode = icy_engine::FontMode::Unlimited;
 

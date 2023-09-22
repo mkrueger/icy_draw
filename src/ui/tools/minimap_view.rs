@@ -92,7 +92,7 @@ impl MinimapToolWindow {
             buffer_view: Arc::new(eframe::epaint::mutex::Mutex::new(buffer_view)),
             last_id: usize::MAX,
             undo_size: -1,
-            palette: Palette::default(),
+            palette: Palette::dos_default(),
         }
     }
 }
