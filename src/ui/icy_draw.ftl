@@ -158,10 +158,7 @@ export-video-preparation-Clear=Bildschirm löschen
 export-video-preparation-Home=Cursor zurücksetzen
 export-utf8-output-label=UTF-8 Ausgabe
 export-save-sauce-label=SAUCE Info speichern
-export-compression-level-label=Kompressionsstufe
-export-compression-level-off=Keine
-export-compression-level-medium=Mittel
-export-compression-level-high=Hoch
+export-compression-label=Ausgabe komprimieren
 export-limit-output-line-length-label=Maximale Ausgabe-Zeilenlänge
 export-maximum_line_length=Maximale Zeilenlänge
 
