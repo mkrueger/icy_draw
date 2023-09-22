@@ -476,11 +476,17 @@ impl Tool for FontTool {
                         fl!(crate::LANGUAGE_LOADER, "undo-render_character"),
                         OperationType::RenderCharacter,
                     );
+
+                let outline_style = if editor.outline_font_mode {
+                    usize::MAX
+                } else {
+                    Settings::get_font_outline_style()
+                };
                 editor
                     .buffer_view
                     .lock()
                     .get_edit_state_mut()
-                    .set_outline_style(Settings::get_font_outline_style());
+                    .set_outline_style(outline_style);
 
                 let _ = editor
                     .buffer_view
