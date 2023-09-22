@@ -258,7 +258,6 @@ impl MainWindow {
 
         match Buffer::from_bytes(path, true, data) {
             Ok(mut buf) => {
-                println!("size: {}", icy_engine::TextPane::get_size(&buf));
                 let id = self.create_id();
                 buf.is_terminal_buffer = false;
                 let editor = AnsiEditor::new(&self.gl, id, buf);

@@ -255,8 +255,8 @@ impl AnsiEditor {
             guide: None,
             raster: None,
             outline_font_mode: false,
-            next_scroll_x_position: None,
-            next_scroll_y_position: None,
+            next_scroll_x_position: Some(0.0),
+            next_scroll_y_position: Some(0.0),
             half_block_click_pos: Position::default(),
         }
     }

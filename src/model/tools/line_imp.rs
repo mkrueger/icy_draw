@@ -412,6 +412,7 @@ pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
     if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 {
         return;
     }
+
     let (
         _,
         text_y,
@@ -555,7 +556,7 @@ fn optimize_block(editor: &AnsiEditor, pos: Position) {
             }
         }
     } else if block.attribute.get_foreground() < 8 && block.attribute.get_background() >= 8 {
-        let (pos, _, is_blocky, is_vertically_blocky, _, _, _, _, _, _, _) =
+        let (_, _, is_blocky, is_vertically_blocky, _, _, _, _, _, _, _) =
             get_half_block(editor, pos);
 
         if is_blocky {
