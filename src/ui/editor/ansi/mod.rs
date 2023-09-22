@@ -46,7 +46,8 @@ pub struct AnsiEditor {
     // pub outline_changed: std::boxed::Box<dyn Fn(&Editor)>,
     //pub request_refresh: Box<dyn Fn ()>,
     pub egui_id: Id,
-    pub next_scroll_position: Option<f32>,
+    pub next_scroll_x_position: Option<f32>,
+    pub next_scroll_y_position: Option<f32>,
     pub guide: Option<Vec2>,
     pub raster: Option<Vec2>, //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
                               //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
@@ -205,7 +206,8 @@ impl Document for AnsiEditor {
             id: Some(Id::new(self.id + 10000)),
             raster: self.raster,
             guide: self.guide,
-            scroll_offset: self.next_scroll_position.take(),
+            scroll_offset_y: self.next_scroll_y_position.take(),
+            scroll_offset_x: self.next_scroll_x_position.take(),
             show_layer_borders: unsafe { SETTINGS.show_layer_borders },
             show_line_numbers: unsafe { SETTINGS.show_line_numbers },
             ..Default::default()
@@ -253,7 +255,8 @@ impl AnsiEditor {
             guide: None,
             raster: None,
             outline_font_mode: false,
-            next_scroll_position: None,
+            next_scroll_x_position: None,
+            next_scroll_y_position: None,
             half_block_click_pos: Position::default(),
         }
     }
@@ -366,35 +369,38 @@ impl AnsiEditor {
         let h = self.buffer_view.lock().get_buffer().get_height() - 1;
 
         let char_scroll_position = self.buffer_view.lock().calc.char_scroll_positon;
-        let terminal_height = self.buffer_view.lock().calc.terminal_rect.height();
-        let buffer_height = self
-            .buffer_view
-            .lock()
-            .calc
-            .buffer_rect
-            .height()
-            .min(terminal_height);
+        let terminal_rect = self.buffer_view.lock().calc.terminal_rect;
+        let terminal_width = terminal_rect.width();
+        let terminal_height = terminal_rect.height();
+        let rect = self.buffer_view.lock().calc.buffer_rect;
+        let buffer_width = rect.width().min(terminal_width);
+        let buffer_height = rect.height().min(terminal_height);
+        let buffer_char_width = buffer_width / self.buffer_view.lock().calc.scale.x;
         let buffer_char_height = buffer_height / self.buffer_view.lock().calc.scale.y;
 
         let y = min(max(0, y), h);
         self.set_caret_position(Position::new(min(max(0, x), w), y));
 
-        let char_height = self
-            .buffer_view
-            .lock()
-            .get_buffer()
-            .get_font_dimensions()
-            .height as f32;
-        let y = y as f32 * char_height;
+        let font_dim = self.buffer_view.lock().get_buffer().get_font_dimensions();
+        let x = x as f32 * font_dim.width as f32;
 
-        if y < char_scroll_position {
-            self.next_scroll_position = Some(y);
+        let y = y as f32 * font_dim.height as f32;
+        let mut next_y = None;
+        let mut next_x = None;
+        if y < char_scroll_position.y {
+            next_y = Some(y);
         }
-
-        if y > (char_scroll_position + buffer_char_height - char_height) {
-            self.next_scroll_position = Some((y - buffer_char_height + char_height).max(0.0));
+        if x < char_scroll_position.x {
+            next_x = Some(x);
         }
-
+        if y > (char_scroll_position.y + buffer_char_height - font_dim.height as f32) {
+            next_y = Some((y - buffer_char_height + font_dim.height as f32).max(0.0));
+        }
+        if x > (char_scroll_position.x + buffer_char_width - font_dim.width as f32) {
+            next_x = Some((x - buffer_char_width + font_dim.width as f32).max(0.0));
+        }
+        self.next_scroll_x_position = next_x;
+        self.next_scroll_y_position = next_y;
         Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())
     }
 
@@ -630,7 +636,9 @@ impl AnsiEditor {
 
         if response.clicked_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
+                if calc.buffer_rect.contains(mouse_pos)
+                    && !calc.vert_scrollbar_rect.contains(mouse_pos)
+                    && !calc.horiz_scrollbar_rect.contains(mouse_pos)
                 {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
@@ -661,7 +669,9 @@ impl AnsiEditor {
 
         if response.drag_started_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
+                if calc.buffer_rect.contains(mouse_pos)
+                    && !calc.vert_scrollbar_rect.contains(mouse_pos)
+                    && !calc.horiz_scrollbar_rect.contains(mouse_pos)
                 {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
@@ -716,7 +726,9 @@ impl AnsiEditor {
             .clear();
         if response.hovered() {
             if let Some(mouse_pos) = response.hover_pos() {
-                if calc.buffer_rect.contains(mouse_pos) && !calc.scrollbar_rect.contains(mouse_pos)
+                if calc.buffer_rect.contains(mouse_pos)
+                    && !calc.vert_scrollbar_rect.contains(mouse_pos)
+                    && !calc.horiz_scrollbar_rect.contains(mouse_pos)
                 {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
