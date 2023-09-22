@@ -92,9 +92,6 @@ impl Settings {
 
     pub fn add_recent_file(file: &Path) {
         unsafe {
-            if !file.exists() {
-                return;
-            }
             let file = file.to_path_buf();
             for i in 0..SETTINGS.recent_files.len() {
                 if SETTINGS.recent_files[i] == file {
