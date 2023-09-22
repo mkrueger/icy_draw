@@ -31,6 +31,7 @@ pub struct CharFontEditor {
     fonts: Vec<TheDrawFont>,
     undostack_len: usize,
     last_update_preview: usize,
+    last_update_preview_attr: TextAttribute,
     outline_selection: crate::SelectOutlineDialog,
     draw_outline_bg: bool,
     opt_cheat_sheet: Option<RetainedImage>,
@@ -276,7 +277,7 @@ impl Document for CharFontEditor {
 
                 let mut is_outline = false;
                 for layer in &mut self
-                    .ansi_editor
+                .ansi_editor
                     .buffer_view
                     .lock()
                     .get_edit_state_mut()
@@ -285,14 +286,13 @@ impl Document for CharFontEditor {
                 {
                     match self.fonts[self.selected_font].font_type {
                         icy_engine::FontType::Outline => {
-                            layer.forced_output_attribute = Some(attr);
                             is_outline = true;
+                            set_attribute(layer, attr);
                         }
                         icy_engine::FontType::Block => {
-                            layer.forced_output_attribute = Some(attr);
+                            set_attribute(layer, attr);
                         }
                         icy_engine::FontType::Color => {
-                            layer.forced_output_attribute = None;
                         }
                     }
                 }
@@ -392,7 +392,13 @@ impl Document for CharFontEditor {
 
                         if let Some(cheat_sheet) = & self.opt_cheat_sheet {
                             ui.vertical_centered(|ui| {
-                            cheat_sheet.show(ui);
+                                let width = ui.available_width();
+                                let mut size = Vec2::new(cheat_sheet.width() as f32, cheat_sheet.height() as f32);
+                                if width < size.x {
+                                    size.y *= width / size.x;
+                                    size.x = width;
+                                }
+                                cheat_sheet.show_size(ui, size);
                             });
                         }
                     });
@@ -413,8 +419,16 @@ impl Document for CharFontEditor {
             .lock()
             .get_edit_state()
             .undo_stack_len();
-        if self.last_update_preview != u {
+        let attr = self
+            .ansi_editor
+            .buffer_view
+            .lock()
+            .get_edit_state()
+            .get_caret()
+            .get_attribute();
+        if self.last_update_preview != u || self.last_update_preview_attr != attr {
             self.last_update_preview = u;
+            self.last_update_preview_attr = attr;
             self.save_old_selected_char();
             self.render_outline_preview();
         }
@@ -433,6 +447,19 @@ impl Document for CharFontEditor {
     fn destroy(&self, gl: &glow::Context) -> Option<Message> {
         self.ansi_editor.destroy(gl);
         None
+    }
+}
+
+fn set_attribute(layer: &mut Layer, attr: TextAttribute) {
+    for y in 0..layer.get_size().height {
+        for x in 0..layer.get_size().width {
+            let mut c = layer.get_char((x, y));
+            if !c.is_visible() {
+                continue;
+            }
+            c.attribute = attr;
+            layer.set_char((x, y), c);
+        }
     }
 }
 
@@ -462,6 +489,7 @@ impl CharFontEditor {
             last_update_preview: 0,
             opt_cheat_sheet: None,
             draw_outline_bg: true,
+            last_update_preview_attr: TextAttribute::default(),
         };
         res.show_selected_char();
         res
