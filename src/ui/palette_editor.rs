@@ -249,12 +249,21 @@ pub fn palette_editor_16(
             ],
             stroke,
         );
+
         if let Some(hp) = response.hover_pos() {
             let pos = (hp.to_vec2() - stroke_rect.left_top().to_vec2()) / Vec2::new(height, height);
             let color = min(
                 palette.len() as u32 - 1,
                 pos.x as u32 + pos.y as u32 * items_per_row as u32,
             );
+
+            if response.hovered() {
+                response = response.on_hover_ui(|ui| {
+                    let (r, g, b) = palette.get_rgb(color as usize);
+                    ui.label(format!("#{:02X}{:02X}{:02X}", r, g, b));
+                });
+            }
+
             if response.clicked() {
                 if color < 8 || font_mode.has_high_fg_colors() || palette.len() > 16 {
                     result = Some(Message::SetForeground(color));

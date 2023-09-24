@@ -52,7 +52,7 @@ impl AnimationEditor {
     pub fn new(gl: &Arc<glow::Context>, id: usize, path: &Path, txt: String) -> Self {
         let mut buffer = Buffer::new(Size::new(80, 25));
         buffer.is_terminal_buffer = true;
-        let mut buffer_view = BufferView::from_buffer(gl, buffer, glow::NEAREST as i32);
+        let mut buffer_view = BufferView::from_buffer(gl, buffer);
         buffer_view.interactive = false;
         let buffer_view = Arc::new(Mutex::new(buffer_view));
         let parent_path = path.parent().map(|p| p.to_path_buf());

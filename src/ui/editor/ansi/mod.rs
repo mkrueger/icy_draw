@@ -238,11 +238,7 @@ impl Document for AnsiEditor {
 
 impl AnsiEditor {
     pub fn new(gl: &Arc<glow::Context>, id: usize, buf: Buffer) -> Self {
-        let buffer_view = Arc::new(Mutex::new(BufferView::from_buffer(
-            gl,
-            buf,
-            glow::NEAREST as i32,
-        )));
+        let buffer_view = Arc::new(Mutex::new(BufferView::from_buffer(gl, buf)));
         // let buffer_parser = ansi::Parser::default();
         AnsiEditor {
             id,

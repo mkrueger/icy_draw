@@ -471,7 +471,7 @@ impl CharFontEditor {
 
         let mut buffer = Buffer::new(Size::new(30, 12));
         buffer.is_terminal_buffer = true;
-        let mut buffer_view = BufferView::from_buffer(gl, buffer, glow::NEAREST as i32);
+        let mut buffer_view = BufferView::from_buffer(gl, buffer);
         buffer_view.interactive = false;
         let outline_previewbuffer_view = Arc::new(Mutex::new(buffer_view));
 

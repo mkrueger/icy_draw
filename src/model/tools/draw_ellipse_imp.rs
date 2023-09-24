@@ -132,7 +132,7 @@ impl Tool for DrawEllipseTool {
         } else {
             lines.add_ellipse(Rectangle::from_pt(cur, start));
         }
-
+        println!("{start} -> {cur}");
         let col = editor
             .buffer_view
             .lock()
