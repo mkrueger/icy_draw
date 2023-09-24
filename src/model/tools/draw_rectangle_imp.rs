@@ -44,8 +44,7 @@ impl Tool for DrawRectangleTool {
     ) -> Option<Message> {
         self.color_mode.show_ui(ui);
         self.draw_mode
-            .show_ui(ui, editor_opt, self.char_code.clone());
-        None
+            .show_ui(ui, editor_opt, self.char_code.clone(), true)
     }
 
     fn handle_hover(

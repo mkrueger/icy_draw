@@ -1,9 +1,9 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Position, TextAttribute, TextPane};
+use icy_engine::{AttributedChar, Position, TextAttribute, TextPane, TheDrawFont};
 use icy_engine_egui::BufferView;
 
-use crate::{model::brush_imp::draw_glyph, AnsiEditor};
+use crate::{model::brush_imp::draw_glyph, AnsiEditor, Message};
 
 use self::half_block::get_half_block;
 
@@ -19,6 +19,7 @@ pub use ellipse::*;
 pub enum BrushMode {
     Block,
     HalfBlock,
+    Outline,
     Char(std::rc::Rc<std::cell::RefCell<char>>),
     Shade,
     Colorize,
@@ -30,7 +31,9 @@ impl BrushMode {
         ui: &mut egui::Ui,
         editor_opt: Option<&AnsiEditor>,
         char_code: std::rc::Rc<std::cell::RefCell<char>>,
-    ) {
+        show_outline:bool
+    ) -> Option<Message> {
+        let mut msg = None;
         ui.radio_value(
             self,
             BrushMode::HalfBlock,
@@ -41,6 +44,26 @@ impl BrushMode {
             BrushMode::Block,
             fl!(crate::LANGUAGE_LOADER, "tool-full-block"),
         );
+
+        if show_outline { 
+            
+            ui.horizontal(|ui| { 
+                ui.radio_value(
+                    self,
+                    BrushMode::Outline,
+                    fl!(crate::LANGUAGE_LOADER, "tool-outline"),
+                );
+                if ui
+                .button(fl!(
+                    crate::LANGUAGE_LOADER,
+                    "font_tool_select_outline_button"
+                ))
+                .clicked()
+                {
+                    msg = Some(Message::ShowOutlineDialog);
+                }
+            });
+        }
 
         ui.horizontal(|ui| {
             ui.radio_value(
@@ -62,6 +85,8 @@ impl BrushMode {
             BrushMode::Colorize,
             fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
         );
+
+        msg
     }
 }
 
@@ -168,6 +193,28 @@ pub fn plot_point(
         BrushMode::Char(ch) => {
             layer.set_char(text_pos, AttributedChar::new(*ch.borrow(), attribute));
         }
+
+        BrushMode::Outline => {
+            if overlay_ch.is_visible() {
+                return;
+            }
+            let ch = match point_role {
+                PointRole::NWCorner => 'E',
+                PointRole::NECorner => 'F',
+                PointRole::SWCorner => 'K',
+                PointRole::SECorner => 'L',
+                PointRole::LeftSide => 'C',
+                PointRole::RightSide => 'D',
+                PointRole::TopSide => 'A',
+                PointRole::BottomSide => 'B',
+                _ => {
+                    return;
+                }
+            };
+            let outline_style = crate::Settings::get_font_outline_style();
+            layer.set_char(text_pos, AttributedChar::new(TheDrawFont::transform_outline(outline_style, ch as u8) as char, attribute));
+        }
+
         BrushMode::Shade => {
             let mut char_code = SHADE_GRADIENT[0];
             if ch.ch == SHADE_GRADIENT[SHADE_GRADIENT.len() - 1] {

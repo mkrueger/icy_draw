@@ -55,8 +55,7 @@ impl Tool for PencilTool {
     ) -> Option<Message> {
         self.color_mode.show_ui(ui);
         self.draw_mode
-            .show_ui(ui, editor_opt, self.char_code.clone());
-        None
+            .show_ui(ui, editor_opt, self.char_code.clone(), false)
     }
 
     fn handle_click(
