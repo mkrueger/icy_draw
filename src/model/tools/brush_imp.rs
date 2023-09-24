@@ -8,7 +8,7 @@ use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Layer, TextPane};
 use icy_engine_egui::TerminalCalc;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{create_retained_image, AnsiEditor, Event, Message};
+use crate::{create_retained_image, paint::ColorMode, AnsiEditor, Event, Message};
 
 use super::{Position, Tool};
 
@@ -24,8 +24,7 @@ pub enum BrushType {
 pub static mut CUSTOM_BRUSH: Option<Layer> = None;
 
 pub struct BrushTool {
-    use_fore: bool,
-    use_back: bool,
+    color_mode: ColorMode,
     size: i32,
     char_code: Rc<RefCell<char>>,
 
@@ -40,8 +39,7 @@ impl Default for BrushTool {
     fn default() -> Self {
         Self {
             size: 3,
-            use_back: true,
-            use_fore: true,
+            color_mode: ColorMode::Both,
             undo_op: None,
             custom_brush: None,
             image: None,
@@ -88,10 +86,19 @@ impl BrushTool {
                 {
                     continue;
                 }
+                let ch = editor.get_char_from_cur_layer(pos);
+                let mut attribute = ch.attribute;
+                attribute.attr &= !icy_engine::attribute::INVISIBLE;
+
+                if self.color_mode.use_fore() {
+                    attribute.set_foreground(caret_attr.get_foreground());
+                }
+                if self.color_mode.use_back() {
+                    attribute.set_background(caret_attr.get_background());
+                }
 
                 match self.brush_type {
                     BrushType::Shade => {
-                        let ch = editor.get_char_from_cur_layer(pos);
                         let mut char_code = gradient[0];
                         if ch.ch == gradient[gradient.len() - 1] {
                             char_code = gradient[gradient.len() - 1];
@@ -103,23 +110,15 @@ impl BrushTool {
                                 }
                             }
                         }
-                        editor.set_char(pos, AttributedChar::new(char_code, caret_attr));
+                        editor.set_char(pos, AttributedChar::new(char_code, attribute));
                     }
                     BrushType::Solid => {
                         editor.set_char(
                             center + Position::new(x, y),
-                            AttributedChar::new(*self.char_code.borrow(), caret_attr),
+                            AttributedChar::new(*self.char_code.borrow(), attribute),
                         );
                     }
                     BrushType::Color => {
-                        let ch = editor.get_char_from_cur_layer(pos);
-                        let mut attribute = ch.attribute;
-                        if self.use_fore {
-                            attribute.set_foreground(caret_attr.get_foreground());
-                        }
-                        if self.use_back {
-                            attribute.set_background(caret_attr.get_background());
-                        }
                         editor.set_char(pos, AttributedChar::new(ch.ch, attribute));
                     }
                     BrushType::Custom => {}
@@ -145,22 +144,8 @@ impl Tool for BrushTool {
         buffer_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         let mut result = None;
-        ui.vertical_centered(|ui| {
-            ui.horizontal(|ui| {
-                if ui
-                    .selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg"))
-                    .clicked()
-                {
-                    self.use_fore = !self.use_fore;
-                }
-                if ui
-                    .selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg"))
-                    .clicked()
-                {
-                    self.use_back = !self.use_back;
-                }
-            });
-        });
+        self.color_mode.show_ui(ui);
+
         ui.horizontal(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
             ui.add(

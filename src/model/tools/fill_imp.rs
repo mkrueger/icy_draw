@@ -4,7 +4,7 @@ use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Size, TextPane};
 
-use crate::{AnsiEditor, Message};
+use crate::{paint::ColorMode, AnsiEditor, Message};
 
 use super::{brush_imp::draw_glyph, Position, Tool};
 
@@ -15,8 +15,7 @@ pub enum FillType {
 }
 
 pub struct FillTool {
-    use_fore: bool,
-    use_back: bool,
+    color_mode: ColorMode,
 
     char_code: std::rc::Rc<std::cell::RefCell<char>>,
     fill_type: FillType,
@@ -26,8 +25,7 @@ pub struct FillTool {
 impl FillTool {
     pub fn new() -> Self {
         Self {
-            use_fore: true,
-            use_back: true,
+            color_mode: ColorMode::Both,
             char_code: Rc::new(RefCell::new('\u{00B0}')),
             fill_type: crate::model::fill_imp::FillType::Character,
             use_exact_matching: false,
@@ -37,8 +35,7 @@ impl FillTool {
 #[allow(clippy::struct_excessive_bools)]
 struct FillOperation {
     fill_type: FillType,
-    use_fore: bool,
-    use_back: bool,
+    color_mode: ColorMode,
     use_exact_matching: bool,
 
     size: Size,
@@ -77,9 +74,8 @@ impl FillOperation {
 
         Self {
             size,
+            color_mode: fill_tool.color_mode,
             fill_type: fill_tool.fill_type,
-            use_fore: fill_tool.use_fore,
-            use_back: fill_tool.use_back,
             use_selection,
             base_char,
             offset,
@@ -135,7 +131,7 @@ impl FillOperation {
                     }
                 }
             }
-            if self.use_fore {
+            if self.color_mode.use_fore() {
                 repl_ch
                     .attribute
                     .set_foreground(self.new_char.attribute.get_foreground());
@@ -144,7 +140,7 @@ impl FillOperation {
                     .set_is_bold(self.new_char.attribute.is_bold());
             }
 
-            if self.use_back {
+            if self.color_mode.use_back() {
                 repl_ch
                     .attribute
                     .set_background(self.new_char.attribute.get_background());
@@ -187,22 +183,7 @@ impl Tool for FillTool {
         editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
         let mut result = None;
-        ui.vertical_centered(|ui| {
-            ui.horizontal(|ui| {
-                if ui
-                    .selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg"))
-                    .clicked()
-                {
-                    self.use_fore = !self.use_fore;
-                }
-                if ui
-                    .selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg"))
-                    .clicked()
-                {
-                    self.use_back = !self.use_back;
-                }
-            });
-        });
+        self.color_mode.show_ui(ui);
 
         ui.horizontal(|ui| {
             ui.radio_value(
@@ -259,7 +240,10 @@ impl Tool for FillTool {
                 .get_cur_layer()
                 .unwrap()
                 .get_char(pos);
-            if self.use_back || self.use_fore || matches!(self.fill_type, FillType::Character) {
+            if self.color_mode.use_fore()
+                || self.color_mode.use_back()
+                || matches!(self.fill_type, FillType::Character)
+            {
                 let _undo =
                     editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-bucket-fill"));
                 let mut op = FillOperation::new(

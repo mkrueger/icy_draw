@@ -56,7 +56,10 @@ impl SelectOutlineDialog {
                 if ui.input(|i| i.pointer.primary_clicked()) {
                     self.selected_outline = outline_style;
                 }
-                if ui.input(|i| i.pointer.button_double_clicked(egui::PointerButton::Primary)) {
+                if ui.input(|i| {
+                    i.pointer
+                        .button_double_clicked(egui::PointerButton::Primary)
+                }) {
                     self.selected_outline = outline_style;
                     self.should_commit = true;
                 }

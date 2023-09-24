@@ -1,4 +1,4 @@
-use eframe::egui;
+use eframe::egui::{self, RichText};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Position, TextAttribute, TextPane, TheDrawFont};
 use icy_engine_egui::BufferView;
@@ -31,7 +31,7 @@ impl BrushMode {
         ui: &mut egui::Ui,
         editor_opt: Option<&AnsiEditor>,
         char_code: std::rc::Rc<std::cell::RefCell<char>>,
-        show_outline:bool
+        show_outline: bool,
     ) -> Option<Message> {
         let mut msg = None;
         ui.radio_value(
@@ -45,20 +45,19 @@ impl BrushMode {
             fl!(crate::LANGUAGE_LOADER, "tool-full-block"),
         );
 
-        if show_outline { 
-            
-            ui.horizontal(|ui| { 
+        if show_outline {
+            ui.horizontal(|ui| {
                 ui.radio_value(
                     self,
                     BrushMode::Outline,
                     fl!(crate::LANGUAGE_LOADER, "tool-outline"),
                 );
                 if ui
-                .button(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "font_tool_select_outline_button"
-                ))
-                .clicked()
+                    .button(fl!(
+                        crate::LANGUAGE_LOADER,
+                        "font_tool_select_outline_button"
+                    ))
+                    .clicked()
                 {
                     msg = Some(Message::ShowOutlineDialog);
                 }
@@ -108,34 +107,40 @@ impl ColorMode {
     }
 
     pub fn show_ui(&mut self, ui: &mut egui::Ui) {
-        ui.vertical_centered(|ui| {
-            ui.horizontal(|ui| {
-                let mut use_fore = self.use_fore();
-                let mut use_back = self.use_back();
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            ui.add_space(84.0);
+            let mut use_fore = self.use_fore();
+            let mut use_back = self.use_back();
 
-                if ui
-                    .selectable_label(use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg"))
-                    .clicked()
-                {
-                    use_fore = !use_fore;
-                }
-                if ui
-                    .selectable_label(use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg"))
-                    .clicked()
-                {
-                    use_back = !use_back;
-                }
+            if ui
+                .selectable_label(
+                    use_fore,
+                    RichText::new(fl!(crate::LANGUAGE_LOADER, "tool-fg")).size(20.0),
+                )
+                .clicked()
+            {
+                use_fore = !use_fore;
+            }
+            if ui
+                .selectable_label(
+                    use_back,
+                    RichText::new(fl!(crate::LANGUAGE_LOADER, "tool-bg")).size(20.0),
+                )
+                .clicked()
+            {
+                use_back = !use_back;
+            }
 
-                if use_fore && use_back {
-                    *self = ColorMode::Both;
-                } else if use_fore {
-                    *self = ColorMode::UseFg;
-                } else if use_back {
-                    *self = ColorMode::UseBg;
-                } else {
-                    *self = ColorMode::None;
-                }
-            });
+            if use_fore && use_back {
+                *self = ColorMode::Both;
+            } else if use_fore {
+                *self = ColorMode::UseFg;
+            } else if use_back {
+                *self = ColorMode::UseBg;
+            } else {
+                *self = ColorMode::None;
+            }
         });
     }
 }
@@ -212,7 +217,13 @@ pub fn plot_point(
                 }
             };
             let outline_style = crate::Settings::get_font_outline_style();
-            layer.set_char(text_pos, AttributedChar::new(TheDrawFont::transform_outline(outline_style, ch as u8) as char, attribute));
+            layer.set_char(
+                text_pos,
+                AttributedChar::new(
+                    TheDrawFont::transform_outline(outline_style, ch as u8) as char,
+                    attribute,
+                ),
+            );
         }
 
         BrushMode::Shade => {
