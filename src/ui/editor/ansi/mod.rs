@@ -190,6 +190,7 @@ impl Document for AnsiEditor {
         let mut message = None;
 
         let mut scale = options.get_scale();
+        self.buffer_view.lock().get_caret_mut().is_visible = cur_tool.use_caret();
         if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
             if self.buffer_view.lock().get_buffer().use_letter_spacing() {
                 scale.y *= 1.2;

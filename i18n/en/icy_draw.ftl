@@ -125,12 +125,13 @@ menu-open_plugin_directory=Open Plugin Directory…
 tool-fg=Fg
 tool-bg=Bg
 tool-solid=Solid
-tool-line=Line
 tool-character=Character
 tool-shade=Shade
 tool-colorize=Colorize
 tool-size-label=Size:
-tool-half-block=Half block
+tool-full-block=Block
+tool-half-block=Half Block
+tool-outline=Outline
 tool-custom-brush=Custom brush
 
 tool-select-label=Selection mode:

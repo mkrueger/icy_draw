@@ -129,12 +129,13 @@ menu-open_plugin_directory=Erweiterungsverzeichnis öffnen…
 tool-fg=Fg
 tool-bg=Bg
 tool-solid=Solid
-tool-line=Line
 tool-character=Zeichen
 tool-shade=Schattieren
 tool-colorize=Färben
 tool-size-label=Größe:
+tool-full-block=Block
 tool-half-block=Halbblock
+tool-outline=Outline
 tool-custom-brush=Benutzerdefinierter Pinsel
 
 tool-select-label=Auswahlmodus:

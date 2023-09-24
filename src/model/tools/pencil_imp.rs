@@ -3,147 +3,37 @@ use std::{cell::RefCell, rc::Rc};
 use eframe::egui::{self};
 use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
-use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Rectangle};
+use icy_engine::{editor::AtomicUndoGuard, TextAttribute};
 use icy_engine_egui::TerminalCalc;
 
-use crate::{model::ScanLines, AnsiEditor, Event, Message};
+use crate::{
+    paint::{plot_point, BrushMode, ColorMode, PointRole},
+    AnsiEditor, Event, Message,
+};
 
-use super::{brush_imp::draw_glyph, line_imp::set_half_block, Position, Tool};
-
-#[derive(PartialEq, Eq, Default)]
-pub enum PencilType {
-    #[default]
-    HalfBlock,
-    Shade,
-    Solid,
-    Color,
-}
+use super::{Position, Tool};
 
 pub struct PencilTool {
-    use_fore: bool,
-    use_back: bool,
     char_code: std::rc::Rc<std::cell::RefCell<char>>,
     undo_op: Option<AtomicUndoGuard>,
+    draw_mode: BrushMode,
+    color_mode: ColorMode,
+    pub attr: TextAttribute,
 
     last_pos: Position,
     cur_pos: Position,
-    brush_type: PencilType,
 }
 
 impl Default for PencilTool {
     fn default() -> Self {
         Self {
-            use_back: true,
-            use_fore: true,
             undo_op: None,
-            brush_type: crate::model::pencil_imp::PencilType::Shade,
+            draw_mode: BrushMode::HalfBlock,
+            color_mode: ColorMode::Both,
             char_code: Rc::new(RefCell::new('\u{00B0}')),
             last_pos: Position::default(),
             cur_pos: Position::default(),
-        }
-    }
-}
-
-impl PencilTool {
-    fn paint_brush(&self, editor: &mut AnsiEditor, pos: Position) {
-        let center = pos;
-        let gradient = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
-        let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer()
-        {
-            layer.get_offset()
-        } else {
-            Position::default()
-        };
-
-        let use_selection = editor
-            .buffer_view
-            .lock()
-            .get_edit_state()
-            .is_something_selected();
-
-        if use_selection
-            && !editor
-                .buffer_view
-                .lock()
-                .get_edit_state()
-                .get_is_selected(pos + offset)
-        {
-            return;
-        }
-
-        match self.brush_type {
-            PencilType::HalfBlock => {
-                let mut lines = ScanLines::new(1);
-                let pos = editor.half_block_click_pos;
-                lines.add_line(Position::new(pos.x, pos.y), Position::new(pos.x, pos.y));
-                let draw = move |rect: Rectangle| {
-                    let col = editor
-                        .buffer_view
-                        .lock()
-                        .get_caret()
-                        .get_attribute()
-                        .get_foreground();
-                    for y in 0..rect.size.height {
-                        for x in 0..rect.size.width {
-                            set_half_block(
-                                editor,
-                                Position::new(rect.start.x + x, rect.start.y + y),
-                                col,
-                            );
-                        }
-                    }
-                };
-                lines.fill(draw);
-            }
-            PencilType::Shade => {
-                let ch = editor.get_char_from_cur_layer(center);
-                let attribute = editor.buffer_view.lock().get_caret().get_attribute();
-
-                let mut char_code = gradient[0];
-                if ch.ch == gradient[gradient.len() - 1] {
-                    char_code = gradient[gradient.len() - 1];
-                } else {
-                    for i in 0..gradient.len() - 1 {
-                        if ch.ch == gradient[i] {
-                            char_code = gradient[i + 1];
-                            break;
-                        }
-                    }
-                }
-                editor.set_char(center, AttributedChar::new(char_code, attribute));
-            }
-            PencilType::Solid => {
-                let attribute = editor.buffer_view.lock().get_caret().get_attribute();
-                editor.set_char(
-                    center,
-                    AttributedChar::new(*self.char_code.borrow(), attribute),
-                );
-            }
-            PencilType::Color => {
-                let ch = editor.get_char_from_cur_layer(center);
-                let mut attribute = ch.attribute;
-                if self.use_fore {
-                    attribute.set_foreground(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_caret()
-                            .get_attribute()
-                            .get_foreground(),
-                    );
-                }
-                if self.use_back {
-                    attribute.set_background(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_caret()
-                            .get_attribute()
-                            .get_background(),
-                    );
-                }
-                editor.set_char(center, AttributedChar::new(ch.ch, attribute));
-            }
+            attr: icy_engine::TextAttribute::default(),
         }
     }
 }
@@ -163,49 +53,10 @@ impl Tool for PencilTool {
         ui: &mut egui::Ui,
         editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
-        let mut result = None;
-        ui.vertical_centered(|ui| {
-            ui.horizontal(|ui| {
-                if ui
-                    .selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg"))
-                    .clicked()
-                {
-                    self.use_fore = !self.use_fore;
-                }
-                if ui
-                    .selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg"))
-                    .clicked()
-                {
-                    self.use_back = !self.use_back;
-                }
-            });
-        });
-        ui.radio_value(
-            &mut self.brush_type,
-            PencilType::HalfBlock,
-            fl!(crate::LANGUAGE_LOADER, "tool-half-block"),
-        );
-        ui.radio_value(
-            &mut self.brush_type,
-            PencilType::Shade,
-            fl!(crate::LANGUAGE_LOADER, "tool-shade"),
-        );
-        ui.horizontal(|ui| {
-            ui.radio_value(
-                &mut self.brush_type,
-                PencilType::Solid,
-                fl!(crate::LANGUAGE_LOADER, "tool-character"),
-            );
-            if let Some(editor) = editor_opt {
-                result = draw_glyph(ui, editor, &self.char_code);
-            }
-        });
-        ui.radio_value(
-            &mut self.brush_type,
-            PencilType::Color,
-            fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
-        );
-        result
+        self.color_mode.show_ui(ui);
+        self.draw_mode
+            .show_ui(ui, editor_opt, self.char_code.clone());
+        None
     }
 
     fn handle_click(
@@ -221,7 +72,13 @@ impl Tool for PencilTool {
             let _op: AtomicUndoGuard =
                 editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
             editor.clear_overlay_layer();
-            self.paint_brush(editor, pos);
+            plot_point(
+                &mut editor.buffer_view.lock(),
+                editor.half_block_click_pos,
+                self.draw_mode.clone(),
+                self.color_mode,
+                PointRole::Line,
+            );
             editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
         }
         None
@@ -245,7 +102,14 @@ impl Tool for PencilTool {
         editor: &mut AnsiEditor,
         _calc: &TerminalCalc,
     ) -> egui::Response {
-        self.paint_brush(editor, editor.drag_pos.cur);
+        plot_point(
+            &mut editor.buffer_view.lock(),
+            editor.half_block_click_pos,
+            self.draw_mode.clone(),
+            self.color_mode,
+            PointRole::Line,
+        );
+
         self.last_pos = editor.drag_pos.cur;
         self.cur_pos = editor.drag_pos.cur;
 
@@ -257,7 +121,13 @@ impl Tool for PencilTool {
         self.last_pos = editor.drag_pos.cur;
         self.cur_pos = editor.drag_pos.cur;
         editor.clear_overlay_layer();
-        self.paint_brush(editor, editor.drag_pos.cur);
+        plot_point(
+            &mut editor.buffer_view.lock(),
+            editor.half_block_click_pos,
+            self.draw_mode.clone(),
+            self.color_mode,
+            PointRole::Line,
+        );
 
         Event::None
     }

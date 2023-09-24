@@ -1,36 +1,31 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Rectangle, TextAttribute, TextPane};
 use icy_engine_egui::TerminalCalc;
 
-use crate::{model::ScanLines, AnsiEditor, Message};
+use crate::{
+    paint::{draw_line, BrushMode, ColorMode},
+    AnsiEditor, Message,
+};
 
-use super::{brush_imp::draw_glyph, plot_point, DrawMode, Plottable, Position, Tool};
+use super::{Position, Tool};
 
 pub struct LineTool {
-    pub draw_mode: DrawMode,
+    draw_mode: BrushMode,
+    color_mode: ColorMode,
 
-    pub use_fore: bool,
-    pub use_back: bool,
-    pub attr: TextAttribute,
     pub char_code: std::rc::Rc<std::cell::RefCell<char>>,
 
     pub old_pos: Position,
 }
 
-impl Plottable for LineTool {
-    fn get_draw_mode(&self) -> DrawMode {
-        self.draw_mode
-    }
-
-    fn get_use_fore(&self) -> bool {
-        self.use_fore
-    }
-    fn get_use_back(&self) -> bool {
-        self.use_back
-    }
-    fn get_char_code(&self) -> char {
-        *self.char_code.borrow()
+impl Default for LineTool {
+    fn default() -> Self {
+        Self {
+            draw_mode: BrushMode::HalfBlock,
+            color_mode: crate::paint::ColorMode::Both,
+            char_code: std::rc::Rc::new(std::cell::RefCell::new('\u{00B0}')),
+            old_pos: Position::default(),
+        }
     }
 }
 
@@ -182,50 +177,10 @@ impl Tool for LineTool {
         ui: &mut egui::Ui,
         editor_opt: Option<&AnsiEditor>,
     ) -> Option<Message> {
-        let mut result = None;
-        ui.vertical_centered(|ui| {
-            ui.horizontal(|ui| {
-                if ui
-                    .selectable_label(self.use_fore, fl!(crate::LANGUAGE_LOADER, "tool-fg"))
-                    .clicked()
-                {
-                    self.use_fore = !self.use_fore;
-                }
-                if ui
-                    .selectable_label(self.use_back, fl!(crate::LANGUAGE_LOADER, "tool-bg"))
-                    .clicked()
-                {
-                    self.use_back = !self.use_back;
-                }
-            });
-        });
-
-        ui.radio_value(
-            &mut self.draw_mode,
-            DrawMode::Line,
-            fl!(crate::LANGUAGE_LOADER, "tool-line"),
-        );
-        ui.horizontal(|ui| {
-            ui.radio_value(
-                &mut self.draw_mode,
-                DrawMode::Char,
-                fl!(crate::LANGUAGE_LOADER, "tool-character"),
-            );
-            if let Some(editor) = editor_opt {
-                result = draw_glyph(ui, editor, &self.char_code);
-            }
-        });
-        ui.radio_value(
-            &mut self.draw_mode,
-            DrawMode::Shade,
-            fl!(crate::LANGUAGE_LOADER, "tool-shade"),
-        );
-        ui.radio_value(
-            &mut self.draw_mode,
-            DrawMode::Colorize,
-            fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
-        );
-        result
+        self.color_mode.show_ui(ui);
+        self.draw_mode
+            .show_ui(ui, editor_opt, self.char_code.clone());
+        None
     }
 
     fn handle_click(
@@ -261,46 +216,13 @@ impl Tool for LineTool {
         _calc: &TerminalCalc,
     ) -> egui::Response {
         editor.clear_overlay_layer();
-        let mut lines = ScanLines::new(1);
-        if self.draw_mode == DrawMode::Line {
-            lines.add_line(
-                editor.drag_pos.start_half_block,
-                editor.half_block_click_pos,
-            );
-            let col = editor
-                .buffer_view
-                .lock()
-                .get_caret()
-                .get_attribute()
-                .get_foreground();
-            let draw = move |rect: Rectangle| {
-                for y in 0..rect.size.height {
-                    for x in 0..rect.size.width {
-                        set_half_block(
-                            editor,
-                            Position::new(rect.start.x + x, rect.start.y + y),
-                            col,
-                        );
-                    }
-                }
-            };
-            lines.fill(draw);
-        } else {
-            lines.add_line(editor.drag_pos.start, editor.drag_pos.cur);
-            let draw = move |rect: Rectangle| {
-                for y in 0..rect.size.height {
-                    for x in 0..rect.size.width {
-                        plot_point(
-                            editor,
-                            self,
-                            Position::new(rect.start.x + x, rect.start.y + y),
-                        );
-                    }
-                }
-            };
-            lines.fill(draw);
-        }
-
+        draw_line(
+            &mut editor.buffer_view.lock(),
+            editor.drag_pos.start_half_block,
+            editor.half_block_click_pos,
+            self.draw_mode.clone(),
+            self.color_mode,
+        );
         response
     }
 
@@ -311,338 +233,5 @@ impl Tool for LineTool {
             editor.join_overlay(fl!(crate::LANGUAGE_LOADER, "undo-line"));
         }
         None
-    }
-}
-
-fn get_half_block(
-    editor: &AnsiEditor,
-    pos: Position,
-) -> (
-    Position,
-    i32,
-    bool,
-    bool,
-    u32,
-    u32,
-    u32,
-    u32,
-    bool,
-    u32,
-    u32,
-) {
-    let text_y = pos.y / 2;
-    let is_top = pos.y % 2 == 0;
-
-    let offset = editor
-        .buffer_view
-        .lock()
-        .get_edit_state()
-        .get_cur_layer()
-        .unwrap()
-        .get_offset();
-    let pos = Position::new(pos.x, text_y) + offset;
-    let block = editor.get_char(pos);
-
-    let mut upper_block_color = 0;
-    let mut lower_block_color = 0;
-    let mut left_block_color = 0;
-    let mut right_block_color = 0;
-    let mut is_blocky = false;
-    let mut is_vertically_blocky = false;
-    match block.ch as u8 {
-        0 | 32 | 255 => {
-            upper_block_color = block.attribute.get_background();
-            lower_block_color = block.attribute.get_background();
-            is_blocky = true;
-        }
-        220 => {
-            upper_block_color = block.attribute.get_background();
-            lower_block_color = block.attribute.get_foreground();
-            is_blocky = true;
-        }
-        223 => {
-            upper_block_color = block.attribute.get_foreground();
-            lower_block_color = block.attribute.get_background();
-            is_blocky = true;
-        }
-        219 => {
-            upper_block_color = block.attribute.get_foreground();
-            lower_block_color = block.attribute.get_foreground();
-            is_blocky = true;
-        }
-        221 => {
-            left_block_color = block.attribute.get_foreground();
-            right_block_color = block.attribute.get_background();
-            is_vertically_blocky = true;
-        }
-        222 => {
-            left_block_color = block.attribute.get_background();
-            right_block_color = block.attribute.get_foreground();
-            is_vertically_blocky = true;
-        }
-        _ => {
-            if block.attribute.get_foreground() == block.attribute.get_background() {
-                is_blocky = true;
-                upper_block_color = block.attribute.get_foreground();
-                lower_block_color = block.attribute.get_foreground();
-            } else {
-                is_blocky = false;
-            }
-        }
-    }
-    (
-        pos,
-        text_y,
-        is_blocky,
-        is_vertically_blocky,
-        upper_block_color,
-        lower_block_color,
-        left_block_color,
-        right_block_color,
-        is_top,
-        block.attribute.get_foreground(),
-        block.attribute.get_background(),
-    )
-}
-
-pub fn set_half_block(editor: &AnsiEditor, pos: Position, col: u32) {
-    let w = editor.buffer_view.lock().get_buffer().get_width();
-    let h = editor.buffer_view.lock().get_buffer().get_height();
-
-    if pos.x < 0 || pos.x >= w || pos.y < 0 || pos.y >= h * 2 {
-        return;
-    }
-
-    let (
-        _,
-        text_y,
-        is_blocky,
-        _,
-        upper_block_color,
-        lower_block_color,
-        _,
-        _,
-        is_top,
-        _,
-        block_back,
-    ) = get_half_block(editor, pos);
-
-    let pos = Position::new(pos.x, text_y);
-    if is_blocky {
-        if (is_top && lower_block_color == col) || (!is_top && upper_block_color == col) {
-            if let Some(layer) = editor
-                .buffer_view
-                .lock()
-                .get_buffer_mut()
-                .get_overlay_layer()
-            {
-                layer.set_char(
-                    pos,
-                    AttributedChar::new('\u{00DB}', TextAttribute::new(col, 0)),
-                );
-            }
-        } else if is_top {
-            if let Some(layer) = editor
-                .buffer_view
-                .lock()
-                .get_buffer_mut()
-                .get_overlay_layer()
-            {
-                layer.set_char(
-                    pos,
-                    AttributedChar::new('\u{00DF}', TextAttribute::new(col, lower_block_color)),
-                );
-            }
-        } else if let Some(layer) = editor
-            .buffer_view
-            .lock()
-            .get_buffer_mut()
-            .get_overlay_layer()
-        {
-            layer.set_char(
-                pos,
-                AttributedChar::new('\u{00DC}', TextAttribute::new(col, upper_block_color)),
-            );
-        }
-    } else if is_top {
-        if let Some(layer) = editor
-            .buffer_view
-            .lock()
-            .get_buffer_mut()
-            .get_overlay_layer()
-        {
-            layer.set_char(
-                pos,
-                AttributedChar::new('\u{00DF}', TextAttribute::new(col, block_back)),
-            );
-        }
-    } else if let Some(layer) = editor
-        .buffer_view
-        .lock()
-        .get_buffer_mut()
-        .get_overlay_layer()
-    {
-        layer.set_char(
-            pos,
-            AttributedChar::new('\u{00DC}', TextAttribute::new(col, block_back)),
-        );
-    }
-    optimize_block(editor, Position::new(pos.x, text_y));
-}
-
-fn optimize_block(editor: &AnsiEditor, pos: Position) {
-    let block = if let Some(layer) = editor
-        .buffer_view
-        .lock()
-        .get_buffer_mut()
-        .get_overlay_layer()
-    {
-        layer.get_char(pos)
-    } else {
-        AttributedChar::default()
-    };
-
-    if block.attribute.get_foreground() == 0 {
-        if block.attribute.get_background() == 0 || block.ch == '\u{00DB}' {
-            if let Some(layer) = editor
-                .buffer_view
-                .lock()
-                .get_buffer_mut()
-                .get_overlay_layer()
-            {
-                layer.set_char(pos, AttributedChar::default());
-            }
-        } else {
-            match block.ch as u8 {
-                220 => {
-                    if let Some(layer) = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .get_overlay_layer()
-                    {
-                        layer.set_char(
-                            pos,
-                            AttributedChar::new(
-                                '\u{00DF}',
-                                TextAttribute::new(
-                                    block.attribute.get_background(),
-                                    block.attribute.get_foreground(),
-                                ),
-                            ),
-                        );
-                    }
-                }
-                223 => {
-                    if let Some(layer) = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .get_overlay_layer()
-                    {
-                        layer.set_char(
-                            pos,
-                            AttributedChar::new(
-                                '\u{00DC}',
-                                TextAttribute::new(
-                                    block.attribute.get_background(),
-                                    block.attribute.get_foreground(),
-                                ),
-                            ),
-                        );
-                    }
-                }
-                _ => {}
-            }
-        }
-    } else if block.attribute.get_foreground() < 8 && block.attribute.get_background() >= 8 {
-        let (_, _, is_blocky, is_vertically_blocky, _, _, _, _, _, _, _) =
-            get_half_block(editor, pos);
-
-        if is_blocky {
-            match block.ch as u8 {
-                220 => {
-                    if let Some(layer) = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .get_overlay_layer()
-                    {
-                        layer.set_char(
-                            pos,
-                            AttributedChar::new(
-                                '\u{00DF}',
-                                TextAttribute::new(
-                                    block.attribute.get_background(),
-                                    block.attribute.get_foreground(),
-                                ),
-                            ),
-                        );
-                    }
-                }
-                223 => {
-                    if let Some(layer) = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .get_overlay_layer()
-                    {
-                        layer.set_char(
-                            pos,
-                            AttributedChar::new(
-                                '\u{00DC}',
-                                TextAttribute::new(
-                                    block.attribute.get_background(),
-                                    block.attribute.get_foreground(),
-                                ),
-                            ),
-                        );
-                    }
-                }
-                _ => {}
-            }
-        } else if is_vertically_blocky {
-            match block.ch as u8 {
-                221 => {
-                    if let Some(layer) = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .get_overlay_layer()
-                    {
-                        layer.set_char(
-                            pos,
-                            AttributedChar::new(
-                                '\u{00DE}',
-                                TextAttribute::new(
-                                    block.attribute.get_background(),
-                                    block.attribute.get_foreground(),
-                                ),
-                            ),
-                        );
-                    }
-                }
-                222 => {
-                    if let Some(layer) = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .get_overlay_layer()
-                    {
-                        layer.set_char(
-                            pos,
-                            AttributedChar::new(
-                                '\u{00DD}',
-                                TextAttribute::new(
-                                    block.attribute.get_background(),
-                                    block.attribute.get_foreground(),
-                                ),
-                            ),
-                        );
-                    }
-                }
-                _ => {}
-            }
-        }
     }
 }

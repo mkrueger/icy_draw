@@ -6,6 +6,7 @@
 use eframe::egui;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 mod model;
+mod paint;
 mod plugins;
 mod ui;
 mod util;
