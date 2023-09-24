@@ -5,7 +5,7 @@ use eframe::{
     epaint::Vec2,
 };
 use i18n_embed_fl::fl;
-use icy_engine::{Palette, TextPane};
+use icy_engine::TextPane;
 use icy_engine_egui::BufferView;
 
 use crate::{AnsiEditor, Document, Message, ToolWindow};
@@ -14,7 +14,7 @@ pub struct MinimapToolWindow {
     buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
     undo_size: i32,
     last_id: usize,
-    palette: Palette,
+    palette_hash: u32,
 }
 
 impl ToolWindow for MinimapToolWindow {
@@ -45,9 +45,15 @@ impl MinimapToolWindow {
         let w = (ui.available_width() / 8.0).floor();
 
         let undo_stack = editor.buffer_view.lock().get_edit_state().undo_stack_len() as i32;
+        let cur_palette_hash = editor
+            .buffer_view
+            .lock()
+            .get_buffer_mut()
+            .palette
+            .get_hash();
         if undo_stack != self.undo_size
             || self.last_id != editor.id
-            || self.palette != editor.buffer_view.lock().get_buffer().palette
+            || self.palette_hash != cur_palette_hash
         {
             self.undo_size = undo_stack;
             self.last_id = editor.id;
@@ -59,7 +65,13 @@ impl MinimapToolWindow {
                 .set_size(buffer.get_size());
             self.buffer_view.lock().get_buffer_mut().layers = buffer.layers.clone();
             self.buffer_view.lock().get_buffer_mut().palette = buffer.palette.clone();
-            self.palette = buffer.palette.clone();
+            self.buffer_view
+                .lock()
+                .get_buffer_mut()
+                .set_font_table(buffer.get_font_table());
+            self.palette_hash = cur_palette_hash;
+            self.buffer_view.lock().redraw_palette();
+            self.buffer_view.lock().redraw_font();
             self.buffer_view.lock().redraw_view();
         }
 
@@ -92,7 +104,7 @@ impl MinimapToolWindow {
             buffer_view: Arc::new(eframe::epaint::mutex::Mutex::new(buffer_view)),
             last_id: usize::MAX,
             undo_size: -1,
-            palette: Palette::dos_default(),
+            palette_hash: 0,
         }
     }
 }
