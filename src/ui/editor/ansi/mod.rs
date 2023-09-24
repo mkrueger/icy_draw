@@ -676,16 +676,17 @@ impl AnsiEditor {
                     let layer_offset = self.get_cur_click_offset();
                     let cp = cp_abs - layer_offset;
                     let click_pos2 = calc.calc_click_pos_half_block(mouse_pos);
-                    self.half_block_click_pos = Position::new(
-                        click_pos2.x as i32 - layer_offset.x,
-                        click_pos2.y as i32 - layer_offset.y,
-                    );
+                    let click_pos2 = Position::new(click_pos2.x as i32, click_pos2.y as i32);
+                    let half_block_layer_offset = Position::new(layer_offset.x, layer_offset.y * 2);
+                    let half_block_click_pos = click_pos2 - half_block_layer_offset;
+                    self.half_block_click_pos = half_block_click_pos;
+
                     self.drag_pos.start_abs = cp_abs;
                     self.drag_pos.start = cp;
 
                     self.drag_pos.cur_abs = cp_abs;
                     self.drag_pos.cur = cp;
-                    self.drag_pos.start_half_block = self.half_block_click_pos;
+                    self.drag_pos.start_half_block = half_block_click_pos;
                     self.drag_started = true;
 
                     cur_tool.handle_drag_begin(self, &response);
