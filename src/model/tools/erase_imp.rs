@@ -48,7 +48,11 @@ impl EraseTool {
         } else {
             Position::default()
         };
-
+        editor
+            .buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .is_buffer_dirty = true;
         for y in 0..self.size {
             for x in 0..self.size {
                 let pos = center + Position::new(x, y);
@@ -132,6 +136,17 @@ impl Tool for EraseTool {
         None
     }
 
+    fn handle_no_hover(&mut self, editor: &mut AnsiEditor) {
+        let lock: &mut eframe::epaint::mutex::MutexGuard<'_, icy_engine_egui::BufferView> =
+            &mut editor.buffer_view.lock();
+        let get_edit_state_mut = lock.get_edit_state_mut();
+        if get_edit_state_mut.get_tool_overlay_mask_mut().is_empty() {
+            return;
+        }
+        get_edit_state_mut.get_tool_overlay_mask_mut().clear();
+        get_edit_state_mut.is_buffer_dirty = true;
+    }
+
     fn handle_hover(
         &mut self,
         _ui: &egui::Ui,
@@ -140,21 +155,20 @@ impl Tool for EraseTool {
         cur: Position,
         cur_abs: Position,
     ) -> egui::Response {
-        self.cur_pos = cur;
-
-        let mid = Position::new(-(self.size / 2), -(self.size / 2));
-        for y in 0..self.size {
-            for x in 0..self.size {
-                let pos = cur_abs + Position::new(x, y) + mid;
-                editor
-                    .buffer_view
-                    .lock()
-                    .get_edit_state_mut()
-                    .get_tool_overlay_mask_mut()
-                    .set_is_selected(pos, true);
+        if self.cur_pos != cur {
+            self.cur_pos = cur;
+            let lock = &mut editor.buffer_view.lock();
+            let get_tool_overlay_mask_mut = lock.get_edit_state_mut().get_tool_overlay_mask_mut();
+            get_tool_overlay_mask_mut.clear();
+            let mid: Position = Position::new(-(self.size / 2), -(self.size / 2));
+            for y in 0..self.size {
+                for x in 0..self.size {
+                    let pos = cur_abs + Position::new(x, y) + mid;
+                    get_tool_overlay_mask_mut.set_is_selected(pos, true);
+                }
             }
+            lock.get_edit_state_mut().is_buffer_dirty = true;
         }
-
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
@@ -168,7 +182,6 @@ impl Tool for EraseTool {
     ) -> Option<Message> {
         if button == 1 {
             let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-eraser"));
-
             self.eraser(editor, pos);
         }
         None
@@ -181,8 +194,6 @@ impl Tool for EraseTool {
         editor: &mut AnsiEditor,
         _calc: &TerminalCalc,
     ) -> egui::Response {
-        self.cur_pos = editor.drag_pos.cur;
-
         self.eraser(editor, editor.drag_pos.cur);
         response
     }

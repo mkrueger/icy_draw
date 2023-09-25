@@ -66,6 +66,11 @@ impl BrushTool {
             .lock()
             .get_edit_state()
             .is_something_selected();
+        editor
+            .buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .is_buffer_dirty = true;
 
         let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer()
         {
@@ -208,6 +213,16 @@ impl Tool for BrushTool {
         result
     }
 
+    fn handle_no_hover(&mut self, editor: &mut AnsiEditor) {
+        let lock = &mut editor.buffer_view.lock();
+        let get_edit_state_mut = lock.get_edit_state_mut();
+        if get_edit_state_mut.get_tool_overlay_mask_mut().is_empty() {
+            return;
+        }
+        get_edit_state_mut.get_tool_overlay_mask_mut().clear();
+        get_edit_state_mut.is_buffer_dirty = true;
+    }
+
     fn handle_hover(
         &mut self,
         _ui: &egui::Ui,
@@ -216,20 +231,20 @@ impl Tool for BrushTool {
         cur: Position,
         cur_abs: Position,
     ) -> egui::Response {
-        self.cur_pos = cur;
-        let mid = Position::new(-(self.size / 2), -(self.size / 2));
-        for y in 0..self.size {
-            for x in 0..self.size {
-                let pos = cur_abs + Position::new(x, y) + mid;
-                editor
-                    .buffer_view
-                    .lock()
-                    .get_edit_state_mut()
-                    .get_tool_overlay_mask_mut()
-                    .set_is_selected(pos, true);
+        if self.cur_pos != cur {
+            self.cur_pos = cur;
+            let mid = Position::new(-(self.size / 2), -(self.size / 2));
+            let lock = &mut editor.buffer_view.lock();
+            let get_tool_overlay_mask_mut = lock.get_edit_state_mut().get_tool_overlay_mask_mut();
+            get_tool_overlay_mask_mut.clear();
+            for y in 0..self.size {
+                for x in 0..self.size {
+                    let pos = cur_abs + Position::new(x, y) + mid;
+                    get_tool_overlay_mask_mut.set_is_selected(pos, true);
+                }
             }
+            lock.get_edit_state_mut().is_buffer_dirty = true;
         }
-
         if matches!(self.brush_type, BrushType::Custom) {
             editor.clear_overlay_layer();
             if let Some(layer) = editor
@@ -282,8 +297,6 @@ impl Tool for BrushTool {
         editor: &mut AnsiEditor,
         _calc: &TerminalCalc,
     ) -> egui::Response {
-        self.cur_pos = editor.drag_pos.cur;
-
         self.paint_brush(editor, editor.drag_pos.cur);
         response
     }
