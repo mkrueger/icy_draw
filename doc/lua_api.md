@@ -58,8 +58,47 @@ Input/Output
 | `bg_rgb(#rrggbb)`                      | u32     | Sets the caret bg rgb color with html style notation , returns color palette number
 | `set_char(x, y, ch)`                   | -       | Sets a specific char at a given position (uses caret color)
 | `get_char(x, y)`                       | char    | Gets a specific char at a given position
+| `pickup_char(x, y)`                    | char    | Like get char but sets all attributes to the char attributes
 | `get_fg(x, y)`                         | u32     | Gets the foreground at a given positon
 | `set_fg(x, y, fg)`                     | -       | Sets a specific foreground at a given layer position
 | `get_bg(x, y)`                         | u32     | Gets the background at a given positon
 | `set_bg(x, y, bg)`                     | -       | Sets a specific foreground at a given layer position
 | `print(string)`                        | -       | Prints a string at caret position, advances caret.
+
+
+## CP437 - Unicode table:
+
+|Offset|0|1|2|3|4|5|6|7|
+|---|-|-|-|-|-|-|-|-
+|  0| |☺|☻|♥|♦|♣|♠|•
+|  8|◘|○|◙|♂|♀|♪|♫|☼
+| 16|►|◄|↕|‼|¶|§|▬|↨
+| 24|↑|↓|→|←|∟|↔|▲|▼
+| 32| |!|"|#|$|%|&|'
+| 40|(|)|*|+|,|-|.|/
+| 48|0|1|2|3|4|5|6|7
+| 56|8|9|:|;|<|=|>|?
+| 64|@|A|B|C|D|E|F|G
+| 72|H|I|J|K|L|M|N|O
+| 80|P|Q|R|S|T|U|V|W
+| 88|X|Y|Z|[|\|]|^|_
+| 96|`|a|b|c|d|e|f|g
+|104|h|i|j|k|l|m|n|o
+|112|p|q|r|s|t|u|v|w
+|120|x|y|z|{|||}|~|
+|128|Ç|ü|é|â|ä|à|å|ç
+|136|ê|ë|è|ï|î|ì|Ä|Å
+|144|É|æ|Æ|ô|ö|ò|û|ù
+|152|ÿ|Ö|Ü|¢|£|¥|₧|ƒ
+|160|á|í|ó|ú|ñ|Ñ|ª|º
+|168|¿|⌐|¬|½|¼|¡|«|»
+|176|░|▒|▓|│|┤|╡|╢|╖
+|184|╕|╣|║|╗|╝|╜|╛|┐
+|192|└|┴|┬|├|─|┼|╞|╟
+|200|╚|╔|╩|╦|╠|═|╬|╧
+|208|╨|╤|╥|╙|╘|╒|╓|╫
+|216|╪|┘|┌|█|▄|▌|▐|▀
+|224|α|ß|Γ|π|Σ|σ|µ|τ
+|232|Φ|Θ|Ω|δ|∞|φ|ε|∩
+|240|≡|±|≥|≤|⌠|⌡|÷|≈
+|248|°|∙|·|√|ⁿ|²|■|
