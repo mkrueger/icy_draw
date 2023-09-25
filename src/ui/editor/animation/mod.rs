@@ -9,7 +9,7 @@ use std::{
 
 use eframe::{
     egui::{self, Id, ImageButton, RichText, Slider, TextEdit, TopBottomPanel},
-    epaint::{mutex::Mutex, Vec2},
+    epaint::Vec2,
 };
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
@@ -35,15 +35,15 @@ pub struct AnimationEditor {
     undostack: usize,
 
     txt: String,
-    buffer_view: Arc<Mutex<BufferView>>,
-    animator: Option<Arc<Mutex<Animator>>>,
+    buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
+    animator: Option<Arc<std::sync::Mutex<Animator>>>,
     error: String,
 
     parent_path: Option<PathBuf>,
     export_path: PathBuf,
     export_type: ExportType,
 
-    update_thread: Option<thread::JoinHandle<mlua::Result<Arc<Mutex<Animator>>>>>,
+    update_thread: Option<thread::JoinHandle<mlua::Result<Arc<std::sync::Mutex<Animator>>>>>,
     shedule_update: bool,
     last_update: Instant,
 }
@@ -54,10 +54,10 @@ impl AnimationEditor {
         buffer.is_terminal_buffer = true;
         let mut buffer_view = BufferView::from_buffer(gl, buffer);
         buffer_view.interactive = false;
-        let buffer_view = Arc::new(Mutex::new(buffer_view));
+        let buffer_view = Arc::new(eframe::epaint::mutex::Mutex::new(buffer_view));
         let parent_path = path.parent().map(|p| p.to_path_buf());
         let animator = if let Ok(animator) = Animator::run(&parent_path, &txt) {
-            animator.lock().display_frame(buffer_view.clone());
+            animator.lock().unwrap().display_frame(buffer_view.clone());
             Some(animator)
         } else {
             None
@@ -97,15 +97,21 @@ impl AnimationEditor {
                     };
                     encoder.set_repeat(::gif::Repeat::Infinite).unwrap();
 
-                    let frame_count = self.animator.as_ref().unwrap().lock().frames.len();
+                    let frame_count = self.animator.as_ref().unwrap().lock().unwrap().frames.len();
 
                     for frame in 0..frame_count {
-                        self.animator.as_ref().unwrap().lock().set_cur_frame(frame);
+                        self.animator
+                            .as_ref()
+                            .unwrap()
+                            .lock()
+                            .unwrap()
+                            .set_cur_frame(frame);
                         let monitor_settings = self
                             .animator
                             .as_ref()
                             .unwrap()
                             .lock()
+                            .unwrap()
                             .display_frame(self.buffer_view.clone());
                         let opt = icy_engine_egui::TerminalOptions {
                             stick_to_bottom: false,
@@ -131,7 +137,7 @@ impl AnimationEditor {
                 let opt = SaveOptions::default();
                 if let Ok(mut image) = File::create(&self.export_path) {
                     if let Some(animator) = &self.animator {
-                        let animator = animator.lock();
+                        let animator = animator.lock().unwrap();
                         for (frame, _, _) in &animator.frames {
                             let _ = image.write_all(b"\x1BP0;1;0!z\x1b[2J\x1b[0; D");
                             let _ = image.write_all(&frame.to_bytes("ans", &opt)?);
@@ -221,7 +227,7 @@ impl Document for AnimationEditor {
                             }
                             let size_points = Vec2::new(22.0, 22.0);
                             if let Some(animator) = &mut self.animator {
-                                let animator = &mut animator.lock();
+                                let animator = &mut animator.lock().unwrap();
                                 let frame_count = animator.frames.len();
                                 if animator.is_playing() {
                                     if ui
@@ -351,14 +357,15 @@ impl Document for AnimationEditor {
                     }
 
                     if let Some(animator) = &self.animator {
-                        let cur_frame = animator.lock().get_cur_frame();
+                        let cur_frame = animator.lock().unwrap().get_cur_frame();
 
-                        let monitor_settings =
-                            if let Some((_, settings, _)) = animator.lock().frames.get(cur_frame) {
-                                settings.clone()
-                            } else {
-                                MonitorSettings::default()
-                            };
+                        let monitor_settings = if let Some((_, settings, _)) =
+                            animator.lock().unwrap().frames.get(cur_frame)
+                        {
+                            settings.clone()
+                        } else {
+                            MonitorSettings::default()
+                        };
 
                         let opt = icy_engine_egui::TerminalOptions {
                             stick_to_bottom: false,
@@ -410,7 +417,18 @@ impl Document for AnimationEditor {
                     if let Ok(result) = self.update_thread.take().unwrap().join() {
                         match result {
                             Ok(animator) => {
-                                animator.lock().display_frame(self.buffer_view.clone());
+                                animator
+                                    .lock()
+                                    .unwrap()
+                                    .display_frame(self.buffer_view.clone());
+                                let cur_frame = if let Some(cur) = &self.animator {
+                                    cur.lock().unwrap().get_cur_frame()
+                                } else {
+                                    0
+                                };
+                                if cur_frame < animator.lock().unwrap().frames.len() {
+                                    animator.lock().unwrap().set_cur_frame(cur_frame);
+                                }
                                 self.animator = Some(animator);
                                 self.error = "".to_string();
                             }
@@ -430,7 +448,7 @@ impl Document for AnimationEditor {
         });
         let buffer_view = self.buffer_view.clone();
         if let Some(animator) = &self.animator {
-            animator.lock().update_frame(buffer_view);
+            animator.lock().unwrap().update_frame(buffer_view);
         }
         message
     }

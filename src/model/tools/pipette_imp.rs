@@ -83,7 +83,7 @@ impl Tool for PipetteTool {
                 ));
                 paint_color(
                     ui,
-                    editor
+                    &editor
                         .buffer_view
                         .lock()
                         .get_buffer()
@@ -97,7 +97,7 @@ impl Tool for PipetteTool {
                 ));
                 paint_color(
                     ui,
-                    editor
+                    &editor
                         .buffer_view
                         .lock()
                         .get_buffer()
@@ -162,7 +162,7 @@ impl Tool for PipetteTool {
     }
 }
 
-fn paint_color(ui: &mut egui::Ui, color: icy_engine::Color) {
+fn paint_color(ui: &mut egui::Ui, color: &icy_engine::Color) {
     let (_, stroke_rect) = ui.allocate_space(Vec2::new(100.0, 32.0));
 
     let painter = ui.painter_at(stroke_rect);

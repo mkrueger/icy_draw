@@ -1,5 +1,6 @@
 use directories::ProjectDirs;
-use eframe::{egui::Modifiers, epaint::Color32};
+use eframe::egui::Modifiers;
+use icy_engine::Color;
 use icy_engine_egui::{BackgroundEffect, MarkerSettings, MonitorSettings};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -248,17 +249,17 @@ pub static mut SETTINGS: Settings = Settings {
         curvature: 10.,
         scanlines: 10.,
         background_effect: BackgroundEffect::Checkers,
-        selection_fg: Color32::from_rgb(0xAB, 0x00, 0xAB),
-        selection_bg: Color32::from_rgb(0xAB, 0xAB, 0xAB),
+        selection_fg: Color::new(0xAB, 0x00, 0xAB),
+        selection_bg: Color::new(0xAB, 0xAB, 0xAB),
     },
     marker_settings: MarkerSettings {
         reference_image_alpha: 0.2,
         raster_alpha: 0.2,
-        raster_color: Color32::from_rgb(0xAB, 0xAB, 0xAB),
+        raster_color: Color::new(0xAB, 0xAB, 0xAB),
         guide_alpha: 0.2,
-        guide_color: Color32::from_rgb(0xAB, 0xAB, 0xAB),
+        guide_color: Color::new(0xAB, 0xAB, 0xAB),
 
-        border_color: Color32::from_rgb(64, 69, 74),
+        border_color: Color::new(64, 69, 74),
     },
 };
 

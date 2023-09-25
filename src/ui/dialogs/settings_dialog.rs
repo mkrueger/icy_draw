@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use eframe::{
     egui::{self, color_picker, Layout, Modifiers, RichText},
-    epaint::{mutex::Mutex, Vec2},
+    epaint::{mutex::Mutex, Color32, Vec2},
 };
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Buffer, Size, TextAttribute};
+use icy_engine::{AttributedChar, Buffer, Color, Size, TextAttribute};
 use icy_engine_egui::{
     show_monitor_settings, show_terminal_area, BufferView, MarkerSettings, MonitorSettings,
 };
@@ -281,11 +281,10 @@ pub fn show_marker_settings(
             crate::LANGUAGE_LOADER,
             "settings-background_color-label"
         ));
-        color_picker::color_edit_button_srgba(
-            ui,
-            &mut marker_settings.border_color,
-            color_picker::Alpha::Opaque,
-        );
+        let (r, g, b) = marker_settings.border_color.get_rgb();
+        let mut color = Color32::from_rgb(r, g, b);
+        color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
+        marker_settings.border_color = Color::new(r, g, b);
     });
 
     ui.add(
@@ -295,12 +294,11 @@ pub fn show_marker_settings(
 
     ui.horizontal(|ui| {
         ui.label(fl!(crate::LANGUAGE_LOADER, "settings-raster-label"));
+        let (r, g, b) = marker_settings.raster_color.get_rgb();
+        let mut color = Color32::from_rgb(r, g, b);
 
-        color_picker::color_edit_button_srgba(
-            ui,
-            &mut marker_settings.raster_color,
-            color_picker::Alpha::Opaque,
-        );
+        color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
+        marker_settings.raster_color = Color::new(r, g, b);
         ui.add(
             egui::Slider::new(&mut marker_settings.raster_alpha, 0.1..=0.9)
                 .text(fl!(crate::LANGUAGE_LOADER, "settings-alpha")),
@@ -309,11 +307,11 @@ pub fn show_marker_settings(
 
     ui.horizontal(|ui| {
         ui.label(fl!(crate::LANGUAGE_LOADER, "settings-guide-label"));
-        color_picker::color_edit_button_srgba(
-            ui,
-            &mut marker_settings.guide_color,
-            color_picker::Alpha::Opaque,
-        );
+        let (r, g, b) = marker_settings.guide_color.get_rgb();
+        let mut color = Color32::from_rgb(r, g, b);
+
+        color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
+        marker_settings.guide_color = Color::new(r, g, b);
 
         ui.add(
             egui::Slider::new(&mut marker_settings.guide_alpha, 0.1..=0.9)
