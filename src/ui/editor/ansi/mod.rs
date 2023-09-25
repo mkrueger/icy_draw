@@ -493,10 +493,6 @@ impl AnsiEditor {
         self.set_caret(pos.x + 1, pos.y);
     }
 
-    pub fn redraw_view(&self) {
-        self.buffer_view.lock().redraw_view();
-    }
-
     pub fn switch_fg_bg_color(&mut self) {
         let mut attr = self.buffer_view.lock().get_caret().get_attribute();
         let bg = attr.get_background();
@@ -577,7 +573,6 @@ impl AnsiEditor {
                     egui::Event::Cut => {}
                     egui::Event::Paste(text) => {
                         self.output_string(text);
-                        self.buffer_view.lock().redraw_view();
                     }
 
                     egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
@@ -590,7 +585,6 @@ impl AnsiEditor {
                                     MModifiers::None,
                                 );
                             }
-                            self.redraw_view();
                         }
                     }
 
@@ -620,8 +614,6 @@ impl AnsiEditor {
                         for (k, m) in EDITOR_KEY_MAP {
                             if *k == key_code {
                                 cur_tool.handle_key(self, *m, modifier);
-                                self.buffer_view.lock().redraw_view();
-                                self.redraw_view();
                                 break;
                             }
                         }
@@ -659,7 +651,6 @@ impl AnsiEditor {
                     if message.is_none() {
                         *message = msg;
                     }
-                    self.redraw_view();
                 }
             }
         }
@@ -692,7 +683,6 @@ impl AnsiEditor {
                     cur_tool.handle_drag_begin(self, &response);
                 }
             }
-            self.redraw_view();
         }
 
         if response.dragged_by(egui::PointerButton::Primary) && self.drag_started {
@@ -715,7 +705,6 @@ impl AnsiEditor {
                     response = cur_tool.handle_drag(ui, response, self, &calc);
                 }
             }
-            self.redraw_view();
         }
         self.buffer_view
             .lock()
@@ -749,7 +738,6 @@ impl AnsiEditor {
             }
 
             self.drag_started = false;
-            self.redraw_view();
         }
 
         response
