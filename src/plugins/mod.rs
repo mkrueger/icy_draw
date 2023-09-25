@@ -1,7 +1,7 @@
 use std::{fs, path::Path, sync::Arc};
 
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Position, TextPane, BufferParser};
+use icy_engine::{AttributedChar, BufferParser, Position, TextPane};
 use mlua::{Lua, UserData};
 use regex::Regex;
 use walkdir::WalkDir;
@@ -125,10 +125,14 @@ impl LuaBufferView {
         let buffer_type = self.buffer_view.lock().get_buffer().buffer_type;
         let ch = match buffer_type {
             icy_engine::BufferType::Unicode => ch,
-            icy_engine::BufferType::CP437 => icy_engine::ascii::Parser::default().convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
-            icy_engine::BufferType::Petscii => icy_engine::petscii::Parser::default().convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
-            icy_engine::BufferType::Atascii => icy_engine::atascii::Parser::default().convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
-            icy_engine::BufferType::Viewdata => icy_engine::viewdata::Parser::default().convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
+            icy_engine::BufferType::CP437 => icy_engine::ascii::Parser::default()
+                .convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
+            icy_engine::BufferType::Petscii => icy_engine::petscii::Parser::default()
+                .convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
+            icy_engine::BufferType::Atascii => icy_engine::atascii::Parser::default()
+                .convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
+            icy_engine::BufferType::Viewdata => icy_engine::viewdata::Parser::default()
+                .convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
         };
         Ok(ch)
     }
@@ -137,10 +141,18 @@ impl LuaBufferView {
         let buffer_type = self.buffer_view.lock().get_buffer().buffer_type;
         let ch = match buffer_type {
             icy_engine::BufferType::Unicode => ch.ch,
-            icy_engine::BufferType::CP437 => icy_engine::ascii::Parser::default().convert_to_unicode(ch),
-            icy_engine::BufferType::Petscii => icy_engine::petscii::Parser::default().convert_to_unicode(ch),
-            icy_engine::BufferType::Atascii => icy_engine::atascii::Parser::default().convert_to_unicode(ch),
-            icy_engine::BufferType::Viewdata => icy_engine::viewdata::Parser::default().convert_to_unicode(ch),
+            icy_engine::BufferType::CP437 => {
+                icy_engine::ascii::Parser::default().convert_to_unicode(ch)
+            }
+            icy_engine::BufferType::Petscii => {
+                icy_engine::petscii::Parser::default().convert_to_unicode(ch)
+            }
+            icy_engine::BufferType::Atascii => {
+                icy_engine::atascii::Parser::default().convert_to_unicode(ch)
+            }
+            icy_engine::BufferType::Viewdata => {
+                icy_engine::viewdata::Parser::default().convert_to_unicode(ch)
+            }
         };
         ch.to_string()
     }
@@ -299,10 +311,7 @@ impl UserData for LuaBufferView {
             this.buffer_view
                 .lock()
                 .get_edit_state_mut()
-                .set_char(
-                    (x, y),
-                    ch,
-                )
+                .set_char((x, y), ch)
                 .unwrap();
             Ok(())
         });
@@ -346,11 +355,13 @@ impl UserData for LuaBufferView {
             }
 
             let ch = this.buffer_view.lock().get_buffer_mut().layers[cur_layer].get_char((x, y));
-            this.buffer_view.lock().get_caret_mut().set_attr(ch.attribute);
+            this.buffer_view
+                .lock()
+                .get_caret_mut()
+                .set_attr(ch.attribute);
 
             Ok(this.convert_to_unicode(ch))
         });
-
 
         methods.add_method_mut("set_fg", |_, this, (x, y, col): (i32, i32, u32)| {
             let cur_layer = this
@@ -444,10 +455,11 @@ impl UserData for LuaBufferView {
                 let mut pos = this.buffer_view.lock().get_caret_mut().get_position();
                 let attribute = this.buffer_view.lock().get_caret_mut().get_attribute();
                 let ch = AttributedChar::new(this.convert_from_unicode(c.to_string())?, attribute);
-                let _ = this.buffer_view.lock().get_edit_state_mut().set_char(
-                    pos,
-                    ch,
-                );
+                let _ = this
+                    .buffer_view
+                    .lock()
+                    .get_edit_state_mut()
+                    .set_char(pos, ch);
                 pos.x += 1;
                 this.buffer_view.lock().get_caret_mut().set_position(pos);
             }
