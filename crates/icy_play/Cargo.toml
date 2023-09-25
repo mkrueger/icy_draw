@@ -1,5 +1,5 @@
 [package]
-name = "play_anim"
+name = "icy_play"
 version = "0.1.0"
 edition = "2021"
 authors = ["Mike Krüger <mkrueger@posteo.de>"]
@@ -12,7 +12,7 @@ repository = "https://github.com/mkrueger/icy_draw"
 [dependencies]
 #icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
 #icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
-icy_engine = { path = "../../../icy_engine" }
+icy_engine = { path = "../../../icy_engine", features=["minimal"], default-features = false }
 icy_engine_egui = { path = "../../../icy_engine_egui", features = ["animations"], default-features = false}
 clap = { version="4.4.0", features = ["derive"] }
 
