@@ -173,9 +173,11 @@ pub fn plot_point(
         attribute.set_background(editor_attr.get_background());
     }
 
+    buffer_view.get_edit_state_mut().is_buffer_dirty = true;
     let Some(layer) = buffer_view.get_buffer_mut().get_overlay_layer() else {
         return;
     };
+
     let overlay_ch = layer.get_char(text_pos);
     if overlay_ch.is_visible() {
         ch = overlay_ch;
@@ -184,7 +186,6 @@ pub fn plot_point(
     if matches!(mode, BrushMode::HalfBlock) && matches!(point_role, PointRole::Fill) {
         mode = BrushMode::Block;
     }
-
     match mode {
         BrushMode::HalfBlock => {
             layer.set_char(
