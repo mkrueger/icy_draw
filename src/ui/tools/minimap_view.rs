@@ -70,7 +70,6 @@ impl MinimapToolWindow {
                 .get_buffer_mut()
                 .set_font_table(buffer.get_font_table());
             self.palette_hash = cur_palette_hash;
-            self.buffer_view.lock().redraw_palette();
             self.buffer_view.lock().redraw_font();
             self.buffer_view.lock().redraw_view();
         }
