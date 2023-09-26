@@ -417,19 +417,21 @@ impl Document for AnimationEditor {
                     if let Ok(result) = self.update_thread.take().unwrap().join() {
                         match result {
                             Ok(animator) => {
-                                animator
-                                    .lock()
-                                    .unwrap()
-                                    .display_frame(self.buffer_view.clone());
                                 let cur_frame = if let Some(cur) = &self.animator {
                                     cur.lock().unwrap().get_cur_frame()
                                 } else {
                                     0
                                 };
-                                if cur_frame < animator.lock().unwrap().frames.len() {
+                                let frames = animator.lock().unwrap().frames.len();
+                                if cur_frame < frames {
                                     animator.lock().unwrap().set_cur_frame(cur_frame);
-                                }
+                                } 
                                 self.animator = Some(animator);
+                                self.animator.as_ref().unwrap()
+                                    .lock()
+                                    .unwrap()
+                                    .display_frame(self.buffer_view.clone());
+
                                 self.error = "".to_string();
                             }
                             Err(e) => {

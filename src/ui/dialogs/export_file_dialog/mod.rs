@@ -97,7 +97,6 @@ impl ModalDialog for ExportFileDialog {
                             }
                         }
                     }
-                    let old_format = format_type;
                     // ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
 
                     egui::ComboBox::from_id_source("format_combo")
@@ -109,10 +108,8 @@ impl ModalDialog for ExportFileDialog {
                                 ui.selectable_value(&mut format_type, i, td.0);
                             });
                         });
-                    if old_format != format_type {
-                        self.file_name
-                            .set_extension(TYPE_DESCRIPTIONS[format_type].2);
-                    }
+                    self.file_name
+                        .set_extension(TYPE_DESCRIPTIONS[format_type].2);
                     //    });
                 });
 

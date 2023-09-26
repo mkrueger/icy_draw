@@ -15,6 +15,7 @@ repository = "https://github.com/mkrueger/icy_draw"
 icy_engine = { path = "../../../icy_engine", features=["minimal"], default-features = false }
 icy_engine_egui = { path = "../../../icy_engine_egui", features = ["animations"], default-features = false}
 clap = { version="4.4.0", features = ["derive"] }
+anyhow = "1.0.75"
 
 [profile.release]
 strip = "symbols"
