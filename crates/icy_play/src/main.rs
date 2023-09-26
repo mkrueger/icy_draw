@@ -139,15 +139,14 @@ fn show_buffer(io: &mut Box<dyn Com>, buffer: &Buffer, single_frame: bool, use_u
     if use_utf8 {
         opt.modern_terminal_output = true;
     }
-    opt.longer_terminal_output = true;
     opt.control_char_handling = icy_engine::ControlCharHandling::FilterOut;
     opt.longer_terminal_output = true;
-
+    opt.compress = false;
     let bytes = buffer.to_bytes("ans", &opt)?;
     if !single_frame && terminal.use_dcs() {
         io.write(b"\x1BP0;1;0!z")?;
     }
-    io.write(b"\x1b[0m\x1b[0;")?;
+    io.write(b"\x1b[0m")?;
     io.write(&bytes)?;
     //io.write(format!("\x1b[0;0HTerminal:{:?}", terminal).as_bytes())?;
     if !single_frame && terminal.use_dcs() {

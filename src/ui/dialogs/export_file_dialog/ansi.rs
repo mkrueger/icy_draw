@@ -43,6 +43,10 @@ pub fn create_settings_page(ui: &mut Ui, options: &mut SaveOptions) {
                     );
                 });
         });
+        ui.checkbox(
+            &mut options.compress,
+            fl!(crate::LANGUAGE_LOADER, "export-compression-label"),
+        );
         ui.horizontal(|ui| {
             ui.add(egui::Checkbox::new(
                 &mut options.modern_terminal_output,
