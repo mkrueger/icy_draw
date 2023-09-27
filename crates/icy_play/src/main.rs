@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use icy_engine::{SaveOptions, Buffer};
+use icy_engine::{Buffer, SaveOptions, TextPane};
 use icy_engine_egui::animations::Animator;
 use std::{fs, path::PathBuf, time::Duration};
 
@@ -12,14 +12,14 @@ pub enum Terminal {
     IcyTerm,
     SyncTerm,
     Unknown,
-    Name(String)
+    Name(String),
 }
 
 impl Terminal {
     pub fn use_dcs(&self) -> bool {
         match self {
             Terminal::IcyTerm | Terminal::SyncTerm => true,
-            _ => false
+            _ => false,
         }
     }
 }
@@ -32,7 +32,7 @@ pub struct Cli {
         default_value_t = false
     )]
     utf8: bool,
-    
+
     #[arg(help = "File to play/show.", required = true)]
     path: Option<PathBuf>,
 
@@ -52,7 +52,6 @@ enum Commands {
     ShowFrame { frame: usize },
 }
 
-
 fn main() {
     let args = Cli::parse();
 
@@ -62,14 +61,14 @@ fn main() {
     } else {
         Box::new(com::StdioCom::start().unwrap())
     };
-    
+
     io.write(b"\x1B[0c").unwrap();
     if let Some(path) = args.path {
         let parent = Some(path.parent().unwrap().to_path_buf());
 
         let Some(ext) = path.extension() else {
             println!("Error: File extension not found.");
-            return;  
+            return;
         };
         let ext = ext.to_string_lossy().to_ascii_lowercase();
         let mut term = Terminal::Unknown;
@@ -83,7 +82,7 @@ fn main() {
                 } else {
                     Terminal::Name(txt)
                 }
-            }// 67;84;101;114;109;1;316
+            } // 67;84;101;114;109;1;316
             Ok(_) => {}
             Err(_) => {
                 eprintln!("Connection aborted.");
@@ -91,38 +90,41 @@ fn main() {
             }
         }
 
-
         match ext.as_str() {
-            "icyanim" => {
-                match fs::read_to_string(path) {
-                    Ok(txt) => {
-                        let animator = Animator::run(&parent, &txt);
+            "icyanim" => match fs::read_to_string(path) {
+                Ok(txt) => {
+                    let animator = Animator::run(&parent, &txt);
 
-            
-                        if let Ok(animator) = animator {
-                            let animator = animator.lock().unwrap();
-                            let mut opt: SaveOptions = SaveOptions::default();
-                            if args.utf8 {
-                                opt.modern_terminal_output = true;
+                    if let Ok(animator) = animator {
+                        let animator = animator.lock().unwrap();
+                        let mut opt: SaveOptions = SaveOptions::default();
+                        if args.utf8 {
+                            opt.modern_terminal_output = true;
+                        }
+                        match args.command.unwrap_or(Commands::Play) {
+                            Commands::Play => {
+                                for (buffer, _, delay) in animator.frames.iter() {
+                                    show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
+                                    std::thread::sleep(Duration::from_millis(*delay as u64));
+                                }
                             }
-                            match args.command.unwrap_or(Commands::Play) {
-                                Commands::Play => {
-                                    for (buffer, _, delay) in animator.frames.iter() {
-                                        show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
-                                        std::thread::sleep(Duration::from_millis(*delay as u64));
-                                    }
-                                }
-                                Commands::ShowFrame { frame } => {
-                                    show_buffer(&mut io, &animator.frames[frame].0, true, args.utf8, &term).unwrap();
-                                }
+                            Commands::ShowFrame { frame } => {
+                                show_buffer(
+                                    &mut io,
+                                    &animator.frames[frame].0,
+                                    true,
+                                    args.utf8,
+                                    &term,
+                                )
+                                .unwrap();
                             }
                         }
                     }
-                    Err(e) => {
-                        println!("Error opening file: {e}");
-                    }
                 }
-            }
+                Err(e) => {
+                    println!("Error opening file: {e}");
+                }
+            },
             _ => {
                 let buffer = Buffer::load_buffer(&path, true);
                 if let Ok(buffer) = &buffer {
@@ -130,11 +132,16 @@ fn main() {
                 }
             }
         }
-
     }
 }
 
-fn show_buffer(io: &mut Box<dyn Com>, buffer: &Buffer, single_frame: bool, use_utf8: bool, terminal: &Terminal) ->anyhow::Result<()> {
+fn show_buffer(
+    io: &mut Box<dyn Com>,
+    buffer: &Buffer,
+    single_frame: bool,
+    use_utf8: bool,
+    terminal: &Terminal,
+) -> anyhow::Result<()> {
     let mut opt: SaveOptions = SaveOptions::default();
     if use_utf8 {
         opt.modern_terminal_output = true;
@@ -148,9 +155,16 @@ fn show_buffer(io: &mut Box<dyn Com>, buffer: &Buffer, single_frame: bool, use_u
     }
     io.write(b"\x1b[0m")?;
     io.write(&bytes)?;
+    /*
+    for i in 0..buffer.get_height() {
+        io.write(format!("\x1b[{};1H{}:", i + 1, i).as_bytes())?;
+    }*/
+
     //io.write(format!("\x1b[0;0HTerminal:{:?}", terminal).as_bytes())?;
     if !single_frame && terminal.use_dcs() {
         io.write(b"\x1b\\\x1b[0*z")?;
     }
+    io.write(b"\n\r")?;
+
     Ok(())
 }

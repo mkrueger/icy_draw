@@ -1,17 +1,18 @@
-use std::{io::{Write, Read, self}, net::{TcpStream, ToSocketAddrs}};
+use std::{
+    io::{self, Read, Write},
+    net::{TcpStream, ToSocketAddrs},
+};
 
 pub trait Com {
     fn write(&mut self, buf: &[u8]) -> anyhow::Result<usize>;
     fn read(&mut self) -> anyhow::Result<Option<Vec<u8>>>;
 }
 
-pub struct StdioCom { 
-}
+pub struct StdioCom {}
 
 impl StdioCom {
     pub fn start() -> anyhow::Result<Self> {
-        Ok(Self {
-        })
+        Ok(Self {})
     }
 }
 impl Com for StdioCom {
@@ -32,9 +33,7 @@ pub struct SocketCom {
 impl SocketCom {
     pub fn connect<A: ToSocketAddrs>(address: A) -> anyhow::Result<Self> {
         let tcp_stream = TcpStream::connect(address)?;
-        Ok(Self {
-            tcp_stream,
-        })
+        Ok(Self { tcp_stream })
     }
 }
 

@@ -88,7 +88,7 @@ impl Tool for PipetteTool {
                         .lock()
                         .get_buffer()
                         .palette
-                        .get_color(ch.attribute.get_foreground() as usize),
+                        .get_color(ch.attribute.get_foreground()),
                 );
                 ui.label(fl!(
                     crate::LANGUAGE_LOADER,
@@ -102,7 +102,7 @@ impl Tool for PipetteTool {
                         .lock()
                         .get_buffer()
                         .palette
-                        .get_color(ch.attribute.get_background() as usize),
+                        .get_color(ch.attribute.get_background()),
                 );
             });
         }
