@@ -397,6 +397,16 @@ new-file-template-thedraw-ui-label=
 
     Eine große Font-Sammlung kann hier heruntergeladen werden:
 
+manage-font-dialog-title=Bufferfonts bearbeiten
+manage-font-used_font_label=Verwendete Fonts
+manage-font-copy_font_button=Kopieren
+manage-font-copy_font_button-tooltip=Kopiert den Font als CTerm ANSI Sequenz ins Clipboard. (Für BBS)
+manage-font-remove_font_button=Entfernen
+manage-font-used_label=verwendet
+manage-font-not_used_label=nicht verwendet
+manage-font-replace_label=Ersetze Font mit:
+manage-font-replace_font_button=Ersetzen
+
 palette_selector-dos_default_palette=VGA 16 Farben
 palette_selector-dos_default_low_palette=VGA 8 Farben
 palette_selector-c64_default_palette=C64 Farben

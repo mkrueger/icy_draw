@@ -392,6 +392,14 @@ new-file-template-thedraw-ui-label=
     A big font archive can be downloaded from:
 
 manage-font-dialog-title=Manage Fonts
+manage-font-used_font_label=Used Fonts
+manage-font-copy_font_button=Copy Font
+manage-font-copy_font_button-tooltip=Copies font as CTerm ANSI sequence to clipboard. (for BBS use)
+manage-font-remove_font_button=Remove
+manage-font-used_label=used
+manage-font-not_used_label=not used
+manage-font-replace_label=Replace usage with slot
+manage-font-replace_font_button=Replace
 
 palette_selector-dos_default_palette=VGA 16 colors
 palette_selector-dos_default_low_palette=VGA 8 colors

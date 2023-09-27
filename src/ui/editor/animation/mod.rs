@@ -425,9 +425,11 @@ impl Document for AnimationEditor {
                                 let frames = animator.lock().unwrap().frames.len();
                                 if cur_frame < frames {
                                     animator.lock().unwrap().set_cur_frame(cur_frame);
-                                } 
+                                }
                                 self.animator = Some(animator);
-                                self.animator.as_ref().unwrap()
+                                self.animator
+                                    .as_ref()
+                                    .unwrap()
                                     .lock()
                                     .unwrap()
                                     .display_frame(self.buffer_view.clone());

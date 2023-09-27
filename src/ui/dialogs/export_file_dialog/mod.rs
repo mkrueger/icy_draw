@@ -183,7 +183,7 @@ impl ModalDialog for ExportFileDialog {
 
 type CreateSettingsFunction = fn(&mut Ui, &mut SaveOptions);
 
-const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 10] = [
+const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 11] = [
     ("Ansi (.ans)", ansi::create_settings_page, "ans"),
     ("Avatar (.avt)", avatar::create_settings_page, "avt"),
     ("PCBoard (.pcb)", pcboard::create_settings_page, "pcb"),
@@ -197,5 +197,6 @@ const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 10] = [
     ),
     ("Bin (.bin)", bin::create_settings_page, "bin"),
     ("XBin (.xb)", xbin::create_settings_page, "xb"),
+    ("CtrlA (.msg)", pcboard::create_settings_page, "msg"),
     ("PNG (.png)", png::create_settings_page, "png"),
 ];
