@@ -54,8 +54,11 @@ impl MainWindow {
 
             if self.last_command_update.elapsed().as_millis() > 250 {
                 let mut c = self.commands.pop().unwrap();
-                let pane = self.get_active_pane();
-                c.update_states(pane);
+                if let Some((_, pane)) = self.get_active_pane() {
+                    c.update_states(Some(pane));
+                } else {
+                    c.update_states(None);
+                }
                 self.commands.push(c);
                 self.last_command_update = Instant::now();
             }

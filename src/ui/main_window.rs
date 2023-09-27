@@ -34,6 +34,8 @@ pub struct MainWindow {
     dialog_open: bool,
     modal_dialog: Option<Box<dyn ModalDialog>>,
     id: usize,
+
+    pub current_id: Option<TileId>,
     pub is_closed: bool,
     pub top_bar: TopBar,
     pub left_panel: bool,
@@ -166,6 +168,7 @@ impl MainWindow {
             show_settings: false,
             settings_dialog,
             last_command_update: Instant::now(),
+            current_id: None,
         }
     }
 
@@ -315,7 +318,7 @@ impl MainWindow {
         None
     }
 
-    pub fn get_active_pane(&mut self) -> Option<&DocumentTab> {
+    pub fn get_active_pane(&mut self) -> Option<(TileId, &DocumentTab)> {
         let mut stack = vec![];
 
         if let Some(root) = self.document_tree.root {
@@ -324,8 +327,8 @@ impl MainWindow {
         while let Some(id) = stack.pop() {
             match self.document_tree.tiles.get(id) {
                 Some(egui_tiles::Tile::Pane(_)) => {
-                    if let Some(egui_tiles::Tile::Pane(p)) = self.document_tree.tiles.get_mut(id) {
-                        return Some(p);
+                    if let Some(egui_tiles::Tile::Pane(p)) = self.document_tree.tiles.get(id) {
+                        return Some((id, p));
                     } else {
                         return None;
                     }
@@ -491,6 +494,67 @@ impl MainWindow {
         self.handle_message(msg);
         result
     }
+
+    pub fn update_title(&mut self, frame: &mut eframe::Frame) {
+        let id = if let Some((id, _)) = self.get_active_pane() {
+            Some(id)
+        } else {
+            None
+        };
+
+        if let Some(id) = id {
+            if self.current_id == Some(id) {
+                return;
+            }
+            self.current_id = Some(id);
+        } else {
+            if self.current_id.is_some() {
+                self.current_id = None;
+                frame.set_window_title(&crate::DEFAULT_TITLE);
+            }
+            return;
+        }
+
+        if let Some((_, doc)) = self.get_active_pane() {
+            if let Some(path) = doc.get_path() {
+                if let Some(mut parent) = path.parent() {
+                    let directory = if let Some(user) = UserDirs::new() {
+                        let home_dir = user.home_dir();
+                        let mut parents = Vec::new();
+                        while parent != home_dir {
+                            let value = parent.file_name().unwrap().to_string_lossy().to_string();
+                            parents.push(value);
+                            parent = parent.parent().unwrap();
+                        }
+                        if parents.is_empty() {
+                            "~/".to_string()
+                        } else {
+                            format!(
+                                "~/{}/",
+                                parents.into_iter().rev().collect::<Vec<String>>().join("/")
+                            )
+                        }
+                    } else {
+                        parent.to_string_lossy().to_string()
+                    };
+
+                    frame.set_window_title(&format!(
+                        "{}{} - iCY DRAW {}",
+                        directory,
+                        path.file_name().unwrap().to_str().unwrap(),
+                        &crate::VERSION
+                    ));
+                } else {
+                    frame.set_window_title(&format!(
+                        "{} - iCY DRAW {}",
+                        path.file_name().unwrap().to_str().unwrap(),
+                        &crate::VERSION
+                    ));
+                }
+                return;
+            }
+        }
+    }
 }
 
 pub fn is_font_extensions(ext: &str) -> bool {
@@ -561,6 +625,7 @@ impl eframe::App for MainWindow {
         }
 
         let msg = self.show_top_bar(ctx, frame);
+        self.update_title(frame);
         self.handle_message(msg);
         if self.is_closed {
             frame.close();
