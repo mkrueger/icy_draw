@@ -144,14 +144,15 @@ impl MinimapToolWindow {
 
         if pos.x < 0.0 || pos.y < 0.0 {
             self.next_scroll_pos = Some(ours.char_scroll_positon + pos / ours.scale);
+            ui.ctx().request_repaint();
         }
 
         if pos.x + size.x > ours.terminal_rect.size().x
             || pos.y + size.y > ours.terminal_rect.size().y
         {
             let p = pos + size - ours.terminal_rect.size();
-
             self.next_scroll_pos = Some(ours.char_scroll_positon + p / ours.scale);
+            ui.ctx().request_repaint();
         }
 
         if response.dragged() {
@@ -161,6 +162,7 @@ impl MinimapToolWindow {
                     Some(pos.x - theirs.buffer_char_width * theirs.font_width / 2.0);
                 editor.next_scroll_y_position =
                     Some(pos.y - theirs.buffer_char_height * theirs.font_height / 2.0);
+                ui.ctx().request_repaint();
             }
         }
 
