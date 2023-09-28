@@ -132,14 +132,12 @@ impl MinimapToolWindow {
         let pos = pos - ours.char_scroll_positon * ours.scale;
 
         ui.painter().rect_stroke(
-            Rect::from_min_size(ours.buffer_rect.min + pos, size),
+            Rect::from_min_size(
+                (ours.buffer_rect.min + pos).floor() + Vec2::new(0.5, 0.5),
+                size.floor(),
+            ),
             0.0,
-            Stroke::new(3.0, Color32::from_rgba_premultiplied(155, 155, 155, 90)),
-        );
-        ui.painter().rect_stroke(
-            Rect::from_min_size(ours.buffer_rect.min + pos, size),
-            0.0,
-            Stroke::new(1.0, Color32::WHITE),
+            Stroke::new(1.0, Color32::from_rgba_premultiplied(227, 227, 227, 93)),
         );
 
         if pos.x < 0.0 || pos.y < 0.0 {
