@@ -104,6 +104,20 @@ fn main() {
                         match args.command.unwrap_or(Commands::Play) {
                             Commands::Play => {
                                 for (buffer, _, delay) in animator.frames.iter() {
+                                    match io.read() {
+                                        Ok(v) => {
+                                            if let Some(v) = v {
+                                                if v.contains(&b'\x1b') || v.contains(&b'\n') || v.contains(&b' ') {
+                                                    return;
+                                                }
+                                            }
+                                        },
+                                        Err(_) => {
+                                            eprintln!("Connection aborted.");
+                                            return;
+                                        },
+                                    }
+
                                     show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
                                     std::thread::sleep(Duration::from_millis(*delay as u64));
                                 }
