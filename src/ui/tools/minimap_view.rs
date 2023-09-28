@@ -128,15 +128,16 @@ impl MinimapToolWindow {
         let tx = theirs.char_scroll_position.x / tmax_x.max(1.0);
         let ty = theirs.char_scroll_position.y / tmax_y.max(1.0);
 
-        let pos = (our_total_size - size - Vec2::new(2.0, 2.0)) * Vec2::new(tx, ty);
+        let pos = (our_total_size - size - Vec2::new(1.0, 1.0)) * Vec2::new(tx, ty);
 
         let pos = pos - ours.char_scroll_position * ours.scale;
+        let min = (ours.buffer_rect.min + pos).floor() + Vec2::new(0.5, 0.5);
+
+        let corr = ours.buffer_rect.min.y + ours.terminal_rect.height() - (size.y + min.y);
+        let view_size = Vec2::new(size.x, size.y + corr.min(0.0)).floor();
 
         ui.painter().rect_stroke(
-            Rect::from_min_size(
-                (ours.buffer_rect.min + pos).floor() + Vec2::new(0.5, 0.5),
-                size.floor() - Vec2::new(0.0, 1.0),
-            ),
+            Rect::from_min_size(min, view_size),
             0.0,
             Stroke::new(1.0, Color32::from_rgba_premultiplied(157, 157, 157, 220)),
         );
