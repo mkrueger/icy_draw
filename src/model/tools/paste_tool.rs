@@ -71,6 +71,8 @@ impl Tool for PasteTool {
             if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
                 self.closed = !layer.role.is_paste();
             }
+        } else {
+            self.closed = true;
         }
 
         if self.closed {
