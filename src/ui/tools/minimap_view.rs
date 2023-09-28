@@ -96,6 +96,7 @@ impl MinimapToolWindow {
             stick_to_bottom: false,
             scale: Some(Vec2::new(scalex, scaley)),
             use_terminal_height: false,
+            hide_scrollbars: true,
 
             ..Default::default()
         };
@@ -134,7 +135,7 @@ impl MinimapToolWindow {
         ui.painter().rect_stroke(
             Rect::from_min_size(
                 (ours.buffer_rect.min + pos).floor() + Vec2::new(0.5, 0.5),
-                size.floor(),
+                size.floor() - Vec2::new(0.0, 1.0),
             ),
             0.0,
             Stroke::new(1.0, Color32::from_rgba_premultiplied(227, 227, 227, 93)),
