@@ -138,7 +138,7 @@ impl MinimapToolWindow {
                 size.floor() - Vec2::new(0.0, 1.0),
             ),
             0.0,
-            Stroke::new(1.0, Color32::from_rgba_premultiplied(227, 227, 227, 93)),
+            Stroke::new(1.0, Color32::from_rgba_premultiplied(157, 157, 157, 220)),
         );
 
         if pos.x < 0.0 || pos.y < 0.0 {
