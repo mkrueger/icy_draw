@@ -365,7 +365,7 @@ impl AnsiEditor {
         let w = self.buffer_view.lock().get_buffer().get_width() - 1;
         let h = self.buffer_view.lock().get_buffer().get_height() - 1;
 
-        let char_scroll_position = self.buffer_view.lock().calc.char_scroll_positon;
+        let char_scroll_position = self.buffer_view.lock().calc.char_scroll_position;
         let terminal_rect = self.buffer_view.lock().calc.terminal_rect;
         let terminal_width = terminal_rect.width();
         let terminal_height = terminal_rect.height();

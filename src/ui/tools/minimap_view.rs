@@ -124,12 +124,12 @@ impl MinimapToolWindow {
             theirs.font_width * (theirs.real_width as f32 - theirs.buffer_char_width).max(0.0);
 
         let size = our_total_size * their_buffer_size / their_total_size;
-        let tx = theirs.char_scroll_positon.x / tmax_x.max(1.0);
-        let ty = theirs.char_scroll_positon.y / tmax_y.max(1.0);
+        let tx = theirs.char_scroll_position.x / tmax_x.max(1.0);
+        let ty = theirs.char_scroll_position.y / tmax_y.max(1.0);
 
         let pos = (our_total_size - size - Vec2::new(2.0, 2.0)) * Vec2::new(tx, ty);
 
-        let pos = pos - ours.char_scroll_positon * ours.scale;
+        let pos = pos - ours.char_scroll_position * ours.scale;
 
         ui.painter().rect_stroke(
             Rect::from_min_size(
@@ -141,7 +141,7 @@ impl MinimapToolWindow {
         );
 
         if pos.x < 0.0 || pos.y < 0.0 {
-            self.next_scroll_pos = Some(ours.char_scroll_positon + pos / ours.scale);
+            self.next_scroll_pos = Some(ours.char_scroll_position + pos / ours.scale);
             ui.ctx().request_repaint();
         }
 
@@ -149,13 +149,13 @@ impl MinimapToolWindow {
             || pos.y + size.y > ours.terminal_rect.size().y
         {
             let p = pos + size - ours.terminal_rect.size();
-            self.next_scroll_pos = Some(ours.char_scroll_positon + p / ours.scale);
+            self.next_scroll_pos = Some(ours.char_scroll_position + p / ours.scale);
             ui.ctx().request_repaint();
         }
 
         if response.dragged() {
             if let Some(pos) = response.interact_pointer_pos() {
-                let pos = (pos - ours.buffer_rect.min) / ours.scale + ours.char_scroll_positon;
+                let pos = (pos - ours.buffer_rect.min) / ours.scale + ours.char_scroll_position;
                 editor.next_scroll_x_position =
                     Some(pos.x - theirs.buffer_char_width * theirs.font_width / 2.0);
                 editor.next_scroll_y_position =
