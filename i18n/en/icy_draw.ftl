@@ -400,6 +400,7 @@ manage-font-used_label=used
 manage-font-not_used_label=not used
 manage-font-replace_label=Replace usage with slot
 manage-font-replace_font_button=Replace
+manage-font-change_font_slot_button=Change font slot
 
 palette_selector-dos_default_palette=VGA 16 colors
 palette_selector-dos_default_low_palette=VGA 8 colors

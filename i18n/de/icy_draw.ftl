@@ -406,6 +406,7 @@ manage-font-used_label=verwendet
 manage-font-not_used_label=nicht verwendet
 manage-font-replace_label=Ersetze Font mit:
 manage-font-replace_font_button=Ersetzen
+manage-font-change_font_slot_button=Slot ändern
 
 palette_selector-dos_default_palette=VGA 16 Farben
 palette_selector-dos_default_low_palette=VGA 8 Farben

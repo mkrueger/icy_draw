@@ -213,6 +213,35 @@ impl crate::ModalDialog for FontManager {
                                 self.replace_with = 0;
                                 self.do_select = true;
                             }
+
+                            if ui
+                            .add_enabled(
+                                !enabled,
+                                Button::new(fl!(
+                                    crate::LANGUAGE_LOADER,
+                                    "manage-font-change_font_slot_button"
+                                )),
+                            )
+                            .clicked()
+                        {
+                            if let Err(err) = self
+                                .buffer_view
+                                .lock()
+                                .get_edit_state_mut()
+                                .change_font_slot(self.selected, self.replace_with)
+                            {
+                                log::error!(
+                                    "Error change font {}->{}: {err}",
+                                    self.selected,
+                                    self.replace_with
+                                );
+                            }
+                            self.update_used_fonts();
+                            self.selected = 0;
+                            self.replace_with = 0;
+                            self.do_select = true;
+                        }
+
                         });
                     });
             });
