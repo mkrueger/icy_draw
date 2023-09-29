@@ -62,7 +62,6 @@ fn main() {
         Box::new(com::StdioCom::start().unwrap())
     };
 
-    io.write(b"\x1B[0c").unwrap();
     if let Some(path) = args.path {
         let parent = Some(path.parent().unwrap().to_path_buf());
 
@@ -72,23 +71,6 @@ fn main() {
         };
         let ext = ext.to_string_lossy().to_ascii_lowercase();
         let mut term = Terminal::Unknown;
-        match io.read() {
-            Ok(Some(data)) => {
-                let txt = String::from_utf8_lossy(&data).to_string();
-                term = if txt.contains("73;99;121;84;101;114;109") {
-                    Terminal::IcyTerm
-                } else if txt.contains("67;84;101;114") {
-                    Terminal::SyncTerm
-                } else {
-                    Terminal::Name(txt)
-                }
-            } // 67;84;101;114;109;1;316
-            Ok(_) => {}
-            Err(_) => {
-                eprintln!("Connection aborted.");
-                return;
-            }
-        }
 
         match ext.as_str() {
             "icyanim" => match fs::read_to_string(path) {
@@ -103,6 +85,28 @@ fn main() {
                         }
                         match args.command.unwrap_or(Commands::Play) {
                             Commands::Play => {
+                                io.write(b"\x1B[0c").unwrap();
+                                match io.read() {
+                                    Ok(Some(data)) => {
+                                        let txt: String = String::from_utf8_lossy(&data).to_string();
+                                        term = if txt.contains("73;99;121;84;101;114;109") {
+                                            Terminal::IcyTerm
+                                        } else if txt.contains("67;84;101;114") {
+                                            Terminal::SyncTerm
+                                        } else {
+                                            Terminal::Name(txt)
+                                        }
+                                    } // 67;84;101;114;109;1;316
+                                    Ok(_) => {}
+                                    Err(_) => {
+                                        eprintln!("Connection aborted.");
+                                        return;
+                                    }
+                                }
+                                // flush.
+                                while io.read().is_ok() {
+                                }
+                        
                                 for (buffer, _, delay) in animator.frames.iter() {
                                     match io.read() {
                                         Ok(v) => {
@@ -177,16 +181,12 @@ fn show_buffer(
     }
     io.write(b"\x1b[0m")?;
     io.write(&bytes)?;
-    /*
     for i in 0..buffer.get_height() {
         io.write(format!("\x1b[{};1H{}:", i + 1, i).as_bytes())?;
-    }*/
-
-    //io.write(format!("\x1b[0;0HTerminal:{:?}", terminal).as_bytes())?;
+    }
+    io.write(format!("\x1b[1;1HTerminal:{:?}", terminal).as_bytes())?;
     if !single_frame && terminal.use_dcs() {
         io.write(b"\x1b\\\x1b[0*z")?;
     }
-    io.write(b"\n\r")?;
-
     Ok(())
 }
