@@ -1,6 +1,7 @@
 use std::{
     io::{self, Read, Write},
     net::{TcpStream, ToSocketAddrs},
+    time::Duration,
 };
 
 pub trait Com {
@@ -33,6 +34,7 @@ pub struct SocketCom {
 impl SocketCom {
     pub fn connect<A: ToSocketAddrs>(address: A) -> anyhow::Result<Self> {
         let tcp_stream = TcpStream::connect(address)?;
+        tcp_stream.set_read_timeout(Some(Duration::from_millis(500)))?;
         Ok(Self { tcp_stream })
     }
 }

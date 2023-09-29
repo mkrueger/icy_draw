@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
-use icy_engine::{Buffer, SaveOptions, TextPane};
+use icy_engine::{Buffer, SaveOptions};
 use icy_engine_egui::animations::Animator;
-use std::{fs, path::PathBuf, time::Duration, io::Write};
+use std::{fs, path::PathBuf, time::Duration};
 
 use crate::com::Com;
 
@@ -17,17 +17,11 @@ pub enum Terminal {
 
 impl Terminal {
     pub fn use_dcs(&self) -> bool {
-        match self {
-            Terminal::IcyTerm | Terminal::SyncTerm => true,
-            _ => false,
-        }
+        matches!(self, Terminal::IcyTerm | Terminal::SyncTerm)
     }
 
     fn can_repeat_rle(&self) -> bool {
-        match self {
-            Terminal::IcyTerm | Terminal::SyncTerm => true,
-            _ => false,
-        }
+        matches!(self, Terminal::IcyTerm | Terminal::SyncTerm)
     }
 }
 
@@ -95,7 +89,8 @@ fn main() {
                                 io.write(b"\x1B[0c").unwrap();
                                 match io.read() {
                                     Ok(Some(data)) => {
-                                        let txt: String = String::from_utf8_lossy(&data).to_string();
+                                        let txt: String =
+                                            String::from_utf8_lossy(&data).to_string();
                                         term = if txt.contains("73;99;121;84;101;114;109") {
                                             Terminal::IcyTerm
                                         } else if txt.contains("67;84;101;114") {
@@ -111,25 +106,24 @@ fn main() {
                                     }
                                 }
                                 // flush.
-                                while let Ok(Some(_)) = io.read() {
-                                }
+                                while let Ok(Some(_)) = io.read() {}
 
                                 for (buffer, _, delay) in animator.frames.iter() {
-                                    match io.read() {
-                                        Ok(v) => {
-                                            if let Some(v) = v {
-                                                if v.contains(&b'\x1b') || v.contains(&b'\n') || v.contains(&b' ') {
-                                                    break;
-                                                }
+                                    if let Ok(v) = io.read() {
+                                        if let Some(v) = v {
+                                            if v.contains(&b'\x1b')
+                                                || v.contains(&b'\n')
+                                                || v.contains(&b' ')
+                                            {
+                                                break;
                                             }
-                                        },
-                                        Err(_) => { },
+                                        }
                                     }
 
                                     show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
                                     std::thread::sleep(Duration::from_millis(*delay as u64));
                                 }
-                                io.write(b"\x1b\\\x1b[0;0 D");
+                                let _ = io.write(b"\x1b\\\x1b[0;0 D");
                             }
                             Commands::ShowFrame { frame } => {
                                 show_buffer(
@@ -175,12 +169,12 @@ fn show_buffer(
     opt.use_skip_ws = false;
     opt.preserve_line_length = true;
     opt.use_repeat_rle = terminal.can_repeat_rle();
-    
+
     if matches!(terminal, Terminal::IcyTerm) {
         opt.control_char_handling = icy_engine::ControlCharHandling::IcyTerm;
     }
     let bytes = buffer.to_bytes("ans", &opt)?;
-    
+
     if !single_frame && terminal.use_dcs() {
         io.write(b"\x1BP0;1;0!z")?;
     }
