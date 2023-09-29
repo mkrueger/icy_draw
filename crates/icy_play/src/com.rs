@@ -6,7 +6,7 @@ use std::{
 
 pub trait Com {
     fn write(&mut self, buf: &[u8]) -> anyhow::Result<usize>;
-    fn read(&mut self) -> anyhow::Result<Option<Vec<u8>>>;
+    fn read(&mut self, block: bool) -> anyhow::Result<Option<Vec<u8>>>;
 }
 
 pub struct StdioCom {}
@@ -22,7 +22,7 @@ impl Com for StdioCom {
         Ok(buf.len())
     }
 
-    fn read(&mut self) -> anyhow::Result<Option<Vec<u8>>> {
+    fn read(&mut self, _block: bool) -> anyhow::Result<Option<Vec<u8>>> {
         Ok(None)
     }
 }
@@ -45,8 +45,9 @@ impl Com for SocketCom {
         Ok(buf.len())
     }
 
-    fn read(&mut self) -> anyhow::Result<Option<Vec<u8>>> {
+    fn read(&mut self, block: bool) -> anyhow::Result<Option<Vec<u8>>> {
         let mut buf = [0; 1024 * 256];
+        self.tcp_stream.set_nonblocking(!block)?;
         if self.tcp_stream.peek(&mut buf)? == 0 {
             return Ok(None);
         }

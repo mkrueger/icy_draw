@@ -86,7 +86,7 @@ fn main() {
                     match args.command.unwrap_or(Commands::Play) {
                         Commands::Play => {
                             io.write(b"\x1B[0c").unwrap();
-                            match io.read() {
+                            match io.read(true) {
                                 Ok(Some(data)) => {
                                     let txt: String = String::from_utf8_lossy(&data).to_string();
                                     term = if txt.contains("73;99;121;84;101;114;109") {
@@ -102,9 +102,10 @@ fn main() {
                                 }
                             }
                             // flush.
-                            while let Ok(Some(_)) = io.read() {}
+                            while let Ok(Some(_)) = io.read(false) {}
+
                             while animator.lock().unwrap().is_playing() {
-                                if let Ok(Some(v)) = io.read() {
+                                if let Ok(Some(v)) = io.read(false) {
                                     if v.contains(&b'\x1b')
                                         || v.contains(&b'\n')
                                         || v.contains(&b' ')
