@@ -11,6 +11,7 @@ repository = "https://github.com/mkrueger/icy_draw"
 
 [dependencies]
 eframe = "0.22.0"
+egui = { version = "0.22.0" }
 egui_extras = { version="0.22.0", features = ["svg"] }
 egui_glow = "0.22.0"
 egui-modal = "0.2.4"
