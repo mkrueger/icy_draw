@@ -3,7 +3,6 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
     sync::Arc,
-    thread,
     time::Instant,
 };
 
@@ -36,14 +35,14 @@ pub struct AnimationEditor {
 
     txt: String,
     buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
-    animator: Option<Arc<std::sync::Mutex<Animator>>>,
-    error: String,
+    animator: Arc<std::sync::Mutex<Animator>>,
 
     parent_path: Option<PathBuf>,
     export_path: PathBuf,
     export_type: ExportType,
 
-    update_thread: Option<thread::JoinHandle<mlua::Result<Arc<std::sync::Mutex<Animator>>>>>,
+    first_frame: bool,
+
     shedule_update: bool,
     last_update: Instant,
 }
@@ -56,13 +55,7 @@ impl AnimationEditor {
         buffer_view.interactive = false;
         let buffer_view = Arc::new(eframe::epaint::mutex::Mutex::new(buffer_view));
         let parent_path = path.parent().map(|p| p.to_path_buf());
-        let animator = if let Ok(animator) = Animator::run(&parent_path, &txt) {
-            animator.lock().unwrap().display_frame(buffer_view.clone());
-            Some(animator)
-        } else {
-            None
-        };
-
+        let animator = Animator::run(&parent_path, txt.clone());
         let export_path = path.with_extension("gif");
         Self {
             gl: gl.clone(),
@@ -71,14 +64,13 @@ impl AnimationEditor {
             animator,
             txt,
             undostack: 0,
-            error: "".to_string(),
             export_path,
             export_type: ExportType::Gif,
             parent_path,
 
-            update_thread: None,
             shedule_update: false,
             last_update: Instant::now(),
+            first_frame: true,
         }
     }
 
@@ -86,59 +78,56 @@ impl AnimationEditor {
         match self.export_type {
             ExportType::Gif => {
                 if let Ok(mut image) = File::create(&self.export_path) {
-                    let size = self.buffer_view.lock().get_buffer().get_size();
-                    let dim = self.buffer_view.lock().get_buffer().get_font_dimensions();
-                    let width = (size.width * dim.width) as u16;
-                    let height = (size.height * dim.height) as u16;
+                    if self.animator.lock().unwrap().success() {
+                        let size = self.buffer_view.lock().get_buffer().get_size();
+                        let dim = self.buffer_view.lock().get_buffer().get_font_dimensions();
+                        let width = (size.width * dim.width) as u16;
+                        let height = (size.height * dim.height) as u16;
 
-                    let Ok(mut encoder) = ::gif::Encoder::new(&mut image, width, height, &[])
-                    else {
-                        return Err(anyhow::anyhow!("Could not create encoder"));
-                    };
-                    encoder.set_repeat(::gif::Repeat::Infinite).unwrap();
-
-                    let frame_count = self.animator.as_ref().unwrap().lock().unwrap().frames.len();
-
-                    for frame in 0..frame_count {
-                        self.animator
-                            .as_ref()
-                            .unwrap()
-                            .lock()
-                            .unwrap()
-                            .set_cur_frame(frame);
-                        let monitor_settings = self
-                            .animator
-                            .as_ref()
-                            .unwrap()
-                            .lock()
-                            .unwrap()
-                            .display_frame(self.buffer_view.clone());
-                        let opt = icy_engine_egui::TerminalOptions {
-                            stick_to_bottom: false,
-                            scale: Some(Vec2::new(1.0, 1.0)),
-                            monitor_settings,
-
-                            id: Some(Id::new(self.id + 20000)),
-                            ..Default::default()
+                        let Ok(mut encoder) = ::gif::Encoder::new(&mut image, width, height, &[])
+                        else {
+                            return Err(anyhow::anyhow!("Could not create encoder"));
                         };
+                        encoder.set_repeat(::gif::Repeat::Infinite).unwrap();
 
-                        let (size, mut data) =
-                            self.buffer_view.lock().render_buffer(&self.gl, &opt);
+                        let frame_count = self.animator.lock().unwrap().frames.len();
 
-                        let gif_frame =
-                            ::gif::Frame::from_rgba(size.x as u16, size.y as u16, &mut data);
-                        encoder.write_frame(&gif_frame)?;
+                        for frame in 0..frame_count {
+                            self.animator
+                                .lock()
+                                .unwrap()
+                                .set_cur_frame(frame);
+                            let monitor_settings = self
+                                .animator
+                                .lock()
+                                .unwrap()
+                                .display_frame(self.buffer_view.clone());
+                            let opt = icy_engine_egui::TerminalOptions {
+                                stick_to_bottom: false,
+                                scale: Some(Vec2::new(1.0, 1.0)),
+                                monitor_settings,
+
+                                id: Some(Id::new(self.id + 20000)),
+                                ..Default::default()
+                            };
+
+                            let (size, mut data) =
+                                self.buffer_view.lock().render_buffer(&self.gl, &opt);
+
+                            let gif_frame =
+                                ::gif::Frame::from_rgba(size.x as u16, size.y as u16, &mut data);
+                            encoder.write_frame(&gif_frame)?;
+                        }
+                    } else {
+                        return Err(anyhow::anyhow!("Could not create file"));
                     }
-                } else {
-                    return Err(anyhow::anyhow!("Could not create file"));
                 }
             }
             ExportType::Ansi => {
                 let opt = SaveOptions::default();
                 if let Ok(mut image) = File::create(&self.export_path) {
-                    if let Some(animator) = &self.animator {
-                        let animator = animator.lock().unwrap();
-                        for (frame, _, _) in &animator.frames {
+                    if self.animator.lock().unwrap().success() {
+                        for (frame, _, _) in &self.animator.lock().unwrap().frames {
                             let _ = image.write_all(b"\x1BP0;1;0!z\x1b[2J\x1b[0; D");
                             let _ = image.write_all(&frame.to_bytes("ans", &opt)?);
                             let _ = image.write_all(b"\x1B\\ - next frame -  \x1b[0*z");
@@ -214,6 +203,16 @@ impl Document for AnimationEditor {
         options: &DocumentOptions,
     ) -> Option<Message> {
         let mut message = None;
+
+        if self.first_frame && self.animator.lock().unwrap().success() {
+            let animator = &mut self.animator.lock().unwrap();
+            let frame_count = animator.frames.len();
+            if frame_count > 0 {
+                animator.set_cur_frame(0);
+                animator.display_frame(self.buffer_view.clone());
+            }
+            self.first_frame = false;
+        }
         egui::SidePanel::left("movie_panel")
             .exact_width(ui.available_width() / 2.0)
             .resizable(false)
@@ -222,12 +221,12 @@ impl Document for AnimationEditor {
                     .exact_height(24.)
                     .show_inside(ui, |ui| {
                         ui.horizontal(|ui| {
-                            if !self.error.is_empty() {
+                            if !self.animator.lock().unwrap().error.is_empty() {
                                 ui.set_enabled(false);
                             }
                             let size_points = Vec2::new(22.0, 22.0);
-                            if let Some(animator) = &mut self.animator {
-                                let animator = &mut animator.lock().unwrap();
+                            if self.animator.lock().unwrap().success() {
+                                let animator = &mut self.animator.lock().unwrap();
                                 let frame_count = animator.frames.len();
                                 if animator.is_playing() {
                                     if ui
@@ -356,11 +355,11 @@ impl Document for AnimationEditor {
                         scale.y *= 1.35;
                     }
 
-                    if let Some(animator) = &self.animator {
-                        let cur_frame = animator.lock().unwrap().get_cur_frame();
+                    if self.animator.lock().unwrap().success() {
+                        let cur_frame = self.animator.lock().unwrap().get_cur_frame();
 
                         let monitor_settings = if let Some((_, settings, _)) =
-                            animator.lock().unwrap().frames.get(cur_frame)
+                            self.animator.lock().unwrap().frames.get(cur_frame)
                         {
                             settings.clone()
                         } else {
@@ -393,13 +392,13 @@ impl Document for AnimationEditor {
                 .with_syntax(highlighting::lua())
                 .with_numlines(true)
                 .show(ui, &mut self.txt);
-            if !self.error.is_empty() {
+            if !self.animator.lock().unwrap().error.is_empty() {
                 TopBottomPanel::bottom("code_error_bottom_panel")
                     .exact_height(100.)
                     .show_inside(ui, |ui| {
                         ui.colored_label(
                             ui.style().visuals.error_fg_color,
-                            RichText::new(&self.error).small(),
+                            RichText::new(&self.animator.lock().unwrap().error).small(),
                         );
                     });
             }
@@ -409,39 +408,7 @@ impl Document for AnimationEditor {
 
                 let path = self.parent_path.clone();
                 let txt = self.txt.clone();
-                self.update_thread = Some(thread::spawn(move || Animator::run(&path, &txt)));
-            }
-
-            if let Some(handle) = &self.update_thread {
-                if handle.is_finished() {
-                    if let Ok(result) = self.update_thread.take().unwrap().join() {
-                        match result {
-                            Ok(animator) => {
-                                let cur_frame = if let Some(cur) = &self.animator {
-                                    cur.lock().unwrap().get_cur_frame()
-                                } else {
-                                    0
-                                };
-                                let frames = animator.lock().unwrap().frames.len();
-                                if cur_frame < frames {
-                                    animator.lock().unwrap().set_cur_frame(cur_frame);
-                                }
-                                self.animator = Some(animator);
-                                self.animator
-                                    .as_ref()
-                                    .unwrap()
-                                    .lock()
-                                    .unwrap()
-                                    .display_frame(self.buffer_view.clone());
-
-                                self.error = "".to_string();
-                            }
-                            Err(e) => {
-                                self.error = format!("Error: {}", e);
-                            }
-                        }
-                    }
-                }
+                self.animator = Animator::run(&path, txt);
             }
 
             if r.response.changed {
@@ -451,8 +418,8 @@ impl Document for AnimationEditor {
             }
         });
         let buffer_view = self.buffer_view.clone();
-        if let Some(animator) = &self.animator {
-            animator.lock().unwrap().update_frame(buffer_view);
+        if self.animator.lock().unwrap().success() {
+            self.animator.lock().unwrap().update_frame(buffer_view);
         }
         message
     }
