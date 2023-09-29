@@ -17,7 +17,7 @@ pub enum Terminal {
 
 impl Terminal {
     pub fn use_dcs(&self) -> bool {
-        matches!(self, Terminal::IcyTerm | Terminal::SyncTerm)
+        matches!(self, Terminal::IcyTerm)
     }
 
     fn can_repeat_rle(&self) -> bool {
