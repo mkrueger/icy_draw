@@ -22,6 +22,13 @@ impl Terminal {
             _ => false,
         }
     }
+
+    fn can_repeat_rle(&self) -> bool {
+        match self {
+            Terminal::IcyTerm | Terminal::SyncTerm => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Parser)]
@@ -167,7 +174,8 @@ fn show_buffer(
     opt.compress = true;
     opt.use_skip_ws = false;
     opt.preserve_line_length = true;
-
+    opt.use_repeat_rle = terminal.can_repeat_rle();
+    
     if matches!(terminal, Terminal::IcyTerm) {
         opt.control_char_handling = icy_engine::ControlCharHandling::IcyTerm;
     }
@@ -178,10 +186,11 @@ fn show_buffer(
     }
     io.write(b"\x1b[0m")?;
     io.write(&bytes)?;
-    for i in 0..buffer.get_height() {
+    /*for i in 0..buffer.get_height() {
         io.write(format!("\x1b[{};1H{}:", i + 1, i).as_bytes())?;
     }
-    io.write(format!("\x1b[1;1HTerminal:{:?}", terminal).as_bytes())?;
+    */
+    io.write(format!("\x1b[23;1HTerminal:{:?}", terminal).as_bytes())?;
     if !single_frame && terminal.use_dcs() {
         io.write(b"\x1b\\\x1b[0*z")?;
     }
