@@ -167,9 +167,9 @@ fn show_buffer(
     opt.control_char_handling = icy_engine::ControlCharHandling::FilterOut;
     opt.longer_terminal_output = true;
     opt.compress = true;
-    opt.use_skip_ws = false;
+    opt.use_cursor_forward = false;
     opt.preserve_line_length = true;
-    opt.use_repeat_rle = terminal.can_repeat_rle();
+    opt.use_repeat_sequences = terminal.can_repeat_rle();
 
     if matches!(terminal, Terminal::IcyTerm) {
         opt.control_char_handling = icy_engine::ControlCharHandling::IcyTerm;
