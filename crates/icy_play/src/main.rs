@@ -162,8 +162,16 @@ fn show_buffer(
     }
     opt.control_char_handling = icy_engine::ControlCharHandling::FilterOut;
     opt.longer_terminal_output = true;
-    opt.compress = false;
+    opt.compress = true;
+    opt.use_skip_ws = false;
+    opt.preserve_line_length = true;
+
+    if matches!(terminal, Terminal::IcyTerm) {
+        opt.control_char_handling = icy_engine::ControlCharHandling::IcyTerm;
+    }
+
     let bytes = buffer.to_bytes("ans", &opt)?;
+    
     if !single_frame && terminal.use_dcs() {
         io.write(b"\x1BP0;1;0!z")?;
     }
