@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use icy_engine::{Buffer, SaveOptions};
 use icy_engine_egui::animations::Animator;
-use std::{fs, path::PathBuf, time::Duration};
+use std::{fs, path::PathBuf, thread, time::Duration};
 
 use crate::com::Com;
 
@@ -76,64 +76,65 @@ fn main() {
         match ext.as_str() {
             "icyanim" => match fs::read_to_string(path) {
                 Ok(txt) => {
-                    let animator = Animator::run(&parent, &txt);
+                    let animator = Animator::run(&parent, txt);
+                    animator.lock().unwrap().set_is_playing(true);
 
-                    if let Ok(animator) = animator {
-                        let animator = animator.lock().unwrap();
-                        let mut opt: SaveOptions = SaveOptions::default();
-                        if args.utf8 {
-                            opt.modern_terminal_output = true;
-                        }
-                        match args.command.unwrap_or(Commands::Play) {
-                            Commands::Play => {
-                                io.write(b"\x1B[0c").unwrap();
-                                match io.read() {
-                                    Ok(Some(data)) => {
-                                        let txt: String =
-                                            String::from_utf8_lossy(&data).to_string();
-                                        term = if txt.contains("73;99;121;84;101;114;109") {
-                                            Terminal::IcyTerm
-                                        } else if txt.contains("67;84;101;114") {
-                                            Terminal::SyncTerm
-                                        } else {
-                                            Terminal::Name(txt)
-                                        }
-                                    } // 67;84;101;114;109;1;316
-                                    Ok(_) |
-                                    Err(_) => {
-                                        // ignore (timeout)
+                    let mut opt: SaveOptions = SaveOptions::default();
+                    if args.utf8 {
+                        opt.modern_terminal_output = true;
+                    }
+                    match args.command.unwrap_or(Commands::Play) {
+                        Commands::Play => {
+                            io.write(b"\x1B[0c").unwrap();
+                            match io.read() {
+                                Ok(Some(data)) => {
+                                    let txt: String = String::from_utf8_lossy(&data).to_string();
+                                    term = if txt.contains("73;99;121;84;101;114;109") {
+                                        Terminal::IcyTerm
+                                    } else if txt.contains("67;84;101;114") {
+                                        Terminal::SyncTerm
+                                    } else {
+                                        Terminal::Name(txt)
+                                    }
+                                } // 67;84;101;114;109;1;316
+                                Ok(_) | Err(_) => {
+                                    // ignore (timeout)
+                                }
+                            }
+                            // flush.
+                            while let Ok(Some(_)) = io.read() {}
+                            while animator.lock().unwrap().is_playing() {
+                                if let Ok(Some(v)) = io.read() {
+                                    if v.contains(&b'\x1b')
+                                        || v.contains(&b'\n')
+                                        || v.contains(&b' ')
+                                    {
+                                        break;
                                     }
                                 }
-                                // flush.
-                                while let Ok(Some(_)) = io.read() {}
-
-                                for (buffer, _, delay) in animator.frames.iter() {
-                                    if let Ok(v) = io.read() {
-                                        if let Some(v) = v {
-                                            if v.contains(&b'\x1b')
-                                                || v.contains(&b'\n')
-                                                || v.contains(&b' ')
-                                            {
-                                                break;
-                                            }
-                                        }
-                                    }
-
+                                if let Some((buffer, _, delay)) =
+                                    animator.lock().unwrap().get_cur_frame_buffer()
+                                {
                                     show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
                                     std::thread::sleep(Duration::from_millis(*delay as u64));
+                                } else {
+                                    thread::sleep(Duration::from_millis(10));
                                 }
-                                let _ = io.write(b"\x1b\\\x1b[0;0 D");
+                                while !animator.lock().unwrap().next_frame() {
+                                    thread::sleep(Duration::from_millis(10));
+                                }
                             }
-                            Commands::ShowFrame { frame } => {
-                                show_buffer(
-                                    &mut io,
-                                    &animator.frames[frame].0,
-                                    true,
-                                    args.utf8,
-                                    &term,
-                                )
-                                .unwrap();
-                            }
+                            let _ = io.write(b"\x1b\\\x1b[0;0 D");
+                        }
+                        Commands::ShowFrame { frame } => {
+                            show_buffer(
+                                &mut io,
+                                &animator.lock().unwrap().frames[frame].0,
+                                true,
+                                args.utf8,
+                                &term,
+                            )
+                            .unwrap();
                         }
                     }
                 }
@@ -183,7 +184,7 @@ fn show_buffer(
         io.write(format!("\x1b[{};1H{}:", i + 1, i).as_bytes())?;
     }
     */
-    io.write(format!("\x1b[23;1HTerminal:{:?}", terminal).as_bytes())?;
+    //io.write(format!("\x1b[23;1HTerminal:{:?}", terminal).as_bytes())?;
     if !single_frame && terminal.use_dcs() {
         io.write(b"\x1b\\\x1b[0*z")?;
     }
