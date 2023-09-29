@@ -38,7 +38,7 @@ view_library = { git ="https://github.com/mkrueger/icy_view" }
 #icy_engine_egui = { path = "../icy_engine_egui" }
 #view_library = { path = "../icy_view/view_library" }
 
-egui_code_editor = "0.1.6"
+egui_code_editor = "=0.1.6"
 mlua = { version = "0.9.1", features = ["lua54", "vendored"] }
 regex = "1.9.5"
 
