@@ -99,10 +99,9 @@ fn main() {
                                             Terminal::Name(txt)
                                         }
                                     } // 67;84;101;114;109;1;316
-                                    Ok(_) => {}
+                                    Ok(_) |
                                     Err(_) => {
-                                        eprintln!("Connection aborted.");
-                                        return;
+                                        // ignore (timeout)
                                     }
                                 }
                                 // flush.
