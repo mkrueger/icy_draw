@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 use icy_engine::{Buffer, SaveOptions, TextPane};
 use icy_engine_egui::animations::Animator;
-use std::{fs, path::PathBuf, time::Duration};
+use std::{fs, path::PathBuf, time::Duration, io::Write};
 
 use crate::com::Com;
 
@@ -116,10 +116,7 @@ fn main() {
                                                 }
                                             }
                                         },
-                                        Err(_) => {
-                                            eprintln!("Connection aborted.");
-                                            return;
-                                        },
+                                        Err(_) => { },
                                     }
 
                                     show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
@@ -173,7 +170,6 @@ fn show_buffer(
     if matches!(terminal, Terminal::IcyTerm) {
         opt.control_char_handling = icy_engine::ControlCharHandling::IcyTerm;
     }
-
     let bytes = buffer.to_bytes("ans", &opt)?;
     
     if !single_frame && terminal.use_dcs() {
