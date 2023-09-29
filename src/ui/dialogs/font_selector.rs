@@ -14,12 +14,12 @@ use crate::{
     create_retained_image, is_font_extensions, AnsiEditor, Message, Settings, TerminalResult,
 };
 
-enum BitfontSource {
-    AnsiSlot(usize),
-    Sauce(String),
-    File(usize),
-    Library,
-    LibraryAndFile(usize),
+#[derive(Default)]
+struct BitfontSource {
+    pub ansi_slot: Option<usize>,
+    pub sauce: Option<String>,
+    pub file_slot: Option<usize>,
+    pub library: bool,
 }
 
 pub struct FontSelector {
@@ -36,6 +36,7 @@ pub struct FontSelector {
     image_cache: HashMap<usize, RetainedImage>,
     do_select: bool,
     edit_selected_font: bool,
+    only_sauce_fonts: bool,
 }
 
 impl FontSelector {
@@ -44,7 +45,10 @@ impl FontSelector {
         for f in SAUCE_FONT_NAMES {
             fonts.push((
                 BitFont::from_sauce_name(f).unwrap(),
-                BitfontSource::Sauce(f.to_string()),
+                BitfontSource {
+                    sauce: Some(f.to_string()),
+                    ..Default::default()
+                },
             ));
         }
 
@@ -54,16 +58,49 @@ impl FontSelector {
         );
 
         if !only_sauce_fonts {
-            for f in 0..ANSI_FONTS {
+            for slot in 0..ANSI_FONTS {
+                let ansi_font = BitFont::from_ansi_font_page(slot).unwrap();
+                let mut found = false;
+                for (existing_font, src) in &mut fonts {
+                    if existing_font.get_checksum() == ansi_font.get_checksum() {
+                        src.ansi_slot = Some(slot);
+                        found = true;
+                        break;
+                    }
+                }
+                if found {
+                    continue;
+                }
                 fonts.push((
-                    BitFont::from_ansi_font_page(f).unwrap(),
-                    BitfontSource::AnsiSlot(f),
+                    ansi_font,
+                    BitfontSource {
+                        ansi_slot: Some(slot),
+                        ..Default::default()
+                    },
                 ));
             }
 
             if let Ok(font_dir) = Settings::get_font_diretory() {
-                for font in FontSelector::load_fonts(font_dir.as_path()) {
-                    fonts.push((font, BitfontSource::Library));
+                for lib_font in FontSelector::load_fonts(font_dir.as_path()) {
+                    let mut found = false;
+                    for (existing_font, src) in &mut fonts {
+                        if existing_font.get_checksum() == lib_font.get_checksum() {
+                            src.library = true;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if found {
+                        continue;
+                    }
+
+                    fonts.push((
+                        lib_font,
+                        BitfontSource {
+                            library: true,
+                            ..Default::default()
+                        },
+                    ));
                 }
             }
         }
@@ -71,24 +108,29 @@ impl FontSelector {
         let mut selected_font = 0;
         let cur_font = editor.buffer_view.lock().get_caret().get_font_page();
 
-        for (id, font) in editor.buffer_view.lock().get_buffer().font_iter() {
-            let mut index = -1;
-            (0..fonts.len()).for_each(|i| {
-                if fonts[i].0.glyphs == font.glyphs {
-                    index = i as i32;
-                }
-            });
-            if !only_sauce_fonts {
-                if index < 0 {
-                    index = fonts.len() as i32;
-                    fonts.push((font.clone(), BitfontSource::File(*id)));
-                } else {
-                    fonts[index as usize].1 = BitfontSource::LibraryAndFile(*id);
+        for (id, file_font) in editor.buffer_view.lock().get_buffer().font_iter() {
+            let mut found = false;
+            for (index, (existing_font, src)) in fonts.iter_mut().enumerate() {
+                if existing_font.get_checksum() == file_font.get_checksum() {
+                    src.file_slot = Some(*id);
+                    found = true;
+                    if *id == cur_font {
+                        selected_font = index as i32;
+                    }
+                    break;
                 }
             }
-
-            if *id == cur_font {
-                selected_font = index;
+            if !found {
+                if *id == cur_font {
+                    selected_font = fonts.len() as i32;
+                }
+                fonts.push((
+                    file_font.clone(),
+                    BitfontSource {
+                        file_slot: Some(*id),
+                        ..Default::default()
+                    },
+                ));
             }
         }
 
@@ -104,6 +146,7 @@ impl FontSelector {
             show_sauce: true,
             edit_selected_font: false,
             should_add,
+            only_sauce_fonts,
         }
     }
 
@@ -262,90 +305,80 @@ impl FontSelector {
                 Color32::WHITE,
             );
 
-            let font_type = match font.1 {
-                BitfontSource::AnsiSlot(_) => {
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font")
-                }
-                BitfontSource::Library => {
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-library_font")
-                }
-                BitfontSource::LibraryAndFile(_) | BitfontSource::File(_) => {
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-file_font")
-                }
-                BitfontSource::Sauce(_) => {
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font")
-                }
-            };
-
-            let font_id = FontId::new(12.0, FontFamily::Proportional);
-            let text: WidgetText = font_type.into();
-            let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
-
-            let rect = Rect::from_min_size(
-                Pos2::new(
-                    (rect.right() - galley.size().x - 10.0).floor(),
-                    (rect.top() + 8.0).floor(),
-                ),
-                galley.size(),
-            );
-
-            ui.painter().rect_filled(
-                rect.expand(2.0),
-                Rounding::same(4.0),
-                ui.style().visuals.widgets.active.bg_fill,
-            );
-
-            ui.painter()
-                .rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
-
-            ui.painter().galley_with_color(
-                egui::Align2::CENTER_CENTER
-                    .align_size_within_rect(galley.size(), rect)
-                    .min,
-                galley.galley,
-                text_color,
-            );
-
-            let secondary_font_type = match font.1 {
-                BitfontSource::LibraryAndFile(_) => {
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-library_font")
-                }
-                _ => String::new(),
-            };
-
-            if !secondary_font_type.is_empty() {
-                let font_id = FontId::new(12.0, FontFamily::Proportional);
-                let text: WidgetText = secondary_font_type.into();
-                let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
-
-                let rect = Rect::from_min_size(
-                    Pos2::new(
-                        (rect.right() - galley.size().x - 30.0).floor(),
-                        rect.top().floor(),
-                    ),
-                    galley.size(),
-                );
-
-                ui.painter().rect_filled(
-                    rect.expand(2.0),
-                    Rounding::same(4.0),
-                    ui.style().visuals.widgets.active.bg_fill,
-                );
-
-                ui.painter()
-                    .rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
-
-                ui.painter().galley_with_color(
-                    egui::Align2::CENTER_CENTER
-                        .align_size_within_rect(galley.size(), rect)
-                        .min,
-                    galley.galley,
+            let mut rect = rect;
+            if font.1.library {
+                let left = print_source(
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-library_font"),
+                    ui,
+                    rect,
                     text_color,
                 );
+                rect.set_right(left);
+            }
+
+            if font.1.sauce.is_some() {
+                let left = print_source(
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font"),
+                    ui,
+                    rect,
+                    text_color,
+                );
+                rect.set_right(left);
+            }
+
+            if font.1.ansi_slot.is_some() {
+                let left = print_source(
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"),
+                    ui,
+                    rect,
+                    text_color,
+                );
+                rect.set_right(left);
+            }
+
+            if font.1.file_slot.is_some() {
+                let left = print_source(
+                    fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"),
+                    ui,
+                    rect,
+                    text_color,
+                );
+                rect.set_right(left);
             }
         }
         response
     }
+}
+
+fn print_source(font_type: String, ui: &egui::Ui, rect: Rect, text_color: Color32) -> f32 {
+    let font_id = FontId::new(12.0, FontFamily::Proportional);
+    let text: WidgetText = font_type.into();
+    let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
+    let galley_size = galley.size();
+
+    let left_side = rect.right() - galley_size.x - 10.0;
+    let rect = Rect::from_min_size(
+        Pos2::new((left_side).floor(), (rect.top() + 8.0).floor()),
+        galley_size,
+    );
+
+    ui.painter().rect_filled(
+        rect.expand(2.0),
+        Rounding::same(4.0),
+        ui.style().visuals.widgets.active.bg_fill,
+    );
+
+    ui.painter()
+        .rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
+
+    ui.painter().galley_with_color(
+        egui::Align2::CENTER_CENTER
+            .align_size_within_rect(galley_size, rect)
+            .min,
+        galley.galley,
+        text_color,
+    );
+    left_side
 }
 
 impl crate::ModalDialog for FontSelector {
@@ -384,36 +417,37 @@ impl crate::ModalDialog for FontSelector {
                     if response.clicked() {
                         self.filter.clear();
                     }
+                    if !self.only_sauce_fonts {
+                        let response = ui.selectable_label(
+                            self.show_library,
+                            fl!(crate::LANGUAGE_LOADER, "font_selector-library_font"),
+                        );
+                        if response.clicked() {
+                            self.show_library = !self.show_library;
+                        }
 
-                    let response = ui.selectable_label(
-                        self.show_library,
-                        fl!(crate::LANGUAGE_LOADER, "font_selector-library_font"),
-                    );
-                    if response.clicked() {
-                        self.show_library = !self.show_library;
-                    }
+                        let response = ui.selectable_label(
+                            self.show_file,
+                            fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"),
+                        );
+                        if response.clicked() {
+                            self.show_file = !self.show_file;
+                        }
 
-                    let response = ui.selectable_label(
-                        self.show_file,
-                        fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"),
-                    );
-                    if response.clicked() {
-                        self.show_file = !self.show_file;
-                    }
-
-                    let response = ui.selectable_label(
-                        self.show_builtin,
-                        fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"),
-                    );
-                    if response.clicked() {
-                        self.show_builtin = !self.show_builtin;
-                    }
-                    let response = ui.selectable_label(
-                        self.show_sauce,
-                        fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font"),
-                    );
-                    if response.clicked() {
-                        self.show_sauce = !self.show_sauce;
+                        let response = ui.selectable_label(
+                            self.show_builtin,
+                            fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"),
+                        );
+                        if response.clicked() {
+                            self.show_builtin = !self.show_builtin;
+                        }
+                        let response = ui.selectable_label(
+                            self.show_sauce,
+                            fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font"),
+                        );
+                        if response.clicked() {
+                            self.show_sauce = !self.show_sauce;
+                        }
                     }
                 });
                 ui.add_space(4.0);
@@ -422,13 +456,10 @@ impl crate::ModalDialog for FontSelector {
 
                 for i in 0..font_count {
                     let font = &self.fonts[i];
-                    let match_filter = match font.1 {
-                        BitfontSource::AnsiSlot(_) => self.show_builtin,
-                        BitfontSource::File(_) => self.show_file,
-                        BitfontSource::Library => self.show_library,
-                        BitfontSource::Sauce(_) => self.show_sauce,
-                        BitfontSource::LibraryAndFile(_) => self.show_file || self.show_library,
-                    };
+                    let match_filter = self.show_builtin && font.1.ansi_slot.is_some()
+                        || self.show_file && font.1.file_slot.is_some()
+                        || self.show_library && font.1.library
+                        || self.show_sauce && font.1.sauce.is_some();
 
                     if font
                         .0
@@ -530,49 +561,43 @@ impl crate::ModalDialog for FontSelector {
         }
 
         if let Some((font, src)) = self.fonts.get(self.selected_font as usize) {
-            match src {
-                BitfontSource::AnsiSlot(id) => {
-                    if self.should_add {
-                        return Ok(Some(Message::AddAnsiFont(*id)));
-                    } else {
-                        return Ok(Some(Message::SetAnsiFont(*id)));
-                    }
+            if let Some(file_slot) = src.file_slot {
+                return Ok(Some(Message::SwitchToFontPage(file_slot)));
+            } else if let Some(ansi_slot) = src.ansi_slot {
+                if self.should_add {
+                    return Ok(Some(Message::AddAnsiFont(ansi_slot)));
+                } else {
+                    return Ok(Some(Message::SetAnsiFont(ansi_slot)));
                 }
-                BitfontSource::LibraryAndFile(id) | BitfontSource::File(id) => {
-                    return Ok(Some(Message::SwitchToFontPage(*id)));
+            } else if let Some(name) = &src.sauce {
+                if self.should_add {
+                    return Ok(Some(Message::AddFont(Box::new(font.clone()))));
+                } else {
+                    return Ok(Some(Message::SetSauceFont(name.clone())));
                 }
-                BitfontSource::Sauce(name) => {
+            } else {
+                let mut font_set = false;
+                let mut font_slot = 0;
+                editor
+                    .buffer_view
+                    .lock()
+                    .get_buffer()
+                    .font_iter()
+                    .for_each(|(id, f)| {
+                        if f == font {
+                            font_slot = *id;
+                            font_set = true;
+                        }
+                    });
+                if font_set {
+                    return Ok(Some(Message::SwitchToFontPage(font_slot)));
+                }
+
+                if !font_set {
                     if self.should_add {
                         return Ok(Some(Message::AddFont(Box::new(font.clone()))));
                     } else {
-                        return Ok(Some(Message::SetSauceFont(name.clone())));
-                    }
-                }
-
-                BitfontSource::Library => {
-                    let mut font_set = false;
-                    let mut font_slot = 0;
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer()
-                        .font_iter()
-                        .for_each(|(id, f)| {
-                            if f == font {
-                                font_slot = *id;
-                                font_set = true;
-                            }
-                        });
-                    if font_set {
-                        return Ok(Some(Message::SwitchToFontPage(font_slot)));
-                    }
-
-                    if !font_set {
-                        if self.should_add {
-                            return Ok(Some(Message::AddFont(Box::new(font.clone()))));
-                        } else {
-                            return Ok(Some(Message::SetFont(Box::new(font.clone()))));
-                        }
+                        return Ok(Some(Message::SetFont(Box::new(font.clone()))));
                     }
                 }
             }

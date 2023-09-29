@@ -521,12 +521,23 @@ impl MainWindow {
                     let directory = if let Some(user) = UserDirs::new() {
                         let home_dir = user.home_dir();
                         let mut parents = Vec::new();
+                        let mut root = false;
                         while parent != home_dir {
-                            let value = parent.file_name().unwrap().to_string_lossy().to_string();
-                            parents.push(value);
-                            parent = parent.parent().unwrap();
+                            if let Some(file_name) = parent.file_name() {
+                                let value = file_name.to_string_lossy().to_string();
+                                parents.push(value);
+                                parent = parent.parent().unwrap();
+                            } else {
+                                root = true;
+                                break;
+                            }
                         }
-                        if parents.is_empty() {
+                        if root {
+                            format!(
+                                "/{}/",
+                                parents.into_iter().rev().collect::<Vec<String>>().join("/")
+                            )
+                        } else if parents.is_empty() {
                             "~/".to_string()
                         } else {
                             format!(
@@ -551,7 +562,6 @@ impl MainWindow {
                         &crate::VERSION
                     ));
                 }
-                return;
             }
         }
     }

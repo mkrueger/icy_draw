@@ -25,8 +25,8 @@ pub use edit_layer_dialog::*;
 mod save_file_dialog;
 pub use save_file_dialog::*;
 
-mod select_font_dialog;
-pub use select_font_dialog::*;
+mod select_tdf_font_dialog;
+pub use select_tdf_font_dialog::*;
 
 mod resize_layer_dialog;
 pub use resize_layer_dialog::*;

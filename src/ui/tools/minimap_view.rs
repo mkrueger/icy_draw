@@ -49,7 +49,7 @@ impl MinimapToolWindow {
             .lock()
             .get_buffer_mut()
             .palette
-            .get_hash();
+            .get_checksum();
         if undo_stack != self.undo_size
             || self.last_id != editor.id
             || self.palette_hash != cur_palette_hash
