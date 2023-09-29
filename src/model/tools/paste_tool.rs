@@ -1,5 +1,5 @@
 use super::{move_layer_imp::get_layer_offset_text, Event, Position, Tool};
-use crate::{AnsiEditor, Message};
+use crate::{AnsiEditor, Message, to_message};
 use eframe::egui::{self, Key};
 use i18n_embed_fl::fl;
 use icy_engine::TextPane;
@@ -148,21 +148,9 @@ impl Tool for PasteTool {
         result
     }
 
+
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.drag_started = false;
-        if let Some(selected) = PasteTool::is_paste_layer_selected(editor, editor.drag_pos.cur) {
-            if !selected {
-                let layer = editor.get_cur_layer_index();
-                editor
-                    .buffer_view
-                    .lock()
-                    .get_edit_state_mut()
-                    .merge_layer_down(layer)
-                    .unwrap();
-                self.closed = true;
-                return Event::None;
-            }
-        }
 
         if let Some(layer) = editor
             .buffer_view
@@ -199,20 +187,18 @@ impl Tool for PasteTool {
         response.on_hover_cursor(egui::CursorIcon::Grabbing)
     }
 
+    fn get_toolbar_location_text(&self, editor: &AnsiEditor) -> String {
+        get_layer_offset_text(editor)
+    }
+
     fn handle_hover(
         &mut self,
         _ui: &egui::Ui,
         response: egui::Response,
-        editor: &mut AnsiEditor,
-        cur: Position,
+        _editor: &mut AnsiEditor,
+        _cur: Position,
         _cur_abs: Position,
     ) -> egui::Response {
-        if let Some(selected) = PasteTool::is_paste_layer_selected(editor, cur) {
-            if selected {
-                return response.on_hover_cursor(egui::CursorIcon::Move);
-            }
-            return response.on_hover_cursor(egui::CursorIcon::PointingHand);
-        }
         response.on_hover_cursor(egui::CursorIcon::Move)
     }
 
@@ -220,16 +206,12 @@ impl Tool for PasteTool {
         if !self.drag_started {
             return None;
         }
-        editor
-            .buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .move_layer(self.drag_offset)
-            .unwrap();
-        None
-    }
-
-    fn get_toolbar_location_text(&self, editor: &AnsiEditor) -> String {
-        get_layer_offset_text(editor)
+        to_message(
+            editor
+                .buffer_view
+                .lock()
+                .get_edit_state_mut()
+                .move_layer(self.drag_offset),
+        )
     }
 }
