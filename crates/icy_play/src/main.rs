@@ -104,15 +104,15 @@ fn main() {
                                     }
                                 }
                                 // flush.
-                                while io.read().is_ok() {
+                                while let Ok(Some(_)) = io.read() {
                                 }
-                        
+
                                 for (buffer, _, delay) in animator.frames.iter() {
                                     match io.read() {
                                         Ok(v) => {
                                             if let Some(v) = v {
                                                 if v.contains(&b'\x1b') || v.contains(&b'\n') || v.contains(&b' ') {
-                                                    return;
+                                                    break;
                                                 }
                                             }
                                         },
@@ -122,6 +122,7 @@ fn main() {
                                     show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
                                     std::thread::sleep(Duration::from_millis(*delay as u64));
                                 }
+                                io.write(b"\x1b\\\x1b[0;0 D");
                             }
                             Commands::ShowFrame { frame } => {
                                 show_buffer(
