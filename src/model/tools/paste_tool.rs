@@ -2,7 +2,6 @@ use super::{move_layer_imp::get_layer_offset_text, Event, Position, Tool};
 use crate::{AnsiEditor, Message, to_message};
 use eframe::egui::{self, Key};
 use i18n_embed_fl::fl;
-use icy_engine::TextPane;
 use icy_engine_egui::TerminalCalc;
 
 #[derive(Default)]
@@ -15,23 +14,6 @@ pub struct PasteTool {
 }
 
 impl PasteTool {
-    fn is_paste_layer_selected(editor: &AnsiEditor, cur: Position) -> Option<bool> {
-        if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.last() {
-            if layer.role.is_paste() {
-                let pos = cur;
-                if pos.x >= 0
-                    && pos.y >= 0
-                    && pos.x < layer.get_width()
-                    && pos.y < layer.get_height()
-                {
-                    return Some(true);
-                }
-            }
-            return Some(false);
-        }
-        None
-    }
-
     pub(crate) fn new(selected_tool: usize) -> Self {
         Self {
             last_tool: selected_tool,
