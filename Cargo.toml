@@ -14,13 +14,13 @@ eframe = "0.22.0"
 egui = { version = "0.22.0" }
 egui_extras = { version="0.22.0", features = ["svg"] }
 egui_glow = "0.22.0"
-egui-modal = "0.2.4"
+egui-modal = "=0.2.4"
 glow = "0.12.1"
 egui_file = "0.10.0"
 egui_tiles = { git ="https://github.com/mkrueger/egui_tiles"}
-egui-bind = "0.7.0"
+egui-bind = "=0.7.0"
 #egui_tiles = { path = "../egui_tiles"  }
-egui-notify = "0.9.0"
+egui-notify = "=0.9.0"
 log = "0.4.20"
 log4rs = "1.2.0"
 open = "5.0.0"
