@@ -1,6 +1,6 @@
 use directories::ProjectDirs;
 use eframe::egui::Modifiers;
-use icy_engine::Color;
+use icy_engine::{Color, SaveOptions};
 use icy_engine_egui::{BackgroundEffect, MarkerSettings, MonitorSettings};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -24,6 +24,7 @@ pub struct Settings {
 
     pub monitor_settings: MonitorSettings,
     pub marker_settings: MarkerSettings,
+    pub save_options: SaveOptions,
 
     pub key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
 
@@ -230,6 +231,7 @@ pub static mut SETTINGS: Settings = Settings {
     recent_files: Vec::new(),
     key_bindings: Vec::new(),
     character_sets: Vec::new(),
+    save_options: SaveOptions::new(),
     monitor_settings: MonitorSettings {
         use_filter: false,
         monitor_type: 0,

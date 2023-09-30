@@ -211,6 +211,9 @@ export-compression-level-medium=Mittel
 export-compression-level-high=Hoch
 export-limit-output-line-length-label=Maximale Ausgabe-Zeilenlänge
 export-maximum_line_length=Maximale Zeilenlänge
+export-use_repeat_sequences=Benutze `CSI Pn b`Sequenzen 
+export-save_full_line_length=Abschließende Weißzeichen speichern
+export-format-label=Format:
 
 select-character-title=Zeichen auswählen
 

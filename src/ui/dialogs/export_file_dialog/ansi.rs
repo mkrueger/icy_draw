@@ -1,4 +1,5 @@
 use eframe::egui::{self, Ui};
+use egui::Checkbox;
 use i18n_embed_fl::fl;
 use icy_engine::{SaveOptions, ScreenPreperation};
 
@@ -41,6 +42,14 @@ pub fn create_settings_page(ui: &mut Ui, options: &mut SaveOptions) {
                 });
         });
         ui.checkbox(&mut options.compress, fl!(crate::LANGUAGE_LOADER, "export-compression-label"));
+
+        ui.add_enabled(
+            options.compress,
+            Checkbox::new(&mut options.use_repeat_sequences, fl!(crate::LANGUAGE_LOADER, "export-use_repeat_sequences")),
+        );
+
+        ui.checkbox(&mut options.preserve_line_length, fl!(crate::LANGUAGE_LOADER, "export-save_full_line_length"));
+
         ui.horizontal(|ui| {
             ui.add(egui::Checkbox::new(
                 &mut options.modern_terminal_output,
@@ -48,12 +57,6 @@ pub fn create_settings_page(ui: &mut Ui, options: &mut SaveOptions) {
             ));
         });
 
-        ui.horizontal(|ui| {
-            ui.add(egui::Checkbox::new(
-                &mut options.save_sauce,
-                fl!(crate::LANGUAGE_LOADER, "export-save-sauce-label"),
-            ));
-        });
         ui.horizontal(|ui| {
             let mut use_max_lines = options.output_line_length.is_some();
             ui.add(egui::Checkbox::new(
@@ -71,6 +74,13 @@ pub fn create_settings_page(ui: &mut Ui, options: &mut SaveOptions) {
                 ui.add(egui::Slider::new(&mut len, 32..=255).text(fl!(crate::LANGUAGE_LOADER, "export-maximum_line_length")));
                 options.output_line_length = Some(len);
             }
+        });
+
+        ui.horizontal(|ui: &mut Ui| {
+            ui.add(egui::Checkbox::new(
+                &mut options.save_sauce,
+                fl!(crate::LANGUAGE_LOADER, "export-save-sauce-label"),
+            ));
         });
     });
 }
