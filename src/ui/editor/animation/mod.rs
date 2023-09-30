@@ -313,7 +313,7 @@ impl Document for AnimationEditor {
                             id: Some(Id::new(self.id + 20000)),
                             ..Default::default()
                         };
-                        self.buffer_view.lock().get_caret_mut().is_visible = false;
+                        self.buffer_view.lock().get_caret_mut().set_is_visible(false);
                         let (_, _) = show_terminal_area(ui, self.buffer_view.clone(), opt);
                     }
                 });

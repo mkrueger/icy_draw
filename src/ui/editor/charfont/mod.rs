@@ -291,7 +291,7 @@ impl Document for CharFontEditor {
                             self.outline_previewbuffer_view
                                 .lock()
                                 .get_caret_mut()
-                                .is_visible = false;
+                                .set_is_visible(false);
                             ui.horizontal(|ui|  {
                                 ui.label(fl!(crate::LANGUAGE_LOADER, "tdf-editor-outline_preview_label"));
                                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
