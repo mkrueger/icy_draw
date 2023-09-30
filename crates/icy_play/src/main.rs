@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use icy_engine::{Buffer, SaveOptions};
+use icy_engine::{Buffer, SaveOptions, update_crc32, TextPane};
 use icy_engine_egui::animations::Animator;
 use std::{fs, path::PathBuf, thread, time::Duration};
 
@@ -47,6 +47,21 @@ enum Commands {
 
     #[command(about = "Show a specific frame of the animation")]
     ShowFrame { frame: usize },
+}
+
+
+pub fn get_line_checksums(buf:  &Buffer) -> Vec<u32> {
+    let mut result = Vec::new();
+    for y in 0..buf.get_height() {
+        let mut crc = 0;
+        for x in 0..buf.get_width() {
+            let ch = buf.get_char((x, y));
+            crc = update_crc32(crc, ch.ch as u8);
+            crc = update_crc32(crc, ch.attribute.as_u8(buf.ice_mode));
+        }
+        result.push(crc);
+    }
+    result
 }
 
 fn main() {
@@ -99,6 +114,7 @@ fn main() {
                             }
                             // flush.
                             while let Ok(Some(_)) = io.read(false) {}
+                            let mut checksums = Vec::new();
 
                             while animator.lock().unwrap().is_playing() {
                                 if let Ok(Some(v)) = io.read(false) {
@@ -107,7 +123,20 @@ fn main() {
                                     }
                                 }
                                 if let Some((buffer, _, delay)) = animator.lock().unwrap().get_cur_frame_buffer() {
-                                    show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
+                                    let new_checksums = get_line_checksums(buffer);
+
+                                    let mut skip_lines = Vec::new();
+                                    if checksums.len() == new_checksums.len() {
+                                        for i in 0..checksums.len() {
+                                            if checksums[i] == new_checksums[i] {
+                                                skip_lines.push(i);
+                                            }
+                                        }
+                                    }
+
+                                    show_buffer(&mut io, buffer, false, args.utf8, &term, skip_lines).unwrap();
+                                    checksums = new_checksums;
+
                                     std::thread::sleep(Duration::from_millis(*delay as u64));
                                 } else {
                                     thread::sleep(Duration::from_millis(10));
@@ -119,7 +148,7 @@ fn main() {
                             let _ = io.write(b"\x1b\\\x1b[0;0 D");
                         }
                         Commands::ShowFrame { frame } => {
-                            show_buffer(&mut io, &animator.lock().unwrap().frames[frame].0, true, args.utf8, &term).unwrap();
+                            show_buffer(&mut io, &animator.lock().unwrap().frames[frame].0, true, args.utf8, &term, Vec::new()).unwrap();
                         }
                     }
                 }
@@ -130,14 +159,14 @@ fn main() {
             _ => {
                 let buffer = Buffer::load_buffer(&path, true);
                 if let Ok(buffer) = &buffer {
-                    show_buffer(&mut io, buffer, true, args.utf8, &Terminal::Unknown).unwrap();
+                    show_buffer(&mut io, buffer, true, args.utf8, &Terminal::Unknown, Vec::new()).unwrap();
                 }
             }
         }
     }
 }
 
-fn show_buffer(io: &mut Box<dyn Com>, buffer: &Buffer, single_frame: bool, use_utf8: bool, terminal: &Terminal) -> anyhow::Result<()> {
+fn show_buffer(io: &mut Box<dyn Com>, buffer: &Buffer, single_frame: bool, use_utf8: bool, terminal: &Terminal, skip_lines: Vec<usize>) -> anyhow::Result<()> {
     let mut opt: SaveOptions = SaveOptions::default();
     if use_utf8 {
         opt.modern_terminal_output = true;
@@ -148,6 +177,8 @@ fn show_buffer(io: &mut Box<dyn Com>, buffer: &Buffer, single_frame: bool, use_u
     opt.use_cursor_forward = false;
     opt.preserve_line_length = true;
     opt.use_repeat_sequences = terminal.can_repeat_rle();
+
+    opt.skip_lines = Some(skip_lines);
 
     if matches!(terminal, Terminal::IcyTerm) {
         opt.control_char_handling = icy_engine::ControlCharHandling::IcyTerm;
