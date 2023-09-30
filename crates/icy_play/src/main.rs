@@ -124,6 +124,9 @@ fn main() {
                             while let Ok(Some(_)) = io.read(false) {}
                             let mut checksums = Vec::new();
 
+                            // turn caret off
+                            let _ = io.write(b"\x1b[?25l");
+
                             while animator.lock().unwrap().is_playing() {
                                 if let Ok(Some(v)) = io.read(false) {
                                     if v.contains(&b'\x1b') || v.contains(&b'\n') || v.contains(&b' ') {
@@ -151,7 +154,7 @@ fn main() {
                                     thread::sleep(Duration::from_millis(10));
                                 }
                             }
-                            let _ = io.write(b"\x1b\\\x1b[0;0 D");
+                            let _ = io.write(b"\x1b[?25h\x1b[0;0 D");
                         }
                         Commands::ShowFrame { frame } => {
                             show_buffer(&mut io, &animator.lock().unwrap().frames[frame].0, true, args.utf8, &term, Vec::new()).unwrap();
