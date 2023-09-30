@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use icy_engine::{Buffer, SaveOptions, update_crc32, TextPane};
+use icy_engine::{update_crc32, Buffer, SaveOptions, TextPane};
 use icy_engine_egui::animations::Animator;
 use std::{fs, path::PathBuf, thread, time::Duration};
 
@@ -49,8 +49,7 @@ enum Commands {
     ShowFrame { frame: usize },
 }
 
-
-pub fn get_line_checksums(buf:  &Buffer) -> Vec<u32> {
+pub fn get_line_checksums(buf: &Buffer) -> Vec<u32> {
     let mut result = Vec::new();
     for y in 0..buf.get_height() {
         let mut crc = 0;
@@ -134,7 +133,7 @@ fn main() {
                                 if let Some((buffer, _, delay)) = animator.lock().unwrap().get_cur_frame_buffer() {
                                     let new_checksums = get_line_checksums(buffer);
                                     let mut skip_lines = Vec::new();
-                                     if checksums.len() == new_checksums.len() {
+                                    if checksums.len() == new_checksums.len() {
                                         for i in 0..checksums.len() {
                                             if checksums[i] == new_checksums[i] {
                                                 skip_lines.push(i);
@@ -195,7 +194,6 @@ fn show_buffer(io: &mut Box<dyn Com>, buffer: &Buffer, single_frame: bool, use_u
     if !single_frame && terminal.use_dcs() {
         io.write(b"\x1BP0;1;0!z")?;
     }
-    io.write(b"\x1b[0m")?;
     io.write(&bytes)?;
     /*for i in 0..buffer.get_height() {
         io.write(format!("\x1b[{};1H{}:", i + 1, i).as_bytes())?;
