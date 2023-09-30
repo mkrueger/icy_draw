@@ -349,7 +349,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                             }
 
                             let mut buffer = Buffer::new((char_count, 1));
-                            buffer.is_terminal_buffer = true;
+                            buffer.is_terminal_buffer = false;
                             let mut attr: TextAttribute = TextAttribute::default();
                             let c = if ui.style().visuals.dark_mode {
                                 ui.style().visuals.extreme_bg_color

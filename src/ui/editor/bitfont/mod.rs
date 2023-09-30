@@ -46,7 +46,7 @@ pub enum DrawGlyphStyle {
 impl BitFontEditor {
     pub fn new(gl: &Arc<glow::Context>, id: usize, font: BitFont) -> Self {
         let mut buffer = Buffer::new(Size::new(10, 10));
-        buffer.is_terminal_buffer = true;
+        buffer.is_terminal_buffer = false;
         let mut buffer_view = BufferView::from_buffer(gl, buffer);
         buffer_view.interactive = false;
         let buffer_view = Arc::new(Mutex::new(buffer_view));

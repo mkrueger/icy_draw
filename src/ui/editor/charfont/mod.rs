@@ -425,7 +425,7 @@ impl CharFontEditor {
         let ansi_editor = AnsiEditor::new(gl, id, buffer);
 
         let mut buffer = Buffer::new(Size::new(30, 12));
-        buffer.is_terminal_buffer = true;
+        buffer.is_terminal_buffer = false;
         let mut buffer_view = BufferView::from_buffer(gl, buffer);
         buffer_view.interactive = false;
         let outline_previewbuffer_view = Arc::new(Mutex::new(buffer_view));
