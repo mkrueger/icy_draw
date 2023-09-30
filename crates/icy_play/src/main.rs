@@ -57,7 +57,16 @@ pub fn get_line_checksums(buf:  &Buffer) -> Vec<u32> {
         for x in 0..buf.get_width() {
             let ch = buf.get_char((x, y));
             crc = update_crc32(crc, ch.ch as u8);
-            crc = update_crc32(crc, ch.attribute.as_u8(buf.ice_mode));
+            let fg = buf.palette.get_color(ch.attribute.get_foreground()).get_rgb();
+            crc = update_crc32(crc, fg.0);
+            crc = update_crc32(crc, fg.1);
+            crc = update_crc32(crc, fg.2);
+            let bg = buf.palette.get_color(ch.attribute.get_background()).get_rgb();
+            crc = update_crc32(crc, bg.0);
+            crc = update_crc32(crc, bg.1);
+            crc = update_crc32(crc, bg.2);
+            crc = update_crc32(crc, ch.attribute.attr as u8);
+            crc = update_crc32(crc, (ch.attribute.attr >> 8) as u8);
         }
         result.push(crc);
     }
@@ -124,19 +133,17 @@ fn main() {
                                 }
                                 if let Some((buffer, _, delay)) = animator.lock().unwrap().get_cur_frame_buffer() {
                                     let new_checksums = get_line_checksums(buffer);
-
                                     let mut skip_lines = Vec::new();
-                                    if checksums.len() == new_checksums.len() {
+                                     if checksums.len() == new_checksums.len() {
                                         for i in 0..checksums.len() {
                                             if checksums[i] == new_checksums[i] {
                                                 skip_lines.push(i);
                                             }
                                         }
                                     }
-
+                                    //println!("skip lines: {:?}", skip_lines );
                                     show_buffer(&mut io, buffer, false, args.utf8, &term, skip_lines).unwrap();
                                     checksums = new_checksums;
-
                                     std::thread::sleep(Duration::from_millis(*delay as u64));
                                 } else {
                                     thread::sleep(Duration::from_millis(10));
