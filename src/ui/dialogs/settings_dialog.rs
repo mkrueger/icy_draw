@@ -239,14 +239,6 @@ pub fn show_marker_settings(ui: &mut egui::Ui, old_settings: &MarkerSettings) ->
 
     let mut marker_settings = old_settings.clone();
 
-    ui.horizontal(|ui| {
-        ui.label(fl!(crate::LANGUAGE_LOADER, "settings-background_color-label"));
-        let (r, g, b) = marker_settings.border_color.get_rgb();
-        let mut color = Color32::from_rgb(r, g, b);
-        color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
-        marker_settings.border_color = Color::new(r, g, b);
-    });
-
     ui.add(egui::Slider::new(&mut marker_settings.reference_image_alpha, 0.1..=0.9).text(fl!(crate::LANGUAGE_LOADER, "settings-reference-alpha")));
 
     ui.horizontal(|ui| {
@@ -255,7 +247,7 @@ pub fn show_marker_settings(ui: &mut egui::Ui, old_settings: &MarkerSettings) ->
         let mut color = Color32::from_rgb(r, g, b);
 
         color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
-        marker_settings.raster_color = Color::new(r, g, b);
+        marker_settings.raster_color = Color::new(color.r(), color.g(), color.b());
         ui.add(egui::Slider::new(&mut marker_settings.raster_alpha, 0.1..=0.9).text(fl!(crate::LANGUAGE_LOADER, "settings-alpha")));
     });
 
@@ -265,7 +257,7 @@ pub fn show_marker_settings(ui: &mut egui::Ui, old_settings: &MarkerSettings) ->
         let mut color = Color32::from_rgb(r, g, b);
 
         color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
-        marker_settings.guide_color = Color::new(r, g, b);
+        marker_settings.guide_color = Color::new(color.r(), color.g(), color.b());
 
         ui.add(egui::Slider::new(&mut marker_settings.guide_alpha, 0.1..=0.9).text(fl!(crate::LANGUAGE_LOADER, "settings-alpha")));
     });

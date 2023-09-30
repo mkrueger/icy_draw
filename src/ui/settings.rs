@@ -244,6 +244,7 @@ pub static mut SETTINGS: Settings = Settings {
         background_effect: BackgroundEffect::Checkers,
         selection_fg: Color::new(0xAB, 0x00, 0xAB),
         selection_bg: Color::new(0xAB, 0xAB, 0xAB),
+        border_color: Color::new(64, 69, 74),
     },
     marker_settings: MarkerSettings {
         reference_image_alpha: 0.2,
@@ -251,8 +252,6 @@ pub static mut SETTINGS: Settings = Settings {
         raster_color: Color::new(0xAB, 0xAB, 0xAB),
         guide_alpha: 0.2,
         guide_color: Color::new(0xAB, 0xAB, 0xAB),
-
-        border_color: Color::new(64, 69, 74),
     },
 };
 

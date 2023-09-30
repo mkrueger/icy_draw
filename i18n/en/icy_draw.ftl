@@ -436,5 +436,4 @@ settings-reference-alpha=Reference image alpha
 settings-raster-label=Grid color:
 settings-alpha=alpha
 settings-guide-label=Guide color:
-settings-background_color-label=Border color:
 settings-set-label=Set { $set }

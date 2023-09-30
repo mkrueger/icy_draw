@@ -442,5 +442,4 @@ settings-reference-alpha=Referenzbild Alpha
 settings-raster-label=Gitterfarbe:
 settings-alpha=alpha
 settings-guide-label=Hilfslinienfarbe:
-settings-background_color-label=Hintergrundfarbe:
 settings-set-label=Set { $set }
