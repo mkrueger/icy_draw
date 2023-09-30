@@ -38,8 +38,7 @@ fn get_ellipse_points(from: Position, to: Position) -> Vec<Position> {
         }
     }
 
-    let mut d2 = ((ry * ry) * ((x/*+ 0.5f*/) * (x/*+ 0.5f*/))) + ((rx * rx) * ((y - 1) * (y - 1)))
-        - (rx * rx * ry * ry);
+    let mut d2 = ((ry * ry) * ((x/*+ 0.5f*/) * (x/*+ 0.5f*/))) + ((rx * rx) * ((y - 1) * (y - 1))) - (rx * rx * ry * ry);
 
     while y >= 0 {
         result.push(Position::new(-x + xc, y + yc));
@@ -62,33 +61,15 @@ fn get_ellipse_points(from: Position, to: Position) -> Vec<Position> {
     result
 }
 
-pub fn draw_ellipse(
-    buffer_view: &mut BufferView,
-    from: impl Into<Position>,
-    to: impl Into<Position>,
-    mode: BrushMode,
-    color_mode: ColorMode,
-) {
+pub fn draw_ellipse(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
     let from = from.into();
     let to = to.into();
     for point in get_ellipse_points(from, to) {
-        plot_point(
-            buffer_view,
-            point,
-            mode.clone(),
-            color_mode,
-            PointRole::Line,
-        );
+        plot_point(buffer_view, point, mode.clone(), color_mode, PointRole::Line);
     }
 }
 
-pub fn fill_ellipse(
-    buffer_view: &mut BufferView,
-    from: impl Into<Position>,
-    to: impl Into<Position>,
-    mode: BrushMode,
-    color_mode: ColorMode,
-) {
+pub fn fill_ellipse(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
     let from = from.into();
     let to = to.into();
     let points = get_ellipse_points(from, to);

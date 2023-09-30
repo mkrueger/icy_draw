@@ -9,12 +9,10 @@ pub fn lua() -> Syntax {
         comment: "--",
         comment_multiline: ["--[[", "]]"],
         keywords: HashSet::from([
-            "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in",
-            "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while",
+            "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then",
+            "true", "until", "while",
         ]),
-        types: HashSet::from([
-            "nil", "boolean", "number", "string", "nil", "function", "userdata", "thread", "table",
-        ]),
+        types: HashSet::from(["nil", "boolean", "number", "string", "nil", "function", "userdata", "thread", "table"]),
         special: HashSet::from([
             "new_buffer",
             "load_buffer",

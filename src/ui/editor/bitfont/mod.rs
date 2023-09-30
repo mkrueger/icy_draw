@@ -14,10 +14,7 @@ use icy_engine::{
 };
 use icy_engine_egui::{show_terminal_area, BufferView};
 
-use crate::{
-    model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message,
-    TerminalResult, UndoHandler, SETTINGS,
-};
+use crate::{model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, UndoHandler, SETTINGS};
 
 use self::undo::UndoOperation;
 
@@ -71,17 +68,9 @@ impl BitFontEditor {
         }
     }
 
-    pub fn draw_glyph(
-        ui: &mut egui::Ui,
-        font: &BitFont,
-        style: DrawGlyphStyle,
-        ch: char,
-    ) -> egui::Response {
+    pub fn draw_glyph(ui: &mut egui::Ui, font: &BitFont, style: DrawGlyphStyle, ch: char) -> egui::Response {
         let scale = 3.;
-        let (id, stroke_rect) = ui.allocate_space(Vec2::new(
-            scale * font.size.width as f32,
-            scale * font.size.height as f32,
-        ));
+        let (id, stroke_rect) = ui.allocate_space(Vec2::new(scale * font.size.width as f32, scale * font.size.height as f32));
         let response = ui.interact(stroke_rect, id, Sense::click());
         let col = if response.hovered() {
             match style {
@@ -106,10 +95,7 @@ impl BitFontEditor {
                     if glyph.data[y as usize] & (128 >> x) != 0 {
                         painter.rect_filled(
                             Rect::from_min_size(
-                                Pos2::new(
-                                    stroke_rect.left() + x as f32 * scale,
-                                    stroke_rect.top() + y as f32 * scale,
-                                ),
+                                Pos2::new(stroke_rect.left() + x as f32 * scale, stroke_rect.top() + y as f32 * scale),
                                 Vec2::new(scale, scale),
                             ),
                             Rounding::none(),
@@ -182,15 +168,11 @@ impl BitFontEditor {
                     }
                 }
             } else { */
-            if response.drag_started_by(egui::PointerButton::Primary)
-                || response.drag_started_by(egui::PointerButton::Secondary)
-            {
+            if response.drag_started_by(egui::PointerButton::Primary) || response.drag_started_by(egui::PointerButton::Secondary) {
                 self.start_edit();
             }
 
-            if response.drag_released_by(egui::PointerButton::Primary)
-                || response.drag_released_by(egui::PointerButton::Secondary)
-            {
+            if response.drag_released_by(egui::PointerButton::Primary) || response.drag_released_by(egui::PointerButton::Secondary) {
                 self.end_edit();
             }
 
@@ -198,10 +180,8 @@ impl BitFontEditor {
                 if let Some(pos) = response.interact_pointer_pos() {
                     if let Some(number) = self.selected_char_opt {
                         if let Some(glyph) = self.font.get_glyph_mut(number) {
-                            let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border))
-                                as usize;
-                            let x = ((pos.x - top_ruler - stroke_rect.left()) / (scale + border))
-                                as usize;
+                            let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border)) as usize;
+                            let x = ((pos.x - top_ruler - stroke_rect.left()) / (scale + border)) as usize;
                             if y < glyph.data.len() && x < 8 {
                                 glyph.data[y] |= 128 >> x;
                                 self.update_tile_area();
@@ -216,10 +196,8 @@ impl BitFontEditor {
                 if let Some(pos) = response.interact_pointer_pos() {
                     if let Some(number) = self.selected_char_opt {
                         if let Some(glyph) = self.font.get_glyph_mut(number) {
-                            let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border))
-                                as usize;
-                            let x = ((pos.x - top_ruler - stroke_rect.left()) / (scale + border))
-                                as usize;
+                            let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border)) as usize;
+                            let x = ((pos.x - top_ruler - stroke_rect.left()) / (scale + border)) as usize;
                             if y < glyph.data.len() && x < 8 {
                                 glyph.data[y] &= !(128 >> x);
                                 self.update_tile_area();
@@ -245,15 +223,11 @@ impl BitFontEditor {
 
                     for x in 0..s.width {
                         let pos = Pos2::new(
-                            2. + left_ruler
-                                + stroke_rect.left()
-                                + (x as f32 + 0.5) * (border + scale),
+                            2. + left_ruler + stroke_rect.left() + (x as f32 + 0.5) * (border + scale),
                             2. + top_ruler / 2. + stroke_rect.top(),
                         );
                         let col = if let Some(pos) = response.hover_pos() {
-                            if x == ((pos.x - (2. + left_ruler + stroke_rect.left()))
-                                / (border + scale)) as i32
-                            {
+                            if x == ((pos.x - (2. + left_ruler + stroke_rect.left())) / (border + scale)) as i32 {
                                 ui.style().visuals.strong_text_color()
                             } else {
                                 ui.style().visuals.text_color()
@@ -273,14 +247,10 @@ impl BitFontEditor {
                     for y in 0..s.height {
                         let pos = Pos2::new(
                             2. + left_ruler / 2. + stroke_rect.left(),
-                            2. + top_ruler
-                                + stroke_rect.top()
-                                + (y as f32 + 0.5) * (border + scale),
+                            2. + top_ruler + stroke_rect.top() + (y as f32 + 0.5) * (border + scale),
                         );
                         let col = if let Some(pos) = response.hover_pos() {
-                            if y == ((pos.y - (2. + top_ruler + stroke_rect.top()))
-                                / (border + scale)) as i32
-                            {
+                            if y == ((pos.y - (2. + top_ruler + stroke_rect.top())) / (border + scale)) as i32 {
                                 ui.style().visuals.strong_text_color()
                             } else {
                                 ui.style().visuals.text_color()
@@ -302,12 +272,8 @@ impl BitFontEditor {
                         for x in 0..s.width {
                             let rect = Rect::from_min_size(
                                 Pos2::new(
-                                    2. + left_ruler
-                                        + stroke_rect.left()
-                                        + x as f32 * (border + scale),
-                                    2. + top_ruler
-                                        + stroke_rect.top()
-                                        + y as f32 * (border + scale),
+                                    2. + left_ruler + stroke_rect.left() + x as f32 * (border + scale),
+                                    2. + top_ruler + stroke_rect.top() + y as f32 * (border + scale),
                                 ),
                                 Vec2::new(scale, scale),
                             );
@@ -531,13 +497,7 @@ impl Document for BitFontEditor {
         self.undo_stack.lock().len()
     }
 
-    fn show_ui(
-        &mut self,
-        ui: &mut eframe::egui::Ui,
-        _cur_tool: &mut Box<dyn Tool>,
-        _selected_tool: usize,
-        options: &DocumentOptions,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, options: &DocumentOptions) -> Option<Message> {
         let mut message = None;
         ui.add_space(16.);
         ui.vertical_centered(|ui| {
@@ -548,16 +508,10 @@ impl Document for BitFontEditor {
                 ui.vertical(|ui| {
                     ui.add_space(20.);
                     ui.horizontal(|ui| {
-                        if ui
-                            .button(fl!(crate::LANGUAGE_LOADER, "font-editor-clear"))
-                            .clicked()
-                        {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-clear")).clicked() {
                             message = to_message(self.clear_selected_glyph());
                         }
-                        if ui
-                            .button(fl!(crate::LANGUAGE_LOADER, "font-editor-inverse"))
-                            .clicked()
-                        {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-inverse")).clicked() {
                             message = to_message(self.inverse_selected_glyph());
                         }
                     });
@@ -590,41 +544,30 @@ impl Document for BitFontEditor {
                     ui.add_space(8.);
 
                     ui.horizontal(|ui| {
-                        if ui
-                            .button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_x"))
-                            .clicked()
-                        {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_x")).clicked() {
                             message = to_message(self.flip_x_selected_glyph());
                         }
 
-                        if ui
-                            .button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_y"))
-                            .clicked()
-                        {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font-editor-flip_y")).clicked() {
                             message = to_message(self.flip_y_selected_glyph());
                         }
                     });
 
-                    egui::Grid::new("some_unique_id")
-                        .num_columns(2)
-                        .spacing([4.0, 8.0])
-                        .show(ui, |ui| {
-                            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-                            });
-                            ui.add(egui::Slider::new(&mut self.width, 2..=8));
-                            ui.end_row();
-
-                            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
-                            });
-                            ui.add(egui::Slider::new(&mut self.height, 2..=19));
-                            ui.end_row();
+                    egui::Grid::new("some_unique_id").num_columns(2).spacing([4.0, 8.0]).show(ui, |ui| {
+                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
                         });
+                        ui.add(egui::Slider::new(&mut self.width, 2..=8));
+                        ui.end_row();
 
-                    if (self.width != self.font.size.width || self.height != self.font.size.height)
-                        && ui.button("Resize").clicked()
-                    {
+                        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+                        });
+                        ui.add(egui::Slider::new(&mut self.height, 2..=19));
+                        ui.end_row();
+                    });
+
+                    if (self.width != self.font.size.width || self.height != self.font.size.height) && ui.button("Resize").clicked() {
                         message = to_message(self.resize_font());
                     }
                 });
@@ -649,11 +592,7 @@ impl Document for BitFontEditor {
             });
         });
 
-        ui.label(fl!(
-            crate::LANGUAGE_LOADER,
-            "font-editor-table",
-            length = (self.font.length - 1).to_string()
-        ));
+        ui.label(fl!(crate::LANGUAGE_LOADER, "font-editor-table", length = (self.font.length - 1).to_string()));
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.horizontal_wrapped(|ui| {
                 for i in 0..self.font.length {
@@ -672,27 +611,15 @@ impl Document for BitFontEditor {
 
                     response.on_hover_ui(|ui| {
                         ui.horizontal(|ui| {
-                            ui.label(
-                                RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-char_label"))
-                                    .small(),
-                            );
-                            ui.label(
-                                RichText::new(format!("{0}/0x{0:02X}", i))
-                                    .small()
-                                    .color(Color32::WHITE),
-                            );
+                            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-char_label")).small());
+                            ui.label(RichText::new(format!("{0}/0x{0:02X}", i)).small().color(Color32::WHITE));
                         });
                         ui.horizontal(|ui| {
+                            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-ascii_label")).small());
                             ui.label(
-                                RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-ascii_label"))
-                                    .small(),
-                            );
-                            ui.label(
-                                RichText::new(format!("'{0}'", unsafe {
-                                    char::from_u32_unchecked(i as u32)
-                                }))
-                                .small()
-                                .color(Color32::WHITE),
+                                RichText::new(format!("'{0}'", unsafe { char::from_u32_unchecked(i as u32) }))
+                                    .small()
+                                    .color(Color32::WHITE),
                             );
                         });
                     });
@@ -701,10 +628,7 @@ impl Document for BitFontEditor {
         });
 
         if message.is_none() && self.send_update_message {
-            message = Some(Message::UpdateFont(Box::new((
-                self.last_updated_font.clone(),
-                self.font.clone(),
-            ))));
+            message = Some(Message::UpdateFont(Box::new((self.last_updated_font.clone(), self.font.clone()))));
             self.last_updated_font = self.font.clone();
             self.send_update_message = false;
         }
@@ -730,9 +654,6 @@ impl Document for BitFontEditor {
 
     fn destroy(&self, gl: &glow::Context) -> Option<Message> {
         self.buffer_view.lock().destroy(gl);
-        Some(Message::UpdateFont(Box::new((
-            self.last_updated_font.clone(),
-            self.original_font.clone(),
-        ))))
+        Some(Message::UpdateFont(Box::new((self.last_updated_font.clone(), self.original_font.clone()))))
     }
 }

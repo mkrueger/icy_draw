@@ -10,9 +10,7 @@ use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, TextAttribute, ANSI_FONTS, SAUCE_FONT_NAMES};
 use walkdir::WalkDir;
 
-use crate::{
-    create_retained_image, is_font_extensions, AnsiEditor, Message, Settings, TerminalResult,
-};
+use crate::{create_retained_image, is_font_extensions, AnsiEditor, Message, Settings, TerminalResult};
 
 #[derive(Default)]
 struct BitfontSource {
@@ -52,10 +50,7 @@ impl FontSelector {
             ));
         }
 
-        let only_sauce_fonts = matches!(
-            editor.buffer_view.lock().get_buffer().font_mode,
-            icy_engine::FontMode::Sauce
-        );
+        let only_sauce_fonts = matches!(editor.buffer_view.lock().get_buffer().font_mode, icy_engine::FontMode::Sauce);
 
         if !only_sauce_fonts {
             for slot in 0..ANSI_FONTS {
@@ -232,29 +227,17 @@ impl FontSelector {
         }
     }
 
-    pub fn draw_font_row(
-        &mut self,
-        ui: &mut egui::Ui,
-        cur_font: usize,
-        row_height: f32,
-        is_selected: bool,
-    ) -> Response {
+    pub fn draw_font_row(&mut self, ui: &mut egui::Ui, cur_font: usize, row_height: f32, is_selected: bool) -> Response {
         let font = &self.fonts[cur_font];
         let (id, rect) = ui.allocate_space([ui.available_width(), row_height].into());
         let response = ui.interact(rect, id, Sense::click());
 
         if response.hovered() {
-            ui.painter().rect_filled(
-                rect.expand(1.0),
-                Rounding::same(4.0),
-                ui.style().visuals.widgets.active.bg_fill,
-            );
+            ui.painter()
+                .rect_filled(rect.expand(1.0), Rounding::same(4.0), ui.style().visuals.widgets.active.bg_fill);
         } else if is_selected {
-            ui.painter().rect_filled(
-                rect.expand(1.0),
-                Rounding::same(4.0),
-                ui.style().visuals.extreme_bg_color,
-            );
+            ui.painter()
+                .rect_filled(rect.expand(1.0), Rounding::same(4.0), ui.style().visuals.extreme_bg_color);
         }
 
         let text_color = if is_selected {
@@ -267,9 +250,7 @@ impl FontSelector {
         let text: WidgetText = font.0.name.clone().into();
         let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
         ui.painter().galley_with_color(
-            egui::Align2::LEFT_TOP
-                .align_size_within_rect(galley.size(), rect.shrink(4.0))
-                .min,
+            egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), rect.shrink(4.0)).min,
             galley.galley,
             text_color,
         );
@@ -281,10 +262,7 @@ impl FontSelector {
             for ch in 0..256 {
                 buffer.layers[0].set_char(
                     (ch % 64, ch / 64),
-                    AttributedChar::new(
-                        unsafe { char::from_u32_unchecked(ch as u32) },
-                        TextAttribute::default(),
-                    ),
+                    AttributedChar::new(unsafe { char::from_u32_unchecked(ch as u32) }, TextAttribute::default()),
                 );
             }
             let img = create_retained_image(&buffer);
@@ -294,10 +272,7 @@ impl FontSelector {
         if let Some(image) = self.image_cache.get(&cur_font) {
             let w = (image.width() as f32).floor();
             let h = (image.height() as f32).floor();
-            let r = Rect::from_min_size(
-                Pos2::new((rect.left() + 4.0).floor(), (rect.top() + 24.0).floor()),
-                Vec2::new(w, h),
-            );
+            let r = Rect::from_min_size(Pos2::new((rect.left() + 4.0).floor(), (rect.top() + 24.0).floor()), Vec2::new(w, h));
             ui.painter().image(
                 image.texture_id(ui.ctx()),
                 r,
@@ -307,42 +282,22 @@ impl FontSelector {
 
             let mut rect = rect;
             if font.1.library {
-                let left = print_source(
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-library_font"),
-                    ui,
-                    rect,
-                    text_color,
-                );
+                let left = print_source(fl!(crate::LANGUAGE_LOADER, "font_selector-library_font"), ui, rect, text_color);
                 rect.set_right(left);
             }
 
             if font.1.sauce.is_some() {
-                let left = print_source(
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font"),
-                    ui,
-                    rect,
-                    text_color,
-                );
+                let left = print_source(fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font"), ui, rect, text_color);
                 rect.set_right(left);
             }
 
             if font.1.ansi_slot.is_some() {
-                let left = print_source(
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"),
-                    ui,
-                    rect,
-                    text_color,
-                );
+                let left = print_source(fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"), ui, rect, text_color);
                 rect.set_right(left);
             }
 
             if font.1.file_slot.is_some() {
-                let left = print_source(
-                    fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"),
-                    ui,
-                    rect,
-                    text_color,
-                );
+                let left = print_source(fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"), ui, rect, text_color);
                 rect.set_right(left);
             }
         }
@@ -357,24 +312,15 @@ fn print_source(font_type: String, ui: &egui::Ui, rect: Rect, text_color: Color3
     let galley_size = galley.size();
 
     let left_side = rect.right() - galley_size.x - 10.0;
-    let rect = Rect::from_min_size(
-        Pos2::new((left_side).floor(), (rect.top() + 8.0).floor()),
-        galley_size,
-    );
-
-    ui.painter().rect_filled(
-        rect.expand(2.0),
-        Rounding::same(4.0),
-        ui.style().visuals.widgets.active.bg_fill,
-    );
+    let rect = Rect::from_min_size(Pos2::new((left_side).floor(), (rect.top() + 8.0).floor()), galley_size);
 
     ui.painter()
-        .rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
+        .rect_filled(rect.expand(2.0), Rounding::same(4.0), ui.style().visuals.widgets.active.bg_fill);
+
+    ui.painter().rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
 
     ui.painter().galley_with_color(
-        egui::Align2::CENTER_CENTER
-            .align_size_within_rect(galley_size, rect)
-            .min,
+        egui::Align2::CENTER_CENTER.align_size_within_rect(galley_size, rect).min,
         galley.galley,
         text_color,
     );
@@ -390,17 +336,9 @@ impl crate::ModalDialog for FontSelector {
             modal.title(
                 ui,
                 if self.should_add {
-                    fl!(
-                        crate::LANGUAGE_LOADER,
-                        "add-font-dialog-title",
-                        fontcount = font_count
-                    )
+                    fl!(crate::LANGUAGE_LOADER, "add-font-dialog-title", fontcount = font_count)
                 } else {
-                    fl!(
-                        crate::LANGUAGE_LOADER,
-                        "select-font-dialog-title",
-                        fontcount = font_count
-                    )
+                    fl!(crate::LANGUAGE_LOADER, "select-font-dialog-title", fontcount = font_count)
                 },
             );
             modal.frame(ui, |ui| {
@@ -408,43 +346,28 @@ impl crate::ModalDialog for FontSelector {
                 ui.horizontal(|ui: &mut egui::Ui| {
                     ui.add_sized(
                         [250.0, 20.0],
-                        TextEdit::singleline(&mut self.filter).hint_text(fl!(
-                            crate::LANGUAGE_LOADER,
-                            "select-font-dialog-filter-text"
-                        )),
+                        TextEdit::singleline(&mut self.filter).hint_text(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-filter-text")),
                     );
                     let response = ui.button("🗙");
                     if response.clicked() {
                         self.filter.clear();
                     }
                     if !self.only_sauce_fonts {
-                        let response = ui.selectable_label(
-                            self.show_library,
-                            fl!(crate::LANGUAGE_LOADER, "font_selector-library_font"),
-                        );
+                        let response = ui.selectable_label(self.show_library, fl!(crate::LANGUAGE_LOADER, "font_selector-library_font"));
                         if response.clicked() {
                             self.show_library = !self.show_library;
                         }
 
-                        let response = ui.selectable_label(
-                            self.show_file,
-                            fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"),
-                        );
+                        let response = ui.selectable_label(self.show_file, fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"));
                         if response.clicked() {
                             self.show_file = !self.show_file;
                         }
 
-                        let response = ui.selectable_label(
-                            self.show_builtin,
-                            fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"),
-                        );
+                        let response = ui.selectable_label(self.show_builtin, fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"));
                         if response.clicked() {
                             self.show_builtin = !self.show_builtin;
                         }
-                        let response = ui.selectable_label(
-                            self.show_sauce,
-                            fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font"),
-                        );
+                        let response = ui.selectable_label(self.show_sauce, fl!(crate::LANGUAGE_LOADER, "font_selector-sauce_font"));
                         if response.clicked() {
                             self.show_sauce = !self.show_sauce;
                         }
@@ -461,39 +384,23 @@ impl crate::ModalDialog for FontSelector {
                         || self.show_library && font.1.library
                         || self.show_sauce && font.1.sauce.is_some();
 
-                    if font
-                        .0
-                        .name
-                        .to_lowercase()
-                        .contains(&self.filter.to_lowercase())
-                        && match_filter
-                    {
+                    if font.0.name.to_lowercase().contains(&self.filter.to_lowercase()) && match_filter {
                         filtered_fonts.push(i);
                     }
                 }
                 if filtered_fonts.is_empty() {
                     if font_count == 0 {
-                        ui.label(fl!(
-                            crate::LANGUAGE_LOADER,
-                            "select-font-dialog-no-fonts-installed"
-                        ));
+                        ui.label(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-no-fonts-installed"));
                     } else {
                         ui.label(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-no-fonts"));
                     }
                 } else {
-                    egui::ScrollArea::vertical().max_height(300.).show_rows(
-                        ui,
-                        row_height,
-                        filtered_fonts.len(),
-                        |ui, range| {
+                    egui::ScrollArea::vertical()
+                        .max_height(300.)
+                        .show_rows(ui, row_height, filtered_fonts.len(), |ui, range| {
                             for row in range {
                                 let is_selected = self.selected_font == filtered_fonts[row] as i32;
-                                let response = self.draw_font_row(
-                                    ui,
-                                    filtered_fonts[row],
-                                    row_height,
-                                    is_selected,
-                                );
+                                let response = self.draw_font_row(ui, filtered_fonts[row], row_height, is_selected);
 
                                 if response.clicked() {
                                     self.selected_font = filtered_fonts[row] as i32;
@@ -504,8 +411,7 @@ impl crate::ModalDialog for FontSelector {
                                     result = true;
                                 }
                             }
-                        },
-                    );
+                        });
                 }
             });
 
@@ -520,22 +426,13 @@ impl crate::ModalDialog for FontSelector {
                     self.do_select = true;
                     result = true;
                 }
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel")).clicked() {
                     result = true;
                 }
 
                 let enabled = self.fonts[self.selected_font as usize].0.path_opt.is_some();
                 if ui
-                    .add_enabled(
-                        enabled,
-                        Button::new(fl!(
-                            crate::LANGUAGE_LOADER,
-                            "select-font-dialog-edit-button"
-                        )),
-                    )
+                    .add_enabled(enabled, Button::new(fl!(crate::LANGUAGE_LOADER, "select-font-dialog-edit-button")))
                     .clicked()
                 {
                     self.edit_selected_font = true;
@@ -578,17 +475,12 @@ impl crate::ModalDialog for FontSelector {
             } else {
                 let mut font_set = false;
                 let mut font_slot = 0;
-                editor
-                    .buffer_view
-                    .lock()
-                    .get_buffer()
-                    .font_iter()
-                    .for_each(|(id, f)| {
-                        if f == font {
-                            font_slot = *id;
-                            font_set = true;
-                        }
-                    });
+                editor.buffer_view.lock().get_buffer().font_iter().for_each(|(id, f)| {
+                    if f == font {
+                        font_slot = *id;
+                        font_set = true;
+                    }
+                });
                 if font_set {
                     return Ok(Some(Message::SwitchToFontPage(font_slot)));
                 }

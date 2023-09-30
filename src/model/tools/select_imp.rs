@@ -77,39 +77,14 @@ impl Tool for SelectTool {
         false
     }
 
-    fn show_ui(
-        &mut self,
-        _ctx: &egui::Context,
-        ui: &mut egui::Ui,
-        _editor_opt: Option<&AnsiEditor>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         ui.label(fl!(crate::LANGUAGE_LOADER, "tool-select-label"));
-        ui.radio_value(
-            &mut self.mode,
-            SelectionMode::Normal,
-            fl!(crate::LANGUAGE_LOADER, "tool-select-normal"),
-        );
-        ui.radio_value(
-            &mut self.mode,
-            SelectionMode::Character,
-            fl!(crate::LANGUAGE_LOADER, "tool-select-character"),
-        );
-        ui.radio_value(
-            &mut self.mode,
-            SelectionMode::Attribute,
-            fl!(crate::LANGUAGE_LOADER, "tool-select-attribute"),
-        );
-        ui.radio_value(
-            &mut self.mode,
-            SelectionMode::Foreground,
-            fl!(crate::LANGUAGE_LOADER, "tool-select-foreground"),
-        );
+        ui.radio_value(&mut self.mode, SelectionMode::Normal, fl!(crate::LANGUAGE_LOADER, "tool-select-normal"));
+        ui.radio_value(&mut self.mode, SelectionMode::Character, fl!(crate::LANGUAGE_LOADER, "tool-select-character"));
+        ui.radio_value(&mut self.mode, SelectionMode::Attribute, fl!(crate::LANGUAGE_LOADER, "tool-select-attribute"));
+        ui.radio_value(&mut self.mode, SelectionMode::Foreground, fl!(crate::LANGUAGE_LOADER, "tool-select-foreground"));
 
-        ui.radio_value(
-            &mut self.mode,
-            SelectionMode::Background,
-            fl!(crate::LANGUAGE_LOADER, "tool-select-background"),
-        );
+        ui.radio_value(&mut self.mode, SelectionMode::Background, fl!(crate::LANGUAGE_LOADER, "tool-select-background"));
         ui.add_space(8.0);
         ui.vertical_centered(|ui| {
             ui.small(fl!(crate::LANGUAGE_LOADER, "tool-select-description"));
@@ -118,14 +93,7 @@ impl Tool for SelectTool {
         None
     }
 
-    fn handle_click(
-        &mut self,
-        editor: &mut AnsiEditor,
-        button: i32,
-        pos: Position,
-        cur_abs: Position,
-        response: &egui::Response,
-    ) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, cur_abs: Position, response: &egui::Response) -> Option<Message> {
         let cur_ch = editor.get_char_from_cur_layer(pos);
 
         let selection_mode = if response.ctx.input(|i| i.modifiers.shift_only()) {
@@ -152,27 +120,17 @@ impl Tool for SelectTool {
                 .buffer_view
                 .lock()
                 .get_edit_state_mut()
-                .enumerate_selections(|_, ch, _| {
-                    selection_mode.get_response(ch.attribute == cur_ch.attribute)
-                }),
+                .enumerate_selections(|_, ch, _| selection_mode.get_response(ch.attribute == cur_ch.attribute)),
             SelectionMode::Foreground => editor
                 .buffer_view
                 .lock()
                 .get_edit_state_mut()
-                .enumerate_selections(|_, ch, _| {
-                    selection_mode.get_response(
-                        ch.attribute.get_foreground() == cur_ch.attribute.get_foreground(),
-                    )
-                }),
+                .enumerate_selections(|_, ch, _| selection_mode.get_response(ch.attribute.get_foreground() == cur_ch.attribute.get_foreground())),
             SelectionMode::Background => editor
                 .buffer_view
                 .lock()
                 .get_edit_state_mut()
-                .enumerate_selections(|_, ch, _| {
-                    selection_mode.get_response(
-                        ch.attribute.get_background() == cur_ch.attribute.get_background(),
-                    )
-                }),
+                .enumerate_selections(|_, ch, _| selection_mode.get_response(ch.attribute.get_background() == cur_ch.attribute.get_background())),
         }
         None
     }
@@ -188,26 +146,13 @@ impl Tool for SelectTool {
             if let Some(selection) = editor.buffer_view.lock().get_selection() {
                 self.start_selection = selection.as_rectangle();
             }
-        } else if !response
-            .ctx
-            .input(|i| i.modifiers.shift_only() || i.modifiers.command_only())
-        {
-            let _ = editor
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .clear_selection();
+        } else if !response.ctx.input(|i| i.modifiers.shift_only() || i.modifiers.command_only()) {
+            let _ = editor.buffer_view.lock().get_edit_state_mut().clear_selection();
         }
         Event::None
     }
 
-    fn handle_drag(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-    ) -> egui::Response {
+    fn handle_drag(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _calc: &TerminalCalc) -> egui::Response {
         if self.mode != SelectionMode::Normal {
             return response;
         }
@@ -219,8 +164,7 @@ impl Tool for SelectTool {
 
         match self.selection_drag {
             SelectionDrag::Move => {
-                rect.start = self.start_selection.top_left() - editor.drag_pos.start_abs
-                    + editor.drag_pos.cur_abs;
+                rect.start = self.start_selection.top_left() - editor.drag_pos.start_abs + editor.drag_pos.cur_abs;
                 editor.buffer_view.lock().set_selection(rect);
             }
             SelectionDrag::Left => {
@@ -287,14 +231,7 @@ impl Tool for SelectTool {
         response
     }
 
-    fn handle_hover(
-        &mut self,
-        ui: &egui::Ui,
-        response: egui::Response,
-        editor: &mut AnsiEditor,
-        _cur: Position,
-        cur_abs: Position,
-    ) -> egui::Response {
+    fn handle_hover(&mut self, ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _cur: Position, cur_abs: Position) -> egui::Response {
         if self.mode != SelectionMode::Normal {
             return response.on_hover_cursor(egui::CursorIcon::Crosshair);
         }
@@ -365,8 +302,7 @@ impl SelectTool {
     }
 
     fn move_right(&mut self, editor: &AnsiEditor, rect: &mut Rectangle) {
-        rect.size.width = self.start_selection.get_width() - editor.drag_pos.start_abs.x
-            + editor.drag_pos.cur_abs.x;
+        rect.size.width = self.start_selection.get_width() - editor.drag_pos.start_abs.x + editor.drag_pos.cur_abs.x;
         if rect.size.width < 0 {
             rect.start.x = self.start_selection.left() + rect.size.width;
             rect.size.width = self.start_selection.left() - rect.start.x;
@@ -385,8 +321,7 @@ impl SelectTool {
     }
 
     fn move_bottom(&mut self, editor: &AnsiEditor, rect: &mut Rectangle) {
-        rect.size.height = self.start_selection.get_height() - editor.drag_pos.start_abs.y
-            + editor.drag_pos.cur_abs.y;
+        rect.size.height = self.start_selection.get_height() - editor.drag_pos.start_abs.y + editor.drag_pos.cur_abs.y;
         if rect.size.height < 0 {
             rect.start.y = self.start_selection.top() + rect.size.height;
             rect.size.height = self.start_selection.top() - rect.start.y;

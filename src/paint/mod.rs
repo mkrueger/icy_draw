@@ -34,56 +34,26 @@ impl BrushMode {
         show_outline: bool,
     ) -> Option<Message> {
         let mut msg = None;
-        ui.radio_value(
-            self,
-            BrushMode::HalfBlock,
-            fl!(crate::LANGUAGE_LOADER, "tool-half-block"),
-        );
-        ui.radio_value(
-            self,
-            BrushMode::Block,
-            fl!(crate::LANGUAGE_LOADER, "tool-full-block"),
-        );
+        ui.radio_value(self, BrushMode::HalfBlock, fl!(crate::LANGUAGE_LOADER, "tool-half-block"));
+        ui.radio_value(self, BrushMode::Block, fl!(crate::LANGUAGE_LOADER, "tool-full-block"));
 
         if show_outline {
             ui.horizontal(|ui| {
-                ui.radio_value(
-                    self,
-                    BrushMode::Outline,
-                    fl!(crate::LANGUAGE_LOADER, "tool-outline"),
-                );
-                if ui
-                    .button(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "font_tool_select_outline_button"
-                    ))
-                    .clicked()
-                {
+                ui.radio_value(self, BrushMode::Outline, fl!(crate::LANGUAGE_LOADER, "tool-outline"));
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "font_tool_select_outline_button")).clicked() {
                     msg = Some(Message::ShowOutlineDialog);
                 }
             });
         }
 
         ui.horizontal(|ui| {
-            ui.radio_value(
-                self,
-                BrushMode::Char(char_code.clone()),
-                fl!(crate::LANGUAGE_LOADER, "tool-character"),
-            );
+            ui.radio_value(self, BrushMode::Char(char_code.clone()), fl!(crate::LANGUAGE_LOADER, "tool-character"));
             if let Some(editor) = editor_opt {
                 draw_glyph(ui, editor, &char_code);
             }
         });
-        ui.radio_value(
-            self,
-            BrushMode::Shade,
-            fl!(crate::LANGUAGE_LOADER, "tool-shade"),
-        );
-        ui.radio_value(
-            self,
-            BrushMode::Colorize,
-            fl!(crate::LANGUAGE_LOADER, "tool-colorize"),
-        );
+        ui.radio_value(self, BrushMode::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
+        ui.radio_value(self, BrushMode::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
 
         msg
     }
@@ -114,19 +84,13 @@ impl ColorMode {
             let mut use_back = self.use_back();
 
             if ui
-                .selectable_label(
-                    use_fore,
-                    RichText::new(fl!(crate::LANGUAGE_LOADER, "tool-fg")).size(20.0),
-                )
+                .selectable_label(use_fore, RichText::new(fl!(crate::LANGUAGE_LOADER, "tool-fg")).size(20.0))
                 .clicked()
             {
                 use_fore = !use_fore;
             }
             if ui
-                .selectable_label(
-                    use_back,
-                    RichText::new(fl!(crate::LANGUAGE_LOADER, "tool-bg")).size(20.0),
-                )
+                .selectable_label(use_back, RichText::new(fl!(crate::LANGUAGE_LOADER, "tool-bg")).size(20.0))
                 .clicked()
             {
                 use_back = !use_back;
@@ -145,13 +109,7 @@ impl ColorMode {
     }
 }
 
-pub fn plot_point(
-    buffer_view: &mut BufferView,
-    pos: impl Into<Position>,
-    mut mode: BrushMode,
-    color_mode: ColorMode,
-    point_role: PointRole,
-) {
+pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mode: BrushMode, color_mode: ColorMode, point_role: PointRole) {
     let pos = pos.into();
     let text_pos = Position::new(pos.x, pos.y / 2);
     let mut ch = if let Some(layer) = buffer_view.get_edit_state().get_cur_layer() {
@@ -188,10 +146,7 @@ pub fn plot_point(
     }
     match mode {
         BrushMode::HalfBlock => {
-            layer.set_char(
-                text_pos,
-                get_half_block(ch, pos, attribute.get_foreground()),
-            );
+            layer.set_char(text_pos, get_half_block(ch, pos, attribute.get_foreground()));
         }
         BrushMode::Block => {
             layer.set_char(text_pos, AttributedChar::new(219 as char, attribute));
@@ -220,10 +175,7 @@ pub fn plot_point(
             let outline_style = crate::Settings::get_font_outline_style();
             layer.set_char(
                 text_pos,
-                AttributedChar::new(
-                    TheDrawFont::transform_outline(outline_style, ch as u8) as char,
-                    attribute,
-                ),
+                AttributedChar::new(TheDrawFont::transform_outline(outline_style, ch as u8) as char, attribute),
             );
         }
 

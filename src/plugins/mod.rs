@@ -26,11 +26,7 @@ impl Plugin {
         Err(anyhow::anyhow!("No plugin file"))
     }
 
-    pub(crate) fn run_plugin(
-        &self,
-        _window: &mut crate::MainWindow,
-        editor: &crate::AnsiEditor,
-    ) -> anyhow::Result<()> {
+    pub(crate) fn run_plugin(&self, _window: &mut crate::MainWindow, editor: &crate::AnsiEditor) -> anyhow::Result<()> {
         let lua = Lua::new();
         let globals = lua.globals();
 
@@ -77,11 +73,7 @@ impl Plugin {
             .buffer_view
             .lock()
             .get_edit_state_mut()
-            .begin_atomic_undo(fl!(
-                crate::LANGUAGE_LOADER,
-                "undo-plugin",
-                title = self.title.clone()
-            ));
+            .begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-plugin", title = self.title.clone()));
         lua.load(&self.text).exec()?;
         Ok(())
     }
@@ -125,14 +117,16 @@ impl LuaBufferView {
         let buffer_type = self.buffer_view.lock().get_buffer().buffer_type;
         let ch = match buffer_type {
             icy_engine::BufferType::Unicode => ch,
-            icy_engine::BufferType::CP437 => icy_engine::ascii::Parser::default()
-                .convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
-            icy_engine::BufferType::Petscii => icy_engine::petscii::Parser::default()
-                .convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
-            icy_engine::BufferType::Atascii => icy_engine::atascii::Parser::default()
-                .convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
-            icy_engine::BufferType::Viewdata => icy_engine::viewdata::Parser::default()
-                .convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
+            icy_engine::BufferType::CP437 => icy_engine::ascii::Parser::default().convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page()),
+            icy_engine::BufferType::Petscii => {
+                icy_engine::petscii::Parser::default().convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page())
+            }
+            icy_engine::BufferType::Atascii => {
+                icy_engine::atascii::Parser::default().convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page())
+            }
+            icy_engine::BufferType::Viewdata => {
+                icy_engine::viewdata::Parser::default().convert_from_unicode(ch, self.buffer_view.lock().get_caret().get_font_page())
+            }
         };
         Ok(ch)
     }
@@ -141,18 +135,10 @@ impl LuaBufferView {
         let buffer_type = self.buffer_view.lock().get_buffer().buffer_type;
         let ch = match buffer_type {
             icy_engine::BufferType::Unicode => ch.ch,
-            icy_engine::BufferType::CP437 => {
-                icy_engine::ascii::Parser::default().convert_to_unicode(ch)
-            }
-            icy_engine::BufferType::Petscii => {
-                icy_engine::petscii::Parser::default().convert_to_unicode(ch)
-            }
-            icy_engine::BufferType::Atascii => {
-                icy_engine::atascii::Parser::default().convert_to_unicode(ch)
-            }
-            icy_engine::BufferType::Viewdata => {
-                icy_engine::viewdata::Parser::default().convert_to_unicode(ch)
-            }
+            icy_engine::BufferType::CP437 => icy_engine::ascii::Parser::default().convert_to_unicode(ch),
+            icy_engine::BufferType::Petscii => icy_engine::petscii::Parser::default().convert_to_unicode(ch),
+            icy_engine::BufferType::Atascii => icy_engine::atascii::Parser::default().convert_to_unicode(ch),
+            icy_engine::BufferType::Viewdata => icy_engine::viewdata::Parser::default().convert_to_unicode(ch),
         };
         ch.to_string()
     }
@@ -160,63 +146,37 @@ impl LuaBufferView {
 
 impl UserData for LuaBufferView {
     fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
-        fields.add_field_method_get("height", |_, this| {
-            Ok(this.buffer_view.lock().get_buffer_mut().get_height())
-        });
+        fields.add_field_method_get("height", |_, this| Ok(this.buffer_view.lock().get_buffer_mut().get_height()));
         fields.add_field_method_set("height", |_, this, val| {
             this.buffer_view.lock().get_buffer_mut().set_height(val);
             Ok(())
         });
-        fields.add_field_method_get("width", |_, this| {
-            Ok(this.buffer_view.lock().get_buffer_mut().get_width())
-        });
+        fields.add_field_method_get("width", |_, this| Ok(this.buffer_view.lock().get_buffer_mut().get_width()));
         fields.add_field_method_set("width", |_, this, val| {
             this.buffer_view.lock().get_buffer_mut().set_width(val);
             Ok(())
         });
 
-        fields.add_field_method_get("font_page", |_, this| {
-            Ok(this.buffer_view.lock().get_caret_mut().get_font_page())
-        });
+        fields.add_field_method_get("font_page", |_, this| Ok(this.buffer_view.lock().get_caret_mut().get_font_page()));
         fields.add_field_method_set("font_page", |_, this, val| {
             this.buffer_view.lock().get_caret_mut().set_font_page(val);
             Ok(())
         });
 
-        fields.add_field_method_get("layer", |_, this| {
-            Ok(this
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .get_current_layer())
-        });
+        fields.add_field_method_get("layer", |_, this| Ok(this.buffer_view.lock().get_edit_state_mut().get_current_layer()));
         fields.add_field_method_set("layer", |_, this, val| {
             if val < this.buffer_view.lock().get_buffer_mut().layers.len() {
-                this.buffer_view
-                    .lock()
-                    .get_edit_state_mut()
-                    .set_current_layer(val);
+                this.buffer_view.lock().get_edit_state_mut().set_current_layer(val);
                 Ok(())
             } else {
                 Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Layer {} out of range (0..<{})",
-                        val,
-                        this.buffer_view.lock().get_buffer_mut().layers.len()
-                    ),
+                    message: format!("Layer {} out of range (0..<{})", val, this.buffer_view.lock().get_buffer_mut().layers.len()),
                     incomplete_input: false,
                 })
             }
         });
 
-        fields.add_field_method_get("fg", |_, this| {
-            Ok(this
-                .buffer_view
-                .lock()
-                .get_caret_mut()
-                .get_attribute()
-                .get_foreground())
-        });
+        fields.add_field_method_get("fg", |_, this| Ok(this.buffer_view.lock().get_caret_mut().get_attribute().get_foreground()));
         fields.add_field_method_set("fg", |_, this, val| {
             let mut attr = this.buffer_view.lock().get_caret_mut().get_attribute();
             attr.set_foreground(val);
@@ -224,14 +184,7 @@ impl UserData for LuaBufferView {
             Ok(())
         });
 
-        fields.add_field_method_get("bg", |_, this| {
-            Ok(this
-                .buffer_view
-                .lock()
-                .get_caret_mut()
-                .get_attribute()
-                .get_background())
-        });
+        fields.add_field_method_get("bg", |_, this| Ok(this.buffer_view.lock().get_caret_mut().get_attribute().get_background()));
         fields.add_field_method_set("bg", |_, this, val| {
             let mut attr = this.buffer_view.lock().get_caret_mut().get_attribute();
             attr.set_background(val);
@@ -239,96 +192,56 @@ impl UserData for LuaBufferView {
             Ok(())
         });
 
-        fields.add_field_method_get("x", |_, this| {
-            Ok(this.buffer_view.lock().get_caret_mut().get_position().x)
-        });
+        fields.add_field_method_get("x", |_, this| Ok(this.buffer_view.lock().get_caret_mut().get_position().x));
         fields.add_field_method_set("x", |_, this, val| {
             this.buffer_view.lock().get_caret_mut().set_x_position(val);
             Ok(())
         });
 
-        fields.add_field_method_get("y", |_, this| {
-            Ok(this.buffer_view.lock().get_caret_mut().get_position().y)
-        });
+        fields.add_field_method_get("y", |_, this| Ok(this.buffer_view.lock().get_caret_mut().get_position().y));
         fields.add_field_method_set("y", |_, this, val| {
             this.buffer_view.lock().get_caret_mut().set_y_position(val);
             Ok(())
         });
 
-        fields.add_field_method_get("layer_count", |_, this| {
-            Ok(this.buffer_view.lock().get_buffer_mut().layers.len())
-        });
+        fields.add_field_method_get("layer_count", |_, this| Ok(this.buffer_view.lock().get_buffer_mut().layers.len()));
     }
 
     fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_method_mut("fg_rgb", |_, this, (r, g, b): (u8, u8, u8)| {
-            let color = this
-                .buffer_view
-                .lock()
-                .get_buffer_mut()
-                .palette
-                .insert_color_rgb(r, g, b);
-            this.buffer_view
-                .lock()
-                .get_caret_mut()
-                .set_foreground(color);
+            let color = this.buffer_view.lock().get_buffer_mut().palette.insert_color_rgb(r, g, b);
+            this.buffer_view.lock().get_caret_mut().set_foreground(color);
             Ok(color)
         });
 
         methods.add_method_mut("bg_rgb", |_, this, (r, g, b): (u8, u8, u8)| {
-            let color = this
-                .buffer_view
-                .lock()
-                .get_buffer_mut()
-                .palette
-                .insert_color_rgb(r, g, b);
-            this.buffer_view
-                .lock()
-                .get_caret_mut()
-                .set_background(color);
+            let color = this.buffer_view.lock().get_buffer_mut().palette.insert_color_rgb(r, g, b);
+            this.buffer_view.lock().get_caret_mut().set_background(color);
             Ok(color)
         });
 
         methods.add_method_mut("set_char", |_, this, (x, y, ch): (i32, i32, String)| {
-            let cur_layer = this
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Current layer {} out of range (0..<{})",
-                        cur_layer, layer_len
-                    ),
+                    message: format!("Current layer {} out of range (0..<{})", cur_layer, layer_len),
                     incomplete_input: false,
                 });
             }
             let attr = this.buffer_view.lock().get_caret_mut().get_attribute();
             let ch = AttributedChar::new(this.convert_from_unicode(ch)?, attr);
 
-            this.buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .set_char((x, y), ch)
-                .unwrap();
+            this.buffer_view.lock().get_edit_state_mut().set_char((x, y), ch).unwrap();
             Ok(())
         });
 
         methods.add_method_mut("get_char", |_, this, (x, y): (i32, i32)| {
-            let cur_layer = this
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Current layer {} out of range (0..<{})",
-                        cur_layer, layer_len
-                    ),
+                    message: format!("Current layer {} out of range (0..<{})", cur_layer, layer_len),
                     incomplete_input: false,
                 });
             }
@@ -338,67 +251,42 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("pickup_char", |_, this, (x, y): (i32, i32)| {
-            let cur_layer = this
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Current layer {} out of range (0..<{})",
-                        cur_layer, layer_len
-                    ),
+                    message: format!("Current layer {} out of range (0..<{})", cur_layer, layer_len),
                     incomplete_input: false,
                 });
             }
 
             let ch = this.buffer_view.lock().get_buffer_mut().layers[cur_layer].get_char((x, y));
-            this.buffer_view
-                .lock()
-                .get_caret_mut()
-                .set_attr(ch.attribute);
+            this.buffer_view.lock().get_caret_mut().set_attr(ch.attribute);
 
             Ok(this.convert_to_unicode(ch))
         });
 
         methods.add_method_mut("set_fg", |_, this, (x, y, col): (i32, i32, u32)| {
-            let cur_layer = this
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Current layer {} out of range (0..<{})",
-                        cur_layer, layer_len
-                    ),
+                    message: format!("Current layer {} out of range (0..<{})", cur_layer, layer_len),
                     incomplete_input: false,
                 });
             }
-            let mut ch =
-                this.buffer_view.lock().get_buffer_mut().layers[cur_layer].get_char((x, y));
+            let mut ch = this.buffer_view.lock().get_buffer_mut().layers[cur_layer].get_char((x, y));
             ch.attribute.set_foreground(col);
             this.buffer_view.lock().get_buffer_mut().layers[cur_layer].set_char((x, y), ch);
             Ok(())
         });
 
         methods.add_method_mut("get_fg", |_, this, (x, y): (i32, i32)| {
-            let cur_layer = this
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Current layer {} out of range (0..<{})",
-                        cur_layer, layer_len
-                    ),
+                    message: format!("Current layer {} out of range (0..<{})", cur_layer, layer_len),
                     incomplete_input: false,
                 });
             }
@@ -408,41 +296,26 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("set_bg", |_, this, (x, y, col): (i32, i32, u32)| {
-            let cur_layer = this
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Current layer {} out of range (0..<{})",
-                        cur_layer, layer_len
-                    ),
+                    message: format!("Current layer {} out of range (0..<{})", cur_layer, layer_len),
                     incomplete_input: false,
                 });
             }
-            let mut ch =
-                this.buffer_view.lock().get_buffer_mut().layers[cur_layer].get_char((x, y));
+            let mut ch = this.buffer_view.lock().get_buffer_mut().layers[cur_layer].get_char((x, y));
             ch.attribute.set_background(col);
             this.buffer_view.lock().get_buffer_mut().layers[cur_layer].set_char((x, y), ch);
             Ok(())
         });
 
         methods.add_method_mut("get_bg", |_, this, (x, y): (i32, i32)| {
-            let cur_layer = this
-                .buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Current layer {} out of range (0..<{})",
-                        cur_layer, layer_len
-                    ),
+                    message: format!("Current layer {} out of range (0..<{})", cur_layer, layer_len),
                     incomplete_input: false,
                 });
             }
@@ -455,11 +328,7 @@ impl UserData for LuaBufferView {
                 let mut pos = this.buffer_view.lock().get_caret_mut().get_position();
                 let attribute = this.buffer_view.lock().get_caret_mut().get_attribute();
                 let ch = AttributedChar::new(this.convert_from_unicode(c.to_string())?, attribute);
-                let _ = this
-                    .buffer_view
-                    .lock()
-                    .get_edit_state_mut()
-                    .set_char(pos, ch);
+                let _ = this.buffer_view.lock().get_edit_state_mut().set_char(pos, ch);
                 pos.x += 1;
                 this.buffer_view.lock().get_caret_mut().set_position(pos);
             }
@@ -467,82 +336,53 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("gotoxy", |_, this, (x, y): (i32, i32)| {
-            this.buffer_view
-                .lock()
-                .get_caret_mut()
-                .set_position(Position::new(x, y));
+            this.buffer_view.lock().get_caret_mut().set_position(Position::new(x, y));
             Ok(())
         });
 
-        methods.add_method_mut(
-            "set_layer_position",
-            |_, this, (layer, x, y): (usize, i32, i32)| {
-                if layer < this.buffer_view.lock().get_buffer_mut().layers.len() {
-                    let _ = this
-                        .buffer_view
-                        .lock()
-                        .get_edit_state_mut()
-                        .move_layer(Position::new(x, y));
-                    Ok(())
-                } else {
-                    Err(mlua::Error::SyntaxError {
-                        message: format!(
-                            "Layer {} out of range (0..<{})",
-                            layer,
-                            this.buffer_view.lock().get_buffer_mut().layers.len()
-                        ),
-                        incomplete_input: false,
-                    })
-                }
-            },
-        );
+        methods.add_method_mut("set_layer_position", |_, this, (layer, x, y): (usize, i32, i32)| {
+            if layer < this.buffer_view.lock().get_buffer_mut().layers.len() {
+                let _ = this.buffer_view.lock().get_edit_state_mut().move_layer(Position::new(x, y));
+                Ok(())
+            } else {
+                Err(mlua::Error::SyntaxError {
+                    message: format!("Layer {} out of range (0..<{})", layer, this.buffer_view.lock().get_buffer_mut().layers.len()),
+                    incomplete_input: false,
+                })
+            }
+        });
         methods.add_method_mut("get_layer_position", |_, this, layer: usize| {
             if layer < this.buffer_view.lock().get_buffer_mut().layers.len() {
                 let pos = this.buffer_view.lock().get_buffer_mut().layers[layer].get_offset();
                 Ok((pos.x, pos.y))
             } else {
                 Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Layer {} out of range (0..<{})",
-                        layer,
-                        this.buffer_view.lock().get_buffer_mut().layers.len()
-                    ),
+                    message: format!("Layer {} out of range (0..<{})", layer, this.buffer_view.lock().get_buffer_mut().layers.len()),
                     incomplete_input: false,
                 })
             }
         });
 
-        methods.add_method_mut(
-            "set_layer_visible",
-            |_, this, (layer, is_visible): (i32, bool)| {
-                let layer = layer as usize;
-                if layer < this.buffer_view.lock().get_buffer_mut().layers.len() {
-                    // todo
-                    this.buffer_view.lock().get_buffer_mut().layers[layer].is_visible = is_visible;
-                    Ok(())
-                } else {
-                    Err(mlua::Error::SyntaxError {
-                        message: format!(
-                            "Layer {} out of range (0..<{})",
-                            layer,
-                            this.buffer_view.lock().get_buffer_mut().layers.len()
-                        ),
-                        incomplete_input: false,
-                    })
-                }
-            },
-        );
+        methods.add_method_mut("set_layer_visible", |_, this, (layer, is_visible): (i32, bool)| {
+            let layer = layer as usize;
+            if layer < this.buffer_view.lock().get_buffer_mut().layers.len() {
+                // todo
+                this.buffer_view.lock().get_buffer_mut().layers[layer].is_visible = is_visible;
+                Ok(())
+            } else {
+                Err(mlua::Error::SyntaxError {
+                    message: format!("Layer {} out of range (0..<{})", layer, this.buffer_view.lock().get_buffer_mut().layers.len()),
+                    incomplete_input: false,
+                })
+            }
+        });
 
         methods.add_method_mut("get_layer_visible", |_, this, layer: usize| {
             if layer < this.buffer_view.lock().get_buffer_mut().layers.len() {
                 Ok(this.buffer_view.lock().get_buffer_mut().layers[layer].is_visible)
             } else {
                 Err(mlua::Error::SyntaxError {
-                    message: format!(
-                        "Layer {} out of range (0..<{})",
-                        layer,
-                        this.buffer_view.lock().get_buffer_mut().layers.len()
-                    ),
+                    message: format!("Layer {} out of range (0..<{})", layer, this.buffer_view.lock().get_buffer_mut().layers.len()),
                     incomplete_input: false,
                 })
             }

@@ -15,16 +15,14 @@ use i18n_embed_fl::fl;
 use icy_engine::{
     editor::{AtomicUndoGuard, UndoState},
     util::{pop_data, pop_sixel_image, push_data, BUFFER_DATA},
-    AttributedChar, Buffer, EngineResult, Line, Position, Rectangle, SaveOptions, TextAttribute,
-    TextPane,
+    AttributedChar, Buffer, EngineResult, Line, Position, Rectangle, SaveOptions, TextAttribute, TextPane,
 };
 
 use icy_engine_egui::{show_terminal_area, BufferView, TerminalCalc};
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
-    ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, TerminalResult,
-    UndoHandler, SETTINGS,
+    ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, TerminalResult, UndoHandler, SETTINGS,
 };
 
 pub enum Event {
@@ -88,10 +86,7 @@ impl ClipboardHandler for AnsiEditor {
     fn cut(&mut self) -> EngineResult<()> {
         let _cut = self.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-cut"));
         self.copy()?;
-        self.buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .erase_selection()?;
+        self.buffer_view.lock().get_edit_state_mut().erase_selection()?;
         Ok(())
     }
 
@@ -100,12 +95,7 @@ impl ClipboardHandler for AnsiEditor {
     }
 
     fn copy(&mut self) -> EngineResult<()> {
-        if let Some(data) = self
-            .buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .get_clipboard_data()
-        {
+        if let Some(data) = self.buffer_view.lock().get_edit_state_mut().get_clipboard_data() {
             push_data(BUFFER_DATA, &data)?;
         } else {
             log::error!("can't get clipboard data!");
@@ -118,25 +108,14 @@ impl ClipboardHandler for AnsiEditor {
     }
 
     fn paste(&mut self) -> EngineResult<()> {
-        if self
-            .buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .has_floating_layer()
-        {
+        if self.buffer_view.lock().get_edit_state_mut().has_floating_layer() {
             return Ok(());
         }
 
         if let Some(data) = pop_data(BUFFER_DATA) {
-            self.buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .paste_clipboard_data(&data)?;
+            self.buffer_view.lock().get_edit_state_mut().paste_clipboard_data(&data)?;
         } else if let Some(sixel) = pop_sixel_image() {
-            self.buffer_view
-                .lock()
-                .get_edit_state_mut()
-                .paste_sixel(sixel)?;
+            self.buffer_view.lock().get_edit_state_mut().paste_sixel(sixel)?;
         }
         Ok(())
     }
@@ -149,13 +128,7 @@ impl Document for AnsiEditor {
     }
 
     fn undo_stack_len(&self) -> usize {
-        if let Ok(stack) = self
-            .buffer_view
-            .lock()
-            .get_edit_state()
-            .get_undo_stack()
-            .lock()
-        {
+        if let Ok(stack) = self.buffer_view.lock().get_edit_state().get_undo_stack().lock() {
             for i in (0..stack.len()).rev() {
                 if stack[i].changes_data() {
                     return i + 1;
@@ -172,21 +145,11 @@ impl Document for AnsiEditor {
             ICED_EXT.to_string()
         };
         let options = SaveOptions::new();
-        let bytes = self
-            .buffer_view
-            .lock()
-            .get_buffer()
-            .to_bytes(&ext, &options)?;
+        let bytes = self.buffer_view.lock().get_buffer().to_bytes(&ext, &options)?;
         Ok(bytes)
     }
 
-    fn show_ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        cur_tool: &mut Box<dyn Tool>,
-        _selected_tool: usize,
-        options: &DocumentOptions,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, ui: &mut egui::Ui, cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, options: &DocumentOptions) -> Option<Message> {
         let mut message = None;
 
         let mut scale = options.get_scale();
@@ -259,17 +222,11 @@ impl AnsiEditor {
     }
 
     pub fn get_cur_layer_index(&self) -> usize {
-        self.buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .get_current_layer()
+        self.buffer_view.lock().get_edit_state_mut().get_current_layer()
     }
 
     pub fn set_cur_layer_index(&self, layer: usize) {
-        self.buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .set_current_layer(layer);
+        self.buffer_view.lock().get_edit_state_mut().set_current_layer(layer);
     }
 
     pub fn output_string(&mut self, str: &str) {
@@ -305,11 +262,7 @@ impl AnsiEditor {
     pub fn join_overlay(&mut self, description: impl Into<String>) {
         let _undo = self.begin_atomic_undo(description.into());
         let opt_layer = self.buffer_view.lock().get_buffer_mut().remove_overlay();
-        let use_selection = self
-            .buffer_view
-            .lock()
-            .get_edit_state()
-            .is_something_selected();
+        let use_selection = self.buffer_view.lock().get_edit_state().is_something_selected();
 
         if let Some(layer) = &opt_layer {
             for y in 0..layer.lines.len() {
@@ -317,14 +270,7 @@ impl AnsiEditor {
                 for x in 0..line.chars.len() {
                     let ch = line.chars[x];
                     let pos = Position::new(x as i32, y as i32);
-                    if ch.is_visible()
-                        && (!use_selection
-                            || self
-                                .buffer_view
-                                .lock()
-                                .get_edit_state()
-                                .get_is_selected(pos + layer.get_offset()))
-                    {
+                    if ch.is_visible() && (!use_selection || self.buffer_view.lock().get_edit_state().get_is_selected(pos + layer.get_offset())) {
                         self.set_char(pos, ch);
                     }
                 }
@@ -353,10 +299,7 @@ impl AnsiEditor {
     pub fn pickup_color(&mut self, pos: Position) {
         let ch = self.buffer_view.lock().get_buffer().get_char(pos);
         if ch.is_visible() {
-            self.buffer_view
-                .lock()
-                .get_caret_mut()
-                .set_attr(ch.attribute);
+            self.buffer_view.lock().get_caret_mut().set_attr(ch.attribute);
         }
     }
 
@@ -406,15 +349,9 @@ impl AnsiEditor {
             Ok(mut f) => {
                 let content = if let Some(ext) = file_name.extension() {
                     let ext = OsStr::to_str(ext).unwrap().to_lowercase();
-                    self.buffer_view
-                        .lock()
-                        .get_buffer()
-                        .to_bytes(ext.as_str(), options)?
+                    self.buffer_view.lock().get_buffer().to_bytes(ext.as_str(), options)?
                 } else {
-                    self.buffer_view
-                        .lock()
-                        .get_buffer()
-                        .to_bytes(ICED_EXT, options)?
+                    self.buffer_view.lock().get_buffer().to_bytes(ICED_EXT, options)?
                 };
                 if let Err(err) = f.write_all(&content) {
                     return Err(SavingError::ErrorWritingFile(format!("{err}")).into());
@@ -451,19 +388,12 @@ impl AnsiEditor {
     }
 
     pub fn set_char(&mut self, pos: impl Into<Position>, attributed_char: AttributedChar) {
-        let _ = self
-            .buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .set_char(pos, attributed_char);
+        let _ = self.buffer_view.lock().get_edit_state_mut().set_char(pos, attributed_char);
     }
 
     #[must_use]
     pub fn begin_atomic_undo(&mut self, description: impl Into<String>) -> AtomicUndoGuard {
-        self.buffer_view
-            .lock()
-            .get_edit_state_mut()
-            .begin_atomic_undo(description.into())
+        self.buffer_view.lock().get_edit_state_mut().begin_atomic_undo(description.into())
     }
 
     pub fn fill(&mut self, rect: Rectangle, dos_char: AttributedChar) {
@@ -576,23 +506,15 @@ impl AnsiEditor {
                     }
 
                     egui::Event::CompositionEnd(text) | egui::Event::Text(text) => {
-                        if !ui.input(|i| i.modifiers.ctrl || i.modifiers.command || i.modifiers.alt)
-                        {
+                        if !ui.input(|i| i.modifiers.ctrl || i.modifiers.command || i.modifiers.alt) {
                             for c in text.chars() {
-                                cur_tool.handle_key(
-                                    self,
-                                    MKey::Character(c as u16),
-                                    MModifiers::None,
-                                );
+                                cur_tool.handle_key(self, MKey::Character(c as u16), MModifiers::None);
                             }
                         }
                     }
 
                     egui::Event::Key {
-                        key,
-                        pressed: true,
-                        modifiers,
-                        ..
+                        key, pressed: true, modifiers, ..
                     } => {
                         let mut key_code = *key as u32;
                         if modifiers.shift {
@@ -625,19 +547,13 @@ impl AnsiEditor {
 
         if response.clicked_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos)
-                    && !calc.vert_scrollbar_rect.contains(mouse_pos)
-                    && !calc.horiz_scrollbar_rect.contains(mouse_pos)
-                {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.vert_scrollbar_rect.contains(mouse_pos) && !calc.horiz_scrollbar_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
                     let layer_offset = self.get_cur_click_offset();
                     let cp = cp_abs - layer_offset;
                     let click_pos2 = calc.calc_click_pos_half_block(mouse_pos);
-                    self.half_block_click_pos = Position::new(
-                        click_pos2.x as i32 - layer_offset.x,
-                        click_pos2.y as i32 - layer_offset.y,
-                    );
+                    self.half_block_click_pos = Position::new(click_pos2.x as i32 - layer_offset.x, click_pos2.y as i32 - layer_offset.y);
 
                     /*
                     let b: i32 = match responsee.b {
@@ -657,10 +573,7 @@ impl AnsiEditor {
 
         if response.drag_started_by(egui::PointerButton::Primary) {
             if let Some(mouse_pos) = response.interact_pointer_pos() {
-                if calc.buffer_rect.contains(mouse_pos)
-                    && !calc.vert_scrollbar_rect.contains(mouse_pos)
-                    && !calc.horiz_scrollbar_rect.contains(mouse_pos)
-                {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.vert_scrollbar_rect.contains(mouse_pos) && !calc.horiz_scrollbar_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
 
@@ -708,10 +621,7 @@ impl AnsiEditor {
         }
         if response.hovered() {
             if let Some(mouse_pos) = response.hover_pos() {
-                if calc.buffer_rect.contains(mouse_pos)
-                    && !calc.vert_scrollbar_rect.contains(mouse_pos)
-                    && !calc.horiz_scrollbar_rect.contains(mouse_pos)
-                {
+                if calc.buffer_rect.contains(mouse_pos) && !calc.vert_scrollbar_rect.contains(mouse_pos) && !calc.horiz_scrollbar_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
                     let cp = cp_abs - self.get_cur_click_offset();
@@ -746,13 +656,7 @@ impl AnsiEditor {
     }
 
     pub(crate) fn clear_overlay_layer(&self) {
-        let cur_offset = self
-            .buffer_view
-            .lock()
-            .get_edit_state()
-            .get_cur_layer()
-            .unwrap()
-            .get_offset();
+        let cur_offset = self.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().get_offset();
 
         if let Some(layer) = self.buffer_view.lock().get_buffer_mut().get_overlay_layer() {
             layer.set_offset(cur_offset);
@@ -812,11 +716,7 @@ pub const DEFAULT_CHAR_SET_TABLE: [[u8; 10]; 15] = [
     [147, 148, 149, 162, 167, 150, 129, 151, 163, 154],
 ];
 
-pub fn terminal_context_menu(
-    editor: &AnsiEditor,
-    commands: &Commands,
-    ui: &mut egui::Ui,
-) -> Option<Message> {
+pub fn terminal_context_menu(editor: &AnsiEditor, commands: &Commands, ui: &mut egui::Ui) -> Option<Message> {
     ui.style_mut().wrap = Some(false);
     let mut result = None;
     ui.input_mut(|i| i.events.clear());

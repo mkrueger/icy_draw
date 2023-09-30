@@ -15,33 +15,14 @@ impl Tool for FlipTool {
     fn use_selection(&self) -> bool {
         false
     }
-    fn show_ui(
-        &mut self,
-        _ctx: &egui::Context,
-        _ui: &mut egui::Ui,
-        _editor_opt: Option<&AnsiEditor>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, _ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         None
     }
 
-    fn handle_hover(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        _editor: &mut AnsiEditor,
-        _cur: Position,
-        _cur_abs: Position,
-    ) -> egui::Response {
+    fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, _editor: &mut AnsiEditor, _cur: Position, _cur_abs: Position) -> egui::Response {
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
-    fn handle_click(
-        &mut self,
-        editor: &mut AnsiEditor,
-        button: i32,
-        pos: Position,
-        _pos_abs: Position,
-        _response: &egui::Response,
-    ) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 {
             let mut ch = editor.get_char(pos);
 

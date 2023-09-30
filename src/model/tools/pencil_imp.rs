@@ -47,29 +47,15 @@ impl Tool for PencilTool {
         false
     }
 
-    fn show_ui(
-        &mut self,
-        _ctx: &egui::Context,
-        ui: &mut egui::Ui,
-        editor_opt: Option<&AnsiEditor>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         self.color_mode.show_ui(ui);
-        self.draw_mode
-            .show_ui(ui, editor_opt, self.char_code.clone(), false)
+        self.draw_mode.show_ui(ui, editor_opt, self.char_code.clone(), false)
     }
 
-    fn handle_click(
-        &mut self,
-        editor: &mut AnsiEditor,
-        button: i32,
-        pos: Position,
-        _pos_abs: Position,
-        _response: &egui::Response,
-    ) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 {
             self.last_pos = pos;
-            let _op: AtomicUndoGuard =
-                editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
+            let _op: AtomicUndoGuard = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil"));
             editor.clear_overlay_layer();
             plot_point(
                 &mut editor.buffer_view.lock(),
@@ -82,25 +68,12 @@ impl Tool for PencilTool {
         }
         None
     }
-    fn handle_hover(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        _editor: &mut AnsiEditor,
-        cur: Position,
-        _cur_abs: Position,
-    ) -> egui::Response {
+    fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, _editor: &mut AnsiEditor, cur: Position, _cur_abs: Position) -> egui::Response {
         self.cur_pos = cur;
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
-    fn handle_drag(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-    ) -> egui::Response {
+    fn handle_drag(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _calc: &TerminalCalc) -> egui::Response {
         plot_point(
             &mut editor.buffer_view.lock(),
             editor.half_block_click_pos,
@@ -139,11 +112,6 @@ impl Tool for PencilTool {
 
     fn get_toolbar_location_text(&self, _editor: &AnsiEditor) -> String {
         let pos = self.cur_pos;
-        fl!(
-            crate::LANGUAGE_LOADER,
-            "toolbar-position",
-            line = (pos.y + 1),
-            column = (pos.x + 1)
-        )
+        fl!(crate::LANGUAGE_LOADER, "toolbar-position", line = (pos.y + 1), column = (pos.x + 1))
     }
 }

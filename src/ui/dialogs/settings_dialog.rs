@@ -6,9 +6,7 @@ use eframe::{
 };
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Buffer, Color, Size, TextAttribute};
-use icy_engine_egui::{
-    show_monitor_settings, show_terminal_area, BufferView, MarkerSettings, MonitorSettings,
-};
+use icy_engine_egui::{show_monitor_settings, show_terminal_area, BufferView, MarkerSettings, MonitorSettings};
 
 use crate::{CharTableToolWindow, CharacterSet, Commands, SelectOutlineDialog, SETTINGS};
 pub struct SettingsDialog {
@@ -81,49 +79,34 @@ impl SettingsDialog {
                     let settings_category = self.settings_category;
 
                     if ui
-                        .selectable_label(
-                            settings_category == MONITOR_CAT,
-                            fl!(crate::LANGUAGE_LOADER, "settings-monitor-category"),
-                        )
+                        .selectable_label(settings_category == MONITOR_CAT, fl!(crate::LANGUAGE_LOADER, "settings-monitor-category"))
                         .clicked()
                     {
                         self.settings_category = MONITOR_CAT;
                     }
 
                     if ui
-                        .selectable_label(
-                            settings_category == MARKER_CAT,
-                            fl!(crate::LANGUAGE_LOADER, "settings-markers-guides-category"),
-                        )
+                        .selectable_label(settings_category == MARKER_CAT, fl!(crate::LANGUAGE_LOADER, "settings-markers-guides-category"))
                         .clicked()
                     {
                         self.settings_category = MARKER_CAT;
                     }
 
                     if ui
-                        .selectable_label(
-                            settings_category == OUTLINE_CAT,
-                            fl!(crate::LANGUAGE_LOADER, "settings-font-outline-category"),
-                        )
+                        .selectable_label(settings_category == OUTLINE_CAT, fl!(crate::LANGUAGE_LOADER, "settings-font-outline-category"))
                         .clicked()
                     {
                         self.settings_category = OUTLINE_CAT;
                     }
                     if ui
-                        .selectable_label(
-                            settings_category == CHAR_SET_CAT,
-                            fl!(crate::LANGUAGE_LOADER, "settings-char-set-category"),
-                        )
+                        .selectable_label(settings_category == CHAR_SET_CAT, fl!(crate::LANGUAGE_LOADER, "settings-char-set-category"))
                         .clicked()
                     {
                         self.settings_category = CHAR_SET_CAT;
                     }
 
                     if ui
-                        .selectable_label(
-                            settings_category == KEYBIND_CAT,
-                            fl!(crate::LANGUAGE_LOADER, "settings-keybindings-category"),
-                        )
+                        .selectable_label(settings_category == KEYBIND_CAT, fl!(crate::LANGUAGE_LOADER, "settings-keybindings-category"))
                         .clicked()
                     {
                         self.settings_category = KEYBIND_CAT;
@@ -132,18 +115,14 @@ impl SettingsDialog {
                 ui.separator();
                 match self.settings_category {
                     MONITOR_CAT => unsafe {
-                        if let Some(new_settings) =
-                            show_monitor_settings(ui, &SETTINGS.monitor_settings)
-                        {
+                        if let Some(new_settings) = show_monitor_settings(ui, &SETTINGS.monitor_settings) {
                             SETTINGS.monitor_settings = new_settings;
                         }
                     },
                     MARKER_CAT => {
                         ui.add_space(8.0);
                         unsafe {
-                            if let Some(new_settings) =
-                                show_marker_settings(ui, &SETTINGS.marker_settings)
-                            {
+                            if let Some(new_settings) = show_marker_settings(ui, &SETTINGS.marker_settings) {
                                 SETTINGS.marker_settings = new_settings;
                             }
                         }
@@ -156,8 +135,7 @@ impl SettingsDialog {
 
                     OUTLINE_CAT => {
                         ui.add_space(8.0);
-                        self.select_outline_dialog
-                            .show_outline_ui(ui, 4, Vec2::new(8.0, 8.0));
+                        self.select_outline_dialog.show_outline_ui(ui, 4, Vec2::new(8.0, 8.0));
                     }
 
                     KEYBIND_CAT => {
@@ -177,10 +155,7 @@ impl SettingsDialog {
                 ui.separator();
                 ui.add_space(4.0);
                 ui.with_layout(Layout::right_to_left(egui::Align::TOP), |ui| {
-                    if ui
-                        .button(fl!(crate::LANGUAGE_LOADER, "new-file-ok"))
-                        .clicked()
-                    {
+                    if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-ok")).clicked() {
                         unsafe {
                             SETTINGS.key_bindings = self.key_bindings.clone();
                             SETTINGS.character_sets.clear();
@@ -189,10 +164,7 @@ impl SettingsDialog {
                         dialog_open = false;
                     }
 
-                    if ui
-                        .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
-                        .clicked()
-                    {
+                    if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel")).clicked() {
                         unsafe {
                             SETTINGS.monitor_settings = self.monitor_settings.clone();
                             SETTINGS.marker_settings = self.marker_settings.clone();
@@ -205,9 +177,7 @@ impl SettingsDialog {
                         || self.settings_category == MARKER_CAT
                         || self.settings_category == CHAR_SET_CAT
                         || self.settings_category == KEYBIND_CAT)
-                        && ui
-                            .button(fl!(crate::LANGUAGE_LOADER, "settings-reset_button"))
-                            .clicked()
+                        && ui.button(fl!(crate::LANGUAGE_LOADER, "settings-reset_button")).clicked()
                     {
                         unsafe {
                             match self.settings_category {
@@ -231,66 +201,53 @@ impl SettingsDialog {
         ui.set_height(540.);
         let mut id = 0;
         ui.add_space(48.0);
-        egui::Grid::new("paste_mode_grid")
-            .num_columns(6)
-            .spacing([8.0, 8.0])
-            .show(ui, |ui| {
-                for view in &self.views {
-                    let opt = icy_engine_egui::TerminalOptions {
-                        stick_to_bottom: false,
-                        scale: Some(Vec2::new(2.0, 2.0)),
-                        id: Some(egui::Id::new(200 + id)),
-                        terminal_size: Some(Vec2::new(8. * 10. * 2.0, 16.0 * 2.0)),
-                        ..Default::default()
-                    };
+        egui::Grid::new("paste_mode_grid").num_columns(6).spacing([8.0, 8.0]).show(ui, |ui| {
+            for view in &self.views {
+                let opt = icy_engine_egui::TerminalOptions {
+                    stick_to_bottom: false,
+                    scale: Some(Vec2::new(2.0, 2.0)),
+                    id: Some(egui::Id::new(200 + id)),
+                    terminal_size: Some(Vec2::new(8. * 10. * 2.0, 16.0 * 2.0)),
+                    ..Default::default()
+                };
 
-                    for x in 0..10 {
-                        let ch = self.char_set.table[id][x];
-                        view.lock().get_buffer_mut().layers[0]
-                            .set_char((x, 0), AttributedChar::new(ch, TextAttribute::default()));
-                    }
-                    if id % 3 == 0 {
-                        ui.end_row();
-                    }
-                    id += 1;
-
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if view.lock().calc.has_focus {
-                            ui.strong(fl!(crate::LANGUAGE_LOADER, "settings-set-label", set = id));
-                        } else {
-                            ui.label(fl!(crate::LANGUAGE_LOADER, "settings-set-label", set = id));
-                        }
-                    });
-                    show_terminal_area(ui, view.clone(), opt);
+                for x in 0..10 {
+                    let ch = self.char_set.table[id][x];
+                    view.lock().get_buffer_mut().layers[0].set_char((x, 0), AttributedChar::new(ch, TextAttribute::default()));
                 }
-            });
+                if id % 3 == 0 {
+                    ui.end_row();
+                }
+                id += 1;
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if view.lock().calc.has_focus {
+                        ui.strong(fl!(crate::LANGUAGE_LOADER, "settings-set-label", set = id));
+                    } else {
+                        ui.label(fl!(crate::LANGUAGE_LOADER, "settings-set-label", set = id));
+                    }
+                });
+                show_terminal_area(ui, view.clone(), opt);
+            }
+        });
         self.char_view.show_plain_char_table(ui);
     }
 }
 
-pub fn show_marker_settings(
-    ui: &mut egui::Ui,
-    old_settings: &MarkerSettings,
-) -> Option<MarkerSettings> {
+pub fn show_marker_settings(ui: &mut egui::Ui, old_settings: &MarkerSettings) -> Option<MarkerSettings> {
     let mut result = None;
 
     let mut marker_settings = old_settings.clone();
 
     ui.horizontal(|ui| {
-        ui.label(fl!(
-            crate::LANGUAGE_LOADER,
-            "settings-background_color-label"
-        ));
+        ui.label(fl!(crate::LANGUAGE_LOADER, "settings-background_color-label"));
         let (r, g, b) = marker_settings.border_color.get_rgb();
         let mut color = Color32::from_rgb(r, g, b);
         color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
         marker_settings.border_color = Color::new(r, g, b);
     });
 
-    ui.add(
-        egui::Slider::new(&mut marker_settings.reference_image_alpha, 0.1..=0.9)
-            .text(fl!(crate::LANGUAGE_LOADER, "settings-reference-alpha")),
-    );
+    ui.add(egui::Slider::new(&mut marker_settings.reference_image_alpha, 0.1..=0.9).text(fl!(crate::LANGUAGE_LOADER, "settings-reference-alpha")));
 
     ui.horizontal(|ui| {
         ui.label(fl!(crate::LANGUAGE_LOADER, "settings-raster-label"));
@@ -299,10 +256,7 @@ pub fn show_marker_settings(
 
         color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
         marker_settings.raster_color = Color::new(r, g, b);
-        ui.add(
-            egui::Slider::new(&mut marker_settings.raster_alpha, 0.1..=0.9)
-                .text(fl!(crate::LANGUAGE_LOADER, "settings-alpha")),
-        );
+        ui.add(egui::Slider::new(&mut marker_settings.raster_alpha, 0.1..=0.9).text(fl!(crate::LANGUAGE_LOADER, "settings-alpha")));
     });
 
     ui.horizontal(|ui| {
@@ -313,10 +267,7 @@ pub fn show_marker_settings(
         color_picker::color_edit_button_srgba(ui, &mut color, color_picker::Alpha::Opaque);
         marker_settings.guide_color = Color::new(r, g, b);
 
-        ui.add(
-            egui::Slider::new(&mut marker_settings.guide_alpha, 0.1..=0.9)
-                .text(fl!(crate::LANGUAGE_LOADER, "settings-alpha")),
-        );
+        ui.add(egui::Slider::new(&mut marker_settings.guide_alpha, 0.1..=0.9).text(fl!(crate::LANGUAGE_LOADER, "settings-alpha")));
     });
 
     if marker_settings != *old_settings {

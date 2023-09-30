@@ -42,10 +42,7 @@ impl CommandState for CanSwitchPaletteState {
         if let Some(pane) = open_tab_opt {
             if let Ok(doc) = pane.doc.lock() {
                 if let Some(editor) = doc.get_ansi_editor() {
-                    return !matches!(
-                        editor.buffer_view.lock().get_buffer().palette_mode,
-                        PaletteMode::Fixed16
-                    );
+                    return !matches!(editor.buffer_view.lock().get_buffer().palette_mode, PaletteMode::Fixed16);
                 }
             }
         }
@@ -419,12 +416,7 @@ fn hash(str: impl Into<String>) -> u32 {
 }
 
 impl CommandWrapper {
-    pub fn new(
-        key: Option<(egui::Key, Modifiers)>,
-        message: Message,
-        description: String,
-        state_key: u32,
-    ) -> Self {
+    pub fn new(key: Option<(egui::Key, Modifiers)>, message: Message, description: String, state_key: u32) -> Self {
         let key = key.map(|(k, m)| (KeyOrPointer::Key(k), m));
         Self {
             key,
@@ -448,10 +440,7 @@ impl CommandWrapper {
 
     pub fn ui(&self, ui: &mut egui::Ui, message: &mut Option<Message>) {
         if let Some(mut checked) = self.is_checked {
-            if ui
-                .add(egui::Checkbox::new(&mut checked, &self.label))
-                .clicked()
-            {
+            if ui.add(egui::Checkbox::new(&mut checked, &self.label)).clicked() {
                 *message = Some(self.message.clone());
                 ui.close_menu();
             }
@@ -489,184 +478,40 @@ impl CommandWrapper {
 }
 
 keys![
-    (
-        new_file,
-        "menu-new",
-        NewFileDialog,
-        AlwaysEnabledState,
-        N,
-        CTRL
-    ),
+    (new_file, "menu-new", NewFileDialog, AlwaysEnabledState, N, CTRL),
     (save, "menu-save", SaveFile, FileIsDirtyState, S, CTRL),
-    (
-        save_as,
-        "menu-save-as",
-        SaveFileAs,
-        FileOpenState,
-        S,
-        CTRL_SHIFT
-    ),
-    (
-        open_file,
-        "menu-open",
-        OpenFileDialog,
-        AlwaysEnabledState,
-        O,
-        CTRL
-    ),
+    (save_as, "menu-save-as", SaveFileAs, FileOpenState, S, CTRL_SHIFT),
+    (open_file, "menu-open", OpenFileDialog, AlwaysEnabledState, O, CTRL),
     (export, "menu-export", ExportFile, BufferOpenState),
-    (
-        edit_font_outline,
-        "menu-edit-font-outline",
-        ShowOutlineDialog,
-        AlwaysEnabledState
-    ),
-    (
-        close_window,
-        "menu-close",
-        CloseWindow,
-        AlwaysEnabledState,
-        Q,
-        CTRL
-    ),
+    (edit_font_outline, "menu-edit-font-outline", ShowOutlineDialog, AlwaysEnabledState),
+    (close_window, "menu-close", CloseWindow, AlwaysEnabledState, Q, CTRL),
     (undo, "menu-undo", Undo, CanUndoState, Z, CTRL),
     (redo, "menu-redo", Redo, CanRedoState, Z, CTRL_SHIFT),
     (cut, "menu-cut", Cut, CanCutState, X, CTRL),
     (copy, "menu-copy", Copy, CanCopyState, C, CTRL),
     (paste, "menu-paste", Paste, CanPasteState, V, CTRL),
-    (
-        show_settings,
-        "menu-show_settings",
-        ShowSettings,
-        AlwaysEnabledState
-    ),
-    (
-        select_all,
-        "menu-select-all",
-        SelectAll,
-        BufferOpenState,
-        A,
-        CTRL
-    ),
-    (
-        deselect,
-        "menu-select_nothing",
-        SelectNothing,
-        BufferOpenState
-    ),
-    (
-        erase_selection,
-        "menu-erase",
-        DeleteSelection,
-        BufferOpenState,
-        Delete,
-        NONE
-    ),
+    (show_settings, "menu-show_settings", ShowSettings, AlwaysEnabledState),
+    (select_all, "menu-select-all", SelectAll, BufferOpenState, A, CTRL),
+    (deselect, "menu-select_nothing", SelectNothing, BufferOpenState),
+    (erase_selection, "menu-erase", DeleteSelection, BufferOpenState, Delete, NONE),
     (flip_x, "menu-flipx", FlipX, BufferOpenState),
     (flip_y, "menu-flipy", FlipY, BufferOpenState),
     (justifycenter, "menu-justifycenter", Center, BufferOpenState),
-    (
-        justifyleft,
-        "menu-justifyleft",
-        JustifyLeft,
-        BufferOpenState
-    ),
-    (
-        justifyright,
-        "menu-justifyright",
-        JustifyRight,
-        BufferOpenState
-    ),
+    (justifyleft, "menu-justifyleft", JustifyLeft, BufferOpenState),
+    (justifyright, "menu-justifyright", JustifyRight, BufferOpenState),
     (crop, "menu-crop", Crop, BufferOpenState),
     (about, "menu-about", ShowAboutDialog, AlwaysEnabledState),
-    (
-        justify_line_center,
-        "menu-justify_line_center",
-        CenterLine,
-        BufferOpenState,
-        C,
-        ALT
-    ),
-    (
-        justify_line_left,
-        "menu-justify_line_left",
-        JustifyLineLeft,
-        BufferOpenState,
-        L,
-        ALT
-    ),
-    (
-        justify_line_right,
-        "menu-justify_line_right",
-        JustifyLineRight,
-        BufferOpenState,
-        R,
-        ALT
-    ),
-    (
-        insert_row,
-        "menu-insert_row",
-        InsertRow,
-        BufferOpenState,
-        ArrowUp,
-        ALT
-    ),
-    (
-        delete_row,
-        "menu-delete_row",
-        DeleteRow,
-        BufferOpenState,
-        ArrowDown,
-        ALT
-    ),
-    (
-        insert_column,
-        "menu-insert_colum",
-        InsertColumn,
-        BufferOpenState,
-        ArrowRight,
-        ALT
-    ),
-    (
-        delete_column,
-        "menu-delete_colum",
-        DeleteColumn,
-        BufferOpenState,
-        ArrowLeft,
-        ALT
-    ),
-    (
-        erase_row,
-        "menu-erase_row",
-        EraseRow,
-        BufferOpenState,
-        E,
-        ALT
-    ),
-    (
-        erase_row_to_start,
-        "menu-erase_row_to_start",
-        EraseRowToStart,
-        BufferOpenState,
-        Home,
-        ALT
-    ),
-    (
-        erase_row_to_end,
-        "menu-erase_row_to_end",
-        EraseRowToEnd,
-        BufferOpenState,
-        End,
-        ALT
-    ),
-    (
-        erase_column,
-        "menu-erase_column",
-        EraseColumn,
-        BufferOpenState,
-        E,
-        ALT
-    ),
+    (justify_line_center, "menu-justify_line_center", CenterLine, BufferOpenState, C, ALT),
+    (justify_line_left, "menu-justify_line_left", JustifyLineLeft, BufferOpenState, L, ALT),
+    (justify_line_right, "menu-justify_line_right", JustifyLineRight, BufferOpenState, R, ALT),
+    (insert_row, "menu-insert_row", InsertRow, BufferOpenState, ArrowUp, ALT),
+    (delete_row, "menu-delete_row", DeleteRow, BufferOpenState, ArrowDown, ALT),
+    (insert_column, "menu-insert_colum", InsertColumn, BufferOpenState, ArrowRight, ALT),
+    (delete_column, "menu-delete_colum", DeleteColumn, BufferOpenState, ArrowLeft, ALT),
+    (erase_row, "menu-erase_row", EraseRow, BufferOpenState, E, ALT),
+    (erase_row_to_start, "menu-erase_row_to_start", EraseRowToStart, BufferOpenState, Home, ALT),
+    (erase_row_to_end, "menu-erase_row_to_end", EraseRowToEnd, BufferOpenState, End, ALT),
+    (erase_column, "menu-erase_column", EraseColumn, BufferOpenState, E, ALT),
     (
         erase_column_to_start,
         "menu-erase_column_to_start",
@@ -675,38 +520,10 @@ keys![
         Home,
         ALT
     ),
-    (
-        erase_column_to_end,
-        "menu-erase_column_to_end",
-        EraseColumnToEnd,
-        BufferOpenState,
-        End,
-        ALT
-    ),
-    (
-        scroll_area_up,
-        "menu-scroll_area_up",
-        ScrollAreaUp,
-        BufferOpenState,
-        ArrowUp,
-        ALT_CTRL
-    ),
-    (
-        scroll_area_down,
-        "menu-scroll_area_down",
-        ScrollAreaDown,
-        BufferOpenState,
-        ArrowDown,
-        ALT_CTRL
-    ),
-    (
-        scroll_area_left,
-        "menu-scroll_area_left",
-        ScrollAreaLeft,
-        BufferOpenState,
-        ArrowLeft,
-        ALT_CTRL
-    ),
+    (erase_column_to_end, "menu-erase_column_to_end", EraseColumnToEnd, BufferOpenState, End, ALT),
+    (scroll_area_up, "menu-scroll_area_up", ScrollAreaUp, BufferOpenState, ArrowUp, ALT_CTRL),
+    (scroll_area_down, "menu-scroll_area_down", ScrollAreaDown, BufferOpenState, ArrowDown, ALT_CTRL),
+    (scroll_area_left, "menu-scroll_area_left", ScrollAreaLeft, BufferOpenState, ArrowLeft, ALT_CTRL),
     (
         scroll_area_right,
         "menu-scroll_area_right",
@@ -715,14 +532,7 @@ keys![
         ArrowRight,
         ALT_CTRL
     ),
-    (
-        set_reference_image,
-        "menu-reference-image",
-        SetReferenceImage,
-        BufferOpenState,
-        O,
-        CTRL_SHIFT
-    ),
+    (set_reference_image, "menu-reference-image", SetReferenceImage, BufferOpenState, O, CTRL_SHIFT),
     (
         toggle_reference_image,
         "menu-toggle-reference-image",
@@ -731,12 +541,7 @@ keys![
         Tab,
         CTRL
     ),
-    (
-        clear_reference_image,
-        "menu-clear-reference-image",
-        ClearReferenceImage,
-        BufferOpenState
-    ),
+    (clear_reference_image, "menu-clear-reference-image", ClearReferenceImage, BufferOpenState),
     (
         pick_attribute_under_caret,
         "menu-pick_attribute_under_caret",
@@ -745,172 +550,35 @@ keys![
         U,
         ALT
     ),
-    (
-        switch_to_default_color,
-        "menu-default_color",
-        SwitchToDefaultColor,
-        BufferOpenState,
-        D,
-        CTRL
-    ),
-    (
-        toggle_color,
-        "menu-toggle_color",
-        ToggleColor,
-        BufferOpenState,
-        X,
-        ALT
-    ),
-    (
-        fullscreen,
-        "menu-toggle_fullscreen",
-        ToggleFullScreen,
-        AlwaysEnabledState,
-        F11,
-        NONE
-    ),
-    (
-        zoom_reset,
-        "menu-zoom_reset",
-        ZoomReset,
-        BufferOpenState,
-        Num0,
-        CTRL
-    ),
-    (
-        zoom_in,
-        "menu-zoom_in",
-        ZoomIn,
-        BufferOpenState,
-        PlusEquals,
-        CTRL
-    ),
-    (
-        zoom_out,
-        "menu-zoom_out",
-        ZoomOut,
-        BufferOpenState,
-        Minus,
-        CTRL
-    ),
-    (
-        open_tdf_directory,
-        "menu-open_tdf_directoy",
-        OpenTdfDirectory,
-        AlwaysEnabledState
-    ),
-    (
-        open_font_selector,
-        "menu-open_font_selector",
-        OpenFontSelector,
-        BufferOpenState
-    ),
+    (switch_to_default_color, "menu-default_color", SwitchToDefaultColor, BufferOpenState, D, CTRL),
+    (toggle_color, "menu-toggle_color", ToggleColor, BufferOpenState, X, ALT),
+    (fullscreen, "menu-toggle_fullscreen", ToggleFullScreen, AlwaysEnabledState, F11, NONE),
+    (zoom_reset, "menu-zoom_reset", ZoomReset, BufferOpenState, Num0, CTRL),
+    (zoom_in, "menu-zoom_in", ZoomIn, BufferOpenState, PlusEquals, CTRL),
+    (zoom_out, "menu-zoom_out", ZoomOut, BufferOpenState, Minus, CTRL),
+    (open_tdf_directory, "menu-open_tdf_directoy", OpenTdfDirectory, AlwaysEnabledState),
+    (open_font_selector, "menu-open_font_selector", OpenFontSelector, BufferOpenState),
     (add_fonts, "menu-add_fonts", OpenAddFonts, BufferOpenState),
-    (
-        open_font_manager,
-        "menu-open_font_manager",
-        OpenFontManager,
-        BufferOpenState
-    ),
-    (
-        open_font_directory,
-        "menu-open_font_directoy",
-        OpenFontDirectory,
-        AlwaysEnabledState
-    ),
+    (open_font_manager, "menu-open_font_manager", OpenFontManager, BufferOpenState),
+    (open_font_directory, "menu-open_font_directoy", OpenFontDirectory, AlwaysEnabledState),
     (
         open_palettes_directory,
         "menu-open_palettes_directoy",
         OpenPalettesDirectory,
         AlwaysEnabledState
     ),
-    (
-        mirror_mode,
-        "menu-mirror_mode",
-        ToggleMirrorMode,
-        BufferOpenState
-    ),
-    (
-        clear_recent_open,
-        "menu-open_recent_clear",
-        ClearRecentOpenFiles,
-        HasRecentFilesState
-    ),
-    (
-        inverse_selection,
-        "menu-inverse_selection",
-        InverseSelection,
-        BufferOpenState
-    ),
-    (
-        clear_selection,
-        "menu-delete_row",
-        ClearSelection,
-        BufferOpenState,
-        Escape,
-        NONE
-    ),
-    (
-        select_palette,
-        "menu-select_palette",
-        SelectPalette,
-        CanSwitchPaletteState
-    ),
-    (
-        show_layer_borders,
-        "menu-show_layer_borders",
-        ToggleLayerBorders,
-        LayerBordersState
-    ),
-    (
-        show_line_numbers,
-        "menu-show_line_numbers",
-        ToggleLineNumbers,
-        LineNumberState
-    ),
-    (
-        open_plugin_directory,
-        "menu-open_plugin_directory",
-        OpenPluginDirectory,
-        AlwaysEnabledState
-    ),
-    (
-        next_fg_color,
-        "menu-next_fg_color",
-        NextFgColor,
-        BufferOpenState,
-        ArrowDown,
-        CTRL
-    ),
-    (
-        prev_fg_color,
-        "menu-prev_fg_color",
-        PreviousFgColor,
-        BufferOpenState,
-        ArrowUp,
-        CTRL
-    ),
-    (
-        next_bg_color,
-        "menu-next_bg_color",
-        NextBgColor,
-        BufferOpenState,
-        ArrowRight,
-        CTRL
-    ),
-    (
-        prev_bg_color,
-        "menu-prev_bg_color",
-        PreviousBgColor,
-        BufferOpenState,
-        ArrowLeft,
-        CTRL
-    ),
+    (mirror_mode, "menu-mirror_mode", ToggleMirrorMode, BufferOpenState),
+    (clear_recent_open, "menu-open_recent_clear", ClearRecentOpenFiles, HasRecentFilesState),
+    (inverse_selection, "menu-inverse_selection", InverseSelection, BufferOpenState),
+    (clear_selection, "menu-delete_row", ClearSelection, BufferOpenState, Escape, NONE),
+    (select_palette, "menu-select_palette", SelectPalette, CanSwitchPaletteState),
+    (show_layer_borders, "menu-show_layer_borders", ToggleLayerBorders, LayerBordersState),
+    (show_line_numbers, "menu-show_line_numbers", ToggleLineNumbers, LineNumberState),
+    (open_plugin_directory, "menu-open_plugin_directory", OpenPluginDirectory, AlwaysEnabledState),
+    (next_fg_color, "menu-next_fg_color", NextFgColor, BufferOpenState, ArrowDown, CTRL),
+    (prev_fg_color, "menu-prev_fg_color", PreviousFgColor, BufferOpenState, ArrowUp, CTRL),
+    (next_bg_color, "menu-next_bg_color", NextBgColor, BufferOpenState, ArrowRight, CTRL),
+    (prev_bg_color, "menu-prev_bg_color", PreviousBgColor, BufferOpenState, ArrowLeft, CTRL),
     (lga_font, "menu-9px-font", ToggleLGAFont, LGAFontState),
-    (
-        aspect_ratio,
-        "menu-aspect-ratio",
-        ToggleAspectRatio,
-        AspectRatioState
-    ),
+    (aspect_ratio, "menu-aspect-ratio", ToggleAspectRatio, AspectRatioState),
 ];

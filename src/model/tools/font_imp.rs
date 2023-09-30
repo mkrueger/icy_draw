@@ -29,10 +29,7 @@ impl FontTool {
     }*/
 
     pub(crate) fn is_hidden(entry: &DirEntry) -> bool {
-        entry
-            .file_name()
-            .to_str()
-            .map_or(false, |s| s.starts_with('.'))
+        entry.file_name().to_str().map_or(false, |s| s.starts_with('.'))
     }
 
     pub fn install_watcher(&self) {
@@ -108,22 +105,14 @@ fn read_zip_archive(data: Vec<u8>, fonts: &mut Vec<TheDrawFont>) {
                 match archive.by_index(i) {
                     Ok(mut file) => {
                         if let Some(name) = file.enclosed_name() {
-                            if name
-                                .to_string_lossy()
-                                .to_ascii_lowercase()
-                                .ends_with(".tdf")
-                            {
+                            if name.to_string_lossy().to_ascii_lowercase().ends_with(".tdf") {
                                 let mut data = Vec::new();
                                 file.read_to_end(&mut data).unwrap_or_default();
 
                                 if let Ok(loaded_fonts) = TheDrawFont::from_tdf_bytes(&data) {
                                     fonts.extend(loaded_fonts);
                                 }
-                            } else if name
-                                .to_string_lossy()
-                                .to_ascii_lowercase()
-                                .ends_with(".zip")
-                            {
+                            } else if name.to_string_lossy().to_ascii_lowercase().ends_with(".zip") {
                                 let mut data = Vec::new();
                                 file.read_to_end(&mut data).unwrap_or_default();
                                 read_zip_archive(data, fonts);
@@ -150,12 +139,7 @@ impl Tool for FontTool {
         false
     }
 
-    fn show_ui(
-        &mut self,
-        _ctx: &egui::Context,
-        ui: &mut egui::Ui,
-        _editor_opt: Option<&AnsiEditor>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         let mut select = false;
         let font_count = self.fonts.lock().unwrap().len();
         let selected_font = *self.selected_font.lock().unwrap();
@@ -170,11 +154,8 @@ impl Tool for FontTool {
                     selected_text = font.name.clone();
                 }
             }
-            let selected_text =
-                RichText::new(selected_text).font(FontId::new(18.0, FontFamily::Proportional));
-            select = ui
-                .add_enabled(font_count > 0, Button::new(selected_text))
-                .clicked();
+            let selected_text = RichText::new(selected_text).font(FontId::new(18.0, FontFamily::Proportional));
+            select = ui.add_enabled(font_count > 0, Button::new(selected_text)).clicked();
         });
 
         if font_count == 0 {
@@ -182,13 +163,7 @@ impl Tool for FontTool {
             let mut msg = None;
             ui.vertical_centered(|ui| {
                 ui.label(fl!(crate::LANGUAGE_LOADER, "font_tool_no_fonts_label"));
-                if ui
-                    .button(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "font_tool_open_directory_button"
-                    ))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "font_tool_open_directory_button")).clicked() {
                     msg = Some(Message::OpenTdfDirectory);
                 }
             });
@@ -213,11 +188,7 @@ impl Tool for FontTool {
                                 ui.style().visuals.text_color()
                             };
 
-                            ui.colored_label(
-                                color,
-                                RichText::new(ch.to_string())
-                                    .font(FontId::new(14.0, FontFamily::Monospace)),
-                            );
+                            ui.colored_label(color, RichText::new(ch.to_string()).font(FontId::new(14.0, FontFamily::Monospace)));
                         }
                     }
                 });
@@ -234,11 +205,7 @@ impl Tool for FontTool {
                                 ui.style().visuals.text_color()
                             };
 
-                            ui.colored_label(
-                                color,
-                                RichText::new(ch.to_string())
-                                    .font(FontId::new(14.0, FontFamily::Monospace)),
-                            );
+                            ui.colored_label(color, RichText::new(ch.to_string()).font(FontId::new(14.0, FontFamily::Monospace)));
                         }
                     }
                 });
@@ -254,11 +221,7 @@ impl Tool for FontTool {
                                 ui.style().visuals.text_color()
                             };
 
-                            ui.colored_label(
-                                color,
-                                RichText::new(ch.to_string())
-                                    .font(FontId::new(14.0, FontFamily::Monospace)),
-                            );
+                            ui.colored_label(color, RichText::new(ch.to_string()).font(FontId::new(14.0, FontFamily::Monospace)));
                         }
                     }
                 });
@@ -273,11 +236,7 @@ impl Tool for FontTool {
                                 ui.style().visuals.text_color()
                             };
 
-                            ui.colored_label(
-                                color,
-                                RichText::new(ch.to_string())
-                                    .font(FontId::new(14.0, FontFamily::Monospace)),
-                            );
+                            ui.colored_label(color, RichText::new(ch.to_string()).font(FontId::new(14.0, FontFamily::Monospace)));
                         }
                     }
                 });
@@ -290,13 +249,7 @@ impl Tool for FontTool {
                     ui.add_space(32.0);
                     let mut msg = None;
                     ui.vertical_centered(|ui| {
-                        if ui
-                            .button(fl!(
-                                crate::LANGUAGE_LOADER,
-                                "font_tool_select_outline_button"
-                            ))
-                            .clicked()
-                        {
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "font_tool_select_outline_button")).clicked() {
                             msg = Some(Message::ShowOutlineDialog);
                         }
                     });
@@ -308,23 +261,13 @@ impl Tool for FontTool {
         }
 
         if select {
-            Some(Message::SelectFontDialog(
-                self.fonts.clone(),
-                self.selected_font.clone(),
-            ))
+            Some(Message::SelectFontDialog(self.fonts.clone(), self.selected_font.clone()))
         } else {
             None
         }
     }
 
-    fn handle_click(
-        &mut self,
-        editor: &mut AnsiEditor,
-        button: i32,
-        pos: Position,
-        _pos_abs: Position,
-        _response: &egui::Response,
-    ) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 {
             editor.set_caret_position(pos);
             editor.buffer_view.lock().clear_selection();
@@ -332,14 +275,7 @@ impl Tool for FontTool {
         None
     }
 
-    fn handle_hover(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        _editor: &mut AnsiEditor,
-        _cur: Position,
-        _cur_abs: Position,
-    ) -> egui::Response {
+    fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, _editor: &mut AnsiEditor, _cur: Position, _cur_abs: Position) -> egui::Response {
         response.on_hover_cursor(egui::CursorIcon::Text)
     }
 
@@ -370,10 +306,7 @@ impl Tool for FontTool {
                 if let MModifiers::Control = modifier {
                     let end = editor.buffer_view.lock().get_buffer().get_width();
                     for i in 0..end {
-                        if !editor
-                            .get_char_from_cur_layer(pos.with_x(i))
-                            .is_transparent()
-                        {
+                        if !editor.get_char_from_cur_layer(pos.with_x(i)).is_transparent() {
                             editor.set_caret(i, pos.y);
                             return Event::None;
                         }
@@ -386,10 +319,7 @@ impl Tool for FontTool {
                 if let MModifiers::Control = modifier {
                     let end = editor.buffer_view.lock().get_buffer().get_width();
                     for i in (0..end).rev() {
-                        if !editor
-                            .get_char_from_cur_layer(pos.with_x(i))
-                            .is_transparent()
-                        {
+                        if !editor.get_char_from_cur_layer(pos.with_x(i)).is_transparent() {
                             editor.set_caret(i, pos.y);
                             return Event::None;
                         }
@@ -416,13 +346,7 @@ impl Tool for FontTool {
                     let mut render = false;
                     let mut reverse_count = 0;
 
-                    let op = if let Ok(stack) = editor
-                        .buffer_view
-                        .lock()
-                        .get_edit_state()
-                        .get_undo_stack()
-                        .lock()
-                    {
+                    let op = if let Ok(stack) = editor.buffer_view.lock().get_edit_state().get_undo_stack().lock() {
                         for i in (0..stack.len()).rev() {
                             match stack[i].get_operation_type() {
                                 OperationType::RenderCharacter => {
@@ -448,15 +372,11 @@ impl Tool for FontTool {
 
                     if render {
                         if let Some(op) = op {
-                            let _ = editor
-                                .buffer_view
-                                .lock()
-                                .get_edit_state_mut()
-                                .push_reverse_undo(
-                                    fl!(crate::LANGUAGE_LOADER, "undo-delete_character"),
-                                    op,
-                                    OperationType::ReversedRenderCharacter,
-                                );
+                            let _ = editor.buffer_view.lock().get_edit_state_mut().push_reverse_undo(
+                                fl!(crate::LANGUAGE_LOADER, "undo-delete_character"),
+                                op,
+                                OperationType::ReversedRenderCharacter,
+                            );
                             use_backspace = false;
                         }
                     }
@@ -472,30 +392,18 @@ impl Tool for FontTool {
                     .buffer_view
                     .lock()
                     .get_edit_state_mut()
-                    .begin_typed_atomic_undo(
-                        fl!(crate::LANGUAGE_LOADER, "undo-render_character"),
-                        OperationType::RenderCharacter,
-                    );
+                    .begin_typed_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-render_character"), OperationType::RenderCharacter);
 
                 let outline_style = if editor.outline_font_mode {
                     usize::MAX
                 } else {
                     Settings::get_font_outline_style()
                 };
-                editor
-                    .buffer_view
-                    .lock()
-                    .get_edit_state_mut()
-                    .set_outline_style(outline_style);
+                editor.buffer_view.lock().get_edit_state_mut().set_outline_style(outline_style);
 
-                let _ = editor
-                    .buffer_view
-                    .lock()
-                    .get_edit_state_mut()
-                    .undo_caret_position();
+                let _ = editor.buffer_view.lock().get_edit_state_mut().undo_caret_position();
 
-                let opt_size: Option<Size> =
-                    font.render(editor.buffer_view.lock().get_edit_state_mut(), ch as u8);
+                let opt_size: Option<Size> = font.render(editor.buffer_view.lock().get_edit_state_mut(), ch as u8);
                 if let Some(size) = opt_size {
                     editor.set_caret(c_pos.x + size.width + font.spaces, c_pos.y);
                     let new_pos = editor.get_caret_position();

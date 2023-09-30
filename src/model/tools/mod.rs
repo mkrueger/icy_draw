@@ -107,25 +107,13 @@ pub trait Tool {
         true
     }
 
-    fn show_ui(
-        &mut self,
-        ctx: &egui::Context,
-        ui: &mut egui::Ui,
-        editor_opt: Option<&AnsiEditor>,
-    ) -> Option<Message>;
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message>;
 
     fn handle_key(&mut self, _editor: &mut AnsiEditor, _key: MKey, _modifier: MModifiers) -> Event {
         Event::None
     }
 
-    fn handle_click(
-        &mut self,
-        _editor: &mut AnsiEditor,
-        _button: i32,
-        _pos: Position,
-        _pos_abs: Position,
-        _response: &Response,
-    ) -> Option<Message> {
+    fn handle_click(&mut self, _editor: &mut AnsiEditor, _button: i32, _pos: Position, _pos_abs: Position, _response: &Response) -> Option<Message> {
         None
     }
 
@@ -133,24 +121,11 @@ pub trait Tool {
         Event::None
     }
 
-    fn handle_drag(
-        &mut self,
-        _ui: &egui::Ui,
-        response: Response,
-        _editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-    ) -> Response {
+    fn handle_drag(&mut self, _ui: &egui::Ui, response: Response, _editor: &mut AnsiEditor, _calc: &TerminalCalc) -> Response {
         response
     }
 
-    fn handle_hover(
-        &mut self,
-        _ui: &egui::Ui,
-        response: Response,
-        _editor: &mut AnsiEditor,
-        _cur: Position,
-        _cur_abs: Position,
-    ) -> Response {
+    fn handle_hover(&mut self, _ui: &egui::Ui, response: Response, _editor: &mut AnsiEditor, _cur: Position, _cur_abs: Position) -> Response {
         response
     }
 
@@ -167,26 +142,12 @@ pub trait Tool {
 
 fn toolbar_pos_sel_text(editor: &AnsiEditor, show_selection: bool) -> String {
     let pos = editor.get_caret_position();
-    let sel = if show_selection {
-        editor.buffer_view.lock().get_selection()
-    } else {
-        None
-    };
+    let sel = if show_selection { editor.buffer_view.lock().get_selection() } else { None };
 
     if let Some(sel) = sel {
         let r = sel.as_rectangle();
-        fl!(
-            crate::LANGUAGE_LOADER,
-            "toolbar-size",
-            colums = r.size.height,
-            rows = r.size.width
-        )
+        fl!(crate::LANGUAGE_LOADER, "toolbar-size", colums = r.size.height, rows = r.size.width)
     } else {
-        fl!(
-            crate::LANGUAGE_LOADER,
-            "toolbar-position",
-            line = (pos.y + 1),
-            column = (pos.x + 1)
-        )
+        fl!(crate::LANGUAGE_LOADER, "toolbar-position", line = (pos.y + 1), column = (pos.x + 1))
     }
 }

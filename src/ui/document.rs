@@ -55,13 +55,7 @@ pub trait Document: UndoHandler + ClipboardHandler {
 
     fn get_bytes(&mut self, path: &Path) -> TerminalResult<Vec<u8>>;
 
-    fn show_ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        cur_tool: &mut Box<dyn Tool>,
-        selected_tool: usize,
-        options: &DocumentOptions,
-    ) -> Option<Message>;
+    fn show_ui(&mut self, ui: &mut egui::Ui, cur_tool: &mut Box<dyn Tool>, selected_tool: usize, options: &DocumentOptions) -> Option<Message>;
 
     fn destroy(&self, gl: &glow::Context) -> Option<Message>;
 

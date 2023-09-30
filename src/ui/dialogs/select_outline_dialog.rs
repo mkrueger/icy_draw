@@ -56,10 +56,7 @@ impl SelectOutlineDialog {
                 if ui.input(|i| i.pointer.primary_clicked()) {
                     self.selected_outline = outline_style;
                 }
-                if ui.input(|i| {
-                    i.pointer
-                        .button_double_clicked(egui::PointerButton::Primary)
-                }) {
+                if ui.input(|i| i.pointer.button_double_clicked(egui::PointerButton::Primary)) {
                     self.selected_outline = outline_style;
                     self.should_commit = true;
                 }
@@ -70,10 +67,7 @@ impl SelectOutlineDialog {
 
         for h in 0..OUTLINE_HEIGHT {
             for w in 0..OUTLINE_WIDTH {
-                let ch = TheDrawFont::transform_outline(
-                    outline_style,
-                    OUTLINE_FONT_CHAR[w + h * OUTLINE_WIDTH],
-                );
+                let ch = TheDrawFont::transform_outline(outline_style, OUTLINE_FONT_CHAR[w + h * OUTLINE_WIDTH]);
                 let ch = unsafe { char::from_u32_unchecked(ch as u32) };
 
                 let xs = w as f32 * scale * self.font.size.width as f32;
@@ -121,8 +115,8 @@ impl SelectOutlineDialog {
 const OUTLINE_WIDTH: usize = 8;
 const OUTLINE_HEIGHT: usize = 6;
 const OUTLINE_FONT_CHAR: [u8; 48] = [
-    69, 65, 65, 65, 65, 65, 65, 70, 67, 79, 71, 66, 66, 72, 79, 68, 67, 79, 73, 65, 65, 74, 79, 68,
-    67, 79, 71, 66, 66, 72, 79, 68, 67, 79, 68, 64, 64, 67, 79, 68, 75, 66, 76, 64, 64, 75, 66, 76,
+    69, 65, 65, 65, 65, 65, 65, 70, 67, 79, 71, 66, 66, 72, 79, 68, 67, 79, 73, 65, 65, 74, 79, 68, 67, 79, 71, 66, 66, 72, 79, 68, 67, 79, 68, 64, 64, 67, 79,
+    68, 75, 66, 76, 64, 64, 75, 66, 76,
 ];
 
 impl ModalDialog for SelectOutlineDialog {
@@ -131,10 +125,7 @@ impl ModalDialog for SelectOutlineDialog {
         let modal = Modal::new(ctx, "select_outline_dialog");
 
         modal.show(|ui| {
-            modal.title(
-                ui,
-                fl!(crate::LANGUAGE_LOADER, "select-outline-style-title"),
-            );
+            modal.title(ui, fl!(crate::LANGUAGE_LOADER, "select-outline-style-title"));
 
             modal.frame(ui, |ui| {
                 ui.add_space(8.0);
@@ -142,17 +133,11 @@ impl ModalDialog for SelectOutlineDialog {
             });
 
             modal.buttons(ui, |ui| {
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-ok"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-ok")).clicked() {
                     self.should_commit = true;
                     result = true;
                 }
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel")).clicked() {
                     result = true;
                 }
             });

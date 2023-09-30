@@ -108,8 +108,7 @@ impl ModalDialog for ExportFileDialog {
                                 ui.selectable_value(&mut format_type, i, td.0);
                             });
                         });
-                    self.file_name
-                        .set_extension(TYPE_DESCRIPTIONS[format_type].2);
+                    self.file_name.set_extension(TYPE_DESCRIPTIONS[format_type].2);
                     //    });
                 });
 
@@ -117,17 +116,11 @@ impl ModalDialog for ExportFileDialog {
             });
 
             modal.buttons(ui, |ui| {
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "export-button-title"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "export-button-title")).clicked() {
                     self.should_commit = true;
                     result = true;
                 }
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel")).clicked() {
                     result = true;
                 }
             });
@@ -147,27 +140,16 @@ impl ModalDialog for ExportFileDialog {
                 if ext == "png" {
                     let lock = &editor.buffer_view.lock();
                     let buf = lock.get_buffer();
-                    let (size, pixels) = buf.render_to_rgba(Rectangle::from(
-                        0,
-                        0,
-                        buf.get_width(),
-                        buf.get_height(),
-                    ));
-                    let image_buffer =
-                        image::RgbaImage::from_raw(size.width as u32, size.height as u32, pixels);
+                    let (size, pixels) = buf.render_to_rgba(Rectangle::from(0, 0, buf.get_width(), buf.get_height()));
+                    let image_buffer = image::RgbaImage::from_raw(size.width as u32, size.height as u32, pixels);
                     match image_buffer {
                         Some(img) => {
                             if let Err(err) = img.save(&self.file_name) {
-                                return Ok(Some(Message::ShowError(format!(
-                                    "Failed to save image: {}",
-                                    err
-                                ))));
+                                return Ok(Some(Message::ShowError(format!("Failed to save image: {}", err))));
                             }
                         }
                         None => {
-                            return Ok(Some(Message::ShowError(
-                                "Failed to save image".to_string(),
-                            )));
+                            return Ok(Some(Message::ShowError("Failed to save image".to_string())));
                         }
                     }
 
@@ -190,11 +172,7 @@ const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 11] = [
     ("Ascii (.asc)", ascii::create_settings_page, "asc"),
     ("Artworx (.adf)", artworx::create_settings_page, "adf"),
     ("Ice Draw (.idf)", ice_draw::create_settings_page, "idf"),
-    (
-        "Tundra Draw (.tnd)",
-        tundra_draw::create_settings_page,
-        "tnd",
-    ),
+    ("Tundra Draw (.tnd)", tundra_draw::create_settings_page, "tnd"),
     ("Bin (.bin)", bin::create_settings_page, "bin"),
     ("XBin (.xb)", xbin::create_settings_page, "xb"),
     ("CtrlA (.msg)", pcboard::create_settings_page, "msg"),

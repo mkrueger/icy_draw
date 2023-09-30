@@ -37,42 +37,20 @@ impl crate::ModalDialog for AskCloseFileDialog {
             };
 
             modal.frame(ui, |ui| {
-                ui.strong(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "ask_close_file_dialog-description",
-                    filename = file_name
-                ));
-                ui.small(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "ask_close_file_dialog-subdescription"
-                ));
+                ui.strong(fl!(crate::LANGUAGE_LOADER, "ask_close_file_dialog-description", filename = file_name));
+                ui.small(fl!(crate::LANGUAGE_LOADER, "ask_close_file_dialog-subdescription"));
             });
 
             modal.buttons(ui, |ui| {
-                if ui
-                    .button(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "ask_close_file_dialog-save_button"
-                    ))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "ask_close_file_dialog-save_button")).clicked() {
                     self.save = true;
                     self.do_commit = true;
                     result = true;
                 }
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel")).clicked() {
                     result = true;
                 }
-                if ui
-                    .button(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "ask_close_file_dialog-dont_save_button"
-                    ))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "ask_close_file_dialog-dont_save_button")).clicked() {
                     self.save = false;
                     self.do_commit = true;
                     result = true;
@@ -94,8 +72,7 @@ impl crate::ModalDialog for AskCloseFileDialog {
                 window.open_dialog(SaveFileDialog::default());
                 return Ok(None);
             }
-            if let Some(egui_tiles::Tile::Pane(pane)) = window.document_tree.tiles.get_mut(self.id)
-            {
+            if let Some(egui_tiles::Tile::Pane(pane)) = window.document_tree.tiles.get_mut(self.id) {
                 // TODO: potential message clash. Maybe we should return a Vec<Message> instead? OR a Vec MessageType?
                 msg = pane.save();
                 let msg2 = pane.destroy(&window.gl);
@@ -103,9 +80,7 @@ impl crate::ModalDialog for AskCloseFileDialog {
                     msg = msg2;
                 }
             }
-        } else if let Some(egui_tiles::Tile::Pane(pane)) =
-            window.document_tree.tiles.get_mut(self.id)
-        {
+        } else if let Some(egui_tiles::Tile::Pane(pane)) = window.document_tree.tiles.get_mut(self.id) {
             msg = pane.destroy(&window.gl);
         }
         window.document_tree.tiles.remove(self.id);

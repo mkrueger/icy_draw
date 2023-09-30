@@ -22,20 +22,13 @@ impl crate::ModalDialog for AboutDialog {
 
                 ui.label(fl!(crate::LANGUAGE_LOADER, "about-dialog-description"));
                 ui.add_space(12.0); // ui.separator();
-                ui.label(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "about-dialog-created_by",
-                    authors = env!("CARGO_PKG_AUTHORS")
-                ));
+                ui.label(fl!(crate::LANGUAGE_LOADER, "about-dialog-created_by", authors = env!("CARGO_PKG_AUTHORS")));
 
                 ui.add_space(8.0); // ui.separator();
             });
 
             modal.buttons(ui, |ui| {
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-ok"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-ok")).clicked() {
                     result = true;
                 }
             });

@@ -171,49 +171,23 @@ impl Tool for LineTool {
         false
     }
 
-    fn show_ui(
-        &mut self,
-        _ctx: &egui::Context,
-        ui: &mut egui::Ui,
-        editor_opt: Option<&AnsiEditor>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         self.color_mode.show_ui(ui);
-        self.draw_mode
-            .show_ui(ui, editor_opt, self.char_code.clone(), false)
+        self.draw_mode.show_ui(ui, editor_opt, self.char_code.clone(), false)
     }
 
-    fn handle_click(
-        &mut self,
-        editor: &mut AnsiEditor,
-        button: i32,
-        pos: Position,
-        _pos_abs: Position,
-        _response: &egui::Response,
-    ) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 {
             editor.set_caret_position(pos);
         }
         None
     }
 
-    fn handle_hover(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        _editor: &mut AnsiEditor,
-        _cur: Position,
-        _cur_abs: Position,
-    ) -> egui::Response {
+    fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, _editor: &mut AnsiEditor, _cur: Position, _cur_abs: Position) -> egui::Response {
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
-    fn handle_drag(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-    ) -> egui::Response {
+    fn handle_drag(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _calc: &TerminalCalc) -> egui::Response {
         editor.clear_overlay_layer();
         draw_line(
             &mut editor.buffer_view.lock(),

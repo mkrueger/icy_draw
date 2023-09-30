@@ -31,18 +31,12 @@ impl TopBar {
 }
 
 impl MainWindow {
-    pub fn show_top_bar(
-        &mut self,
-        ctx: &egui::Context,
-        frame: &mut eframe::Frame,
-    ) -> Option<Message> {
+    pub fn show_top_bar(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) -> Option<Message> {
         let mut result = None;
 
-        TopBottomPanel::top("top_panel")
-            .exact_height(24.0)
-            .show(ctx, |ui| {
-                result = self.main_menu(ui, frame);
-            });
+        TopBottomPanel::top("top_panel").exact_height(24.0).show(ctx, |ui| {
+            result = self.main_menu(ui, frame);
+        });
         result
     }
 
@@ -74,25 +68,22 @@ impl MainWindow {
 
                 self.commands[0].new_file.ui(ui, &mut result);
                 self.commands[0].open_file.ui(ui, &mut result);
-                ui.menu_button(
-                    fl!(crate::LANGUAGE_LOADER, "menu-open_recent"),
-                    |ui| unsafe {
-                        ui.style_mut().wrap = Some(false);
+                ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-open_recent"), |ui| unsafe {
+                    ui.style_mut().wrap = Some(false);
 
-                        let get_recent_files = SETTINGS.get_recent_files();
-                        if !get_recent_files.is_empty() {
-                            for file in get_recent_files.iter().rev() {
-                                let button = ui.button(file.file_name().unwrap().to_str().unwrap());
-                                if button.clicked() {
-                                    result = Some(Message::TryLoadFile(file.clone()));
-                                    ui.close_menu();
-                                }
+                    let get_recent_files = SETTINGS.get_recent_files();
+                    if !get_recent_files.is_empty() {
+                        for file in get_recent_files.iter().rev() {
+                            let button = ui.button(file.file_name().unwrap().to_str().unwrap());
+                            if button.clicked() {
+                                result = Some(Message::TryLoadFile(file.clone()));
+                                ui.close_menu();
                             }
-                            ui.separator();
                         }
-                        self.commands[0].clear_recent_open.ui(ui, &mut result);
-                    },
-                );
+                        ui.separator();
+                    }
+                    self.commands[0].clear_recent_open.ui(ui, &mut result);
+                });
                 ui.separator();
                 self.commands[0].save.ui(ui, &mut result);
                 self.commands[0].save_as.ui(ui, &mut result);
@@ -113,11 +104,7 @@ impl MainWindow {
                         let button = button_with_shortcut(
                             ui,
                             enabled,
-                            fl!(
-                                crate::LANGUAGE_LOADER,
-                                "menu-undo-op",
-                                op = doc.lock().unwrap().undo_description().unwrap()
-                            ),
+                            fl!(crate::LANGUAGE_LOADER, "menu-undo-op", op = doc.lock().unwrap().undo_description().unwrap()),
                             "Ctrl+Z",
                         );
                         if button.clicked() {
@@ -132,11 +119,7 @@ impl MainWindow {
                         let button = button_with_shortcut(
                             ui,
                             true,
-                            fl!(
-                                crate::LANGUAGE_LOADER,
-                                "menu-redo-op",
-                                op = doc.lock().unwrap().redo_description().unwrap()
-                            ),
+                            fl!(crate::LANGUAGE_LOADER, "menu-redo-op", op = doc.lock().unwrap().redo_description().unwrap()),
                             "Ctrl+Shift+Z",
                         );
                         if button.clicked() {
@@ -161,23 +144,13 @@ impl MainWindow {
                     ui.style_mut().wrap = Some(false);
                     ui.set_min_width(200.0);
 
-                    let button = button_with_shortcut(
-                        ui,
-                        pop_data(BUFFER_DATA).is_some(),
-                        fl!(crate::LANGUAGE_LOADER, "menu-paste-as-new-image"),
-                        "",
-                    );
+                    let button = button_with_shortcut(ui, pop_data(BUFFER_DATA).is_some(), fl!(crate::LANGUAGE_LOADER, "menu-paste-as-new-image"), "");
                     if button.clicked() {
                         result = Some(Message::PasteAsNewImage);
                         ui.close_menu();
                     }
 
-                    let button = button_with_shortcut(
-                        ui,
-                        pop_data(BUFFER_DATA).is_some(),
-                        fl!(crate::LANGUAGE_LOADER, "menu-paste-as-brush"),
-                        "",
-                    );
+                    let button = button_with_shortcut(ui, pop_data(BUFFER_DATA).is_some(), fl!(crate::LANGUAGE_LOADER, "menu-paste-as-brush"), "");
                     if button.clicked() {
                         result = Some(Message::PasteAsBrush);
                         ui.close_menu();
@@ -215,11 +188,7 @@ impl MainWindow {
 
                 ui.separator();
                 if ui
-                    .add_enabled(
-                        has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-sauce"))
-                            .wrap(false),
-                    )
+                    .add_enabled(has_buffer, egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-edit-sauce")).wrap(false))
                     .clicked()
                 {
                     result = Some(Message::EditSauce);
@@ -230,11 +199,7 @@ impl MainWindow {
                 ui.separator();
 
                 if ui
-                    .add_enabled(
-                        has_buffer,
-                        egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-set-canvas-size"))
-                            .wrap(false),
-                    )
+                    .add_enabled(has_buffer, egui::Button::new(fl!(crate::LANGUAGE_LOADER, "menu-set-canvas-size")).wrap(false))
                     .clicked()
                 {
                     result = Some(Message::SetCanvasSize);
@@ -281,10 +246,7 @@ impl MainWindow {
                                 }
 
                                 if ui
-                                    .selectable_label(
-                                        lock.get_buffer().ice_mode == IceMode::Blink,
-                                        fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-blink"),
-                                    )
+                                    .selectable_label(lock.get_buffer().ice_mode == IceMode::Blink, fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-blink"))
                                     .clicked()
                                 {
                                     result = Some(Message::SwitchIceMode(IceMode::Blink));
@@ -292,10 +254,7 @@ impl MainWindow {
                                 }
 
                                 if ui
-                                    .selectable_label(
-                                        lock.get_buffer().ice_mode == IceMode::Ice,
-                                        fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-ice"),
-                                    )
+                                    .selectable_label(lock.get_buffer().ice_mode == IceMode::Ice, fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-ice"))
                                     .clicked()
                                 {
                                     result = Some(Message::SwitchIceMode(IceMode::Ice));
@@ -303,63 +262,54 @@ impl MainWindow {
                                 }
                             });
 
-                            ui.menu_button(
-                                fl!(crate::LANGUAGE_LOADER, "menu-palette-mode"),
-                                |ui| {
-                                    ui.style_mut().wrap = Some(false);
-                                    ui.set_min_width(240.0);
+                            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-palette-mode"), |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(240.0);
 
-                                    if ui
-                                        .selectable_label(
-                                            lock.get_buffer().palette_mode == PaletteMode::RGB,
-                                            fl!(
-                                                crate::LANGUAGE_LOADER,
-                                                "menu-palette-mode-unrestricted"
-                                            ),
-                                        )
-                                        .clicked()
-                                    {
-                                        result = Some(Message::SwitchPaletteMode(PaletteMode::RGB));
-                                        ui.close_menu();
-                                    }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().palette_mode == PaletteMode::RGB,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-unrestricted"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchPaletteMode(PaletteMode::RGB));
+                                    ui.close_menu();
+                                }
 
-                                    if ui
-                                        .selectable_label(
-                                            lock.get_buffer().palette_mode == PaletteMode::Fixed16,
-                                            fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-dos"),
-                                        )
-                                        .clicked()
-                                    {
-                                        result =
-                                            Some(Message::SwitchPaletteMode(PaletteMode::Fixed16));
-                                        ui.close_menu();
-                                    }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().palette_mode == PaletteMode::Fixed16,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-dos"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchPaletteMode(PaletteMode::Fixed16));
+                                    ui.close_menu();
+                                }
 
-                                    if ui
-                                        .selectable_label(
-                                            lock.get_buffer().palette_mode == PaletteMode::Free16,
-                                            fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free"),
-                                        )
-                                        .clicked()
-                                    {
-                                        result =
-                                            Some(Message::SwitchPaletteMode(PaletteMode::Free16));
-                                        ui.close_menu();
-                                    }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().palette_mode == PaletteMode::Free16,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchPaletteMode(PaletteMode::Free16));
+                                    ui.close_menu();
+                                }
 
-                                    if ui
-                                        .selectable_label(
-                                            lock.get_buffer().palette_mode == PaletteMode::Free8,
-                                            fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free8"),
-                                        )
-                                        .clicked()
-                                    {
-                                        result =
-                                            Some(Message::SwitchPaletteMode(PaletteMode::Free8));
-                                        ui.close_menu();
-                                    }
-                                },
-                            );
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().palette_mode == PaletteMode::Free8,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free8"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchPaletteMode(PaletteMode::Free8));
+                                    ui.close_menu();
+                                }
+                            });
 
                             ui.separator();
                         }
@@ -377,9 +327,7 @@ impl MainWindow {
                 self.commands[0].next_bg_color.ui(ui, &mut result);
                 self.commands[0].prev_bg_color.ui(ui, &mut result);
 
-                self.commands[0]
-                    .pick_attribute_under_caret
-                    .ui(ui, &mut result);
+                self.commands[0].pick_attribute_under_caret.ui(ui, &mut result);
                 self.commands[0].toggle_color.ui(ui, &mut result);
                 self.commands[0].switch_to_default_color.ui(ui, &mut result);
             });
@@ -462,10 +410,7 @@ impl MainWindow {
                     fl!(
                         crate::LANGUAGE_LOADER,
                         "menu-zoom",
-                        zoom = format!(
-                            "{}%",
-                            (100. * self.document_behavior.document_options.get_scale().x) as i32
-                        )
+                        zoom = format!("{}%", (100. * self.document_behavior.document_options.get_scale().x) as i32)
                     ),
                     |ui| {
                         ui.style_mut().wrap = Some(false);
@@ -478,33 +423,23 @@ impl MainWindow {
                         ui.separator();
 
                         if ui.button("4:1 400%").clicked() {
-                            self.document_behavior
-                                .document_options
-                                .set_scale(Vec2::new(4.0, 4.0));
+                            self.document_behavior.document_options.set_scale(Vec2::new(4.0, 4.0));
                             ui.close_menu();
                         }
                         if ui.button("2:1 200%").clicked() {
-                            self.document_behavior
-                                .document_options
-                                .set_scale(Vec2::new(2.0, 2.0));
+                            self.document_behavior.document_options.set_scale(Vec2::new(2.0, 2.0));
                             ui.close_menu();
                         }
                         if ui.button("1:1 100%").clicked() {
-                            self.document_behavior
-                                .document_options
-                                .set_scale(Vec2::new(1.0, 1.0));
+                            self.document_behavior.document_options.set_scale(Vec2::new(1.0, 1.0));
                             ui.close_menu();
                         }
                         if ui.button("1:2 50%").clicked() {
-                            self.document_behavior
-                                .document_options
-                                .set_scale(Vec2::new(0.5, 0.5));
+                            self.document_behavior.document_options.set_scale(Vec2::new(0.5, 0.5));
                             ui.close_menu();
                         }
                         if ui.button("1:4 25%").clicked() {
-                            self.document_behavior
-                                .document_options
-                                .set_scale(Vec2::new(0.25, 0.25));
+                            self.document_behavior.document_options.set_scale(Vec2::new(0.25, 0.25));
                             ui.close_menu();
                         }
 
@@ -542,10 +477,7 @@ impl MainWindow {
                         ui.close_menu();
                     }
                     ui.separator();
-                    if ui
-                        .button(fl!(crate::LANGUAGE_LOADER, "menu-guides-off"))
-                        .clicked()
-                    {
+                    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-guides-off")).clicked() {
                         result = Some(Message::SetGuide(0, 0));
                         ui.close_menu();
                     }
@@ -580,10 +512,7 @@ impl MainWindow {
                     }
 
                     ui.separator();
-                    if ui
-                        .button(fl!(crate::LANGUAGE_LOADER, "menu-guides-off"))
-                        .clicked()
-                    {
+                    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-guides-off")).clicked() {
                         result = Some(Message::SetRaster(0, 0));
                         ui.close_menu();
                     }
@@ -606,13 +535,7 @@ impl MainWindow {
                         ui.style_mut().wrap = Some(false);
                         ui.set_min_width(250.0);
                         for (i, p) in PLUGINS.iter().enumerate() {
-                            if ui
-                                .add_enabled(
-                                    has_buffer,
-                                    egui::Button::new(p.title.clone()).wrap(false),
-                                )
-                                .clicked()
-                            {
+                            if ui.add_enabled(has_buffer, egui::Button::new(p.title.clone()).wrap(false)).clicked() {
                                 result = Some(Message::RunPlugin(i));
                                 ui.close_menu();
                             }
@@ -627,10 +550,7 @@ impl MainWindow {
             ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-help"), |ui| {
                 ui.style_mut().wrap = Some(false);
                 ui.set_min_width(170.0);
-                let r = ui.hyperlink_to(
-                    fl!(crate::LANGUAGE_LOADER, "menu-discuss"),
-                    "https://github.com/mkrueger/icy_draw/discussions",
-                );
+                let r = ui.hyperlink_to(fl!(crate::LANGUAGE_LOADER, "menu-discuss"), "https://github.com/mkrueger/icy_draw/discussions");
                 if r.clicked() {
                     ui.close_menu();
                 }
@@ -672,11 +592,7 @@ impl MainWindow {
     }
 }
 
-pub fn medium_toggle_button(
-    ui: &mut egui::Ui,
-    icon: &RetainedImage,
-    selected: bool,
-) -> egui::Response {
+pub fn medium_toggle_button(ui: &mut egui::Ui, icon: &RetainedImage, selected: bool) -> egui::Response {
     let size_points = egui::Vec2::splat(20.0);
 
     let tint = if selected {

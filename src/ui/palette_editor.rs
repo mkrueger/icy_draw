@@ -4,12 +4,7 @@ use eframe::epaint::{Color32, Pos2, Rect, Rounding, Stroke, Vec2};
 use icy_engine::{Palette, TextAttribute};
 use std::cmp::min;
 
-pub fn palette_switcher(
-    ctx: &egui::Context,
-    ui: &mut egui::Ui,
-    caret_attr: &TextAttribute,
-    palette: &Palette,
-) -> Option<Message> {
+pub fn palette_switcher(ctx: &egui::Context, ui: &mut egui::Ui, caret_attr: &TextAttribute, palette: &Palette) -> Option<Message> {
     let mut result = None;
 
     let tex_id = SWAP_SVG.texture_id(ctx);
@@ -32,8 +27,7 @@ pub fn palette_switcher(
 
     painter.rect_filled(
         Rect::from_min_size(
-            Pos2::new(height - rect_height + 1., height - rect_height + 1.)
-                + rect.left_top().to_vec2(),
+            Pos2::new(height - rect_height + 1., height - rect_height + 1.) + rect.left_top().to_vec2(),
             Vec2::new(rect_height - 2., rect_height - 2.),
         ),
         Rounding::none(),
@@ -43,8 +37,7 @@ pub fn palette_switcher(
     let (r, g, b) = palette.get_rgb(caret_attr.get_background() as usize);
     painter.rect_filled(
         Rect::from_min_size(
-            Pos2::new(height - rect_height + 2., height - rect_height + 2.)
-                + rect.left_top().to_vec2(),
+            Pos2::new(height - rect_height + 2., height - rect_height + 2.) + rect.left_top().to_vec2(),
             Vec2::new(rect_height - 4., rect_height - 4.),
         ),
         Rounding::none(),
@@ -52,29 +45,20 @@ pub fn palette_switcher(
     );
 
     painter.rect_filled(
-        Rect::from_min_size(
-            Pos2::new(0., 0.) + rect.left_top().to_vec2(),
-            Vec2::new(rect_height, rect_height),
-        ),
+        Rect::from_min_size(Pos2::new(0., 0.) + rect.left_top().to_vec2(), Vec2::new(rect_height, rect_height)),
         Rounding::none(),
         Color32::BLACK,
     );
 
     painter.rect_filled(
-        Rect::from_min_size(
-            Pos2::new(1., 1.) + rect.left_top().to_vec2(),
-            Vec2::new(rect_height - 2., rect_height - 2.),
-        ),
+        Rect::from_min_size(Pos2::new(1., 1.) + rect.left_top().to_vec2(), Vec2::new(rect_height - 2., rect_height - 2.)),
         Rounding::none(),
         Color32::WHITE,
     );
 
     let (r, g, b) = palette.get_rgb(caret_attr.get_foreground() as usize);
     painter.rect_filled(
-        Rect::from_min_size(
-            Pos2::new(2., 2.) + rect.left_top().to_vec2(),
-            Vec2::new(rect_height - 4., rect_height - 4.),
-        ),
+        Rect::from_min_size(Pos2::new(2., 2.) + rect.left_top().to_vec2(), Vec2::new(rect_height - 4., rect_height - 4.)),
         Rounding::none(),
         Color32::from_rgb(r, g, b),
     );
@@ -86,10 +70,7 @@ pub fn palette_switcher(
     let overlap = 2.0;
 
     painter.rect_filled(
-        Rect::from_min_size(
-            Pos2::new(rh - overlap, height - rh - overlap) + rect.left_top().to_vec2(),
-            Vec2::new(rh, rh),
-        ),
+        Rect::from_min_size(Pos2::new(rh - overlap, height - rh - overlap) + rect.left_top().to_vec2(), Vec2::new(rh, rh)),
         Rounding::none(),
         Color32::from_rgb(r ^ 0xFF, g ^ 0xFF, b ^ 0xFF),
     );
@@ -162,8 +143,7 @@ pub fn palette_editor_16(
         let right_border = 4.0;
         let items_per_row = if palette.len() < 64 { 8 } else { 16 };
 
-        let upper_limit =
-            (palette.len() as f32 / items_per_row as f32).ceil() as usize * items_per_row;
+        let upper_limit = (palette.len() as f32 / items_per_row as f32).ceil() as usize * items_per_row;
 
         let height = (ui.available_width() - right_border) / items_per_row as f32;
 
@@ -193,69 +173,38 @@ pub fn palette_editor_16(
         // paint fg marker
         let stroke = Stroke::new(1., Color32::WHITE);
         let origin = Pos2::new(
-            stroke_rect.left()
-                + (caret_attr.get_foreground() % items_per_row as u32) as f32 * height,
-            stroke_rect.top()
-                + (caret_attr.get_foreground() / items_per_row as u32) as f32 * height,
+            stroke_rect.left() + (caret_attr.get_foreground() % items_per_row as u32) as f32 * height,
+            stroke_rect.top() + (caret_attr.get_foreground() / items_per_row as u32) as f32 * height,
         );
         painter.line_segment([origin, origin + Vec2::new(marker_len, 0.)], stroke);
         painter.line_segment([origin, origin + Vec2::new(0., marker_len)], stroke);
         for i in 0..marker_len as usize {
-            painter.line_segment(
-                [
-                    origin + Vec2::new(i as f32, 0.),
-                    origin + Vec2::new(0., i as f32),
-                ],
-                stroke,
-            );
+            painter.line_segment([origin + Vec2::new(i as f32, 0.), origin + Vec2::new(0., i as f32)], stroke);
         }
         let stroke = Stroke::new(1., Color32::GRAY);
         painter.line_segment([origin, origin + Vec2::new(marker_len, 0.)], stroke);
         painter.line_segment([origin, origin + Vec2::new(0., marker_len)], stroke);
-        painter.line_segment(
-            [
-                origin + Vec2::new(marker_len, 0.),
-                origin + Vec2::new(0., marker_len),
-            ],
-            stroke,
-        );
+        painter.line_segment([origin + Vec2::new(marker_len, 0.), origin + Vec2::new(0., marker_len)], stroke);
 
         // paint bg marker
         let stroke = Stroke::new(1., Color32::WHITE);
         let origin = Pos2::new(
-            stroke_rect.left()
-                + (1 + caret_attr.get_background() % items_per_row as u32) as f32 * height,
-            stroke_rect.top()
-                + (1 + caret_attr.get_background() / items_per_row as u32) as f32 * height,
+            stroke_rect.left() + (1 + caret_attr.get_background() % items_per_row as u32) as f32 * height,
+            stroke_rect.top() + (1 + caret_attr.get_background() / items_per_row as u32) as f32 * height,
         );
         painter.line_segment([origin, origin - Vec2::new(marker_len, 0.)], stroke);
         painter.line_segment([origin, origin - Vec2::new(0., marker_len)], stroke);
         for i in 0..marker_len as usize {
-            painter.line_segment(
-                [
-                    origin - Vec2::new(i as f32, 0.),
-                    origin - Vec2::new(0., i as f32),
-                ],
-                stroke,
-            );
+            painter.line_segment([origin - Vec2::new(i as f32, 0.), origin - Vec2::new(0., i as f32)], stroke);
         }
         let stroke = Stroke::new(1., Color32::GRAY);
         painter.line_segment([origin, origin - Vec2::new(marker_len, 0.)], stroke);
         painter.line_segment([origin, origin - Vec2::new(0., marker_len)], stroke);
-        painter.line_segment(
-            [
-                origin - Vec2::new(marker_len, 0.),
-                origin - Vec2::new(0., marker_len),
-            ],
-            stroke,
-        );
+        painter.line_segment([origin - Vec2::new(marker_len, 0.), origin - Vec2::new(0., marker_len)], stroke);
 
         if let Some(hp) = response.hover_pos() {
             let pos = (hp.to_vec2() - stroke_rect.left_top().to_vec2()) / Vec2::new(height, height);
-            let color = min(
-                palette.len() as u32 - 1,
-                pos.x as u32 + pos.y as u32 * items_per_row as u32,
-            );
+            let color = min(palette.len() as u32 - 1, pos.x as u32 + pos.y as u32 * items_per_row as u32);
 
             if response.hovered() {
                 response = response.on_hover_ui(|ui| {

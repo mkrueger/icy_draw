@@ -37,23 +37,11 @@ impl Tool for ClickTool {
         &super::icons::CURSOR_SVG
     }
 
-    fn show_ui(
-        &mut self,
-        _ctx: &egui::Context,
-        _ui: &mut egui::Ui,
-        _buffer_opt: Option<&AnsiEditor>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, _ui: &mut egui::Ui, _buffer_opt: Option<&AnsiEditor>) -> Option<Message> {
         None
     }
 
-    fn handle_click(
-        &mut self,
-        editor: &mut AnsiEditor,
-        button: i32,
-        pos: Position,
-        cur_abs: Position,
-        _response: &egui::Response,
-    ) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, cur_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 && !is_inside_selection(editor, cur_abs) {
             editor.set_caret_position(pos);
             editor.buffer_view.lock().clear_selection();
@@ -73,13 +61,7 @@ impl Tool for ClickTool {
 
         Event::None
     }
-    fn handle_drag(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        editor: &mut AnsiEditor,
-        _calc: &TerminalCalc,
-    ) -> egui::Response {
+    fn handle_drag(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _calc: &TerminalCalc) -> egui::Response {
         let mut rect = if let Some(selection) = editor.buffer_view.lock().get_selection() {
             selection.as_rectangle()
         } else {
@@ -88,8 +70,7 @@ impl Tool for ClickTool {
 
         match self.selection_drag {
             SelectionDrag::Move => {
-                rect.start = self.start_selection.top_left() - editor.drag_pos.start_abs
-                    + editor.drag_pos.cur_abs;
+                rect.start = self.start_selection.top_left() - editor.drag_pos.start_abs + editor.drag_pos.cur_abs;
                 editor.buffer_view.lock().set_selection(rect);
             }
             SelectionDrag::Left => {
@@ -157,14 +138,7 @@ impl Tool for ClickTool {
         response
     }
 
-    fn handle_hover(
-        &mut self,
-        ui: &egui::Ui,
-        response: egui::Response,
-        editor: &mut AnsiEditor,
-        _cur: Position,
-        cur_abs: Position,
-    ) -> egui::Response {
+    fn handle_hover(&mut self, ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _cur: Position, cur_abs: Position) -> egui::Response {
         match get_selection_drag(editor, cur_abs) {
             SelectionDrag::None => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Text),
             SelectionDrag::Move => ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Move),
@@ -262,8 +236,7 @@ impl Tool for ClickTool {
                     editor.set_caret(next_tab, pos.y);
                 } else {
                     let tabs = 1 + pos.x / tab_size;
-                    let next_tab = (editor.buffer_view.lock().get_buffer().get_width() - 1)
-                        .min(tabs * tab_size);
+                    let next_tab = (editor.buffer_view.lock().get_buffer().get_width() - 1).min(tabs * tab_size);
                     editor.set_caret(next_tab, pos.y);
                 }
             }
@@ -311,12 +284,7 @@ impl Tool for ClickTool {
                     if VALID_OUTLINE_CHARS.contains(typed_char) {
                         editor.type_key(typed_char);
                     } else if let '1'..='8' = typed_char {
-                        editor.type_key(
-                            VALID_OUTLINE_CHARS
-                                .chars()
-                                .nth(10 + typed_char as usize - b'1' as usize)
-                                .unwrap(),
-                        );
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(10 + typed_char as usize - b'1' as usize).unwrap());
                     }
                 } else {
                     editor.type_key(typed_char);
@@ -432,8 +400,7 @@ impl ClickTool {
     }
 
     fn move_right(&mut self, editor: &AnsiEditor, rect: &mut Rectangle) {
-        rect.size.width = self.start_selection.get_width() - editor.drag_pos.start_abs.x
-            + editor.drag_pos.cur_abs.x;
+        rect.size.width = self.start_selection.get_width() - editor.drag_pos.start_abs.x + editor.drag_pos.cur_abs.x;
         if rect.size.width < 0 {
             rect.start.x = self.start_selection.left() + rect.size.width;
             rect.size.width = self.start_selection.left() - rect.start.x;
@@ -452,8 +419,7 @@ impl ClickTool {
     }
 
     fn move_bottom(&mut self, editor: &AnsiEditor, rect: &mut Rectangle) {
-        rect.size.height = self.start_selection.get_height() - editor.drag_pos.start_abs.y
-            + editor.drag_pos.cur_abs.y;
+        rect.size.height = self.start_selection.get_height() - editor.drag_pos.start_abs.y + editor.drag_pos.cur_abs.y;
         if rect.size.height < 0 {
             rect.start.y = self.start_selection.top() + rect.size.height;
             rect.size.height = self.start_selection.top() - rect.start.y;

@@ -9,9 +9,7 @@ pub struct ToolTab {
 }
 impl ToolTab {
     pub(crate) fn new<T: 'static + ToolWindow>(tool_window: T) -> Self {
-        Self {
-            doc: Box::new(tool_window),
-        }
+        Self { doc: Box::new(tool_window) }
     }
 }
 
@@ -28,12 +26,7 @@ impl egui_tiles::Behavior<ToolTab> for ToolBehavior {
         WidgetText::RichText(egui::RichText::new(title).small())
     }
 
-    fn pane_ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        _tile_id: egui_tiles::TileId,
-        pane: &mut ToolTab,
-    ) -> egui_tiles::UiResponse {
+    fn pane_ui(&mut self, ui: &mut egui::Ui, _tile_id: egui_tiles::TileId, pane: &mut ToolTab) -> egui_tiles::UiResponse {
         let message = pane.doc.show_ui(ui, self.active_document.clone());
         if self.message.is_none() {
             self.message = message;
@@ -56,9 +49,5 @@ impl egui_tiles::Behavior<ToolTab> for ToolBehavior {
 pub trait ToolWindow {
     fn get_title(&self) -> String;
 
-    fn show_ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        active_document: Option<Arc<Mutex<Box<dyn Document>>>>,
-    ) -> Option<Message>;
+    fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message>;
 }

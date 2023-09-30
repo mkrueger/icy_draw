@@ -85,12 +85,7 @@ fn main() {
                     .filter(Box::new(ThresholdFilter::new(level)))
                     .build("stderr", Box::new(stderr)),
             )
-            .build(
-                Root::builder()
-                    .appender("logfile")
-                    .appender("stderr")
-                    .build(LevelFilter::Info),
-            )
+            .build(Root::builder().appender("logfile").appender("stderr").build(LevelFilter::Info))
             .unwrap();
 
         // Use this to change log levels at runtime.
@@ -124,11 +119,7 @@ fn main() {
     log::info!("Starting iCY DRAW {}", VERSION);
     Plugin::read_plugin_directory();
 
-    if let Err(err) = eframe::run_native(
-        &DEFAULT_TITLE,
-        options,
-        Box::new(|cc| Box::new(MainWindow::new(cc))),
-    ) {
+    if let Err(err) = eframe::run_native(&DEFAULT_TITLE, options, Box::new(|cc| Box::new(MainWindow::new(cc)))) {
         log::error!("Error returned by run_native: {}", err);
     }
     let _ = Settings::save();

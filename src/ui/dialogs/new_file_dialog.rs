@@ -44,10 +44,7 @@ impl Template for Dos16Template {
     }
 
     fn description(&self) -> String {
-        fl!(
-            crate::LANGUAGE_LOADER,
-            "new-file-template-cp437-description"
-        )
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-cp437-description")
     }
 
     fn show_ui(&mut self, ui: &mut Ui) {
@@ -152,10 +149,7 @@ impl Template for XBExtTemplate {
     }
 
     fn description(&self) -> String {
-        fl!(
-            crate::LANGUAGE_LOADER,
-            "new-file-template-xb-ext-description"
-        )
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-xb-ext-description")
     }
 
     fn show_ui(&mut self, ui: &mut Ui) {
@@ -225,10 +219,7 @@ impl Template for FileIdTemplate {
     }
 
     fn description(&self) -> String {
-        fl!(
-            crate::LANGUAGE_LOADER,
-            "new-file-template-file_id-description"
-        )
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-file_id-description")
     }
 
     fn show_ui(&mut self, ui: &mut Ui) {
@@ -248,30 +239,27 @@ impl Template for FileIdTemplate {
 }
 
 fn show_file_ui(ui: &mut Ui, width: &mut i32, height: &mut i32) {
-    egui::Grid::new("some_unique_id")
-        .num_columns(2)
-        .spacing([4.0, 8.0])
-        .show(ui, |ui| {
-            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-            });
-            let mut tmp_str = width.to_string();
-            ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
-            if let Ok(new_width) = tmp_str.parse::<i32>() {
-                *width = new_width;
-            }
-            ui.end_row();
-
-            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
-            });
-            let mut tmp_str = height.to_string();
-            ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
-            if let Ok(new_height) = tmp_str.parse::<i32>() {
-                *height = new_height;
-            }
-            ui.end_row();
+    egui::Grid::new("some_unique_id").num_columns(2).spacing([4.0, 8.0]).show(ui, |ui| {
+        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
         });
+        let mut tmp_str = width.to_string();
+        ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
+        if let Ok(new_width) = tmp_str.parse::<i32>() {
+            *width = new_width;
+        }
+        ui.end_row();
+
+        ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+        });
+        let mut tmp_str = height.to_string();
+        ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
+        if let Ok(new_height) = tmp_str.parse::<i32>() {
+            *height = new_height;
+        }
+        ui.end_row();
+    });
 }
 
 struct AnsiMationTemplate {}
@@ -286,10 +274,7 @@ impl Template for AnsiMationTemplate {
     }
 
     fn description(&self) -> String {
-        fl!(
-            crate::LANGUAGE_LOADER,
-            "new-file-template-ansimation-description"
-        )
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-ansimation-description")
     }
 
     fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
@@ -309,10 +294,7 @@ end"#;
     }
 
     fn show_ui(&mut self, ui: &mut Ui) {
-        ui.label(fl!(
-            crate::LANGUAGE_LOADER,
-            "new-file-template-ansimation-ui-label"
-        ));
+        ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-template-ansimation-ui-label"));
         ui.hyperlink("https://github.com/mkrueger/icy_draw/blob/main/doc/lua_api.md");
     }
 }
@@ -332,10 +314,7 @@ impl Template for BitFontTemplate {
     }
 
     fn description(&self) -> String {
-        fl!(
-            crate::LANGUAGE_LOADER,
-            "new-file-template-bit_font-description"
-        )
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-bit_font-description")
     }
 
     fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
@@ -359,27 +338,21 @@ impl Template for BitFontTemplate {
         Ok(None)
     }
     fn show_ui(&mut self, ui: &mut Ui) {
-        ui.label(fl!(
-            crate::LANGUAGE_LOADER,
-            "new-file-template-bitfont-ui-label"
-        ));
+        ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-template-bitfont-ui-label"));
         ui.add_space(8.0);
-        egui::Grid::new("some_unique_id")
-            .num_columns(2)
-            .spacing([4.0, 8.0])
-            .show(ui, |ui| {
-                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
-                });
-                ui.add(egui::Slider::new(&mut self.width, 2..=8));
-                ui.end_row();
-
-                ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
-                });
-                ui.add(egui::Slider::new(&mut self.height, 2..=19));
-                ui.end_row();
+        egui::Grid::new("some_unique_id").num_columns(2).spacing([4.0, 8.0]).show(ui, |ui| {
+            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-width"));
             });
+            ui.add(egui::Slider::new(&mut self.width, 2..=8));
+            ui.end_row();
+
+            ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-height"));
+            });
+            ui.add(egui::Slider::new(&mut self.height, 2..=19));
+            ui.end_row();
+        });
     }
 }
 
@@ -398,10 +371,7 @@ impl Template for TdfFontTemplate {
 
     fn title(&self) -> String {
         match self.font_type {
-            FontType::Outline => fl!(
-                crate::LANGUAGE_LOADER,
-                "new-file-template-outline_font-title"
-            ),
+            FontType::Outline => fl!(crate::LANGUAGE_LOADER, "new-file-template-outline_font-title"),
             FontType::Block => fl!(crate::LANGUAGE_LOADER, "new-file-template-block_font-title"),
             FontType::Color => fl!(crate::LANGUAGE_LOADER, "new-file-template-color_font-title"),
         }
@@ -409,18 +379,9 @@ impl Template for TdfFontTemplate {
 
     fn description(&self) -> String {
         match self.font_type {
-            FontType::Outline => fl!(
-                crate::LANGUAGE_LOADER,
-                "new-file-template-outline_font-description"
-            ),
-            FontType::Block => fl!(
-                crate::LANGUAGE_LOADER,
-                "new-file-template-block_font-description"
-            ),
-            FontType::Color => fl!(
-                crate::LANGUAGE_LOADER,
-                "new-file-template-color_font-description"
-            ),
+            FontType::Outline => fl!(crate::LANGUAGE_LOADER, "new-file-template-outline_font-description"),
+            FontType::Block => fl!(crate::LANGUAGE_LOADER, "new-file-template-block_font-description"),
+            FontType::Color => fl!(crate::LANGUAGE_LOADER, "new-file-template-color_font-description"),
         }
     }
 
@@ -433,10 +394,7 @@ impl Template for TdfFontTemplate {
     }
 
     fn show_ui(&mut self, ui: &mut Ui) {
-        ui.label(fl!(
-            crate::LANGUAGE_LOADER,
-            "new-file-template-thedraw-ui-label"
-        ));
+        ui.label(fl!(crate::LANGUAGE_LOADER, "new-file-template-thedraw-ui-label"));
         ui.hyperlink("http://www.roysac.com/thedrawfonts-tdf.html");
     }
 }
@@ -444,44 +402,17 @@ impl Template for TdfFontTemplate {
 impl Default for NewFileDialog {
     fn default() -> Self {
         let templates: Vec<Box<dyn Template>> = vec![
-            Box::new(AnsiTemplate {
-                width: 80,
-                height: 25,
-            }),
-            Box::new(XB16Template {
-                width: 80,
-                height: 25,
-            }),
-            Box::new(Dos16Template {
-                width: 80,
-                height: 25,
-            }),
-            Box::new(Ice16Template {
-                width: 80,
-                height: 25,
-            }),
-            Box::new(XBExtTemplate {
-                width: 80,
-                height: 25,
-            }),
-            Box::new(FileIdTemplate {
-                width: 44,
-                height: 25,
-            }),
+            Box::new(AnsiTemplate { width: 80, height: 25 }),
+            Box::new(XB16Template { width: 80, height: 25 }),
+            Box::new(Dos16Template { width: 80, height: 25 }),
+            Box::new(Ice16Template { width: 80, height: 25 }),
+            Box::new(XBExtTemplate { width: 80, height: 25 }),
+            Box::new(FileIdTemplate { width: 44, height: 25 }),
             Box::new(AnsiMationTemplate {}),
-            Box::new(BitFontTemplate {
-                width: 8,
-                height: 16,
-            }),
-            Box::new(TdfFontTemplate {
-                font_type: FontType::Color,
-            }),
-            Box::new(TdfFontTemplate {
-                font_type: FontType::Block,
-            }),
-            Box::new(TdfFontTemplate {
-                font_type: FontType::Outline,
-            }),
+            Box::new(BitFontTemplate { width: 8, height: 16 }),
+            Box::new(TdfFontTemplate { font_type: FontType::Color }),
+            Box::new(TdfFontTemplate { font_type: FontType::Block }),
+            Box::new(TdfFontTemplate { font_type: FontType::Outline }),
         ];
 
         Self {
@@ -509,99 +440,62 @@ impl crate::ModalDialog for NewFileDialog {
                     .resizable(false)
                     .show_inside(ui, |ui| {
                         let row_height = 58.0;
-                        egui::ScrollArea::vertical()
-                            .id_source("bitfont_scroll_area")
-                            .show(ui, |ui| {
-                                for (i, template) in self.templates.iter().enumerate() {
-                                    let is_selected = i == self.selected;
+                        egui::ScrollArea::vertical().id_source("bitfont_scroll_area").show(ui, |ui| {
+                            for (i, template) in self.templates.iter().enumerate() {
+                                let is_selected = i == self.selected;
 
-                                    let (id, rect) = ui
-                                        .allocate_space([ui.available_width(), row_height].into());
-                                    let response = ui.interact(rect, id, Sense::click());
-                                    if response.hovered() {
-                                        ui.painter().rect_filled(
-                                            rect.expand(1.0),
-                                            Rounding::same(4.0),
-                                            ui.style().visuals.widgets.active.bg_fill,
-                                        );
-                                    } else if is_selected {
-                                        ui.painter().rect_filled(
-                                            rect.expand(1.0),
-                                            Rounding::same(4.0),
-                                            ui.style().visuals.extreme_bg_color,
-                                        );
-                                    }
-                                    let image = template.image();
-
-                                    let r = Rect::from_min_size(
-                                        Pos2::new(
-                                            (rect.left() + 4.0).floor(),
-                                            (rect.top() + 4.0).floor(),
-                                        ),
-                                        Vec2::new(32.0, 32.0),
-                                    );
-
-                                    ui.painter().image(
-                                        image.texture_id(ui.ctx()),
-                                        r,
-                                        Rect::from_min_max(
-                                            Pos2::new(0.0, 0.0),
-                                            Pos2::new(1.0, 1.0),
-                                        ),
-                                        Color32::WHITE,
-                                    );
-
-                                    let font_id =
-                                        FontId::new(20.0, eframe::epaint::FontFamily::Proportional);
-                                    let text: WidgetText = template.title().into();
-                                    let galley =
-                                        text.into_galley(ui, Some(false), f32::INFINITY, font_id);
-                                    let mut title_rect = rect;
-                                    title_rect.set_left(title_rect.left() + 40.0);
-                                    ui.painter().galley_with_color(
-                                        egui::Align2::LEFT_TOP
-                                            .align_size_within_rect(
-                                                galley.size(),
-                                                title_rect.shrink(4.0),
-                                            )
-                                            .min,
-                                        galley.galley,
-                                        ui.style().visuals.strong_text_color(),
-                                    );
-
-                                    let font_id =
-                                        FontId::new(14.0, eframe::epaint::FontFamily::Proportional);
-                                    let text: WidgetText = template
-                                        .description()
-                                        .lines()
-                                        .next()
-                                        .unwrap_or_default()
-                                        .into();
-                                    let galley =
-                                        text.into_galley(ui, Some(false), f32::INFINITY, font_id);
-                                    let mut descr_rect = rect;
-                                    descr_rect.set_top(descr_rect.top() + 34.0);
-                                    ui.painter().galley_with_color(
-                                        egui::Align2::LEFT_TOP
-                                            .align_size_within_rect(
-                                                galley.size(),
-                                                descr_rect.shrink(4.0),
-                                            )
-                                            .min,
-                                        galley.galley,
-                                        ui.style().visuals.text_color(),
-                                    );
-
-                                    if response.clicked() {
-                                        self.selected = i;
-                                    }
-                                    if response.double_clicked() {
-                                        self.selected = i;
-                                        self.create = true;
-                                        result = true;
-                                    }
+                                let (id, rect) = ui.allocate_space([ui.available_width(), row_height].into());
+                                let response = ui.interact(rect, id, Sense::click());
+                                if response.hovered() {
+                                    ui.painter()
+                                        .rect_filled(rect.expand(1.0), Rounding::same(4.0), ui.style().visuals.widgets.active.bg_fill);
+                                } else if is_selected {
+                                    ui.painter()
+                                        .rect_filled(rect.expand(1.0), Rounding::same(4.0), ui.style().visuals.extreme_bg_color);
                                 }
-                            });
+                                let image = template.image();
+
+                                let r = Rect::from_min_size(Pos2::new((rect.left() + 4.0).floor(), (rect.top() + 4.0).floor()), Vec2::new(32.0, 32.0));
+
+                                ui.painter().image(
+                                    image.texture_id(ui.ctx()),
+                                    r,
+                                    Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
+                                    Color32::WHITE,
+                                );
+
+                                let font_id = FontId::new(20.0, eframe::epaint::FontFamily::Proportional);
+                                let text: WidgetText = template.title().into();
+                                let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
+                                let mut title_rect = rect;
+                                title_rect.set_left(title_rect.left() + 40.0);
+                                ui.painter().galley_with_color(
+                                    egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), title_rect.shrink(4.0)).min,
+                                    galley.galley,
+                                    ui.style().visuals.strong_text_color(),
+                                );
+
+                                let font_id = FontId::new(14.0, eframe::epaint::FontFamily::Proportional);
+                                let text: WidgetText = template.description().lines().next().unwrap_or_default().into();
+                                let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
+                                let mut descr_rect = rect;
+                                descr_rect.set_top(descr_rect.top() + 34.0);
+                                ui.painter().galley_with_color(
+                                    egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), descr_rect.shrink(4.0)).min,
+                                    galley.galley,
+                                    ui.style().visuals.text_color(),
+                                );
+
+                                if response.clicked() {
+                                    self.selected = i;
+                                }
+                                if response.double_clicked() {
+                                    self.selected = i;
+                                    self.create = true;
+                                    result = true;
+                                }
+                            }
+                        });
                     });
 
                 egui::CentralPanel::default().show_inside(ui, |ui| {
@@ -613,17 +507,11 @@ impl crate::ModalDialog for NewFileDialog {
             ui.separator();
             ui.add_space(4.0);
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-create"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-create")).clicked() {
                     self.create = true;
                     result = true;
                 }
-                if ui
-                    .button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel"))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-cancel")).clicked() {
                     result = true;
                 }
             });

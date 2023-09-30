@@ -15,10 +15,7 @@ use i18n_embed_fl::fl;
 use icy_engine::{Buffer, EngineResult, SaveOptions, Size, TextPane};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
 
-use crate::{
-    model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult,
-    UndoHandler,
-};
+use crate::{model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, UndoHandler};
 
 mod highlighting;
 
@@ -84,8 +81,7 @@ impl AnimationEditor {
                         let width = (size.width * dim.width) as u16;
                         let height = (size.height * dim.height) as u16;
 
-                        let Ok(mut encoder) = ::gif::Encoder::new(&mut image, width, height, &[])
-                        else {
+                        let Ok(mut encoder) = ::gif::Encoder::new(&mut image, width, height, &[]) else {
                             return Err(anyhow::anyhow!("Could not create encoder"));
                         };
                         encoder.set_repeat(::gif::Repeat::Infinite).unwrap();
@@ -93,15 +89,8 @@ impl AnimationEditor {
                         let frame_count = self.animator.lock().unwrap().frames.len();
 
                         for frame in 0..frame_count {
-                            self.animator
-                                .lock()
-                                .unwrap()
-                                .set_cur_frame(frame);
-                            let monitor_settings = self
-                                .animator
-                                .lock()
-                                .unwrap()
-                                .display_frame(self.buffer_view.clone());
+                            self.animator.lock().unwrap().set_cur_frame(frame);
+                            let monitor_settings = self.animator.lock().unwrap().display_frame(self.buffer_view.clone());
                             let opt = icy_engine_egui::TerminalOptions {
                                 stick_to_bottom: false,
                                 scale: Some(Vec2::new(1.0, 1.0)),
@@ -111,11 +100,9 @@ impl AnimationEditor {
                                 ..Default::default()
                             };
 
-                            let (size, mut data) =
-                                self.buffer_view.lock().render_buffer(&self.gl, &opt);
+                            let (size, mut data) = self.buffer_view.lock().render_buffer(&self.gl, &opt);
 
-                            let gif_frame =
-                                ::gif::Frame::from_rgba(size.x as u16, size.y as u16, &mut data);
+                            let gif_frame = ::gif::Frame::from_rgba(size.x as u16, size.y as u16, &mut data);
                             encoder.write_frame(&gif_frame)?;
                         }
                     } else {
@@ -195,13 +182,7 @@ impl Document for AnimationEditor {
         self.undostack
     }
 
-    fn show_ui(
-        &mut self,
-        ui: &mut eframe::egui::Ui,
-        _cur_tool: &mut Box<dyn Tool>,
-        _selected_tool: usize,
-        options: &DocumentOptions,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, options: &DocumentOptions) -> Option<Message> {
         let mut message = None;
 
         if self.first_frame && self.animator.lock().unwrap().success() {
@@ -217,129 +198,90 @@ impl Document for AnimationEditor {
             .exact_width(ui.available_width() / 2.0)
             .resizable(false)
             .show_inside(ui, |ui| {
-                TopBottomPanel::top("move_top_panel")
-                    .exact_height(24.)
-                    .show_inside(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            if !self.animator.lock().unwrap().error.is_empty() {
-                                ui.set_enabled(false);
-                            }
-                            let size_points = Vec2::new(22.0, 22.0);
-                            if self.animator.lock().unwrap().success() {
-                                let animator = &mut self.animator.lock().unwrap();
-                                let frame_count = animator.frames.len();
-                                if animator.is_playing() {
-                                    if ui
-                                        .add(ImageButton::new(
-                                            crate::PAUSE_SVG.texture_id(ui.ctx()),
-                                            size_points,
-                                        ))
-                                        .clicked()
-                                    {
-                                        animator.set_is_playing(false);
-                                    }
+                TopBottomPanel::top("move_top_panel").exact_height(24.).show_inside(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        if !self.animator.lock().unwrap().error.is_empty() {
+                            ui.set_enabled(false);
+                        }
+                        let size_points = Vec2::new(22.0, 22.0);
+                        if self.animator.lock().unwrap().success() {
+                            let animator = &mut self.animator.lock().unwrap();
+                            let frame_count = animator.frames.len();
+                            if animator.is_playing() {
+                                if ui.add(ImageButton::new(crate::PAUSE_SVG.texture_id(ui.ctx()), size_points)).clicked() {
+                                    animator.set_is_playing(false);
+                                }
+                            } else {
+                                let id = if animator.get_cur_frame() + 1 < frame_count {
+                                    crate::PLAY_SVG.texture_id(ui.ctx())
                                 } else {
-                                    let id = if animator.get_cur_frame() + 1 < frame_count {
-                                        crate::PLAY_SVG.texture_id(ui.ctx())
-                                    } else {
-                                        crate::REPLAY_SVG.texture_id(ui.ctx())
-                                    };
-                                    if ui.add(ImageButton::new(id, size_points)).clicked() {
-                                        animator.start_playback(self.buffer_view.clone());
-                                    }
-                                }
-                                if ui
-                                    .add_enabled(
-                                        animator.get_cur_frame() + 1 < frame_count,
-                                        ImageButton::new(
-                                            crate::SKIP_NEXT_SVG.texture_id(ui.ctx()),
-                                            size_points,
-                                        ),
-                                    )
-                                    .clicked()
-                                {
-                                    animator.set_cur_frame(frame_count - 1);
-                                    animator.display_frame(self.buffer_view.clone());
-                                }
-                                let is_loop = animator.get_is_loop();
-                                if ui
-                                    .add(
-                                        ImageButton::new(
-                                            crate::REPEAT_SVG.texture_id(ui.ctx()),
-                                            size_points,
-                                        )
-                                        .selected(is_loop),
-                                    )
-                                    .clicked()
-                                {
-                                    animator.set_is_loop(!is_loop);
-                                }
-
-                                let mut cf = animator.get_cur_frame() + 1;
-                                if frame_count > 0
-                                    && ui
-                                        .add(
-                                            Slider::new(&mut cf, 1..=frame_count)
-                                                .text(format!("of {}", frame_count)),
-                                        )
-                                        .changed()
-                                {
-                                    animator.set_cur_frame(cf - 1);
-                                    animator.display_frame(self.buffer_view.clone());
+                                    crate::REPLAY_SVG.texture_id(ui.ctx())
+                                };
+                                if ui.add(ImageButton::new(id, size_points)).clicked() {
+                                    animator.start_playback(self.buffer_view.clone());
                                 }
                             }
-                        });
-                    });
-
-                TopBottomPanel::bottom("export_panel")
-                    .exact_height(100.)
-                    .show_inside(ui, |ui| {
-                        ui.horizontal(|ui| {
-                            ui.label(fl!(crate::LANGUAGE_LOADER, "animation_editor_path_label"));
-                            let mut path_edit = self.export_path.to_str().unwrap().to_string();
-                            let response = ui.add(
-                                //    ui.available_size(),
-                                TextEdit::singleline(&mut path_edit),
-                            );
-                            if response.changed() {
-                                self.export_path = path_edit.into();
-                            }
-
                             if ui
-                                .selectable_label(
-                                    self.export_type == ExportType::Gif,
-                                    fl!(crate::LANGUAGE_LOADER, "animation_editor_gif_label"),
+                                .add_enabled(
+                                    animator.get_cur_frame() + 1 < frame_count,
+                                    ImageButton::new(crate::SKIP_NEXT_SVG.texture_id(ui.ctx()), size_points),
                                 )
                                 .clicked()
                             {
-                                self.export_type = ExportType::Gif;
-                                self.export_path.set_extension("gif");
+                                animator.set_cur_frame(frame_count - 1);
+                                animator.display_frame(self.buffer_view.clone());
                             }
+                            let is_loop = animator.get_is_loop();
                             if ui
-                                .selectable_label(
-                                    self.export_type == ExportType::Ansi,
-                                    fl!(crate::LANGUAGE_LOADER, "animation_editor_ansi_label"),
-                                )
+                                .add(ImageButton::new(crate::REPEAT_SVG.texture_id(ui.ctx()), size_points).selected(is_loop))
                                 .clicked()
                             {
-                                self.export_type = ExportType::Ansi;
-                                self.export_path.set_extension("ans");
+                                animator.set_is_loop(!is_loop);
                             }
-                        });
-                        ui.add_space(8.0);
-                        if ui
-                            .button(fl!(
-                                crate::LANGUAGE_LOADER,
-                                "animation_editor_export_button"
-                            ))
-                            .clicked()
-                        {
-                            if let Err(err) = self.export() {
-                                message =
-                                    Some(Message::ShowError(format!("Could not export: {}", err)));
+
+                            let mut cf = animator.get_cur_frame() + 1;
+                            if frame_count > 0 && ui.add(Slider::new(&mut cf, 1..=frame_count).text(format!("of {}", frame_count))).changed() {
+                                animator.set_cur_frame(cf - 1);
+                                animator.display_frame(self.buffer_view.clone());
                             }
                         }
                     });
+                });
+
+                TopBottomPanel::bottom("export_panel").exact_height(100.).show_inside(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(fl!(crate::LANGUAGE_LOADER, "animation_editor_path_label"));
+                        let mut path_edit = self.export_path.to_str().unwrap().to_string();
+                        let response = ui.add(
+                            //    ui.available_size(),
+                            TextEdit::singleline(&mut path_edit),
+                        );
+                        if response.changed() {
+                            self.export_path = path_edit.into();
+                        }
+
+                        if ui
+                            .selectable_label(self.export_type == ExportType::Gif, fl!(crate::LANGUAGE_LOADER, "animation_editor_gif_label"))
+                            .clicked()
+                        {
+                            self.export_type = ExportType::Gif;
+                            self.export_path.set_extension("gif");
+                        }
+                        if ui
+                            .selectable_label(self.export_type == ExportType::Ansi, fl!(crate::LANGUAGE_LOADER, "animation_editor_ansi_label"))
+                            .clicked()
+                        {
+                            self.export_type = ExportType::Ansi;
+                            self.export_path.set_extension("ans");
+                        }
+                    });
+                    ui.add_space(8.0);
+                    if ui.button(fl!(crate::LANGUAGE_LOADER, "animation_editor_export_button")).clicked() {
+                        if let Err(err) = self.export() {
+                            message = Some(Message::ShowError(format!("Could not export: {}", err)));
+                        }
+                    }
+                });
 
                 /*
                 if ui.button("Export").clicked() {
@@ -358,9 +300,7 @@ impl Document for AnimationEditor {
                     if self.animator.lock().unwrap().success() {
                         let cur_frame = self.animator.lock().unwrap().get_cur_frame();
 
-                        let monitor_settings = if let Some((_, settings, _)) =
-                            self.animator.lock().unwrap().frames.get(cur_frame)
-                        {
+                        let monitor_settings = if let Some((_, settings, _)) = self.animator.lock().unwrap().frames.get(cur_frame) {
                             settings.clone()
                         } else {
                             MonitorSettings::default()
@@ -393,14 +333,9 @@ impl Document for AnimationEditor {
                 .with_numlines(true)
                 .show(ui, &mut self.txt);
             if !self.animator.lock().unwrap().error.is_empty() {
-                TopBottomPanel::bottom("code_error_bottom_panel")
-                    .exact_height(100.)
-                    .show_inside(ui, |ui| {
-                        ui.colored_label(
-                            ui.style().visuals.error_fg_color,
-                            RichText::new(&self.animator.lock().unwrap().error).small(),
-                        );
-                    });
+                TopBottomPanel::bottom("code_error_bottom_panel").exact_height(100.).show_inside(ui, |ui| {
+                    ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.animator.lock().unwrap().error).small());
+                });
             }
 
             if self.shedule_update && self.last_update.elapsed().as_millis() > 1000 {

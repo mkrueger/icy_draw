@@ -6,10 +6,9 @@ use std::{
 };
 
 use crate::{
-    add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor,
-    ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands, Document, DocumentBehavior,
-    DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings,
-    SettingsDialog, ToolBehavior, ToolTab, TopBar, SETTINGS,
+    add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor, ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands,
+    Document, DocumentBehavior, DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, SettingsDialog, ToolBehavior, ToolTab, TopBar,
+    SETTINGS,
 };
 use directories::UserDirs;
 use eframe::egui::{Button, PointerButton};
@@ -116,25 +115,15 @@ impl MainWindow {
         let gl = cc.gl.clone().unwrap();
 
         let mut tool_tree = egui_tiles::Tree::<ToolTab>::empty("tool_tree");
-        let layers = tool_tree
-            .tiles
-            .insert_pane(ToolTab::new(LayerToolWindow::default()));
-        let channels = tool_tree
-            .tiles
-            .insert_pane(ToolTab::new(ChannelToolWindow::default()));
-        let minimap = tool_tree
-            .tiles
-            .insert_pane(ToolTab::new(MinimapToolWindow::new(gl.clone())));
-        let char_table = tool_tree
-            .tiles
-            .insert_pane(ToolTab::new(CharTableToolWindow::new(16)));
+        let layers = tool_tree.tiles.insert_pane(ToolTab::new(LayerToolWindow::default()));
+        let channels = tool_tree.tiles.insert_pane(ToolTab::new(ChannelToolWindow::default()));
+        let minimap = tool_tree.tiles.insert_pane(ToolTab::new(MinimapToolWindow::new(gl.clone())));
+        let char_table = tool_tree.tiles.insert_pane(ToolTab::new(CharTableToolWindow::new(16)));
 
         let tab = tool_tree.tiles.insert_tab_tile(vec![minimap, char_table]);
         let tab2 = tool_tree.tiles.insert_tab_tile(vec![layers, channels]);
         let vert_id = tool_tree.tiles.insert_vertical_tile(vec![tab, tab2]);
-        if let Some(egui_tiles::Tile::Container(Container::Linear(linear))) =
-            tool_tree.tiles.get_mut(vert_id)
-        {
+        if let Some(egui_tiles::Tile::Container(Container::Linear(linear))) = tool_tree.tiles.get_mut(vert_id) {
             linear.shares.set_share(tab, 3.0);
             linear.shares.set_share(tab2, 1.25);
         }
@@ -185,11 +174,7 @@ impl MainWindow {
                 let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
                 if let Ok(font) = BitFont::from_bytes(file_name_str, data) {
                     let id = self.create_id();
-                    add_child(
-                        &mut self.document_tree,
-                        Some(full_path),
-                        Box::new(BitFontEditor::new(&self.gl, id, font)),
-                    );
+                    add_child(&mut self.document_tree, Some(full_path), Box::new(BitFontEditor::new(&self.gl, id, font)));
                     return;
                 }
             }
@@ -212,11 +197,7 @@ impl MainWindow {
                 }
                 if let Ok(fonts) = TheDrawFont::from_tdf_bytes(data) {
                     let id = self.create_id();
-                    add_child(
-                        &mut self.document_tree,
-                        Some(full_path),
-                        Box::new(CharFontEditor::new(&self.gl, id, fonts)),
-                    );
+                    add_child(&mut self.document_tree, Some(full_path), Box::new(CharFontEditor::new(&self.gl, id, fonts)));
                     return;
                 }
             }
@@ -232,11 +213,7 @@ impl MainWindow {
             Err(err) => {
                 log::error!("Error loading file: {}", err);
                 self.toasts
-                    .error(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "error-load-file",
-                        error = err.to_string()
-                    ))
+                    .error(fl!(crate::LANGUAGE_LOADER, "error-load-file", error = err.to_string()))
                     .set_duration(Some(Duration::from_secs(5)));
             }
         }
@@ -272,9 +249,7 @@ impl MainWindow {
             }
             Err(err) => {
                 log::error!("error loading file {path:?}: {err}");
-                self.toasts
-                    .error(format!("{err}"))
-                    .set_duration(Some(Duration::from_secs(5)));
+                self.toasts.error(format!("{err}")).set_duration(Some(Duration::from_secs(5)));
             }
         }
     }
@@ -442,11 +417,7 @@ impl MainWindow {
         self.modal_dialog = Some(Box::new(dialog));
     }
 
-    pub(crate) fn run_editor_command<T>(
-        &mut self,
-        param: T,
-        func: fn(&mut MainWindow, &mut AnsiEditor, T) -> Option<Message>,
-    ) {
+    pub(crate) fn run_editor_command<T>(&mut self, param: T, func: fn(&mut MainWindow, &mut AnsiEditor, T) -> Option<Message>) {
         let mut msg = None;
         if let Some(doc) = self.get_active_document() {
             if let Ok(mut doc) = doc.lock() {
@@ -463,11 +434,7 @@ impl MainWindow {
             Err(err) => {
                 log::error!("Error: {}", err);
                 self.toasts
-                    .error(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "error-load-file",
-                        error = err.to_string()
-                    ))
+                    .error(fl!(crate::LANGUAGE_LOADER, "error-load-file", error = err.to_string()))
                     .set_duration(Some(Duration::from_secs(5)));
                 None
             }
@@ -480,9 +447,7 @@ impl MainWindow {
         let mut msg = None;
         if let Some(egui_tiles::Tile::Pane(pane)) = self.document_tree.tiles.get(close_id) {
             if !pane.is_dirty() {
-                if let Some(egui_tiles::Tile::Pane(pane)) =
-                    self.document_tree.tiles.get_mut(close_id)
-                {
+                if let Some(egui_tiles::Tile::Pane(pane)) = self.document_tree.tiles.get_mut(close_id) {
                     msg = pane.destroy(&self.gl);
                 }
                 self.document_tree.tiles.remove(close_id);
@@ -496,11 +461,7 @@ impl MainWindow {
     }
 
     pub fn update_title(&mut self, frame: &mut eframe::Frame) {
-        let id = if let Some((id, _)) = self.get_active_pane() {
-            Some(id)
-        } else {
-            None
-        };
+        let id = if let Some((id, _)) = self.get_active_pane() { Some(id) } else { None };
 
         if let Some(id) = id {
             if self.current_id == Some(id) {
@@ -533,17 +494,11 @@ impl MainWindow {
                             }
                         }
                         if root {
-                            format!(
-                                "/{}/",
-                                parents.into_iter().rev().collect::<Vec<String>>().join("/")
-                            )
+                            format!("/{}/", parents.into_iter().rev().collect::<Vec<String>>().join("/"))
                         } else if parents.is_empty() {
                             "~/".to_string()
                         } else {
-                            format!(
-                                "~/{}/",
-                                parents.into_iter().rev().collect::<Vec<String>>().join("/")
-                            )
+                            format!("~/{}/", parents.into_iter().rev().collect::<Vec<String>>().join("/"))
                         }
                     } else {
                         parent.to_string_lossy().to_string()
@@ -556,11 +511,7 @@ impl MainWindow {
                         &crate::VERSION
                     ));
                 } else {
-                    frame.set_window_title(&format!(
-                        "{} - iCY DRAW {}",
-                        path.file_name().unwrap().to_str().unwrap(),
-                        &crate::VERSION
-                    ));
+                    frame.set_window_title(&format!("{} - iCY DRAW {}", path.file_name().unwrap().to_str().unwrap(), &crate::VERSION));
                 }
             }
         }
@@ -591,12 +542,7 @@ pub fn is_font_extensions(ext: &str) -> bool {
         || "fon" == ext
 }
 
-pub fn button_with_shortcut(
-    ui: &mut Ui,
-    enabled: bool,
-    label: impl Into<String>,
-    shortcut: impl Into<String>,
-) -> Response {
+pub fn button_with_shortcut(ui: &mut Ui, enabled: bool, label: impl Into<String>, shortcut: impl Into<String>) -> Response {
     let title = label.into();
     let button = Button::new(title).shortcut_text(shortcut.into());
     ui.add_enabled(enabled, button)
@@ -616,10 +562,7 @@ impl eframe::App for MainWindow {
                             if let Some(dir) = user.document_dir() {
                                 path = dir.join(path);
                                 while path.exists() {
-                                    path = path.with_extension(format!(
-                                        "1.{}",
-                                        file.path.extension().unwrap().to_str().unwrap()
-                                    ));
+                                    path = path.with_extension(format!("1.{}", file.path.extension().unwrap().to_str().unwrap()));
                                 }
                             }
                         }
@@ -681,20 +624,13 @@ impl eframe::App for MainWindow {
 
                 if ice_mode.has_blink()
                     && ui
-                        .selectable_label(
-                            caret_attr.is_blinking(),
-                            fl!(crate::LANGUAGE_LOADER, "color-is_blinking"),
-                        )
+                        .selectable_label(caret_attr.is_blinking(), fl!(crate::LANGUAGE_LOADER, "color-is_blinking"))
                         .clicked()
                 {
                     if let Some(doc) = self.get_active_document() {
                         if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
                             caret_attr.set_is_blinking(!caret_attr.is_blinking());
-                            editor
-                                .buffer_view
-                                .lock()
-                                .get_caret_mut()
-                                .set_attr(caret_attr);
+                            editor.buffer_view.lock().get_caret_mut().set_attr(caret_attr);
                         }
                     }
                 }
@@ -766,13 +702,9 @@ impl eframe::App for MainWindow {
                         let lock = &mut editor.buffer_view.lock();
                         let last = lock.get_buffer().layers.len().saturating_sub(1);
                         if let Some(layer) = lock.get_buffer().layers.last() {
-                            if layer.role.is_paste()
-                                && self.document_behavior.get_selected_tool() != PASTE_TOOL
-                            {
+                            if layer.role.is_paste() && self.document_behavior.get_selected_tool() != PASTE_TOOL {
                                 self.document_behavior.tools.lock().unwrap()[PASTE_TOOL] =
-                                    Box::new(crate::model::paste_tool::PasteTool::new(
-                                        self.document_behavior.get_selected_tool(),
-                                    ));
+                                    Box::new(crate::model::paste_tool::PasteTool::new(self.document_behavior.get_selected_tool()));
                                 self.document_behavior.set_selected_tool(PASTE_TOOL);
 
                                 lock.get_edit_state_mut().set_current_layer(last);
@@ -796,9 +728,7 @@ impl eframe::App for MainWindow {
                                 }
                                 Err(err) => {
                                     log::error!("Error: {}", err);
-                                    self.toasts
-                                        .error(format!("{err}"))
-                                        .set_duration(Some(Duration::from_secs(5)));
+                                    self.toasts.error(format!("{err}")).set_duration(Some(Duration::from_secs(5)));
                                 }
                             }
                         }
@@ -811,9 +741,7 @@ impl eframe::App for MainWindow {
                         }
                         Err(err) => {
                             log::error!("Error: {}", err);
-                            self.toasts
-                                .error(format!("{err}"))
-                                .set_duration(Some(Duration::from_secs(5)));
+                            self.toasts.error(format!("{err}")).set_duration(Some(Duration::from_secs(5)));
                         }
                     }
                 }
@@ -949,19 +877,13 @@ fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
         result = Some(Message::SelectOutline(11));
     }
 
-    if ctx.input(|i| {
-        i.key_pressed(Key::F1) && i.modifiers.shift && (i.modifiers.ctrl || i.modifiers.alt)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F1) && i.modifiers.shift && (i.modifiers.ctrl || i.modifiers.alt)) {
         result = Some(Message::SelectOutline(12));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F2) && i.modifiers.shift && (i.modifiers.ctrl || i.modifiers.alt)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F2) && i.modifiers.shift && (i.modifiers.ctrl || i.modifiers.alt)) {
         result = Some(Message::SelectOutline(13));
     }
-    if ctx.input(|i| {
-        i.key_pressed(Key::F3) && i.modifiers.shift && (i.modifiers.ctrl || i.modifiers.alt)
-    }) {
+    if ctx.input(|i| i.key_pressed(Key::F3) && i.modifiers.shift && (i.modifiers.ctrl || i.modifiers.alt)) {
         result = Some(Message::SelectOutline(14));
     }
 

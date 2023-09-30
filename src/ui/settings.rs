@@ -45,12 +45,10 @@ impl Default for CharacterSet {
             table: Vec::new(),
         };
         for i in crate::DEFAULT_CHAR_SET_TABLE {
-            default_char_set
-                .table
-                .push(i.iter().fold(Vec::new(), |mut s, c| {
-                    s.push(char::from_u32(*c as u32).unwrap());
-                    s
-                }));
+            default_char_set.table.push(i.iter().fold(Vec::new(), |mut s, c| {
+                s.push(char::from_u32(*c as u32).unwrap());
+                s
+            }));
         }
         default_char_set
     }
@@ -63,9 +61,7 @@ impl Settings {
             return ' ';
         }
         let char_set = &self.character_sets[table_idx];
-        if self.character_set >= char_set.table.len()
-            || ch >= char_set.table[self.character_set].len()
-        {
+        if self.character_set >= char_set.table.len() || ch >= char_set.table[self.character_set].len() {
             return ' ';
         }
         char_set.table[self.character_set][ch]
@@ -185,10 +181,7 @@ impl Settings {
                 if fs::create_dir_all(&dir).is_err() {
                     return Err(IcyDrawError::ErrorCreatingDirectory(format!("{dir:?}")).into());
                 }
-                fs::write(
-                    dir.join("elite-writing.lua"),
-                    include_bytes!("../plugins/elite-writing.lua.txt"),
-                )?;
+                fs::write(dir.join("elite-writing.lua"), include_bytes!("../plugins/elite-writing.lua.txt"))?;
             }
             return Ok(dir);
         }

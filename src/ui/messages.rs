@@ -10,15 +10,11 @@ use eframe::{
     egui::{self},
     epaint::Vec2,
 };
-use icy_engine::{
-    util::pop_data, BitFont, EngineResult, IceMode, Layer, PaletteMode, SauceData, Size,
-    TextAttribute, TextPane, TheDrawFont,
-};
+use icy_engine::{util::pop_data, BitFont, EngineResult, IceMode, Layer, PaletteMode, SauceData, Size, TextAttribute, TextPane, TheDrawFont};
 
 use crate::{
     util::autosave::{self},
-    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog,
-    SelectOutlineDialog, Settings, PLUGINS, SETTINGS,
+    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog, SelectOutlineDialog, Settings, PLUGINS, SETTINGS,
 };
 
 #[derive(Clone)]
@@ -178,11 +174,7 @@ impl MainWindow {
                 self.open_dialog(NewFileDialog::default());
             }
             Message::OpenFileDialog => {
-                let mut initial_directory = if let Some(d) = self.get_active_pane_mut() {
-                    d.get_path()
-                } else {
-                    None
-                };
+                let mut initial_directory = if let Some(d) = self.get_active_pane_mut() { d.get_path() } else { None };
                 set_default_initial_directory_opt(&mut initial_directory);
                 if let Some(mut path) = initial_directory {
                     while path.parent().is_some() && !path.is_dir() {
@@ -231,13 +223,7 @@ impl MainWindow {
                     window.open_dialog(crate::ExportFileDialog::new(view.lock().get_buffer()));
                     None
                 });
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor()
-                {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::ExportFileDialog::new(view.lock().get_buffer()));
                 }
@@ -248,18 +234,14 @@ impl MainWindow {
             Message::Undo => {
                 let mut msg = None;
                 if let Some(editor) = self.get_active_document() {
-                    msg = self
-                        .handle_result(editor.lock().unwrap().undo())
-                        .unwrap_or(None);
+                    msg = self.handle_result(editor.lock().unwrap().undo()).unwrap_or(None);
                 }
                 self.handle_message(msg);
             }
             Message::Redo => {
                 let mut msg = None;
                 if let Some(editor) = self.get_active_document() {
-                    msg = self
-                        .handle_result(editor.lock().unwrap().redo())
-                        .unwrap_or(None);
+                    msg = self.handle_result(editor.lock().unwrap().redo()).unwrap_or(None);
                 }
                 self.handle_message(msg);
             }
@@ -275,25 +257,11 @@ impl MainWindow {
                 });
             }
             Message::SelectNothing => {
-                self.run_editor_command(0, |_, editor, _| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .clear_selection(),
-                    )
-                });
+                self.run_editor_command(0, |_, editor, _| to_message(editor.buffer_view.lock().get_edit_state_mut().clear_selection()));
             }
             Message::DeleteSelection => {
                 self.run_editor_command(0, |_, editor: &mut AnsiEditor, _| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .erase_selection(),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().erase_selection())
                 });
             }
             Message::ShowCharacterSelectionDialog(ch) => {
@@ -307,51 +275,27 @@ impl MainWindow {
                 self.open_dialog(crate::SelectFontDialog::new(fonts, selected_font));
             }
             Message::EditSauce => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor()
-                {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::EditSauceDialog::new(view.lock().get_buffer()));
                 }
             }
 
             Message::SetCanvasSize => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor()
-                {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::SetCanvasSizeDialog::new(view.lock().get_buffer()));
                 }
             }
 
             Message::EditLayer(i) => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor()
-                {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::EditLayerDialog::new(view.lock().get_buffer(), i));
                 }
             }
             Message::ResizeLayer(i) => {
-                if let Some(editor) = self
-                    .get_active_document()
-                    .unwrap()
-                    .lock()
-                    .unwrap()
-                    .get_ansi_editor_mut()
-                {
+                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::ResizeLayerDialog::new(view.lock().get_buffer(), i));
                 }
@@ -375,13 +319,10 @@ impl MainWindow {
                 });
             }
             Message::RemoveLayer(cur_layer) => {
-                self.run_editor_command(
-                    cur_layer,
-                    |_, editor: &mut crate::AnsiEditor, cur_layer| {
-                        let mut lock = editor.buffer_view.lock();
-                        to_message(lock.get_edit_state_mut().remove_layer(cur_layer))
-                    },
-                );
+                self.run_editor_command(cur_layer, |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().remove_layer(cur_layer))
+                });
 
                 self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
                     let mut lock = editor.buffer_view.lock();
@@ -413,32 +354,23 @@ impl MainWindow {
                 });
             }
             Message::DuplicateLayer(cur_layer) => {
-                self.run_editor_command(
-                    cur_layer,
-                    |_, editor: &mut crate::AnsiEditor, cur_layer| {
-                        let mut lock = editor.buffer_view.lock();
-                        to_message(lock.get_edit_state_mut().duplicate_layer(cur_layer))
-                    },
-                );
+                self.run_editor_command(cur_layer, |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().duplicate_layer(cur_layer))
+                });
             }
             Message::MergeLayerDown(cur_layer) => {
-                self.run_editor_command(
-                    cur_layer,
-                    |_, editor: &mut crate::AnsiEditor, cur_layer| {
-                        let mut lock = editor.buffer_view.lock();
-                        to_message(lock.get_edit_state_mut().merge_layer_down(cur_layer))
-                    },
-                );
+                self.run_editor_command(cur_layer, |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().merge_layer_down(cur_layer))
+                });
             }
 
             Message::ToggleLayerVisibility(cur_layer) => {
-                self.run_editor_command(
-                    cur_layer,
-                    |_, editor: &mut crate::AnsiEditor, cur_layer| {
-                        let mut lock = editor.buffer_view.lock();
-                        to_message(lock.get_edit_state_mut().toggle_layer_visibility(cur_layer))
-                    },
-                );
+                self.run_editor_command(cur_layer, |_, editor: &mut crate::AnsiEditor, cur_layer| {
+                    let mut lock = editor.buffer_view.lock();
+                    to_message(lock.get_edit_state_mut().toggle_layer_visibility(cur_layer))
+                });
             }
 
             Message::SelectLayer(cur_layer) => {
@@ -450,35 +382,19 @@ impl MainWindow {
 
             Message::AnchorLayer => {
                 self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .anchor_layer(),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().anchor_layer())
                 });
             }
 
             Message::AddFloatingLayer => {
                 self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .add_floating_layer(),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().add_floating_layer())
                 });
             }
 
             Message::SetFontPage(page) => {
                 self.run_editor_command(page, |_, editor, page| {
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_font_page(page);
+                    editor.buffer_view.lock().get_caret_mut().set_font_page(page);
 
                     let lock = &mut editor.buffer_view.lock();
                     let buf = &mut lock.get_buffer_mut();
@@ -581,10 +497,7 @@ impl MainWindow {
             Message::ResizeBuffer(resize_layer, w, h) => {
                 self.run_editor_command((resize_layer, w, h), |_, editor, (resize_layer, w, h)| {
                     let mut lock = editor.buffer_view.lock();
-                    to_message(
-                        lock.get_edit_state_mut()
-                            .resize_buffer(resize_layer, Size::new(w, h)),
-                    )
+                    to_message(lock.get_edit_state_mut().resize_buffer(resize_layer, Size::new(w, h)))
                 });
             }
 
@@ -745,12 +658,11 @@ impl MainWindow {
 
             Message::SetReferenceImage => {
                 self.run_editor_command(0, |window, editor, _| {
-                    let mut initial_directory =
-                        if let Some(d) = editor.buffer_view.lock().get_reference_image_path() {
-                            d.parent().map(|p| p.to_path_buf())
-                        } else {
-                            None
-                        };
+                    let mut initial_directory = if let Some(d) = editor.buffer_view.lock().get_reference_image_path() {
+                        d.parent().map(|p| p.to_path_buf())
+                    } else {
+                        None
+                    };
                     set_default_initial_directory_opt(&mut initial_directory);
 
                     window.open_dialog(crate::OpenReferenceImageDialog::new(initial_directory));
@@ -766,10 +678,7 @@ impl MainWindow {
             }
             Message::ClearReferenceImage => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let mut lock: eframe::epaint::mutex::MutexGuard<
-                        '_,
-                        icy_engine_egui::BufferView,
-                    > = editor.buffer_view.lock();
+                    let mut lock: eframe::epaint::mutex::MutexGuard<'_, icy_engine_egui::BufferView> = editor.buffer_view.lock();
                     lock.clear_reference_image();
                     None
                 });
@@ -827,9 +736,7 @@ impl MainWindow {
             }
 
             Message::ZoomReset => {
-                self.document_behavior
-                    .document_options
-                    .set_scale(DocumentOptions::default().get_scale());
+                self.document_behavior.document_options.set_scale(DocumentOptions::default().get_scale());
             }
 
             Message::ZoomIn => {
@@ -847,9 +754,7 @@ impl MainWindow {
             Message::OpenFontDirectory => match Settings::get_font_diretory() {
                 Ok(dir) => {
                     if let Err(err) = open::that(dir) {
-                        self.handle_message(Some(Message::ShowError(format!(
-                            "Can't open font directory: {err}"
-                        ))));
+                        self.handle_message(Some(Message::ShowError(format!("Can't open font directory: {err}"))));
                     }
                 }
                 Err(err) => {
@@ -860,9 +765,7 @@ impl MainWindow {
             Message::OpenTdfDirectory => match Settings::get_tdf_diretory() {
                 Ok(dir) => {
                     if let Err(err) = open::that(dir) {
-                        self.handle_message(Some(Message::ShowError(format!(
-                            "Can't open font directory: {err}"
-                        ))));
+                        self.handle_message(Some(Message::ShowError(format!("Can't open font directory: {err}"))));
                     }
                 }
                 Err(err) => {
@@ -873,9 +776,7 @@ impl MainWindow {
             Message::OpenPalettesDirectory => match Settings::get_palettes_diretory() {
                 Ok(dir) => {
                     if let Err(err) = open::that(dir) {
-                        self.handle_message(Some(Message::ShowError(format!(
-                            "Can't open font directory: {err}"
-                        ))));
+                        self.handle_message(Some(Message::ShowError(format!("Can't open font directory: {err}"))));
                     }
                 }
                 Err(err) => {
@@ -925,16 +826,8 @@ impl MainWindow {
 
             Message::ToggleMirrorMode => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let mode = editor
-                        .buffer_view
-                        .lock()
-                        .get_edit_state_mut()
-                        .get_mirror_mode();
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_edit_state_mut()
-                        .set_mirror_mode(!mode);
+                    let mode = editor.buffer_view.lock().get_edit_state_mut().get_mirror_mode();
+                    editor.buffer_view.lock().get_edit_state_mut().set_mirror_mode(!mode);
                     None
                 });
             }
@@ -944,67 +837,33 @@ impl MainWindow {
             }
 
             Message::InverseSelection => {
-                self.run_editor_command(0, |_, editor, _| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .inverse_selection(),
-                    )
-                });
+                self.run_editor_command(0, |_, editor, _| to_message(editor.buffer_view.lock().get_edit_state_mut().inverse_selection()));
             }
 
             Message::SetForeground(color) => {
                 self.run_editor_command(color, |_, editor, color| {
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_foreground(color);
+                    editor.buffer_view.lock().get_caret_mut().set_foreground(color);
                     None
                 });
             }
             Message::SetForegroundRgb(r, g, b) => {
                 self.run_editor_command((r, g, b), |_, editor, (r, g, b)| {
-                    let color = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .palette
-                        .insert_color_rgb(r, g, b);
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_foreground(color);
+                    let color = editor.buffer_view.lock().get_buffer_mut().palette.insert_color_rgb(r, g, b);
+                    editor.buffer_view.lock().get_caret_mut().set_foreground(color);
                     None
                 });
             }
 
             Message::SetBackground(color) => {
                 self.run_editor_command(color, |_, editor, color| {
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_background(color);
+                    editor.buffer_view.lock().get_caret_mut().set_background(color);
                     None
                 });
             }
             Message::SetBackgroundRgb(r, g, b) => {
                 self.run_editor_command((r, g, b), |_, editor, (r, g, b)| {
-                    let color = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .palette
-                        .insert_color_rgb(r, g, b);
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_background(color);
+                    let color = editor.buffer_view.lock().get_buffer_mut().palette.insert_color_rgb(r, g, b);
+                    editor.buffer_view.lock().get_caret_mut().set_background(color);
                     None
                 });
             }
@@ -1013,16 +872,11 @@ impl MainWindow {
                 let (old, new) = font_box.as_ref();
                 self.enumerate_documents(|_, pane| {
                     if let Some(editor) = pane.doc.lock().unwrap().get_ansi_editor() {
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_buffer_mut()
-                            .font_iter_mut()
-                            .for_each(|(_, font)| {
-                                if font.glyphs == old.glyphs {
-                                    *font = new.clone();
-                                }
-                            });
+                        editor.buffer_view.lock().get_buffer_mut().font_iter_mut().for_each(|(_, font)| {
+                            if font.glyphs == old.glyphs {
+                                *font = new.clone();
+                            }
+                        });
                         editor.buffer_view.lock().redraw_font();
                     }
                 });
@@ -1065,9 +919,7 @@ impl MainWindow {
             Message::OpenPluginDirectory => match Settings::get_plugin_directory() {
                 Ok(dir) => {
                     if let Err(err) = open::that(dir) {
-                        self.handle_message(Some(Message::ShowError(format!(
-                            "Can't open font directory: {err}"
-                        ))));
+                        self.handle_message(Some(Message::ShowError(format!("Can't open font directory: {err}"))));
                     }
                 }
                 Err(err) => {
@@ -1077,77 +929,37 @@ impl MainWindow {
 
             Message::NextFgColor => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let palette_len =
-                        editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
-                    let fg = editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .get_attribute()
-                        .get_foreground();
+                    let palette_len = editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let fg = editor.buffer_view.lock().get_caret_mut().get_attribute().get_foreground();
 
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_foreground((fg + 1) % palette_len);
+                    editor.buffer_view.lock().get_caret_mut().set_foreground((fg + 1) % palette_len);
                     None
                 });
             }
             Message::PreviousFgColor => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let palette_len =
-                        editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
-                    let fg = editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .get_attribute()
-                        .get_foreground();
+                    let palette_len = editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let fg = editor.buffer_view.lock().get_caret_mut().get_attribute().get_foreground();
 
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_foreground((fg + palette_len - 1) % palette_len);
+                    editor.buffer_view.lock().get_caret_mut().set_foreground((fg + palette_len - 1) % palette_len);
                     None
                 });
             }
             Message::NextBgColor => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let palette_len =
-                        editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
-                    let bg = editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .get_attribute()
-                        .get_background();
+                    let palette_len = editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let bg = editor.buffer_view.lock().get_caret_mut().get_attribute().get_background();
 
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_background((bg + 1) % palette_len);
+                    editor.buffer_view.lock().get_caret_mut().set_background((bg + 1) % palette_len);
                     None
                 });
             }
             Message::PreviousBgColor => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let palette_len =
-                        editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
-                    let bg = editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .get_attribute()
-                        .get_background();
+                    let palette_len = editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let bg = editor.buffer_view.lock().get_caret_mut().get_attribute().get_background();
 
-                    editor
-                        .buffer_view
-                        .lock()
-                        .get_caret_mut()
-                        .set_background((bg + palette_len - 1) % palette_len);
+                    editor.buffer_view.lock().get_caret_mut().set_background((bg + palette_len - 1) % palette_len);
                     None
                 });
             }
@@ -1158,146 +970,70 @@ impl MainWindow {
 
             Message::ToggleLGAFont => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let use_lga = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .use_letter_spacing();
-                    let mut sauce_data = if let Some(data) =
-                        &editor.buffer_view.lock().get_buffer_mut().get_sauce()
-                    {
+                    let use_lga = editor.buffer_view.lock().get_buffer_mut().use_letter_spacing();
+                    let mut sauce_data = if let Some(data) = &editor.buffer_view.lock().get_buffer_mut().get_sauce() {
                         data.clone()
                     } else {
                         SauceData::default()
                     };
                     sauce_data.use_letter_spacing = !use_lga;
 
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .update_sauce_data(Some(sauce_data)),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().update_sauce_data(Some(sauce_data)))
                 });
             }
 
             Message::ToggleAspectRatio => {
                 self.run_editor_command(0, |_, editor, _| {
-                    let use_ar = editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer_mut()
-                        .use_aspect_ratio();
-                    let mut sauce_data = if let Some(data) =
-                        &editor.buffer_view.lock().get_buffer_mut().get_sauce()
-                    {
+                    let use_ar = editor.buffer_view.lock().get_buffer_mut().use_aspect_ratio();
+                    let mut sauce_data = if let Some(data) = &editor.buffer_view.lock().get_buffer_mut().get_sauce() {
                         data.clone()
                     } else {
                         SauceData::default()
                     };
                     sauce_data.use_aspect_ratio = !use_ar;
 
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .update_sauce_data(Some(sauce_data)),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().update_sauce_data(Some(sauce_data)))
                 });
             }
 
             Message::SwitchToFontPage(page) => {
                 self.run_editor_command(page, |_, editor, page| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .switch_to_font_page(page),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().switch_to_font_page(page))
                 });
             }
             Message::SetAnsiFont(page) => {
                 self.run_editor_command(page, |_, editor, page| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .set_ansi_font(page),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().set_ansi_font(page))
                 });
             }
 
             Message::SetSauceFont(name) => {
                 self.run_editor_command(name, |_, editor, name| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .set_sauce_font(&name),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().set_sauce_font(&name))
                 });
             }
 
             Message::SetFont(fnt) => {
-                self.run_editor_command(fnt, |_, editor, fnt| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .set_font(*fnt),
-                    )
-                });
+                self.run_editor_command(fnt, |_, editor, fnt| to_message(editor.buffer_view.lock().get_edit_state_mut().set_font(*fnt)));
             }
             Message::AddAnsiFont(page) => {
                 self.run_editor_command(page, |_, editor, page| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .add_ansi_font(page),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().add_ansi_font(page))
                 });
             }
             Message::AddFont(fnt) => {
-                self.run_editor_command(fnt, |_, editor, fnt| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .add_font(*fnt),
-                    )
-                });
+                self.run_editor_command(fnt, |_, editor, fnt| to_message(editor.buffer_view.lock().get_edit_state_mut().add_font(*fnt)));
             }
 
             Message::SwitchPaletteMode(mode) => {
                 self.run_editor_command(mode, |_, editor, mode| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .set_palette_mode(mode),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().set_palette_mode(mode))
                 });
             }
 
             Message::SwitchIceMode(mode) => {
                 self.run_editor_command(mode, |_, editor, mode| {
-                    to_message(
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_edit_state_mut()
-                            .set_ice_mode(mode),
-                    )
+                    to_message(editor.buffer_view.lock().get_edit_state_mut().set_ice_mode(mode))
                 });
             }
         }

@@ -23,11 +23,7 @@ impl ToolWindow for MinimapToolWindow {
         fl!(crate::LANGUAGE_LOADER, "minimap_tool_title")
     }
 
-    fn show_ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        active_document: Option<Arc<Mutex<Box<dyn Document>>>>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message> {
         if let Some(doc) = active_document {
             if let Some(editor) = doc.lock().unwrap().get_ansi_editor_mut() {
                 return self.show_minimap(ui, editor);
@@ -44,30 +40,16 @@ impl ToolWindow for MinimapToolWindow {
 impl MinimapToolWindow {
     pub fn show_minimap(&mut self, ui: &mut egui::Ui, editor: &mut AnsiEditor) -> Option<Message> {
         let undo_stack = editor.buffer_view.lock().get_edit_state().undo_stack_len() as i32;
-        let cur_palette_hash = editor
-            .buffer_view
-            .lock()
-            .get_buffer_mut()
-            .palette
-            .get_checksum();
-        if undo_stack != self.undo_size
-            || self.last_id != editor.id
-            || self.palette_hash != cur_palette_hash
-        {
+        let cur_palette_hash = editor.buffer_view.lock().get_buffer_mut().palette.get_checksum();
+        if undo_stack != self.undo_size || self.last_id != editor.id || self.palette_hash != cur_palette_hash {
             self.undo_size = undo_stack;
             self.last_id = editor.id;
             let bv = editor.buffer_view.lock();
             let buffer = bv.get_buffer();
-            self.buffer_view
-                .lock()
-                .get_buffer_mut()
-                .set_size(buffer.get_size());
+            self.buffer_view.lock().get_buffer_mut().set_size(buffer.get_size());
             self.buffer_view.lock().get_buffer_mut().layers = buffer.layers.clone();
             self.buffer_view.lock().get_buffer_mut().palette = buffer.palette.clone();
-            self.buffer_view
-                .lock()
-                .get_buffer_mut()
-                .set_font_table(buffer.get_font_table());
+            self.buffer_view.lock().get_buffer_mut().set_font_table(buffer.get_font_table());
             self.palette_hash = cur_palette_hash;
             self.buffer_view.lock().redraw_font();
             self.buffer_view.lock().redraw_view();
@@ -75,14 +57,7 @@ impl MinimapToolWindow {
 
         self.buffer_view.lock().use_fg = editor.buffer_view.lock().use_fg;
         self.buffer_view.lock().use_bg = editor.buffer_view.lock().use_bg;
-        let w = (ui.available_width()
-            / self
-                .buffer_view
-                .lock()
-                .get_buffer()
-                .get_font_dimensions()
-                .width as f32)
-            .floor();
+        let w = (ui.available_width() / self.buffer_view.lock().get_buffer().get_font_dimensions().width as f32).floor();
 
         let scalex = (w / self.buffer_view.lock().get_width() as f32).min(2.0);
         let scaley = if self.buffer_view.lock().get_buffer_mut().use_aspect_ratio() {
@@ -108,21 +83,17 @@ impl MinimapToolWindow {
             opt.scroll_offset_y = Some(next_scroll_pos.y);
         }
 
-        let (response, ours) =
-            icy_engine_egui::show_terminal_area(ui, self.buffer_view.clone(), opt);
+        let (response, ours) = icy_engine_egui::show_terminal_area(ui, self.buffer_view.clone(), opt);
 
         let theirs = editor.buffer_view.lock().calc.clone();
 
         let their_total_size = Vec2::new(theirs.char_width, theirs.char_height) * theirs.char_size;
-        let their_buffer_size =
-            Vec2::new(theirs.buffer_char_width, theirs.buffer_char_height) * theirs.char_size;
+        let their_buffer_size = Vec2::new(theirs.buffer_char_width, theirs.buffer_char_height) * theirs.char_size;
 
         let our_total_size = Vec2::new(ours.char_width, ours.char_height) * ours.char_size;
 
-        let tmax_y: f32 =
-            theirs.font_height * (theirs.char_height - theirs.buffer_char_height).max(0.0);
-        let tmax_x: f32 =
-            theirs.font_width * (theirs.real_width as f32 - theirs.buffer_char_width).max(0.0);
+        let tmax_y: f32 = theirs.font_height * (theirs.char_height - theirs.buffer_char_height).max(0.0);
+        let tmax_x: f32 = theirs.font_width * (theirs.real_width as f32 - theirs.buffer_char_width).max(0.0);
 
         let size = our_total_size * their_buffer_size / their_total_size;
         let tx = theirs.char_scroll_position.x / tmax_x.max(1.0);
@@ -147,9 +118,7 @@ impl MinimapToolWindow {
             ui.ctx().request_repaint();
         }
 
-        if pos.x + size.x > ours.terminal_rect.size().x
-            || pos.y + size.y > ours.terminal_rect.size().y
-        {
+        if pos.x + size.x > ours.terminal_rect.size().x || pos.y + size.y > ours.terminal_rect.size().y {
             let p = pos + size - ours.terminal_rect.size();
             self.next_scroll_pos = Some(ours.char_scroll_position + p / ours.scale);
             ui.ctx().request_repaint();
@@ -158,10 +127,8 @@ impl MinimapToolWindow {
         if response.dragged() {
             if let Some(pos) = response.interact_pointer_pos() {
                 let pos = (pos - ours.buffer_rect.min) / ours.scale + ours.char_scroll_position;
-                editor.next_scroll_x_position =
-                    Some(pos.x - theirs.buffer_char_width * theirs.font_width / 2.0);
-                editor.next_scroll_y_position =
-                    Some(pos.y - theirs.buffer_char_height * theirs.font_height / 2.0);
+                editor.next_scroll_x_position = Some(pos.x - theirs.buffer_char_width * theirs.font_width / 2.0);
+                editor.next_scroll_y_position = Some(pos.y - theirs.buffer_char_height * theirs.font_height / 2.0);
                 ui.ctx().request_repaint();
             }
         }

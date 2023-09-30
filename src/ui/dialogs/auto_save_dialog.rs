@@ -34,25 +34,13 @@ impl crate::ModalDialog for AutoSaveDialog {
             });
 
             modal.buttons(ui, |ui| {
-                if ui
-                    .button(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "autosave-dialog-load_autosave_button"
-                    ))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "autosave-dialog-load_autosave_button")).clicked() {
                     self.load_autosave = true;
                     self.finish = true;
                     result = true;
                 }
 
-                if ui
-                    .button(fl!(
-                        crate::LANGUAGE_LOADER,
-                        "autosave-dialog-discard_autosave_button"
-                    ))
-                    .clicked()
-                {
+                if ui.button(fl!(crate::LANGUAGE_LOADER, "autosave-dialog-discard_autosave_button")).clicked() {
                     remove_autosave(&self.path);
                     self.load_autosave = false;
                     self.finish = true;
@@ -69,9 +57,6 @@ impl crate::ModalDialog for AutoSaveDialog {
     }
 
     fn commit_self(&self, _window: &mut MainWindow) -> TerminalResult<Option<Message>> {
-        Ok(Some(Message::LoadFile(
-            self.path.clone(),
-            self.load_autosave,
-        )))
+        Ok(Some(Message::LoadFile(self.path.clone(), self.load_autosave)))
     }
 }

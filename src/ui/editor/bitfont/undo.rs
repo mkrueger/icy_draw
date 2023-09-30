@@ -132,10 +132,7 @@ pub struct DownGlyph {
 
 impl DownGlyph {
     pub(crate) fn new(ch: char) -> Self {
-        Self {
-            ch,
-            old_data: Vec::new(),
-        }
+        Self { ch, old_data: Vec::new() }
     }
 }
 
@@ -168,10 +165,7 @@ pub struct UpGlyph {
 
 impl UpGlyph {
     pub(crate) fn new(ch: char) -> Self {
-        Self {
-            ch,
-            old_data: Vec::new(),
-        }
+        Self { ch, old_data: Vec::new() }
     }
 }
 
@@ -204,10 +198,7 @@ pub struct RightGlyph {
 
 impl RightGlyph {
     pub(crate) fn new(ch: char) -> Self {
-        Self {
-            ch,
-            old_data: Vec::new(),
-        }
+        Self { ch, old_data: Vec::new() }
     }
 }
 
@@ -241,10 +232,7 @@ pub struct LeftGlyph {
 
 impl LeftGlyph {
     pub(crate) fn new(ch: char) -> Self {
-        Self {
-            ch,
-            old_data: Vec::new(),
-        }
+        Self { ch, old_data: Vec::new() }
     }
 }
 
@@ -278,10 +266,7 @@ pub struct ClearGlyph {
 
 impl ClearGlyph {
     pub(crate) fn new(ch: char) -> Self {
-        Self {
-            ch,
-            old_data: Vec::new(),
-        }
+        Self { ch, old_data: Vec::new() }
     }
 }
 

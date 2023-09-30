@@ -5,10 +5,7 @@ use icy_engine::{SaveOptions, ScreenPreperation};
 pub fn create_settings_page(ui: &mut Ui, options: &mut SaveOptions) {
     ui.vertical(|ui| {
         ui.horizontal(|ui| {
-            ui.label(fl!(
-                crate::LANGUAGE_LOADER,
-                "export-video-preparation-label"
-            ));
+            ui.label(fl!(crate::LANGUAGE_LOADER, "export-video-preparation-label"));
 
             let label = match options.screen_preparation {
                 ScreenPreperation::None => {

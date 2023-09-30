@@ -79,31 +79,17 @@ pub fn get_half_block(cur_char: AttributedChar, pos: Position, color: u32) -> At
     let half_block = HalfBlock::from(cur_char, pos);
 
     let ch = if half_block.is_blocky {
-        if (half_block.is_top && half_block.lower_block_color == color)
-            || (!half_block.is_top && half_block.upper_block_color == color)
-        {
+        if (half_block.is_top && half_block.lower_block_color == color) || (!half_block.is_top && half_block.upper_block_color == color) {
             AttributedChar::new(FULL_BLOCK, TextAttribute::new(color, 0))
         } else if half_block.is_top {
-            AttributedChar::new(
-                HALF_BLOCK_TOP,
-                TextAttribute::new(color, half_block.lower_block_color),
-            )
+            AttributedChar::new(HALF_BLOCK_TOP, TextAttribute::new(color, half_block.lower_block_color))
         } else {
-            AttributedChar::new(
-                HALF_BLOCK_BOTTOM,
-                TextAttribute::new(color, half_block.upper_block_color),
-            )
+            AttributedChar::new(HALF_BLOCK_BOTTOM, TextAttribute::new(color, half_block.upper_block_color))
         }
     } else if half_block.is_top {
-        AttributedChar::new(
-            HALF_BLOCK_TOP,
-            TextAttribute::new(color, half_block.block.attribute.get_background()),
-        )
+        AttributedChar::new(HALF_BLOCK_TOP, TextAttribute::new(color, half_block.block.attribute.get_background()))
     } else {
-        AttributedChar::new(
-            HALF_BLOCK_BOTTOM,
-            TextAttribute::new(color, half_block.block.attribute.get_background()),
-        )
+        AttributedChar::new(HALF_BLOCK_BOTTOM, TextAttribute::new(color, half_block.block.attribute.get_background()))
     };
     optimize_block(ch, &half_block)
 }

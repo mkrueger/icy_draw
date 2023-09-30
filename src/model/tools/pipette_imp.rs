@@ -33,90 +33,39 @@ impl Tool for PipetteTool {
         false
     }
 
-    fn show_ui(
-        &mut self,
-        _ctx: &egui::Context,
-        ui: &mut egui::Ui,
-        editor_opt: Option<&AnsiEditor>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         let Some(editor) = editor_opt else {
             return None;
         };
 
         if let Some(ch) = unsafe { CUR_CHAR } {
             ui.vertical_centered(|ui| {
-                ui.label(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "pipette_tool_char_code",
-                    code = (ch.ch as u32)
-                ));
+                ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_char_code", code = (ch.ch as u32)));
 
                 if self.ch.is_none() || !self.ch.unwrap().eq(&ch.ch) {
                     self.ch = Some(ch.ch);
 
                     let mut buf = Buffer::new((1, 1));
                     buf.clear_font_table();
-                    buf.set_font(
-                        0,
-                        editor
-                            .buffer_view
-                            .lock()
-                            .get_buffer()
-                            .get_font(ch.get_font_page())
-                            .unwrap()
-                            .clone(),
-                    );
-                    buf.layers[0]
-                        .set_char((0, 0), AttributedChar::new(ch.ch, TextAttribute::default()));
-                    self.char_image =
-                        Some(create_retained_image(&buf).with_options(TextureOptions::NEAREST));
+                    buf.set_font(0, editor.buffer_view.lock().get_buffer().get_font(ch.get_font_page()).unwrap().clone());
+                    buf.layers[0].set_char((0, 0), AttributedChar::new(ch.ch, TextAttribute::default()));
+                    self.char_image = Some(create_retained_image(&buf).with_options(TextureOptions::NEAREST));
                 }
 
                 if let Some(image) = &self.char_image {
                     image.show_scaled(ui, 2.0);
                 }
 
-                ui.label(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "pipette_tool_foreground",
-                    fg = ch.attribute.get_foreground()
-                ));
-                paint_color(
-                    ui,
-                    &editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer()
-                        .palette
-                        .get_color(ch.attribute.get_foreground()),
-                );
-                ui.label(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "pipette_tool_background",
-                    bg = ch.attribute.get_background()
-                ));
-                paint_color(
-                    ui,
-                    &editor
-                        .buffer_view
-                        .lock()
-                        .get_buffer()
-                        .palette
-                        .get_color(ch.attribute.get_background()),
-                );
+                ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_foreground", fg = ch.attribute.get_foreground()));
+                paint_color(ui, &editor.buffer_view.lock().get_buffer().palette.get_color(ch.attribute.get_foreground()));
+                ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_background", bg = ch.attribute.get_background()));
+                paint_color(ui, &editor.buffer_view.lock().get_buffer().palette.get_color(ch.attribute.get_background()));
             });
         }
         None
     }
 
-    fn handle_hover(
-        &mut self,
-        _ui: &egui::Ui,
-        response: egui::Response,
-        editor: &mut AnsiEditor,
-        cur: Position,
-        _cur_abs: Position,
-    ) -> egui::Response {
+    fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, _cur_abs: Position) -> egui::Response {
         unsafe {
             CUR_CHAR = Some(editor.get_char(cur));
         }
@@ -127,12 +76,7 @@ impl Tool for PipetteTool {
 
     fn get_toolbar_location_text(&self, _editor: &AnsiEditor) -> String {
         if let Some(pos) = self.cur_pos {
-            fl!(
-                crate::LANGUAGE_LOADER,
-                "toolbar-position",
-                line = (pos.y + 1),
-                column = (pos.x + 1)
-            )
+            fl!(crate::LANGUAGE_LOADER, "toolbar-position", line = (pos.y + 1), column = (pos.x + 1))
         } else {
             String::new()
         }
@@ -145,14 +89,7 @@ impl Tool for PipetteTool {
         self.cur_pos = None;
     }
 
-    fn handle_click(
-        &mut self,
-        editor: &mut AnsiEditor,
-        button: i32,
-        pos: Position,
-        _pos_abs: Position,
-        _response: &egui::Response,
-    ) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 {
             let ch = editor.get_char(pos);
             editor.set_caret_attribute(ch.attribute);
@@ -181,11 +118,5 @@ fn paint_color(ui: &mut egui::Ui, color: &icy_engine::Color) {
 
     let text = format!("#{r:02x}{g:02x}{b:02x}");
     let font_id: eframe::epaint::FontId = FontId::monospace(16.0);
-    painter.text(
-        stroke_rect.center(),
-        Align2::CENTER_CENTER,
-        text,
-        font_id,
-        text_color,
-    );
+    painter.text(stroke_rect.center(), Align2::CENTER_CENTER, text, font_id, text_color);
 }

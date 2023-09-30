@@ -56,12 +56,7 @@ impl DocumentTab {
         match doc.get_bytes(path) {
             Ok(bytes) => {
                 let mut tmp_file = path.clone();
-                let ext = path
-                    .extension()
-                    .unwrap_or_default()
-                    .to_str()
-                    .unwrap()
-                    .to_ascii_lowercase();
+                let ext = path.extension().unwrap_or_default().to_str().unwrap().to_ascii_lowercase();
 
                 tmp_file.with_extension(format!("{}~", ext));
                 let mut num = 1;
@@ -199,12 +194,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         title.into()
     }
 
-    fn pane_ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        _tile_id: egui_tiles::TileId,
-        pane: &mut DocumentTab,
-    ) -> egui_tiles::UiResponse {
+    fn pane_ui(&mut self, ui: &mut egui::Ui, _tile_id: egui_tiles::TileId, pane: &mut DocumentTab) -> egui_tiles::UiResponse {
         if pane.is_destroyed() {
             return egui_tiles::UiResponse::None;
         }
@@ -238,39 +228,22 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         egui_tiles::UiResponse::None
     }
 
-    fn on_tab_button(
-        &mut self,
-        tiles: &Tiles<DocumentTab>,
-        tile_id: TileId,
-        button_response: eframe::egui::Response,
-    ) -> Response {
+    fn on_tab_button(&mut self, tiles: &Tiles<DocumentTab>, tile_id: TileId, button_response: eframe::egui::Response) -> Response {
         button_response.context_menu(|ui| {
-            if ui
-                .button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close"))
-                .clicked()
-            {
+            if ui.button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close")).clicked() {
                 self.on_close_requested(tiles, tile_id);
                 ui.close_menu();
             }
-            if ui
-                .button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close_others"))
-                .clicked()
-            {
+            if ui.button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close_others")).clicked() {
                 self.request_close_others = Some(tile_id);
                 ui.close_menu();
             }
-            if ui
-                .button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close_all"))
-                .clicked()
-            {
+            if ui.button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close_all")).clicked() {
                 self.request_close_all = Some(tile_id);
                 ui.close_menu();
             }
             ui.separator();
-            if ui
-                .button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-copy_path"))
-                .clicked()
-            {
+            if ui.button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-copy_path")).clicked() {
                 if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(tile_id) {
                     if let Some(path) = &pane.full_path {
                         let text = path.to_str().unwrap().to_string();
@@ -297,13 +270,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         true
     }
 
-    fn top_bar_rtl_ui(
-        &mut self,
-        tiles: &Tiles<DocumentTab>,
-        ui: &mut Ui,
-        _tile_id: TileId,
-        tabs: &Tabs,
-    ) {
+    fn top_bar_rtl_ui(&mut self, tiles: &Tiles<DocumentTab>, ui: &mut Ui, _tile_id: TileId, tabs: &Tabs) {
         if let Some(id) = tabs.active {
             if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(id) {
                 if let Ok(doc) = &mut pane.doc.lock() {
@@ -311,21 +278,16 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                         ui.add_space(4.0);
                         let mut buffer = Buffer::new((48, 1));
                         let font_page = editor.buffer_view.lock().get_caret().get_font_page();
-                        if let Some(font) =
-                            editor.buffer_view.lock().get_buffer().get_font(font_page)
-                        {
+                        if let Some(font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
                             buffer.set_font(1, font.clone());
                         }
 
                         let char_set = Settings::get_character_set();
-                        if self.cur_char_set != char_set
-                            || self.dark_mode != ui.style().visuals.dark_mode
-                        {
+                        if self.cur_char_set != char_set || self.dark_mode != ui.style().visuals.dark_mode {
                             let c = if ui.style().visuals.dark_mode {
                                 ui.style().visuals.extreme_bg_color
                             } else {
-                                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8))
-                                    .into()
+                                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8)).into()
                             };
 
                             let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
@@ -361,10 +323,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                                 }
                                 attr.set_foreground(15);
                                 attr.set_font_page(1);
-                                buffer.layers[0].set_char(
-                                    (i, 0),
-                                    AttributedChar::new(editor.get_char_set_key(j), attr),
-                                );
+                                buffer.layers[0].set_char((i, 0), AttributedChar::new(editor.get_char_set_key(j), attr));
                                 attr.set_font_page(0);
                                 i += 1;
                             }
@@ -376,11 +335,8 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                             img.show(ui);
                         }
 
-                        let txt = self.tools.lock().unwrap()[self.selected_tool]
-                            .get_toolbar_location_text(editor);
-                        if txt != self.cur_line_col_txt
-                            || self.dark_mode != ui.style().visuals.dark_mode
-                        {
+                        let txt = self.tools.lock().unwrap()[self.selected_tool].get_toolbar_location_text(editor);
+                        if txt != self.cur_line_col_txt || self.dark_mode != ui.style().visuals.dark_mode {
                             self.cur_line_col_txt = txt;
                             self.dark_mode = ui.style().visuals.dark_mode;
                             let mut txt2 = String::new();
@@ -398,8 +354,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                             let c = if ui.style().visuals.dark_mode {
                                 ui.style().visuals.extreme_bg_color
                             } else {
-                                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8))
-                                    .into()
+                                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8)).into()
                             };
 
                             let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
@@ -428,11 +383,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
     }
 }
 
-pub fn add_child(
-    tree: &mut egui_tiles::Tree<DocumentTab>,
-    full_path: Option<PathBuf>,
-    doc: Box<dyn Document>,
-) {
+pub fn add_child(tree: &mut egui_tiles::Tree<DocumentTab>, full_path: Option<PathBuf>, doc: Box<dyn Document>) {
     let tile = DocumentTab {
         full_path,
         doc: Arc::new(Mutex::new(doc)),
@@ -446,15 +397,11 @@ pub fn add_child(
 
     if tree.root.is_none() {
         tree.root = Some(new_child);
-    } else if let Some(egui_tiles::Tile::Container(egui_tiles::Container::Tabs(tabs))) =
-        tree.tiles.get_mut(tree.root.unwrap())
-    {
+    } else if let Some(egui_tiles::Tile::Container(egui_tiles::Container::Tabs(tabs))) = tree.tiles.get_mut(tree.root.unwrap()) {
         tabs.add_child(new_child);
         tabs.set_active(new_child);
     } else if let Some(egui_tiles::Tile::Pane(_)) = tree.tiles.get(tree.root.unwrap()) {
-        let new_id = tree
-            .tiles
-            .insert_tab_tile(vec![new_child, tree.root.unwrap()]);
+        let new_id = tree.tiles.insert_tab_tile(vec![new_child, tree.root.unwrap()]);
         tree.root = Some(new_id);
     } else {
         tree.root = Some(new_child);

@@ -18,11 +18,7 @@ impl ToolWindow for LayerToolWindow {
         fl!(crate::LANGUAGE_LOADER, "layer_tool_title")
     }
 
-    fn show_ui(
-        &mut self,
-        ui: &mut egui::Ui,
-        active_document: Option<Arc<Mutex<Box<dyn Document>>>>,
-    ) -> Option<Message> {
+    fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message> {
         if let Some(doc) = active_document {
             if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
                 return show_layer_view(ui, editor);
@@ -56,27 +52,16 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
 
             if paste_mode {
                 let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
-                    ui.label(
-                        RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small(),
-                    );
+                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
                 });
 
                 if r.clicked() {
                     result = Some(Message::AddFloatingLayer);
                 }
-                let role = editor
-                    .buffer_view
-                    .lock()
-                    .get_edit_state()
-                    .get_cur_layer()
-                    .unwrap()
-                    .role;
+                let role = editor.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().role;
                 if matches!(role, icy_engine::Role::PastePreview) {
                     let r = medium_hover_button(ui, &crate::ANCHOR_SVG).on_hover_ui(|ui| {
-                        ui.label(
-                            RichText::new(fl!(crate::LANGUAGE_LOADER, "anchor_layer_tooltip"))
-                                .small(),
-                        );
+                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "anchor_layer_tooltip")).small());
                     });
 
                     if r.clicked() && cur_layer < max {
@@ -85,9 +70,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                 }
 
                 let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
-                    ui.label(
-                        RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small(),
-                    );
+                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small());
                 });
 
                 if r.clicked() && cur_layer < max {
@@ -95,9 +78,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                 }
             } else {
                 let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
-                    ui.label(
-                        RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small(),
-                    );
+                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
                 });
 
                 if r.clicked() {
@@ -105,9 +86,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                 }
 
                 let r = medium_hover_button(ui, &crate::MOVE_UP_SVG).on_hover_ui(|ui| {
-                    ui.label(
-                        RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_up_tooltip")).small(),
-                    );
+                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_up_tooltip")).small());
                 });
 
                 if r.clicked() {
@@ -115,10 +94,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                 }
 
                 let r = medium_hover_button(ui, &crate::MOVE_DOWN_SVG).on_hover_ui(|ui| {
-                    ui.label(
-                        RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_down_tooltip"))
-                            .small(),
-                    );
+                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_down_tooltip")).small());
                 });
 
                 if r.clicked() {
@@ -126,9 +102,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                 }
 
                 let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
-                    ui.label(
-                        RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small(),
-                    );
+                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small());
                 });
 
                 if r.clicked() && cur_layer < max {
@@ -158,35 +132,19 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                         let back_painter = ui.painter_at(back_rect);
 
                         if response.hovered() {
-                            back_painter.rect_filled(
-                                back_rect,
-                                Rounding::none(),
-                                ui.style().visuals.widgets.active.bg_fill,
-                            );
+                            back_painter.rect_filled(back_rect, Rounding::none(), ui.style().visuals.widgets.active.bg_fill);
                         } else if i == cur_layer {
-                            back_painter.rect_filled(
-                                back_rect,
-                                Rounding::none(),
-                                ui.style().visuals.extreme_bg_color,
-                            );
+                            back_painter.rect_filled(back_rect, Rounding::none(), ui.style().visuals.extreme_bg_color);
                         }
 
-                        let stroke_rect = Rect::from_min_size(
-                            back_rect.min + Vec2::new(0.0, 1.0),
-                            Vec2::new(22.0, 22.0),
-                        );
-                        let visible_icon_response =
-                            ui.interact(stroke_rect, id.with("visible"), Sense::click());
+                        let stroke_rect = Rect::from_min_size(back_rect.min + Vec2::new(0.0, 1.0), Vec2::new(22.0, 22.0));
+                        let visible_icon_response = ui.interact(stroke_rect, id.with("visible"), Sense::click());
 
                         let painter = ui.painter_at(stroke_rect);
 
                         if let Some(color) = color {
                             let (r, g, b) = color.into();
-                            painter.rect_filled(
-                                stroke_rect,
-                                Rounding::none(),
-                                Color32::from_rgb(r, g, b),
-                            );
+                            painter.rect_filled(stroke_rect, Rounding::none(), Color32::from_rgb(r, g, b));
                         }
 
                         let image = if is_visible {
@@ -210,13 +168,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                         };
                         let font_id = TextStyle::Button.resolve(ui.style());
 
-                        back_painter.text(
-                            stroke_rect.right_center() + Vec2::new(4., 0.),
-                            Align2::LEFT_CENTER,
-                            title,
-                            font_id,
-                            color,
-                        );
+                        back_painter.text(stroke_rect.right_center() + Vec2::new(4., 0.), Align2::LEFT_CENTER, title, font_id, color);
 
                         if visible_icon_response.clicked() {
                             result = Some(Message::ToggleLayerVisibility(i));
@@ -225,76 +177,34 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                         if !paste_mode {
                             response = response.context_menu(|ui| {
                                 ui.set_width(250.);
-                                if ui
-                                    .button(fl!(
-                                        crate::LANGUAGE_LOADER,
-                                        "layer_tool_menu_layer_properties"
-                                    ))
-                                    .clicked()
-                                {
+                                if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_layer_properties")).clicked() {
                                     result = Some(Message::EditLayer(i));
                                     ui.close_menu();
                                 }
-                                if ui
-                                    .button(fl!(
-                                        crate::LANGUAGE_LOADER,
-                                        "layer_tool_menu_resize_layer"
-                                    ))
-                                    .clicked()
-                                {
+                                if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_resize_layer")).clicked() {
                                     result = Some(Message::ResizeLayer(i));
                                     ui.close_menu();
                                 }
                                 ui.separator();
-                                if ui
-                                    .button(fl!(
-                                        crate::LANGUAGE_LOADER,
-                                        "layer_tool_menu_new_layer"
-                                    ))
-                                    .clicked()
-                                {
+                                if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_new_layer")).clicked() {
                                     result = Some(Message::AddNewLayer(i));
                                     ui.close_menu();
                                 }
-                                if ui
-                                    .button(fl!(
-                                        crate::LANGUAGE_LOADER,
-                                        "layer_tool_menu_duplicate_layer"
-                                    ))
-                                    .clicked()
-                                {
+                                if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_duplicate_layer")).clicked() {
                                     result = Some(Message::DuplicateLayer(i));
                                     ui.close_menu();
                                 }
-                                if ui
-                                    .button(fl!(
-                                        crate::LANGUAGE_LOADER,
-                                        "layer_tool_menu_merge_layer"
-                                    ))
-                                    .clicked()
-                                {
+                                if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_merge_layer")).clicked() {
                                     result = Some(Message::MergeLayerDown(i));
                                     ui.close_menu();
                                 }
-                                if ui
-                                    .button(fl!(
-                                        crate::LANGUAGE_LOADER,
-                                        "layer_tool_menu_delete_layer"
-                                    ))
-                                    .clicked()
-                                {
+                                if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_delete_layer")).clicked() {
                                     result = Some(Message::RemoveLayer(i));
                                     ui.close_menu();
                                 }
                                 ui.separator();
 
-                                if ui
-                                    .button(fl!(
-                                        crate::LANGUAGE_LOADER,
-                                        "layer_tool_menu_clear_layer"
-                                    ))
-                                    .clicked()
-                                {
+                                if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_clear_layer")).clicked() {
                                     result = Some(Message::ClearLayer(i));
                                     ui.close_menu();
                                 }
@@ -323,11 +233,7 @@ pub fn medium_hover_button(ui: &mut egui::Ui, image: &RetainedImage) -> egui::Re
     let painter = ui.painter_at(rect);
 
     let tint = if response.hovered() {
-        ui.painter().rect_filled(
-            rect,
-            Rounding::same(4.0),
-            ui.style().visuals.extreme_bg_color,
-        );
+        ui.painter().rect_filled(rect, Rounding::same(4.0), ui.style().visuals.extreme_bg_color);
 
         ui.visuals().widgets.active.fg_stroke.color
     } else {

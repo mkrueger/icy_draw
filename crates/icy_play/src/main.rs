@@ -27,11 +27,7 @@ impl Terminal {
 
 #[derive(Parser)]
 pub struct Cli {
-    #[arg(
-        help = "If true modern terminal output (UTF8) is used.",
-        long,
-        default_value_t = false
-    )]
+    #[arg(help = "If true modern terminal output (UTF8) is used.", long, default_value_t = false)]
     utf8: bool,
 
     #[arg(help = "File to play/show.", required = true)]
@@ -106,16 +102,11 @@ fn main() {
 
                             while animator.lock().unwrap().is_playing() {
                                 if let Ok(Some(v)) = io.read(false) {
-                                    if v.contains(&b'\x1b')
-                                        || v.contains(&b'\n')
-                                        || v.contains(&b' ')
-                                    {
+                                    if v.contains(&b'\x1b') || v.contains(&b'\n') || v.contains(&b' ') {
                                         break;
                                     }
                                 }
-                                if let Some((buffer, _, delay)) =
-                                    animator.lock().unwrap().get_cur_frame_buffer()
-                                {
+                                if let Some((buffer, _, delay)) = animator.lock().unwrap().get_cur_frame_buffer() {
                                     show_buffer(&mut io, buffer, false, args.utf8, &term).unwrap();
                                     std::thread::sleep(Duration::from_millis(*delay as u64));
                                 } else {
@@ -128,14 +119,7 @@ fn main() {
                             let _ = io.write(b"\x1b\\\x1b[0;0 D");
                         }
                         Commands::ShowFrame { frame } => {
-                            show_buffer(
-                                &mut io,
-                                &animator.lock().unwrap().frames[frame].0,
-                                true,
-                                args.utf8,
-                                &term,
-                            )
-                            .unwrap();
+                            show_buffer(&mut io, &animator.lock().unwrap().frames[frame].0, true, args.utf8, &term).unwrap();
                         }
                     }
                 }
@@ -153,13 +137,7 @@ fn main() {
     }
 }
 
-fn show_buffer(
-    io: &mut Box<dyn Com>,
-    buffer: &Buffer,
-    single_frame: bool,
-    use_utf8: bool,
-    terminal: &Terminal,
-) -> anyhow::Result<()> {
+fn show_buffer(io: &mut Box<dyn Com>, buffer: &Buffer, single_frame: bool, use_utf8: bool, terminal: &Terminal) -> anyhow::Result<()> {
     let mut opt: SaveOptions = SaveOptions::default();
     if use_utf8 {
         opt.modern_terminal_output = true;
