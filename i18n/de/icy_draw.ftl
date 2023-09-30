@@ -446,3 +446,4 @@ settings-raster-label=Gitterfarbe:
 settings-alpha=alpha
 settings-guide-label=Hilfslinienfarbe:
 settings-set-label=Set { $set }
+settings-key_filter_preview_text=Tastenzuweisung filtern

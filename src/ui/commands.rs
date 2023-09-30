@@ -370,7 +370,7 @@ macro_rules! keys {
                     ui.add(
                         egui::TextEdit::singleline(filter).hint_text(fl!(
                             crate::LANGUAGE_LOADER,
-                            "select-font-dialog-filter-text"
+                            "settings-key_filter_preview_text"
                         )),
                     );
                 });
