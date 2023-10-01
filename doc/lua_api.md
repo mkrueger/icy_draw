@@ -9,6 +9,17 @@ Lua is used as scripting language for the animation engine and plugin language
 |--------------|--------------------------------------
 | `cur_frame`  | Number of current frame (1 based)
 
+Monitor settings (just for video output, play around with:)
+`monitor_type`
+`monitor_gamma`
+`monitor_contrast`
+`monitor_saturation`
+`monitor_brightness`
+`monitor_blur`
+`monitor_curvature`
+`monitor_scanlines`
+
+
 ### Plugins only
 | Variable     | Description
 |--------------|--------------------------------------
@@ -28,6 +39,8 @@ The current area is the whole layer or the selected portion of it. The coordinat
 | `new_buffer(width: i32, height: i32)`  |  Buffer    | Create new, empty buffer with given get_size
 | `load_buffer(file_name: String)`       |  Buffer    | Loads a buffer relatively to the animation file.
 | `next_frame(buf: Buffer)`              |  -         | Snapshots the "buf" table as new frame and moves to the next frame.
+| `set_delay(delay: u32)`                |  -         | Sets current frame delay in ms - note each frame has it's own delay so animations can change speed (default: 100)
+| `get_delay()`                          |  u32       | Gets current frame delay
 
 ## Buffers
 

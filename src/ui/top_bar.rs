@@ -45,6 +45,7 @@ impl MainWindow {
 
         menu::bar(ui, |ui| {
             let mut has_buffer = false;
+            let mut has_reference_image = false;
 
             if self.last_command_update.elapsed().as_millis() > 250 {
                 let mut c = self.commands.pop().unwrap();
@@ -59,7 +60,12 @@ impl MainWindow {
 
             if let Some(pane) = self.get_active_pane_mut() {
                 if let Ok(doc) = pane.doc.lock() {
-                    has_buffer = doc.get_ansi_editor().is_some();
+                    if let Some(editor) = doc.get_ansi_editor() {
+                        has_buffer = true;
+                        has_reference_image = editor.buffer_view.lock().has_reference_image();
+                    } else {
+                        has_buffer = false;
+                    }
                 }
             }
 
@@ -525,7 +531,10 @@ impl MainWindow {
 
                 ui.separator();
                 self.commands[0].set_reference_image.ui(ui, &mut result);
+
+                self.commands[0].toggle_reference_image.is_enabled = has_reference_image;
                 self.commands[0].toggle_reference_image.ui(ui, &mut result);
+                self.commands[0].clear_reference_image.is_enabled = has_reference_image;
                 self.commands[0].clear_reference_image.ui(ui, &mut result);
             });
 
