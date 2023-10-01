@@ -5,10 +5,10 @@ use eframe::{
     epaint::{mutex::Mutex, Color32, Vec2},
 };
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Buffer, Color, Size, TextAttribute};
+use icy_engine::{AttributedChar, BitFont, Buffer, Color, Position, Size, TextAttribute};
 use icy_engine_egui::{show_monitor_settings, show_terminal_area, BufferView, MarkerSettings, MonitorSettings};
 
-use crate::{CharTableToolWindow, CharacterSet, Commands, SelectOutlineDialog, SETTINGS};
+use crate::{CharSetMapping, CharTableToolWindow, Commands, FontSelector, ModalDialog, SelectOutlineDialog, Settings, CHARACTER_SETS, KEYBINDINGS, SETTINGS};
 pub struct SettingsDialog {
     settings_category: usize,
     select_outline_dialog: SelectOutlineDialog,
@@ -17,8 +17,13 @@ pub struct SettingsDialog {
     marker_settings: MarkerSettings,
     key_filter: String,
     key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
-    char_set: CharacterSet,
+
+    font_cache: Vec<BitFont>,
+    font_selector: Option<FontSelector>,
+    cur_char_set: usize,
+    char_sets: Vec<CharSetMapping>,
     views: Vec<Arc<Mutex<BufferView>>>,
+    selected_view: usize,
     char_view: CharTableToolWindow,
 }
 const MONITOR_CAT: usize = 0;
@@ -39,6 +44,25 @@ impl SettingsDialog {
             views.push(Arc::new(Mutex::new(buffer_view)));
         }
         let char_view = CharTableToolWindow::new(32);
+
+        let mut font_cache = if let Ok(font_dir) = Settings::get_font_diretory() {
+            FontSelector::load_fonts(font_dir.as_path())
+        } else {
+            Vec::new()
+        };
+
+        for f in icy_engine::SAUCE_FONT_NAMES {
+            font_cache.push(BitFont::from_sauce_name(f).unwrap());
+        }
+        for slot in 0..icy_engine::ANSI_FONTS {
+            let ansi_font = BitFont::from_ansi_font_page(slot).unwrap();
+            font_cache.push(ansi_font);
+        }
+        font_cache.dedup_by(|x, y| x.get_checksum() == y.get_checksum());
+        let font = BitFont::default();
+        font_cache.retain(|x| x.get_checksum() != font.get_checksum());
+        font_cache.insert(0, font);
+
         Self {
             settings_category: MONITOR_CAT,
             select_outline_dialog: SelectOutlineDialog::default(),
@@ -46,17 +70,21 @@ impl SettingsDialog {
             marker_settings: Default::default(),
             key_filter: String::new(),
             key_bindings: Commands::default_keybindings(),
-            char_set: Default::default(),
+            char_sets: Default::default(),
+            font_cache,
+            cur_char_set: 0,
+            selected_view: 0,
             views,
             char_view,
+            font_selector: None,
         }
     }
 
     pub(crate) fn init(&mut self) {
         self.monitor_settings = unsafe { SETTINGS.monitor_settings.clone() };
         self.marker_settings = unsafe { SETTINGS.marker_settings.clone() };
-        self.key_bindings = unsafe { SETTINGS.key_bindings.clone() };
-        self.char_set = unsafe { SETTINGS.character_sets[0].clone() };
+        self.key_bindings = unsafe { KEYBINDINGS.key_bindings.clone() };
+        self.char_sets = unsafe { CHARACTER_SETS.character_sets.clone() };
     }
 
     pub fn show(&mut self, ctx: &egui::Context) -> bool {
@@ -65,6 +93,19 @@ impl SettingsDialog {
         let title = RichText::new(fl!(crate::LANGUAGE_LOADER, "settings-heading"));
         if ctx.input(|i| i.key_down(egui::Key::Escape)) {
             open = false;
+        }
+
+        if let Some(selector) = &mut self.font_selector {
+            if selector.show(ctx) {
+                if selector.should_commit() {
+                    let font = selector.selected_font().get_checksum();
+                    let mut new_set = self.char_sets[0].clone();
+                    new_set.font_checksum = font;
+                    self.char_sets.push(new_set);
+                }
+                self.font_selector = None;
+            }
+            return open;
         }
 
         egui::Window::new(title)
@@ -157,9 +198,18 @@ impl SettingsDialog {
                 ui.with_layout(Layout::right_to_left(egui::Align::TOP), |ui| {
                     if ui.button(fl!(crate::LANGUAGE_LOADER, "new-file-ok")).clicked() {
                         unsafe {
-                            SETTINGS.key_bindings = self.key_bindings.clone();
-                            SETTINGS.character_sets.clear();
-                            SETTINGS.character_sets.push(self.char_set.clone());
+                            if KEYBINDINGS.key_bindings != self.key_bindings {
+                                KEYBINDINGS.key_bindings = self.key_bindings.clone();
+                                if let Err(err) = KEYBINDINGS.save() {
+                                    log::error!("Error saving keybindings: {}", err);
+                                }
+                            }
+                            if CHARACTER_SETS.character_sets != self.char_sets {
+                                CHARACTER_SETS.character_sets = self.char_sets.clone();
+                                if let Err(err) = CHARACTER_SETS.save() {
+                                    log::error!("Error saving character sets: {}", err);
+                                }
+                            }
                         }
                         dialog_open = false;
                     }
@@ -168,7 +218,6 @@ impl SettingsDialog {
                         unsafe {
                             SETTINGS.monitor_settings = self.monitor_settings.clone();
                             SETTINGS.marker_settings = self.marker_settings.clone();
-                            SETTINGS.key_bindings = self.key_bindings.clone();
                         }
                         dialog_open = false;
                     }
@@ -183,7 +232,7 @@ impl SettingsDialog {
                             match self.settings_category {
                                 MONITOR_CAT => SETTINGS.monitor_settings = Default::default(),
                                 MARKER_CAT => SETTINGS.marker_settings = Default::default(),
-                                CHAR_SET_CAT => self.char_set = Default::default(),
+                                CHAR_SET_CAT => self.char_sets = Default::default(),
                                 KEYBIND_CAT => {
                                     self.key_bindings = Commands::default_keybindings();
                                 }
@@ -198,21 +247,84 @@ impl SettingsDialog {
     }
 
     pub fn show_charset_editor(&mut self, ui: &mut egui::Ui) {
-        ui.set_height(540.);
+        ui.set_height(580.);
         let mut id = 0;
         ui.add_space(48.0);
+
+        let mut cur_font = &self.font_cache[0];
+        for font in &self.font_cache {
+            if font.checksum == self.char_sets[self.cur_char_set].font_checksum {
+                cur_font = font;
+                break;
+            }
+        }
+
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                ui.label(fl!(crate::LANGUAGE_LOADER, "settings-char_set_list_label"));
+                egui::ScrollArea::vertical().max_height(240.0).show(ui, |ui| {
+                    ui.vertical(|ui| {
+                        for (i, char_set) in self.char_sets.iter().enumerate() {
+                            let label = if char_set.font_checksum == 0 {
+                                "Default".to_string()
+                            } else {
+                                let mut result = "Unknown".to_string();
+                                for font in &self.font_cache {
+                                    if font.checksum == char_set.font_checksum {
+                                        result = font.name.to_string();
+                                        break;
+                                    }
+                                }
+                                result
+                            };
+                            if ui.selectable_label(self.cur_char_set == i, label).clicked() {
+                                self.cur_char_set = i;
+                            }
+                        }
+                    });
+                });
+            });
+            ui.separator();
+            if ui.add(egui::Button::new(fl!(crate::LANGUAGE_LOADER, "add-font-dialog-select"))).clicked() {
+                self.font_selector = Some(FontSelector::font_library());
+            }
+
+            if ui
+                .add_enabled(
+                    self.cur_char_set > 0,
+                    egui::Button::new(fl!(crate::LANGUAGE_LOADER, "manage-font-remove_font_button")),
+                )
+                .clicked()
+            {
+                self.char_sets.remove(self.cur_char_set);
+                self.cur_char_set = 0;
+            }
+            if ui
+                .add_enabled(self.cur_char_set == 0, egui::Button::new(fl!(crate::LANGUAGE_LOADER, "settings-reset_button")))
+                .clicked()
+            {
+                self.char_sets[0] = CharSetMapping::default();
+                for view in self.views.iter() {
+                    view.lock().get_edit_state_mut().is_buffer_dirty = true;
+                }
+            }
+        });
+        ui.separator();
         egui::Grid::new("paste_mode_grid").num_columns(6).spacing([8.0, 8.0]).show(ui, |ui| {
-            for view in &self.views {
+            for (i, view) in self.views.iter().enumerate() {
+                let font_dims = view.lock().get_buffer_mut().get_font_dimensions();
+
                 let opt = icy_engine_egui::TerminalOptions {
                     stick_to_bottom: false,
                     scale: Some(Vec2::new(2.0, 2.0)),
                     id: Some(egui::Id::new(200 + id)),
-                    terminal_size: Some(Vec2::new(8. * 10. * 2.0, 16.0 * 2.0)),
+                    terminal_size: Some(Vec2::new(font_dims.width as f32 * 10. * 2.0, font_dims.height as f32 * 2.0)),
+                    force_focus: self.selected_view == i,
                     ..Default::default()
                 };
 
                 for x in 0..10 {
-                    let ch = self.char_set.table[id][x];
+                    let ch = self.char_sets[self.cur_char_set].table[id][x];
                     view.lock().get_buffer_mut().layers[0].set_char((x, 0), AttributedChar::new(ch, TextAttribute::default()));
                 }
                 if id % 3 == 0 {
@@ -221,16 +333,56 @@ impl SettingsDialog {
                 id += 1;
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if view.lock().calc.has_focus {
+                    if i == self.selected_view {
                         ui.strong(fl!(crate::LANGUAGE_LOADER, "settings-set-label", set = id));
                     } else {
                         ui.label(fl!(crate::LANGUAGE_LOADER, "settings-set-label", set = id));
                     }
                 });
-                show_terminal_area(ui, view.clone(), opt);
+                let (response, calc) = show_terminal_area(ui, view.clone(), opt);
+                if response.has_focus() {
+                    self.selected_view = i;
+                }
+                if response.clicked() {
+                    if let Some(click_pos) = response.interact_pointer_pos() {
+                        let pos = calc.calc_click_pos(click_pos);
+                        let pos = Position::new(pos.x as i32, pos.y as i32);
+                        view.lock().get_caret_mut().set_position(pos);
+                    }
+                }
             }
         });
-        self.char_view.show_plain_char_table(ui);
+        if self.char_view.get_font().get_checksum() != cur_font.checksum {
+            self.char_view.set_font(cur_font.clone());
+            for view in &self.views {
+                view.lock().get_buffer_mut().set_font(0, cur_font.clone())
+            }
+        }
+        if let Some(ch) = self.char_view.show_plain_char_table(ui) {
+            let mut pos = self.views[self.selected_view].lock().get_caret().get_position();
+            self.char_sets[self.cur_char_set].table[self.selected_view][pos.x as usize] = ch;
+            pos.x = (pos.x + 1).min(9);
+            self.views[self.selected_view].lock().get_caret_mut().set_position(pos);
+
+            for x in 0..10 {
+                let ch = self.char_sets[self.cur_char_set].table[self.selected_view][x];
+                self.views[self.selected_view].lock().get_buffer_mut().layers[0].set_char((x, 0), AttributedChar::new(ch, TextAttribute::default()));
+            }
+
+            self.views[self.selected_view].lock().get_edit_state_mut().is_buffer_dirty = true;
+        }
+
+        if ui.input(|i| i.key_pressed(egui::Key::ArrowLeft)) {
+            let mut pos = self.views[self.selected_view].lock().get_caret().get_position();
+            pos.x = (pos.x - 1).max(0);
+            self.views[self.selected_view].lock().get_caret_mut().set_position(pos);
+        }
+
+        if ui.input(|i| i.key_pressed(egui::Key::ArrowRight)) {
+            let mut pos = self.views[self.selected_view].lock().get_caret().get_position();
+            pos.x = (pos.x + 1).min(9);
+            self.views[self.selected_view].lock().get_caret_mut().set_position(pos);
+        }
     }
 }
 

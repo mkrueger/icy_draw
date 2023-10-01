@@ -145,7 +145,80 @@ impl FontSelector {
         }
     }
 
-    fn load_fonts(tdf_dir: &Path) -> Vec<BitFont> {
+    pub fn font_library() -> Self {
+        let mut fonts = Vec::new();
+        for f in SAUCE_FONT_NAMES {
+            fonts.push((
+                BitFont::from_sauce_name(f).unwrap(),
+                BitfontSource {
+                    sauce: Some(f.to_string()),
+                    ..Default::default()
+                },
+            ));
+        }
+
+        for slot in 0..ANSI_FONTS {
+            let ansi_font = BitFont::from_ansi_font_page(slot).unwrap();
+            let mut found = false;
+            for (existing_font, src) in &mut fonts {
+                if existing_font.get_checksum() == ansi_font.get_checksum() {
+                    src.ansi_slot = Some(slot);
+                    found = true;
+                    break;
+                }
+            }
+            if found {
+                continue;
+            }
+            fonts.push((
+                ansi_font,
+                BitfontSource {
+                    ansi_slot: Some(slot),
+                    ..Default::default()
+                },
+            ));
+        }
+
+        if let Ok(font_dir) = Settings::get_font_diretory() {
+            for lib_font in FontSelector::load_fonts(font_dir.as_path()) {
+                let mut found = false;
+                for (existing_font, src) in &mut fonts {
+                    if existing_font.get_checksum() == lib_font.get_checksum() {
+                        src.library = true;
+                        found = true;
+                        break;
+                    }
+                }
+                if found {
+                    continue;
+                }
+
+                fonts.push((
+                    lib_font,
+                    BitfontSource {
+                        library: true,
+                        ..Default::default()
+                    },
+                ));
+            }
+        }
+        Self {
+            do_select: false,
+            fonts,
+            image_cache: HashMap::default(),
+            selected_font: 0,
+            filter: String::new(),
+            show_builtin: true,
+            show_library: true,
+            show_file: true,
+            show_sauce: true,
+            edit_selected_font: false,
+            should_add: false,
+            only_sauce_fonts: false,
+        }
+    }
+
+    pub fn load_fonts(tdf_dir: &Path) -> Vec<BitFont> {
         let mut fonts = Vec::new();
         let walker = WalkDir::new(tdf_dir).into_iter();
         for entry in walker.filter_entry(|e| !crate::model::font_imp::FontTool::is_hidden(e)) {
@@ -225,6 +298,11 @@ impl FontSelector {
                 log::error!("Error reading zip archive: {}", err);
             }
         }
+    }
+
+    pub fn selected_font(&self) -> &BitFont {
+        let font = &self.fonts[self.selected_font as usize];
+        &font.0
     }
 
     pub fn draw_font_row(&mut self, ui: &mut egui::Ui, cur_font: usize, row_height: f32, is_selected: bool) -> Response {

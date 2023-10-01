@@ -31,6 +31,17 @@ impl CharTableToolWindow {
             buffer_width,
         }
     }
+
+    pub fn get_font(&self) -> &BitFont {
+        &self.font
+    }
+
+    pub fn set_font(&mut self, font: BitFont) {
+        self.font = font;
+        self.char_table = create_font_image(&self.font, self.buffer_width);
+        self.hover_char = None;
+    }
+
     pub fn show_plain_char_table(&mut self, ui: &mut egui::Ui) -> Option<char> {
         let mut something_hovered = false;
         let mut result = None;

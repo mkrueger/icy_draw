@@ -8,7 +8,7 @@ use std::{
 use crate::{
     add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor, ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands,
     Document, DocumentBehavior, DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, SettingsDialog, ToolBehavior, ToolTab, TopBar,
-    SETTINGS,
+    KEYBINDINGS,
 };
 use directories::UserDirs;
 use eframe::egui::{Button, PointerButton};
@@ -132,7 +132,7 @@ impl MainWindow {
         let open_file_window = view_library::MainWindow::new(&gl, None);
         let mut c = Box::<Commands>::default();
         unsafe {
-            c.apply_key_bindings(&SETTINGS.key_bindings);
+            c.apply_key_bindings(&KEYBINDINGS.key_bindings);
         }
         let settings_dialog = SettingsDialog::new(&gl);
         MainWindow {
@@ -820,7 +820,7 @@ impl eframe::App for MainWindow {
             self.show_settings = self.settings_dialog.show(ctx);
             if !self.show_settings {
                 unsafe {
-                    self.commands[0].apply_key_bindings(&SETTINGS.key_bindings);
+                    self.commands[0].apply_key_bindings(&KEYBINDINGS.key_bindings);
                 }
             }
         }

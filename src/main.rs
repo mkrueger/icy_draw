@@ -106,13 +106,34 @@ fn main() {
             }
         }
     }
+
+    if let Ok(settings_file) = KeyBindings::get_keybindings_file() {
+        if settings_file.exists() {
+            if let Ok(key_bindings) = KeyBindings::load(&settings_file) {
+                unsafe {
+                    KEYBINDINGS = key_bindings;
+                }
+            }
+        }
+    }
+
+    if let Ok(settings_file) = CharacterSets::get_character_sets_file() {
+        if settings_file.exists() {
+            if let Ok(character_sets) = CharacterSets::load(&settings_file) {
+                unsafe {
+                    CHARACTER_SETS = character_sets;
+                }
+            }
+        }
+    }
+
     unsafe {
-        if SETTINGS.key_bindings.is_empty() {
-            SETTINGS.key_bindings = Commands::default_keybindings();
+        if KEYBINDINGS.key_bindings.is_empty() {
+            KEYBINDINGS.key_bindings = Commands::default_keybindings();
         }
 
-        if SETTINGS.character_sets.is_empty() {
-            SETTINGS.character_sets.push(CharacterSet::default());
+        if CHARACTER_SETS.character_sets.is_empty() {
+            CHARACTER_SETS.character_sets.push(CharSetMapping::default());
         }
     }
 

@@ -366,7 +366,18 @@ impl AnsiEditor {
     }
 
     pub fn get_char_set_key(&self, i: usize) -> char {
-        unsafe { SETTINGS.get_character_set_char("", i) }
+        unsafe {
+            let lock = self.buffer_view.lock();
+            let font_page = lock.get_caret().get_font_page();
+
+            let checksum = if let Some(font) = lock.get_buffer().get_font(font_page) {
+                font.get_checksum()
+            } else {
+                0
+            };
+
+            SETTINGS.get_character_set_char(checksum, i)
+        }
     }
 
     pub fn type_char_set_key(&mut self, character_set: usize) {

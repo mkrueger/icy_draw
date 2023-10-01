@@ -447,3 +447,4 @@ settings-alpha=alpha
 settings-guide-label=Hilfslinienfarbe:
 settings-set-label=Set { $set }
 settings-key_filter_preview_text=Tastenzuweisung filtern
+settings-char_set_list_label=Zeichnsatzliste:

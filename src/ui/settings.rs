@@ -26,23 +26,93 @@ pub struct Settings {
     pub marker_settings: MarkerSettings,
     pub save_options: SaveOptions,
 
-    pub key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
-
     recent_files: Vec<PathBuf>,
-
-    pub character_sets: Vec<CharacterSet>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct CharacterSet {
-    pub font_name: String,
+#[derive(Serialize, Deserialize, Debug)]
+pub struct KeyBindings {
+    pub key_bindings: Vec<(String, eframe::egui::Key, Modifiers)>,
+}
+
+impl KeyBindings {
+    pub fn get_keybindings_file() -> TerminalResult<PathBuf> {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+            let dir = proj_dirs.config_dir().join("key_bindings.json");
+            return Ok(dir);
+        }
+        Err(IcyDrawError::ErrorCreatingDirectory("key_bindings".to_string()).into())
+    }
+
+    pub fn load(path: &PathBuf) -> io::Result<Self> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+        // Read the JSON contents of the file as an instance of `User`.
+        let u = serde_json::from_reader(reader)?;
+        // Return the `User`.
+        Ok(u)
+    }
+
+    pub fn save(&self) -> io::Result<()> {
+        let Ok(path) = KeyBindings::get_keybindings_file() else {
+            return Ok(());
+        };
+
+        unsafe {
+            let file = File::create(path)?;
+            let reader = BufWriter::new(file);
+            serde_json::to_writer_pretty(reader, &KEYBINDINGS)?;
+            Ok(())
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CharacterSets {
+    pub character_sets: Vec<CharSetMapping>,
+}
+
+impl CharacterSets {
+    pub fn get_character_sets_file() -> TerminalResult<PathBuf> {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+            let dir = proj_dirs.config_dir().join("character_sets.json");
+            return Ok(dir);
+        }
+        Err(IcyDrawError::ErrorCreatingDirectory("character_sets".to_string()).into())
+    }
+
+    pub fn load(path: &PathBuf) -> io::Result<Self> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+        // Read the JSON contents of the file as an instance of `User`.
+        let u = serde_json::from_reader(reader)?;
+        // Return the `User`.
+        Ok(u)
+    }
+
+    pub fn save(&self) -> io::Result<()> {
+        let Ok(path) = CharacterSets::get_character_sets_file() else {
+            return Ok(());
+        };
+
+        unsafe {
+            let file = File::create(path)?;
+            let reader = BufWriter::new(file);
+            serde_json::to_writer_pretty(reader, &CHARACTER_SETS)?;
+            Ok(())
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct CharSetMapping {
+    pub font_checksum: u32,
     pub table: Vec<Vec<char>>,
 }
 
-impl Default for CharacterSet {
+impl Default for CharSetMapping {
     fn default() -> Self {
-        let mut default_char_set = CharacterSet {
-            font_name: "".to_string(),
+        let mut default_char_set = CharSetMapping {
+            font_checksum: 0,
             table: Vec::new(),
         };
         for i in crate::DEFAULT_CHAR_SET_TABLE {
@@ -56,28 +126,6 @@ impl Default for CharacterSet {
 }
 
 impl Settings {
-    pub fn get_character_set_char(&self, _font_name: &str, ch: usize) -> char {
-        let table_idx = 0;
-        if table_idx >= self.character_sets.len() {
-            return ' ';
-        }
-        let char_set = &self.character_sets[table_idx];
-        if self.character_set >= char_set.table.len() || ch >= char_set.table[self.character_set].len() {
-            return ' ';
-        }
-        char_set.table[self.character_set][ch]
-    }
-
-    pub fn set_character_set(character_set: usize) {
-        unsafe {
-            SETTINGS.character_set = character_set;
-        }
-    }
-
-    pub fn get_character_set() -> usize {
-        unsafe { SETTINGS.character_set }
-    }
-
     pub fn set_font_outline_style(font_outline_style: usize) {
         unsafe {
             SETTINGS.font_outline_style = font_outline_style;
@@ -109,6 +157,34 @@ impl Settings {
         unsafe {
             SETTINGS.recent_files.clear();
         }
+    }
+
+    pub fn get_character_set_char(&self, checksum: u32, ch: usize) -> char {
+        unsafe {
+            let mut table_idx = 0;
+
+            for (i, set) in CHARACTER_SETS.character_sets.iter().enumerate() {
+                if set.font_checksum == checksum {
+                    table_idx = i;
+                    break;
+                }
+            }
+            let char_set = &CHARACTER_SETS.character_sets[table_idx];
+            if self.character_set >= char_set.table.len() || ch >= char_set.table[self.character_set].len() {
+                return ' ';
+            }
+            char_set.table[self.character_set][ch]
+        }
+    }
+
+    pub fn set_character_set(character_set: usize) {
+        unsafe {
+            SETTINGS.character_set = character_set;
+        }
+    }
+
+    pub fn get_character_set() -> usize {
+        unsafe { SETTINGS.character_set }
     }
 
     pub(crate) fn get_font_diretory() -> TerminalResult<PathBuf> {
@@ -223,14 +299,16 @@ impl Settings {
 
 pub static mut PLUGINS: Vec<Plugin> = Vec::new();
 
+pub static mut KEYBINDINGS: KeyBindings = KeyBindings { key_bindings: Vec::new() };
+
+pub static mut CHARACTER_SETS: CharacterSets = CharacterSets { character_sets: Vec::new() };
+
 pub static mut SETTINGS: Settings = Settings {
     font_outline_style: 0,
     character_set: 5,
     show_layer_borders: true,
     show_line_numbers: false,
     recent_files: Vec::new(),
-    key_bindings: Vec::new(),
-    character_sets: Vec::new(),
     save_options: SaveOptions::new(),
     monitor_settings: MonitorSettings {
         use_filter: false,
