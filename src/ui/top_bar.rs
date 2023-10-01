@@ -46,6 +46,8 @@ impl MainWindow {
         menu::bar(ui, |ui| {
             let mut has_buffer = false;
             let mut has_reference_image = false;
+            let mut cur_raster = Some(Vec2::new(f32::NAN, f32::NAN));
+            let mut cur_guide = Some(Vec2::new(f32::NAN, f32::NAN));
 
             if self.last_command_update.elapsed().as_millis() > 250 {
                 let mut c = self.commands.pop().unwrap();
@@ -62,6 +64,8 @@ impl MainWindow {
                 if let Ok(doc) = pane.doc.lock() {
                     if let Some(editor) = doc.get_ansi_editor() {
                         has_buffer = true;
+                        cur_raster = editor.raster;
+                        cur_guide = editor.guide;
                         has_reference_image = editor.buffer_view.lock().has_reference_image();
                     } else {
                         has_buffer = false;
@@ -466,24 +470,27 @@ impl MainWindow {
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-guides"), |ui| {
                     ui.style_mut().wrap = Some(false);
                     ui.set_min_width(200.0);
-                    if ui.button("Smallscale 80x25").clicked() {
+                    if ui.selectable_label(cur_guide == Some(Vec2::new(80.0, 25.0)), "Smallscale 80x25").clicked() {
                         result = Some(Message::SetGuide(80, 25));
                         ui.close_menu();
                     }
-                    if ui.button("Square 80x40").clicked() {
+                    if ui.selectable_label(cur_guide == Some(Vec2::new(80.0, 40.0)), "Square 80x40").clicked() {
                         result = Some(Message::SetGuide(80, 40));
                         ui.close_menu();
                     }
-                    if ui.button("Instagram 80x50").clicked() {
+                    if ui.selectable_label(cur_guide == Some(Vec2::new(80.0, 50.0)), "Instagram 80x50").clicked() {
                         result = Some(Message::SetGuide(80, 50));
                         ui.close_menu();
                     }
-                    if ui.button("File_ID.DIZ 44x22").clicked() {
+                    if ui.selectable_label(cur_guide == Some(Vec2::new(44.0, 22.0)), "File_ID.DIZ 44x22").clicked() {
                         result = Some(Message::SetGuide(44, 22));
                         ui.close_menu();
                     }
                     ui.separator();
-                    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-guides-off")).clicked() {
+                    if ui
+                        .selectable_label(cur_guide.is_none(), fl!(crate::LANGUAGE_LOADER, "menu-guides-off"))
+                        .clicked()
+                    {
                         result = Some(Message::SetGuide(0, 0));
                         ui.close_menu();
                     }
@@ -492,42 +499,22 @@ impl MainWindow {
                 ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-raster"), |ui| {
                     ui.style_mut().wrap = Some(false);
                     ui.set_min_width(100.0);
-                    if ui.button("1x1").clicked() {
-                        result = Some(Message::SetRaster(1, 1));
-                        ui.close_menu();
-                    }
-                    if ui.button("2x2").clicked() {
-                        result = Some(Message::SetRaster(4, 2));
-                        ui.close_menu();
-                    }
-                    if ui.button("4x2").clicked() {
-                        result = Some(Message::SetRaster(4, 2));
-                        ui.close_menu();
-                    }
-                    if ui.button("4x4").clicked() {
-                        result = Some(Message::SetRaster(4, 4));
-                        ui.close_menu();
-                    }
-                    if ui.button("8x4").clicked() {
-                        result = Some(Message::SetRaster(8, 4));
-                        ui.close_menu();
-                    }
-                    if ui.button("8x8").clicked() {
-                        result = Some(Message::SetRaster(8, 8));
-                        ui.close_menu();
-                    }
-                    if ui.button("16x8").clicked() {
-                        result = Some(Message::SetRaster(16, 8));
-                        ui.close_menu();
-                    }
 
-                    if ui.button("16x16").clicked() {
-                        result = Some(Message::SetRaster(16, 16));
-                        ui.close_menu();
+                    let raster = [(1, 1), (2, 2), (4, 2), (4, 4), (8, 2), (8, 4), (8, 8), (16, 4), (16, 8), (16, 16)];
+                    for (x, y) in raster {
+                        if ui
+                            .selectable_label(cur_raster == Some(Vec2::new(x as f32, y as f32)), format!("{x}x{y}"))
+                            .clicked()
+                        {
+                            result = Some(Message::SetRaster(x, y));
+                            ui.close_menu();
+                        }
                     }
-
                     ui.separator();
-                    if ui.button(fl!(crate::LANGUAGE_LOADER, "menu-guides-off")).clicked() {
+                    if ui
+                        .selectable_label(cur_raster.is_none(), fl!(crate::LANGUAGE_LOADER, "menu-guides-off"))
+                        .clicked()
+                    {
                         result = Some(Message::SetRaster(0, 0));
                         ui.close_menu();
                     }
