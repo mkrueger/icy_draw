@@ -496,24 +496,33 @@ impl MainWindow {
                         result = Some(Message::SetRaster(1, 1));
                         ui.close_menu();
                     }
+                    if ui.button("2x2").clicked() {
+                        result = Some(Message::SetRaster(4, 2));
+                        ui.close_menu();
+                    }
                     if ui.button("4x2").clicked() {
                         result = Some(Message::SetRaster(4, 2));
                         ui.close_menu();
                     }
-                    if ui.button("6x3").clicked() {
-                        result = Some(Message::SetRaster(6, 3));
+                    if ui.button("4x4").clicked() {
+                        result = Some(Message::SetRaster(4, 4));
                         ui.close_menu();
                     }
                     if ui.button("8x4").clicked() {
                         result = Some(Message::SetRaster(8, 4));
                         ui.close_menu();
                     }
-                    if ui.button("12x6").clicked() {
-                        result = Some(Message::SetRaster(12, 6));
+                    if ui.button("8x8").clicked() {
+                        result = Some(Message::SetRaster(8, 8));
                         ui.close_menu();
                     }
                     if ui.button("16x8").clicked() {
                         result = Some(Message::SetRaster(16, 8));
+                        ui.close_menu();
+                    }
+
+                    if ui.button("16x16").clicked() {
+                        result = Some(Message::SetRaster(16, 16));
                         ui.close_menu();
                     }
 
