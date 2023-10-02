@@ -249,7 +249,7 @@ impl Document for AnimationEditor {
 
                             if ui
                                 .add_enabled(
-                                    animator.get_cur_frame() < animator.frames.len() - 1,
+                                    animator.get_cur_frame() + 1 < animator.frames.len(),
                                     ImageButton::new(crate::NAVIGATE_NEXT.clone()),
                                 )
                                 .clicked()

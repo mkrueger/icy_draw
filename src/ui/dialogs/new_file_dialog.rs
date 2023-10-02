@@ -3,9 +3,9 @@ use std::path::Path;
 use eframe::{
     egui::{self, Layout, Sense, SidePanel, Ui, WidgetText},
     emath::Align,
-    epaint::{Color32, FontId, Pos2, Rect, Rounding},
+    epaint::{FontId, Pos2, Rect, Rounding},
 };
-use egui::Image;
+use egui::{Image, Vec2};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, FontType, TheDrawFont};
@@ -453,16 +453,19 @@ impl crate::ModalDialog for NewFileDialog {
                                     ui.painter()
                                         .rect_filled(rect.expand(1.0), Rounding::same(4.0), ui.style().visuals.extreme_bg_color);
                                 }
-                                let image = template.image().clone();
-
-                                let image = image.tint(Color32::WHITE);
-                                image.paint_at(ui, Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)));
+                                let image = template.image();
+                                let r = Rect::from_min_size(
+                                    Pos2::new(rect.left() + 4.0, rect.top() + 4.0), 
+                                    Vec2::new(32.0, 32.0)
+                                );
+                                image.paint_at(ui, r);
 
                                 let font_id = FontId::new(20.0, eframe::epaint::FontFamily::Proportional);
                                 let text: WidgetText = template.title().into();
                                 let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
                                 let mut title_rect = rect;
                                 title_rect.set_left(title_rect.left() + 40.0);
+                                title_rect.set_top(title_rect.top() + 4.0);
                                 ui.painter().galley_with_color(
                                     egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), title_rect.shrink(4.0)).min,
                                     galley.galley,
