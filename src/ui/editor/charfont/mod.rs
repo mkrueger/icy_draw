@@ -4,7 +4,7 @@ use eframe::{
     egui::{self, Button, ScrollArea, SidePanel, TextEdit, TopBottomPanel},
     epaint::{mutex::Mutex, Vec2},
 };
-use egui_extras::RetainedImage;
+use egui::{load::SizedTexture, Image, Rect, TextureHandle};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, EngineResult, FontGlyph, Layer, Size, TextAttribute, TextPane, TheDrawFont};
 use icy_engine_egui::{show_terminal_area, BufferView};
@@ -31,7 +31,7 @@ pub struct CharFontEditor {
     last_update_preview_attr: TextAttribute,
     outline_selection: crate::SelectOutlineDialog,
     draw_outline_bg: bool,
-    opt_cheat_sheet: Option<RetainedImage>,
+    opt_cheat_sheet: Option<TextureHandle>,
 }
 
 impl ClipboardHandler for CharFontEditor {
@@ -353,18 +353,25 @@ impl Document for CharFontEditor {
                             for (i, c) in s3.chars().enumerate() {
                                 buffer.layers[0].set_char((i, 2), AttributedChar::new(c, attr));
                             }
-                            self.opt_cheat_sheet = Some(crate::create_retained_image(&buffer));
+                            self.opt_cheat_sheet = Some(crate::create_image(ui.ctx(),&buffer));
                         }
 
-                        if let Some(cheat_sheet) = & self.opt_cheat_sheet {
+                        if let Some(image) = & self.opt_cheat_sheet {
                             ui.vertical_centered(|ui| {
+                                let sized_texture:SizedTexture = (image).into();
+                                let image = Image::from_texture(sized_texture);
+                                let mut size = sized_texture.size;
                                 let width = ui.available_width();
-                                let mut size = Vec2::new(cheat_sheet.width() as f32, cheat_sheet.height() as f32);
                                 if width < size.x {
                                     size.y *= width / size.x;
                                     size.x = width;
                                 }
-                                cheat_sheet.show_size(ui, size);
+                                let r = Rect::from_min_size(
+                                    ui.min_rect().min,
+                                    size,
+                                );
+                                image.paint_at(ui, r);
+
                             });
                         }
                     });

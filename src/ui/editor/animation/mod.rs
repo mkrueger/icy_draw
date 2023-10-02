@@ -10,7 +10,7 @@ use eframe::{
     egui::{self, Id, ImageButton, RichText, Slider, TextEdit, TopBottomPanel},
     epaint::Vec2,
 };
-use egui::{Button, Image};
+use egui::Image;
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
 use icy_engine::{Buffer, EngineResult, Size, TextPane};
@@ -190,7 +190,6 @@ impl Document for AnimationEditor {
                 animator.display_frame(self.buffer_view.clone());
             }
         }
-
         egui::SidePanel::left("movie_panel")
             .exact_width(ui.available_width() / 2.0)
             .resizable(false)
@@ -215,6 +214,9 @@ impl Document for AnimationEditor {
                                     &crate::REPLAY_SVG
                                 };
                                 if ui.add(ImageButton::new(image.clone())).clicked() {
+                                    if animator.get_cur_frame() + 1 >= frame_count {
+                                        animator.set_cur_frame(0);
+                                    }
                                     animator.start_playback(self.buffer_view.clone());
                                 }
                             }
@@ -236,13 +238,22 @@ impl Document for AnimationEditor {
                                 animator.display_frame(self.buffer_view.clone());
                             }
 
-                            if ui.add_enabled(animator.get_cur_frame() > 0, ImageButton::new(crate::NAVIGATE_PREV.clone())).clicked() {
+                            if ui
+                                .add_enabled(animator.get_cur_frame() > 0, ImageButton::new(crate::NAVIGATE_PREV.clone()))
+                                .clicked()
+                            {
                                 let cf = animator.get_cur_frame() - 1;
                                 animator.set_cur_frame(cf);
                                 animator.display_frame(self.buffer_view.clone());
                             }
 
-                            if ui.add_enabled(animator.get_cur_frame() < animator.frames.len() - 1, ImageButton::new(crate::NAVIGATE_NEXT.clone())).clicked()  { 
+                            if ui
+                                .add_enabled(
+                                    animator.get_cur_frame() < animator.frames.len() - 1,
+                                    ImageButton::new(crate::NAVIGATE_NEXT.clone()),
+                                )
+                                .clicked()
+                            {
                                 let cf = animator.get_cur_frame() + 1;
                                 animator.set_cur_frame(cf);
                                 animator.display_frame(self.buffer_view.clone());

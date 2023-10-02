@@ -4,13 +4,13 @@ use eframe::{
     egui::{self, Button, Response, Sense, TextEdit, WidgetText},
     epaint::{ahash::HashMap, Color32, FontFamily, FontId, Pos2, Rect, Rounding, Stroke, Vec2},
 };
-use egui_extras::RetainedImage;
+use egui::{load::SizedTexture, Image, TextureHandle};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, TextAttribute, ANSI_FONTS, SAUCE_FONT_NAMES};
 use walkdir::WalkDir;
 
-use crate::{create_retained_image, is_font_extensions, AnsiEditor, Message, Settings, TerminalResult};
+use crate::{create_image, is_font_extensions, AnsiEditor, Message, Settings, TerminalResult};
 
 #[derive(Default)]
 struct BitfontSource {
@@ -28,11 +28,11 @@ pub struct FontSelector {
     show_builtin: bool,
     show_library: bool,
     show_file: bool,
-    has_file:bool,
+    has_file: bool,
     show_sauce: bool,
     should_add: bool,
 
-    image_cache: HashMap<usize, RetainedImage>,
+    image_cache: HashMap<usize, TextureHandle>,
     do_select: bool,
     edit_selected_font: bool,
     only_sauce_fonts: bool,
@@ -346,20 +346,17 @@ impl FontSelector {
                     AttributedChar::new(unsafe { char::from_u32_unchecked(ch as u32) }, TextAttribute::default()),
                 );
             }
-            let img = create_retained_image(&buffer);
+            let img = create_image(ui.ctx(), &buffer);
             self.image_cache.insert(cur_font, img);
         }
 
         if let Some(image) = self.image_cache.get(&cur_font) {
-            let w = (image.width() as f32).floor();
-            let h = (image.height() as f32).floor();
+            let sized_texture: SizedTexture = (image).into();
+            let w = (sized_texture.size.x).floor();
+            let h = (sized_texture.size.y).floor();
             let r = Rect::from_min_size(Pos2::new((rect.left() + 4.0).floor(), (rect.top() + 24.0).floor()), Vec2::new(w, h));
-            ui.painter().image(
-                image.texture_id(ui.ctx()),
-                r,
-                Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
-                Color32::WHITE,
-            );
+            let image = Image::from_texture(sized_texture);
+            image.paint_at(ui, r);
 
             let mut rect = rect;
             if font.1.library {

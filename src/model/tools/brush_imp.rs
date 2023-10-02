@@ -2,13 +2,13 @@ use eframe::{
     egui::{self, Response, RichText, Sense},
     epaint::{Color32, Pos2, Rect, Rounding, Vec2},
 };
-use egui_extras::RetainedImage;
+use egui::{load::SizedTexture, Image, TextureHandle};
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Layer, TextPane};
 use icy_engine_egui::TerminalCalc;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{create_retained_image, paint::ColorMode, AnsiEditor, Event, Message};
+use crate::{create_image, paint::ColorMode, AnsiEditor, Event, Message};
 
 use super::{Position, Tool};
 
@@ -31,7 +31,7 @@ pub struct BrushTool {
     undo_op: Option<AtomicUndoGuard>,
     cur_pos: Position,
     custom_brush: Option<Layer>,
-    image: Option<RetainedImage>,
+    image: Option<TextureHandle>,
     brush_type: BrushType,
 }
 
@@ -124,7 +124,7 @@ impl Tool for BrushTool {
         false
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<&AnsiEditor>) -> Option<Message> {
         let mut result = None;
         self.color_mode.show_ui(ui);
 
@@ -152,20 +152,19 @@ impl Tool for BrushTool {
                 layer.title = buf.layers[0].title.clone();
                 buf.layers.clear();
                 buf.layers.push(layer);
-                self.image = Some(create_retained_image(&buf));
+                self.image = Some(create_image(ctx, &buf));
             }
         }
 
         if self.custom_brush.is_some() {
             ui.radio_value(&mut self.brush_type, BrushType::Custom, fl!(crate::LANGUAGE_LOADER, "tool-custom-brush"));
             if let Some(image) = &self.image {
+                let sized_texture: SizedTexture = (image).into();
                 let w = ui.available_width() - 16.0;
-                let scale = w / image.width() as f32;
-                image.show_scaled(ui, scale);
-                /*                 ui.image(
-                    image.texture_id(ui.ctx()),
-                    Vec2::new(image.width() as f32 * scale, image.height() as f32 * scale),
-                );*/
+                let scale = w / sized_texture.size.x;
+                let image = Image::from_texture(sized_texture);
+                let r = Rect::from_min_size(ui.min_rect().min, sized_texture.size * scale);
+                image.paint_at(ui, r);
             }
         }
         result

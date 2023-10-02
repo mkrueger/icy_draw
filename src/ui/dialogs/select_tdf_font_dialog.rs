@@ -5,9 +5,9 @@ use std::{
 
 use eframe::{
     egui::{self, Response, Sense, TextEdit, TextStyle, WidgetText},
-    epaint::{ahash::HashMap, Color32, ColorImage, FontFamily, FontId, Pos2, Rect, Rounding, Stroke, Vec2},
+    epaint::{ahash::HashMap, ColorImage, FontFamily, FontId, Pos2, Rect, Rounding, Stroke, Vec2},
 };
-use egui_extras::RetainedImage;
+use egui::{load::SizedTexture, Image, TextureHandle, TextureOptions};
 use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
@@ -28,7 +28,7 @@ pub struct SelectFontDialog {
     export_data: Option<Vec<u8>>,
     export_dialog: Option<FileDialog>,
 
-    image_cache: HashMap<usize, RetainedImage>,
+    image_cache: HashMap<usize, TextureHandle>,
 }
 
 impl SelectFontDialog {
@@ -126,23 +126,27 @@ impl SelectFontDialog {
                     state.get_caret_mut().set_position(pos);
                 }
             }
-            let img = create_retained_image(state.get_buffer());
+            let img = create_image(ui.ctx(), state.get_buffer());
             self.image_cache.insert(cur_font, img);
         }
 
         if let Some(image) = self.image_cache.get(&cur_font) {
-            let w = (image.width() as f32 / 2.0).floor();
-            let h = (image.height() as f32 / 2.0).floor();
+            let sized_texture: SizedTexture = (image).into();
+            let w = (sized_texture.size.x / 2.0).floor();
+            let h = (sized_texture.size.y / 2.0).floor();
             let r = Rect::from_min_size(
                 Pos2::new((rect.right() - w - 4.0).floor(), (rect.top() + ((rect.height() - h) / 2.0)).floor()),
                 Vec2::new(w, h),
             );
+            let image = Image::from_texture(sized_texture);
+            image.paint_at(ui, r);
+            /*
             ui.painter().image(
                 image.texture_id(ui.ctx()),
                 r,
                 Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
                 Color32::WHITE,
-            );
+            );*/
 
             let font_type = match font.font_type {
                 icy_engine::FontType::Outline => {
@@ -312,10 +316,8 @@ impl crate::ModalDialog for SelectFontDialog {
     }
 }
 
-pub fn create_retained_image(buf: &Buffer) -> RetainedImage {
+pub fn create_image(ctx: &egui::Context, buf: &Buffer) -> TextureHandle {
     let (size, pixels) = buf.render_to_rgba(Rectangle::from(0, 0, buf.get_width(), buf.get_height()));
-    RetainedImage::from_color_image(
-        "buf_img",
-        ColorImage::from_rgba_premultiplied([size.width as usize, size.height as usize], &pixels),
-    )
+    let color_image = ColorImage::from_rgba_premultiplied([size.width as usize, size.height as usize], &pixels);
+    ctx.load_texture("my_texture", color_image, TextureOptions::NEAREST)
 }

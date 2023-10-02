@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    create_retained_image,
+    create_image,
     model::Tool,
     util::autosave::{remove_autosave, store_auto_save},
     Document, DocumentOptions, Message, Settings, FIRST_TOOL,
@@ -15,7 +15,7 @@ use eframe::{
     egui::{self, Response, Ui},
     epaint::Rgba,
 };
-use egui_extras::RetainedImage;
+use egui::{TextureHandle, Widget};
 use egui_tiles::{Tabs, TileId, Tiles};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Buffer, TextAttribute, TextPane};
@@ -131,11 +131,11 @@ pub struct DocumentBehavior {
     prev_tool: usize,
     pub document_options: DocumentOptions,
 
-    char_set_img: Option<RetainedImage>,
+    char_set_img: Option<TextureHandle>,
     cur_char_set: usize,
     dark_mode: bool,
 
-    pos_img: Option<RetainedImage>,
+    pos_img: Option<TextureHandle>,
     cur_line_col_txt: String,
 
     pub request_close: Option<TileId>,
@@ -328,11 +328,11 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                                 i += 1;
                             }
 
-                            self.char_set_img = Some(create_retained_image(&buffer));
+                            self.char_set_img = Some(create_image(ui.ctx(), &buffer));
                         }
 
                         if let Some(img) = &self.char_set_img {
-                            img.show(ui);
+                            egui::Image::from_texture(img).ui(ui);
                         }
 
                         let txt = self.tools.lock().unwrap()[self.selected_tool].get_toolbar_location_text(editor);
@@ -370,11 +370,11 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                                 }
                                 buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
                             }
-                            self.pos_img = Some(create_retained_image(&buffer));
+                            self.pos_img = Some(create_image(ui.ctx(), &buffer));
                         }
 
                         if let Some(img) = &self.pos_img {
-                            img.show(ui);
+                            egui::Image::from_texture(img).ui(ui);
                         }
                     }
                 }

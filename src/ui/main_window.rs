@@ -119,7 +119,7 @@ impl MainWindow {
         let layers = tool_tree.tiles.insert_pane(ToolTab::new(LayerToolWindow::default()));
         let channels = tool_tree.tiles.insert_pane(ToolTab::new(ChannelToolWindow::default()));
         let minimap = tool_tree.tiles.insert_pane(ToolTab::new(MinimapToolWindow::new(gl.clone())));
-        let char_table = tool_tree.tiles.insert_pane(ToolTab::new(CharTableToolWindow::new(16)));
+        let char_table = tool_tree.tiles.insert_pane(ToolTab::new(CharTableToolWindow::new(ctx, 16)));
 
         let tab = tool_tree.tiles.insert_tab_tile(vec![minimap, char_table]);
         let tab2 = tool_tree.tiles.insert_tab_tile(vec![layers, channels]);
@@ -135,7 +135,7 @@ impl MainWindow {
         unsafe {
             c.apply_key_bindings(&KEYBINDINGS.key_bindings);
         }
-        let settings_dialog = SettingsDialog::new(&gl);
+        let settings_dialog = SettingsDialog::new(ctx, &gl);
         MainWindow {
             document_behavior: DocumentBehavior::new(Arc::new(Mutex::new(tools))),
             tool_behavior: ToolBehavior::default(),

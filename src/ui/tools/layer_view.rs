@@ -6,7 +6,6 @@ use eframe::{
     epaint::{Color32, Rect, Rounding, Vec2},
 };
 use egui::Image;
-use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 
 use crate::{AnsiEditor, Document, Message, ToolWindow, INVISIBLE_SVG, VISIBLE_SVG};

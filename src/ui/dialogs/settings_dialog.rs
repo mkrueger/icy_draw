@@ -4,6 +4,7 @@ use eframe::{
     egui::{self, color_picker, Layout, Modifiers, RichText},
     epaint::{mutex::Mutex, Color32, Vec2},
 };
+use egui::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, Color, Position, Size, TextAttribute};
 use icy_engine_egui::{show_monitor_settings, show_terminal_area, BufferView, MarkerSettings, MonitorSettings};
@@ -33,7 +34,7 @@ const CHAR_SET_CAT: usize = 3;
 const KEYBIND_CAT: usize = 4;
 
 impl SettingsDialog {
-    pub fn new(gl: &Arc<glow::Context>) -> Self {
+    pub fn new(ctx: &Context, gl: &Arc<glow::Context>) -> Self {
         let mut views = Vec::new();
 
         for _ in 0..15 {
@@ -43,7 +44,7 @@ impl SettingsDialog {
             buffer_view.interactive = true;
             views.push(Arc::new(Mutex::new(buffer_view)));
         }
-        let char_view = CharTableToolWindow::new(32);
+        let char_view = CharTableToolWindow::new(ctx, 32);
 
         let mut font_cache = if let Ok(font_dir) = Settings::get_font_diretory() {
             FontSelector::load_fonts(font_dir.as_path())
@@ -353,7 +354,7 @@ impl SettingsDialog {
             }
         });
         if self.char_view.get_font().get_checksum() != cur_font.checksum {
-            self.char_view.set_font(cur_font.clone());
+            self.char_view.set_font(ui.ctx(), cur_font.clone());
             for view in &self.views {
                 view.lock().get_buffer_mut().set_font(0, cur_font.clone())
             }

@@ -1,28 +1,28 @@
 use std::sync::{Arc, Mutex};
 
 use eframe::{
-    egui::{self, RichText, Sense, TextureOptions},
+    egui::{self, RichText, Sense},
     epaint::{Color32, FontId, Pos2, Rect, Vec2},
 };
-use egui_extras::RetainedImage;
+use egui::{load::SizedTexture, Context, Image, TextureHandle};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, TextAttribute};
 
-use crate::{create_retained_image, AnsiEditor, Document, Message, ToolWindow};
+use crate::{create_image, AnsiEditor, Document, Message, ToolWindow};
 
 pub struct CharTableToolWindow {
     font: BitFont,
     hover_char: Option<char>,
-    hover_char_image: RetainedImage,
-    char_table: RetainedImage,
+    hover_char_image: TextureHandle,
+    char_table: TextureHandle,
     buffer_width: usize,
 }
 
 impl CharTableToolWindow {
-    pub fn new(buffer_width: usize) -> Self {
+    pub fn new(ctx: &Context, buffer_width: usize) -> Self {
         let font = BitFont::default();
-        let char_table = create_font_image(&font, buffer_width);
-        let hover_char_image = create_hover_image(&font, ' ', 14);
+        let char_table = create_font_image(ctx, &font, buffer_width);
+        let hover_char_image = create_hover_image(ctx, &font, ' ', 14);
         Self {
             font,
             char_table,
@@ -36,9 +36,9 @@ impl CharTableToolWindow {
         &self.font
     }
 
-    pub fn set_font(&mut self, font: BitFont) {
+    pub fn set_font(&mut self, ctx: &Context, font: BitFont) {
         self.font = font;
-        self.char_table = create_font_image(&self.font, self.buffer_width);
+        self.char_table = create_font_image(ctx, &self.font, self.buffer_width);
         self.hover_char = None;
     }
 
@@ -49,20 +49,17 @@ impl CharTableToolWindow {
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 let scale = 2.0;
-
-                let width = self.char_table.width() as f32 * scale;
-
-                let height = self.char_table.height() as f32 * scale;
+                let sized_texture: SizedTexture = (&self.char_table).into();
+                let width = sized_texture.size.x * scale;
+                let height = sized_texture.size.y * scale;
                 ui.add_space((ui.available_width() - width) / 2.0);
 
                 let (id, rect) = ui.allocate_space([width, height].into());
                 let response = ui.interact(rect, id, Sense::click());
-                ui.painter().image(
-                    self.char_table.texture_id(ui.ctx()),
-                    Rect::from_min_size(Pos2::new(rect.left(), rect.top()), Vec2::new(width, height)),
-                    Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
-                    Color32::WHITE,
-                );
+                let r = Rect::from_min_size(Pos2::new(rect.left(), rect.top()), Vec2::new(width, height));
+                let image = Image::from_texture(sized_texture);
+                image.paint_at(ui, r);
+
                 let fw = scale * self.font.size.width as f32;
                 let fh = scale * self.font.size.height as f32;
                 if response.clicked() {
@@ -77,20 +74,16 @@ impl CharTableToolWindow {
                         let hover_char = Some(ch);
                         if self.hover_char != hover_char {
                             self.hover_char = hover_char;
-                            self.hover_char_image = create_hover_image(&self.font, ch, 14);
+                            self.hover_char_image = create_hover_image(ui.ctx(), &self.font, ch, 14);
                         }
 
                         let x = (ch as usize) % self.buffer_width;
                         let y = (ch as usize) / self.buffer_width;
 
                         let rect = Rect::from_min_size(rect.min + Vec2::new(x as f32 * fw, y as f32 * fh), Vec2::new(fw, fh));
-
-                        ui.painter().image(
-                            self.hover_char_image.texture_id(ui.ctx()),
-                            rect.expand(2.0),
-                            Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
-                            Color32::WHITE,
-                        );
+                        let sized_texture: SizedTexture = (&self.hover_char_image).into();
+                        let image = Image::from_texture(sized_texture);
+                        image.paint_at(ui, rect.expand(2.0));
                     }
                 }
             });
@@ -128,7 +121,7 @@ impl CharTableToolWindow {
         if let Some(cur_font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
             if cur_font.name != self.font.name {
                 self.font = cur_font.clone();
-                self.char_table = create_font_image(&self.font, self.buffer_width);
+                self.char_table = create_font_image(ui.ctx(), &self.font, self.buffer_width);
                 self.hover_char = None;
             }
         }
@@ -193,7 +186,7 @@ impl CharTableToolWindow {
     }
 }
 
-fn create_font_image(font: &BitFont, buffer_width: usize) -> RetainedImage {
+fn create_font_image(ctx: &Context, font: &BitFont, buffer_width: usize) -> TextureHandle {
     let mut buffer = Buffer::new((buffer_width, 256 / buffer_width));
     buffer.set_font(0, font.clone());
     for ch in 0..256 {
@@ -202,17 +195,17 @@ fn create_font_image(font: &BitFont, buffer_width: usize) -> RetainedImage {
             AttributedChar::new(unsafe { char::from_u32_unchecked(ch as u32) }, TextAttribute::default()),
         );
     }
-    create_retained_image(&buffer).with_options(TextureOptions::NEAREST)
+    create_image(ctx, &buffer)
 }
 
-fn create_hover_image(font: &BitFont, ch: char, color: u32) -> RetainedImage {
+fn create_hover_image(ctx: &Context, font: &BitFont, ch: char, color: u32) -> TextureHandle {
     let mut buffer = Buffer::new((1, 1));
     buffer.set_font(0, font.clone());
     let mut attr = TextAttribute::default();
     attr.set_foreground(color);
 
     buffer.layers[0].set_char((0, 0), AttributedChar::new(unsafe { char::from_u32_unchecked(ch as u32) }, attr));
-    create_retained_image(&buffer).with_options(TextureOptions::NEAREST)
+    create_image(ctx, &buffer)
 }
 
 impl ToolWindow for CharTableToolWindow {

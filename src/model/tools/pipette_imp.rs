@@ -1,13 +1,12 @@
 use eframe::{
-    egui::{self, TextureOptions},
     emath::Align2,
     epaint::{Color32, FontId, Rounding, Vec2},
 };
-use egui_extras::RetainedImage;
+use egui::{load::SizedTexture, Image, Rect, TextureHandle};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Buffer, TextAttribute};
 
-use crate::{create_retained_image, AnsiEditor, Message};
+use crate::{create_image, AnsiEditor, Message};
 
 use super::{Position, Tool};
 
@@ -16,7 +15,7 @@ pub static mut CUR_CHAR: Option<AttributedChar> = None;
 #[derive(Default)]
 pub struct PipetteTool {
     ch: Option<char>,
-    char_image: Option<RetainedImage>,
+    char_image: Option<TextureHandle>,
     cur_pos: Option<Position>,
 }
 
@@ -33,7 +32,7 @@ impl Tool for PipetteTool {
         false
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         let Some(editor) = editor_opt else {
             return None;
         };
@@ -49,11 +48,14 @@ impl Tool for PipetteTool {
                     buf.clear_font_table();
                     buf.set_font(0, editor.buffer_view.lock().get_buffer().get_font(ch.get_font_page()).unwrap().clone());
                     buf.layers[0].set_char((0, 0), AttributedChar::new(ch.ch, TextAttribute::default()));
-                    self.char_image = Some(create_retained_image(&buf).with_options(TextureOptions::NEAREST));
+                    self.char_image = Some(create_image(ctx, &buf));
                 }
 
                 if let Some(image) = &self.char_image {
-                    image.show_scaled(ui, 2.0);
+                    let sized_texture: SizedTexture = (image).into();
+                    let image = Image::from_texture(sized_texture);
+                    let r = Rect::from_min_size(ui.min_rect().min, sized_texture.size * 2.0);
+                    image.paint_at(ui, r);
                 }
 
                 ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_foreground", fg = ch.attribute.get_foreground()));
