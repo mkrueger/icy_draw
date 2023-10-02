@@ -28,6 +28,7 @@ pub struct FontSelector {
     show_builtin: bool,
     show_library: bool,
     show_file: bool,
+    has_file:bool,
     show_sauce: bool,
     should_add: bool,
 
@@ -138,6 +139,7 @@ impl FontSelector {
             show_builtin: true,
             show_library: true,
             show_file: true,
+            has_file: true,
             show_sauce: true,
             edit_selected_font: false,
             should_add,
@@ -211,6 +213,7 @@ impl FontSelector {
             show_builtin: true,
             show_library: true,
             show_file: true,
+            has_file: false,
             show_sauce: true,
             edit_selected_font: false,
             should_add: false,
@@ -436,9 +439,11 @@ impl crate::ModalDialog for FontSelector {
                             self.show_library = !self.show_library;
                         }
 
-                        let response = ui.selectable_label(self.show_file, fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"));
-                        if response.clicked() {
-                            self.show_file = !self.show_file;
+                        if self.has_file {
+                            let response = ui.selectable_label(self.show_file, fl!(crate::LANGUAGE_LOADER, "font_selector-file_font"));
+                            if response.clicked() {
+                                self.show_file = !self.show_file;
+                            }
                         }
 
                         let response = ui.selectable_label(self.show_builtin, fl!(crate::LANGUAGE_LOADER, "font_selector-ansi_font"));
