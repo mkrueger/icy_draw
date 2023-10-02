@@ -119,7 +119,7 @@ impl FillOperation {
 // Character
 // Both
 impl Tool for FillTool {
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::FILL_SVG
     }
     fn use_caret(&self) -> bool {

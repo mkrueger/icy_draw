@@ -132,7 +132,7 @@ fn read_zip_archive(data: Vec<u8>, fonts: &mut Vec<TheDrawFont>) {
 }
 
 impl Tool for FontTool {
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::FONT_SVG
     }
     fn use_selection(&self) -> bool {

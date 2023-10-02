@@ -116,7 +116,7 @@ impl BrushTool {
 }
 
 impl Tool for BrushTool {
-    fn get_icon_name(&self) -> &'static RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::BRUSH_SVG
     }
 
@@ -161,10 +161,11 @@ impl Tool for BrushTool {
             if let Some(image) = &self.image {
                 let w = ui.available_width() - 16.0;
                 let scale = w / image.width() as f32;
-                ui.image(
+                image.show_scaled(ui, scale);
+                /*                 ui.image(
                     image.texture_id(ui.ctx()),
                     Vec2::new(image.width() as f32 * scale, image.height() as f32 * scale),
-                );
+                );*/
             }
         }
         result
@@ -258,9 +259,8 @@ pub fn draw_glyph(ui: &mut egui::Ui, editor: &AnsiEditor, ch: &Rc<RefCell<char>>
         if response.clicked() {
             return Some(crate::Message::ShowCharacterSelectionDialog(ch.clone()));
         }
-
         let painter = ui.painter_at(stroke_rect);
-        painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+        painter.rect_filled(stroke_rect, Rounding::ZERO, Color32::BLACK);
         let s = font.size;
         let ch = *ch.borrow();
         if let Some(glyph) = font.get_glyph(ch) {
@@ -272,7 +272,7 @@ pub fn draw_glyph(ui: &mut egui::Ui, editor: &AnsiEditor, ch: &Rc<RefCell<char>>
                                 Pos2::new(stroke_rect.left() + x as f32 * scale, stroke_rect.top() + y as f32 * scale),
                                 Vec2::new(scale, scale),
                             ),
-                            Rounding::none(),
+                            Rounding::ZERO,
                             col,
                         );
                     }

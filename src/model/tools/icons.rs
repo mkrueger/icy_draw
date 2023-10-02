@@ -1,20 +1,19 @@
-use egui_extras::RetainedImage;
+use egui::Image;
 
 lazy_static::lazy_static! {
-    pub static ref ADD_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("add.svg", include_bytes!("../../../data/icons/add.svg")).unwrap();
-    pub static ref PENCIL_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("brush.svg", include_bytes!("../../../data/icons/pencil.svg")).unwrap();
-    pub static ref BRUSH_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("brush.svg", include_bytes!("../../../data/icons/paint_brush.svg")).unwrap();
-    pub static ref CURSOR_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("cursor.svg", include_bytes!("../../../data/icons/cursor.svg")).unwrap();
-    pub static ref DROPPER_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("dropper.svg", include_bytes!("../../../data/icons/dropper.svg")).unwrap();
-    pub static ref ELLIPSE_FILLED_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("ellipse_filled.svg", include_bytes!("../../../data/icons/ellipse_filled.svg")).unwrap();
-    pub static ref ELLIPSE_OUTLINE_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("ellipse_outline.svg", include_bytes!("../../../data/icons/ellipse_outline.svg")).unwrap();
-    pub static ref ERASER_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("eraser.svg", include_bytes!("../../../data/icons/eraser.svg")).unwrap();
-    pub static ref FILL_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("fill.svg", include_bytes!("../../../data/icons/fill.svg")).unwrap();
-    pub static ref LINE_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("line.svg", include_bytes!("../../../data/icons/line.svg")).unwrap();
-    pub static ref FONT_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("font.svg", include_bytes!("../../../data/icons/font.svg")).unwrap();
-    pub static ref MOVE_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("move.svg", include_bytes!("../../../data/icons/move.svg")).unwrap();
-    pub static ref RECTANGLE_FILLED_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("rectangle_filled.svg", include_bytes!("../../../data/icons/rectangle_filled.svg")).unwrap();
-    pub static ref RECTANGLE_OUTLINE_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("rectangle_outline.svg", include_bytes!("../../../data/icons/rectangle_outline.svg")).unwrap();
-    pub static ref SELECT_SVG: RetainedImage = egui_extras::RetainedImage::from_svg_bytes("select.svg", include_bytes!("../../../data/icons/select.svg")).unwrap();
-
+    pub static ref ADD_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/add.svg"));
+    pub static ref PENCIL_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/pencil.svg"));
+    pub static ref BRUSH_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/paint_brush.svg"));
+    pub static ref CURSOR_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/cursor.svg"));
+    pub static ref DROPPER_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/dropper.svg"));
+    pub static ref ELLIPSE_FILLED_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/ellipse_filled.svg"));
+    pub static ref ELLIPSE_OUTLINE_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/ellipse_outline.svg"));
+    pub static ref ERASER_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/eraser.svg"));
+    pub static ref FILL_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/fill.svg"));
+    pub static ref LINE_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/line.svg"));
+    pub static ref FONT_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/font.svg"));
+    pub static ref MOVE_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/move.svg"));
+    pub static ref RECTANGLE_FILLED_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/rectangle_filled.svg"));
+    pub static ref RECTANGLE_OUTLINE_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/rectangle_outline.svg"));
+    pub static ref SELECT_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/select.svg"));
 }

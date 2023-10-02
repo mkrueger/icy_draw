@@ -218,7 +218,7 @@ impl SelectPaletteDialog {
                 Pos2::new(color_rect.left() + (i % num_colors) as f32 * w, color_rect.top() + (i / num_colors) as f32 * h),
                 Vec2::new(w, h),
             );
-            ui.painter().rect_filled(rect, Rounding::none(), Color32::from_rgb(r, g, b))
+            ui.painter().rect_filled(rect, Rounding::ZERO, Color32::from_rgb(r, g, b))
         }
 
         // paint palette tag

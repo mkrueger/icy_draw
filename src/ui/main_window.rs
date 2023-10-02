@@ -70,6 +70,7 @@ impl MainWindow {
         };
         fnt.load_fonts();
         fnt.install_watcher();
+        egui_extras::install_image_loaders(&cc.egui_ctx);
 
         let tools: Vec<Box<dyn Tool>> = vec![
             Box::<crate::model::paste_tool::PasteTool>::default(),

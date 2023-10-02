@@ -21,7 +21,7 @@ pub struct PipetteTool {
 }
 
 impl Tool for PipetteTool {
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::DROPPER_SVG
     }
 
@@ -105,10 +105,10 @@ fn paint_color(ui: &mut egui::Ui, color: &icy_engine::Color) {
     let painter = ui.painter_at(stroke_rect);
 
     let (r, g, b) = color.get_rgb();
-    painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
-    painter.rect_filled(stroke_rect.shrink(1.0), Rounding::none(), Color32::WHITE);
+    painter.rect_filled(stroke_rect, Rounding::ZERO, Color32::BLACK);
+    painter.rect_filled(stroke_rect.shrink(1.0), Rounding::ZERO, Color32::WHITE);
     let color = Color32::from_rgb(r, g, b);
-    painter.rect_filled(stroke_rect.shrink(2.0), Rounding::none(), color);
+    painter.rect_filled(stroke_rect.shrink(2.0), Rounding::ZERO, color);
 
     let text_color = if (r as f32 * 0.299 + g as f32 * 0.587 + b as f32 * 0.114) > 186.0 {
         Color32::BLACK

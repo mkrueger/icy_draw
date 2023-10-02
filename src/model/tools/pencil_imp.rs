@@ -1,7 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
 use eframe::egui::{self};
-use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, TextAttribute};
 use icy_engine_egui::TerminalCalc;
@@ -39,7 +38,7 @@ impl Default for PencilTool {
 }
 
 impl Tool for PencilTool {
-    fn get_icon_name(&self) -> &'static RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::PENCIL_SVG
     }
 

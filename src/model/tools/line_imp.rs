@@ -164,7 +164,7 @@ impl LineTool {
 // copy/moxe
 // fill, delete
 impl Tool for LineTool {
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::LINE_SVG
     }
     fn use_selection(&self) -> bool {

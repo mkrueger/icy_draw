@@ -3,9 +3,9 @@ use std::path::Path;
 use eframe::{
     egui::{self, Layout, Sense, SidePanel, Ui, WidgetText},
     emath::Align,
-    epaint::{Color32, FontId, Pos2, Rect, Rounding, Vec2},
+    epaint::{Color32, FontId, Pos2, Rect, Rounding},
 };
-use egui_extras::RetainedImage;
+use egui::Image;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, FontType, TheDrawFont};
@@ -13,7 +13,7 @@ use icy_engine::{BitFont, Buffer, FontType, TheDrawFont};
 use crate::{add_child, AnsiEditor, MainWindow, Message};
 
 trait Template {
-    fn image(&self) -> &RetainedImage;
+    fn image(&self) -> &Image<'static>;
     fn title(&self) -> String;
     fn description(&self) -> String;
     fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>>;
@@ -35,7 +35,7 @@ struct Dos16Template {
 }
 
 impl Template for Dos16Template {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         &crate::ANSI_TEMPLATE_IMG
     }
 
@@ -70,7 +70,7 @@ struct Ice16Template {
 }
 
 impl Template for Ice16Template {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         &crate::ANSI_TEMPLATE_IMG
     }
 
@@ -105,7 +105,7 @@ struct XB16Template {
 }
 
 impl Template for XB16Template {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         &crate::ANSI_TEMPLATE_IMG
     }
 
@@ -140,7 +140,7 @@ struct XBExtTemplate {
 }
 
 impl Template for XBExtTemplate {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         &crate::ANSI_TEMPLATE_IMG
     }
 
@@ -175,7 +175,7 @@ struct AnsiTemplate {
 }
 
 impl Template for AnsiTemplate {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         &crate::ANSI_TEMPLATE_IMG
     }
 
@@ -210,7 +210,7 @@ struct FileIdTemplate {
 }
 
 impl Template for FileIdTemplate {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         &crate::ANSI_TEMPLATE_IMG
     }
 
@@ -265,7 +265,7 @@ fn show_file_ui(ui: &mut Ui, width: &mut i32, height: &mut i32) {
 struct AnsiMationTemplate {}
 
 impl Template for AnsiMationTemplate {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         &crate::ANSIMATION_TEMPLATE_IMG
     }
 
@@ -305,7 +305,7 @@ struct BitFontTemplate {
 }
 
 impl Template for BitFontTemplate {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         &crate::BITFONT_TEMPLATE_IMG
     }
 
@@ -361,7 +361,7 @@ struct TdfFontTemplate {
 }
 
 impl Template for TdfFontTemplate {
-    fn image(&self) -> &RetainedImage {
+    fn image(&self) -> &Image<'static> {
         match self.font_type {
             FontType::Outline => &crate::OUTLINEFONT_TEMPLATE_IMG,
             FontType::Block => &crate::BLOCKFONT_TEMPLATE_IMG,
@@ -453,16 +453,10 @@ impl crate::ModalDialog for NewFileDialog {
                                     ui.painter()
                                         .rect_filled(rect.expand(1.0), Rounding::same(4.0), ui.style().visuals.extreme_bg_color);
                                 }
-                                let image = template.image();
+                                let image = template.image().clone();
 
-                                let r = Rect::from_min_size(Pos2::new((rect.left() + 4.0).floor(), (rect.top() + 4.0).floor()), Vec2::new(32.0, 32.0));
-
-                                ui.painter().image(
-                                    image.texture_id(ui.ctx()),
-                                    r,
-                                    Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
-                                    Color32::WHITE,
-                                );
+                                let image = image.tint(Color32::WHITE);
+                                image.paint_at(ui, Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)));
 
                                 let font_id = FontId::new(20.0, eframe::epaint::FontFamily::Proportional);
                                 let text: WidgetText = template.title().into();

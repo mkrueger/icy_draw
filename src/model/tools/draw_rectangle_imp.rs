@@ -26,7 +26,7 @@ impl Default for DrawRectangleTool {
 }
 
 impl Tool for DrawRectangleTool {
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::RECTANGLE_OUTLINE_SVG
     }
     fn use_caret(&self) -> bool {

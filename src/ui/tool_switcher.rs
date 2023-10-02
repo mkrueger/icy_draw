@@ -1,10 +1,10 @@
 use crate::{MainWindow, Message};
 use eframe::{
     egui::{self, Sense},
-    epaint::{pos2, Rect, Rounding, Vec2},
+    epaint::{Rect, Rounding, Vec2},
 };
 
-pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWindow) -> Option<Message> {
+pub fn add_tool_switcher(_ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWindow) -> Option<Message> {
     let mut msg = None;
     let spacing = 4.0;
     let icon_size = 28.0;
@@ -14,7 +14,6 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWindo
             return msg;
         }
         let (id, back_rect) = ui.allocate_space(Vec2::new(200., 68.0));
-        let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
         let mut pos = back_rect.min + Vec2::new(spacing, spacing);
 
         for i in 0..tools.len() {
@@ -22,7 +21,6 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWindo
             if !t.is_visible() {
                 continue;
             }
-            let image = t.get_icon_name();
 
             let rect = Rect::from_min_size(pos.floor(), Vec2::new(icon_size, icon_size));
             let response = ui.interact(rect, id.with(i), Sense::click());
@@ -40,13 +38,14 @@ pub fn add_tool_switcher(ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWindo
                     .rect_stroke(rect.expand(2.0), Rounding::same(4.0), ui.style().visuals.window_stroke);
             }
 
-            let painter = ui.painter_at(rect);
             let tint = if i == arg.document_behavior.get_selected_tool() {
                 ui.visuals().widgets.active.fg_stroke.color
             } else {
                 ui.visuals().widgets.inactive.fg_stroke.color
             };
-            painter.image(image.texture_id(ctx), rect, uv, tint);
+            let mut image = t.get_icon_name().clone();
+            image = image.tint(tint);
+            image.paint_at(ui, rect);
 
             pos.x += icon_size + spacing;
             if pos.x - back_rect.min.x - spacing > back_rect.width() {

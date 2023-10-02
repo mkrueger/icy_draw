@@ -4,7 +4,7 @@ use eframe::{
     egui::{self, menu, ImageButton, TopBottomPanel, Ui},
     epaint::Vec2,
 };
-use egui_extras::RetainedImage;
+use egui::Image;
 use i18n_embed_fl::fl;
 use icy_engine::{
     util::{pop_data, BUFFER_DATA},
@@ -13,20 +13,16 @@ use icy_engine::{
 
 use crate::{button_with_shortcut, MainWindow, Message, Settings, PLUGINS, SETTINGS};
 
-pub struct TopBar {
-    pub dock_left: RetainedImage,
-    pub dock_right: RetainedImage,
+lazy_static::lazy_static! {
+    pub static ref DOCK_LEFT_SVG: Image<'static> = Image::new(egui::include_image!("../../data/icons/dock_left.svg"));
+    pub static ref DOCK_RIGHT_SVG: Image<'static> = Image::new(egui::include_image!("../../data/icons/dock_right.svg"));
 }
+
+pub struct TopBar {}
 
 impl TopBar {
     pub fn new(_ctx: &egui::Context) -> Self {
-        let left_bytes = include_bytes!("../../data/icons/dock_left.svg");
-        let right_bytes = include_bytes!("../../data/icons/dock_right.svg");
-
-        Self {
-            dock_left: RetainedImage::from_svg_bytes("dock_left.svg", left_bytes).unwrap(),
-            dock_right: RetainedImage::from_svg_bytes("dock_right.svg", right_bytes).unwrap(),
-        }
+        Self {}
     }
 }
 
@@ -584,12 +580,12 @@ impl MainWindow {
 
     fn top_bar_ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let right = medium_toggle_button(ui, &self.top_bar.dock_right, self.right_panel);
+            let right = medium_toggle_button(ui, &DOCK_LEFT_SVG, self.right_panel);
             if right.clicked() {
                 self.right_panel = !self.right_panel;
             }
 
-            let left = medium_toggle_button(ui, &self.top_bar.dock_left, self.left_panel);
+            let left = medium_toggle_button(ui, &DOCK_RIGHT_SVG, self.left_panel);
             if left.clicked() {
                 self.left_panel = !self.left_panel;
             }
@@ -597,7 +593,7 @@ impl MainWindow {
     }
 }
 
-pub fn medium_toggle_button(ui: &mut egui::Ui, icon: &RetainedImage, selected: bool) -> egui::Response {
+pub fn medium_toggle_button(ui: &mut egui::Ui, icon: &Image<'_>, selected: bool) -> egui::Response {
     let size_points = egui::Vec2::splat(20.0);
 
     let tint = if selected {
@@ -606,5 +602,5 @@ pub fn medium_toggle_button(ui: &mut egui::Ui, icon: &RetainedImage, selected: b
         ui.visuals().widgets.inactive.fg_stroke.color
     };
 
-    ui.add(ImageButton::new(icon.texture_id(ui.ctx()), size_points).tint(tint))
+    ui.add(ImageButton::new(icon.clone().fit_to_exact_size(size_points).tint(tint)))
 }

@@ -1,5 +1,4 @@
 use eframe::egui;
-use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle, TextPane};
 use icy_engine_egui::TerminalCalc;
@@ -33,7 +32,7 @@ pub struct ClickTool {
 pub const VALID_OUTLINE_CHARS: &str = "ABCDEFGHIJKLMNO@&\u{F7} ";
 
 impl Tool for ClickTool {
-    fn get_icon_name(&self) -> &'static RetainedImage {
+    fn get_icon_name(&self) -> &'static egui::Image<'static> {
         &super::icons::CURSOR_SVG
     }
 

@@ -87,7 +87,7 @@ impl BitFontEditor {
         };
 
         let painter = ui.painter_at(stroke_rect);
-        painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+        painter.rect_filled(stroke_rect, Rounding::ZERO, Color32::BLACK);
         let s = font.size;
         if let Some(glyph) = font.get_glyph(ch) {
             for y in 0..s.height {
@@ -98,7 +98,7 @@ impl BitFontEditor {
                                 Pos2::new(stroke_rect.left() + x as f32 * scale, stroke_rect.top() + y as f32 * scale),
                                 Vec2::new(scale, scale),
                             ),
-                            Rounding::none(),
+                            Rounding::ZERO,
                             col,
                         );
                     }
@@ -144,7 +144,7 @@ impl BitFontEditor {
             let mut response = ui.interact(stroke_rect, id, Sense::click_and_drag());
 
             let painter = ui.painter_at(stroke_rect);
-            painter.rect_filled(stroke_rect, Rounding::none(), Color32::DARK_GRAY);
+            painter.rect_filled(stroke_rect, Rounding::ZERO, Color32::DARK_GRAY);
 
             let s = self.font.size;
 
@@ -217,7 +217,7 @@ impl BitFontEditor {
                                 2. + top_ruler + s.height as f32 * (border + scale),
                             ),
                         ),
-                        Rounding::none(),
+                        Rounding::ZERO,
                         ui.style().visuals.extreme_bg_color,
                     );
 
@@ -296,7 +296,7 @@ impl BitFontEditor {
                             } else {
                                 Color32::BLACK
                             };
-                            painter.rect_filled(rect, Rounding::none(), col);
+                            painter.rect_filled(rect, Rounding::ZERO, col);
                         }
                     }
                 }

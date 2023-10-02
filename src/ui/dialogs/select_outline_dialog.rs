@@ -63,7 +63,7 @@ impl SelectOutlineDialog {
                 col = Color32::WHITE;
             }
         }
-        painter.rect_filled(stroke_rect, Rounding::none(), bg_color);
+        painter.rect_filled(stroke_rect, Rounding::ZERO, bg_color);
 
         for h in 0..OUTLINE_HEIGHT {
             for w in 0..OUTLINE_WIDTH {
@@ -84,7 +84,7 @@ impl SelectOutlineDialog {
                                         ),
                                         Vec2::new(scale, scale),
                                     ),
-                                    Rounding::none(),
+                                    Rounding::ZERO,
                                     col,
                                 );
                             }

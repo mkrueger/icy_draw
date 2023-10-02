@@ -26,7 +26,7 @@ impl Default for DrawEllipseFilledTool {
 }
 
 impl Tool for DrawEllipseFilledTool {
-    fn get_icon_name(&self) -> &'static egui_extras::RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::ELLIPSE_FILLED_SVG
     }
 

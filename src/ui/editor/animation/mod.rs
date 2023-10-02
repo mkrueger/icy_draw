@@ -5,22 +5,22 @@ use std::{
     time::Instant,
 };
 
+use crate::{model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, UndoHandler};
 use eframe::{
     egui::{self, Id, ImageButton, RichText, Slider, TextEdit, TopBottomPanel},
     epaint::Vec2,
 };
-use egui::Button;
+use egui::{Button, Image};
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
 use icy_engine::{Buffer, EngineResult, Size, TextPane};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
-use crate::{model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, UndoHandler};
 
 mod highlighting;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ExportType {
-    Gif
+    Gif,
 }
 pub struct AnimationEditor {
     gl: Arc<glow::Context>,
@@ -111,7 +111,6 @@ impl AnimationEditor {
                     }
                 }
             }
-
         }
         Ok(())
     }
@@ -201,39 +200,33 @@ impl Document for AnimationEditor {
                         if !self.animator.lock().unwrap().error.is_empty() {
                             ui.set_enabled(false);
                         }
-                        let size_points = Vec2::new(22.0, 22.0);
+
                         if self.animator.lock().unwrap().success() {
                             let animator = &mut self.animator.lock().unwrap();
                             let frame_count = animator.frames.len();
                             if animator.is_playing() {
-                                if ui.add(ImageButton::new(crate::PAUSE_SVG.texture_id(ui.ctx()), size_points)).clicked() {
+                                if ui.add(ImageButton::new(crate::PAUSE_SVG.clone())).clicked() {
                                     animator.set_is_playing(false);
                                 }
                             } else {
-                                let id = if animator.get_cur_frame() + 1 < frame_count {
-                                    crate::PLAY_SVG.texture_id(ui.ctx())
+                                let image: &Image<'static> = if animator.get_cur_frame() + 1 < frame_count {
+                                    &crate::PLAY_SVG
                                 } else {
-                                    crate::REPLAY_SVG.texture_id(ui.ctx())
+                                    &crate::REPLAY_SVG
                                 };
-                                if ui.add(ImageButton::new(id, size_points)).clicked() {
+                                if ui.add(ImageButton::new(image.clone())).clicked() {
                                     animator.start_playback(self.buffer_view.clone());
                                 }
                             }
                             if ui
-                                .add_enabled(
-                                    animator.get_cur_frame() + 1 < frame_count,
-                                    ImageButton::new(crate::SKIP_NEXT_SVG.texture_id(ui.ctx()), size_points),
-                                )
+                                .add_enabled(animator.get_cur_frame() + 1 < frame_count, ImageButton::new(crate::SKIP_NEXT_SVG.clone()))
                                 .clicked()
                             {
                                 animator.set_cur_frame(frame_count - 1);
                                 animator.display_frame(self.buffer_view.clone());
                             }
                             let is_loop = animator.get_is_loop();
-                            if ui
-                                .add(ImageButton::new(crate::REPEAT_SVG.texture_id(ui.ctx()), size_points).selected(is_loop))
-                                .clicked()
-                            {
+                            if ui.add(ImageButton::new(crate::REPEAT_SVG.clone()).selected(is_loop)).clicked() {
                                 animator.set_is_loop(!is_loop);
                             }
 

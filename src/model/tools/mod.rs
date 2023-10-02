@@ -18,7 +18,6 @@ pub mod select_imp;
 mod icons;
 
 use eframe::egui::{self, Response};
-use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::Position;
 use icy_engine_egui::TerminalCalc;
@@ -89,7 +88,7 @@ pub struct DragPos {
 }
 
 pub trait Tool {
-    fn get_icon_name(&self) -> &'static RetainedImage;
+    fn get_icon_name(&self) -> &egui::Image<'static>;
 
     fn use_caret(&self) -> bool {
         true

@@ -1,5 +1,4 @@
 use eframe::egui;
-use egui_extras::RetainedImage;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle};
 use icy_engine_egui::TerminalCalc;
@@ -69,7 +68,7 @@ pub struct SelectTool {
 }
 
 impl Tool for SelectTool {
-    fn get_icon_name(&self) -> &'static RetainedImage {
+    fn get_icon_name(&self) -> &egui::Image<'static> {
         &super::icons::SELECT_SVG
     }
 

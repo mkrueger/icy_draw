@@ -43,7 +43,7 @@ impl ModalDialog for SelectCharacterDialog {
                 if let Some(font) = self.buf.lock().get_buffer().get_font(font_page) {
                     let (_id, stroke_rect) = ui.allocate_space(Vec2::new(scale * font.size.width as f32, scale * font.size.height as f32));
                     let painter = ui.painter_at(stroke_rect);
-                    painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+                    painter.rect_filled(stroke_rect, Rounding::ZERO, Color32::BLACK);
                     let s = font.size;
 
                     let col = Color32::GRAY;
@@ -57,7 +57,7 @@ impl ModalDialog for SelectCharacterDialog {
                                             egui::Pos2::new(stroke_rect.left() + x as f32 * scale, stroke_rect.top() + y as f32 * scale),
                                             Vec2::new(scale, scale),
                                         ),
-                                        Rounding::none(),
+                                        Rounding::ZERO,
                                         col,
                                     );
                                 }
@@ -78,7 +78,7 @@ impl ModalDialog for SelectCharacterDialog {
                     let (_id, stroke_rect) = ui.allocate_space(Vec2::new(scale * font.size.width as f32 * 256. / 8., scale * font.size.height as f32 * 8.));
 
                     let painter = ui.painter_at(stroke_rect);
-                    painter.rect_filled(stroke_rect, Rounding::none(), Color32::BLACK);
+                    painter.rect_filled(stroke_rect, Rounding::ZERO, Color32::BLACK);
                     let s = font.size;
 
                     let mut hovered_char = -1;
@@ -121,7 +121,7 @@ impl ModalDialog for SelectCharacterDialog {
                                                 egui::Pos2::new(xs + stroke_rect.left() + x as f32 * scale, ys + stroke_rect.top() + y as f32 * scale),
                                                 Vec2::new(scale, scale),
                                             ),
-                                            Rounding::none(),
+                                            Rounding::ZERO,
                                             col,
                                         );
                                     }
@@ -138,7 +138,7 @@ impl ModalDialog for SelectCharacterDialog {
                         Vec2::new(scale * font.size.width as f32, scale * font.size.height as f32),
                     );
 
-                    painter.rect(selected_rect, Rounding::none(), Color32::TRANSPARENT, (2.0, Color32::LIGHT_BLUE));
+                    painter.rect(selected_rect, Rounding::ZERO, Color32::TRANSPARENT, (2.0, Color32::LIGHT_BLUE));
 
                     ui.horizontal(|ui| {
                         if hovered_char >= 0 {
