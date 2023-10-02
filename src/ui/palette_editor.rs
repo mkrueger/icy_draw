@@ -34,7 +34,7 @@ pub fn palette_switcher(ctx: &egui::Context, ui: &mut egui::Ui, caret_attr: &Tex
         Color32::WHITE,
     );
 
-    let (r, g, b) = palette.get_rgb(caret_attr.get_background() as usize);
+    let (r, g, b) = palette.get_rgb(caret_attr.get_background());
     painter.rect_filled(
         Rect::from_min_size(
             Pos2::new(height - rect_height + 2., height - rect_height + 2.) + rect.left_top().to_vec2(),
@@ -56,7 +56,7 @@ pub fn palette_switcher(ctx: &egui::Context, ui: &mut egui::Ui, caret_attr: &Tex
         Color32::WHITE,
     );
 
-    let (r, g, b) = palette.get_rgb(caret_attr.get_foreground() as usize);
+    let (r, g, b) = palette.get_rgb(caret_attr.get_foreground());
     painter.rect_filled(
         Rect::from_min_size(Pos2::new(2., 2.) + rect.left_top().to_vec2(), Vec2::new(rect_height - 4., rect_height - 4.)),
         Rounding::none(),
@@ -155,7 +155,7 @@ pub fn palette_editor_16(
         let painter = ui.painter_at(stroke_rect);
 
         for i in 0..upper_limit {
-            let (r, g, b) = palette.get_rgb(i);
+            let (r, g, b) = palette.get_rgb(i as u32);
             painter.rect_filled(
                 Rect::from_min_size(
                     Pos2::new(
@@ -208,7 +208,11 @@ pub fn palette_editor_16(
 
             if response.hovered() {
                 response = response.on_hover_ui(|ui| {
-                    let (r, g, b) = palette.get_rgb(color as usize);
+                    let col = palette.get_color(color);
+                    let (r, g, b) = col.get_rgb();
+                    if let Some(title) = &col.name {
+                        ui.label(title);
+                    }
                     ui.label(format!("#{:02X}{:02X}{:02X}", r, g, b));
                 });
             }

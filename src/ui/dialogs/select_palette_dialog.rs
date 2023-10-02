@@ -38,27 +38,31 @@ impl SelectPaletteDialog {
         let mut palettes = Vec::new();
         let mode = editor.buffer_view.lock().get_buffer().palette_mode;
 
-        let mut dos = Palette::from_colors(DOS_DEFAULT_PALETTE.to_vec());
+        let mut dos = Palette::from_slice(&DOS_DEFAULT_PALETTE);
         dos.title = fl!(crate::LANGUAGE_LOADER, "palette_selector-dos_default_palette");
         add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
-        let mut dos = Palette::from_colors(DOS_DEFAULT_PALETTE[0..8].to_vec());
+        let mut dos = Palette::from_slice(&DOS_DEFAULT_PALETTE[0..8]);
         dos.title = fl!(crate::LANGUAGE_LOADER, "palette_selector-dos_default_low_palette");
         add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
-        let mut dos = Palette::from_colors(C64_DEFAULT_PALETTE.to_vec());
+        let mut dos = Palette::from_slice(&C64_DEFAULT_PALETTE);
         dos.title = fl!(crate::LANGUAGE_LOADER, "palette_selector-c64_default_palette");
         add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
-        let mut dos = Palette::from_colors(EGA_PALETTE.to_vec());
+        let mut dos = Palette::from_slice(&EGA_PALETTE);
         dos.title = fl!(crate::LANGUAGE_LOADER, "palette_selector-ega_default_palette");
         add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
-        let mut dos = Palette::from_colors(XTERM_256_PALETTE.map(|p| p.1).to_vec());
+        let mut dos = Palette::from_slice(&XTERM_256_PALETTE.map(|p| {
+            let mut col = p.1.clone();
+            col.name = Some(p.0.to_string());
+            col
+        }));
         dos.title = fl!(crate::LANGUAGE_LOADER, "palette_selector-xterm_default_palette");
         add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
-        let mut dos = Palette::from_colors(VIEWDATA_PALETTE[0..8].to_vec());
+        let mut dos = Palette::from_slice(&VIEWDATA_PALETTE[0..8]);
         dos.title = fl!(crate::LANGUAGE_LOADER, "palette_selector-viewdata_default_palette");
         add_palette(&mut palettes, mode, (dos, PaletteSource::BuiltIn));
 
@@ -209,7 +213,7 @@ impl SelectPaletteDialog {
         let h = color_rect.height() / (palette.0.len() as f32 / num_colors as f32).ceil().max(1.0);
 
         for i in 0..palette.0.len() {
-            let (r, g, b) = palette.0.get_rgb(i);
+            let (r, g, b) = palette.0.get_rgb(i as u32);
             let rect = Rect::from_min_size(
                 Pos2::new(color_rect.left() + (i % num_colors) as f32 * w, color_rect.top() + (i / num_colors) as f32 * h),
                 Vec2::new(w, h),
