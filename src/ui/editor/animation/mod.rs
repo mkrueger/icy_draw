@@ -1,6 +1,5 @@
 use std::{
     fs::File,
-    io::Write,
     path::{Path, PathBuf},
     sync::Arc,
     time::Instant,
@@ -10,19 +9,18 @@ use eframe::{
     egui::{self, Id, ImageButton, RichText, Slider, TextEdit, TopBottomPanel},
     epaint::Vec2,
 };
+use egui::Button;
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
-use icy_engine::{Buffer, EngineResult, SaveOptions, Size, TextPane};
+use icy_engine::{Buffer, EngineResult, Size, TextPane};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
-
 use crate::{model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, UndoHandler};
 
 mod highlighting;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ExportType {
-    Gif,
-    Ansi,
+    Gif
 }
 pub struct AnimationEditor {
     gl: Arc<glow::Context>,
@@ -33,6 +31,8 @@ pub struct AnimationEditor {
     txt: String,
     buffer_view: Arc<eframe::epaint::mutex::Mutex<BufferView>>,
     animator: Arc<std::sync::Mutex<Animator>>,
+    next_animator: Option<Arc<std::sync::Mutex<Animator>>>,
+    set_frame: usize,
 
     parent_path: Option<PathBuf>,
     export_path: PathBuf,
@@ -64,7 +64,8 @@ impl AnimationEditor {
             export_path,
             export_type: ExportType::Gif,
             parent_path,
-
+            set_frame: 0,
+            next_animator: None,
             shedule_update: false,
             last_update: Instant::now(),
             first_frame: true,
@@ -110,20 +111,7 @@ impl AnimationEditor {
                     }
                 }
             }
-            ExportType::Ansi => {
-                let opt = SaveOptions::default();
-                if let Ok(mut image) = File::create(&self.export_path) {
-                    if self.animator.lock().unwrap().success() {
-                        for (frame, _, _) in &self.animator.lock().unwrap().frames {
-                            let _ = image.write_all(b"\x1BP0;1;0!z\x1b[2J\x1b[0; D");
-                            let _ = image.write_all(&frame.to_bytes("ans", &opt)?);
-                            let _ = image.write_all(b"\x1B\\ - next frame -  \x1b[0*z");
-                        }
-                    }
-                } else {
-                    return Err(anyhow::anyhow!("Could not create file"));
-                }
-            }
+
         }
         Ok(())
     }
@@ -189,11 +177,21 @@ impl Document for AnimationEditor {
             let animator = &mut self.animator.lock().unwrap();
             let frame_count = animator.frames.len();
             if frame_count > 0 {
-                animator.set_cur_frame(0);
+                animator.set_cur_frame(self.set_frame);
                 animator.display_frame(self.buffer_view.clone());
             }
             self.first_frame = false;
         }
+        if let Some(next) = &self.next_animator {
+            if next.lock().unwrap().success() {
+                self.animator = next.clone();
+                self.next_animator = None;
+                let animator = &mut self.animator.lock().unwrap();
+                animator.set_cur_frame(self.set_frame);
+                animator.display_frame(self.buffer_view.clone());
+            }
+        }
+
         egui::SidePanel::left("movie_panel")
             .exact_width(ui.available_width() / 2.0)
             .resizable(false)
@@ -244,6 +242,18 @@ impl Document for AnimationEditor {
                                 animator.set_cur_frame(cf - 1);
                                 animator.display_frame(self.buffer_view.clone());
                             }
+
+                            if ui.add(Button::new("-")).clicked() {
+                                let cf = animator.get_cur_frame() - 1;
+                                animator.set_cur_frame(cf);
+                                animator.display_frame(self.buffer_view.clone());
+                            }
+
+                            if ui.add(Button::new("+")).clicked() {
+                                let cf = animator.get_cur_frame() + 1;
+                                animator.set_cur_frame(cf);
+                                animator.display_frame(self.buffer_view.clone());
+                            }
                         }
                     });
                 });
@@ -266,13 +276,6 @@ impl Document for AnimationEditor {
                         {
                             self.export_type = ExportType::Gif;
                             self.export_path.set_extension("gif");
-                        }
-                        if ui
-                            .selectable_label(self.export_type == ExportType::Ansi, fl!(crate::LANGUAGE_LOADER, "animation_editor_ansi_label"))
-                            .clicked()
-                        {
-                            self.export_type = ExportType::Ansi;
-                            self.export_path.set_extension("ans");
                         }
                     });
                     ui.add_space(8.0);
@@ -320,6 +323,22 @@ impl Document for AnimationEditor {
             });
 
         egui::CentralPanel::default().show_inside(ui, |ui| {
+            TopBottomPanel::bottom("code_error_bottom_panel").exact_height(200.).show_inside(ui, |ui| {
+                if !self.animator.lock().unwrap().error.is_empty() {
+                    ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.animator.lock().unwrap().error).small());
+                } else {
+                    egui::ScrollArea::vertical().max_width(f32::INFINITY).show(ui, |ui| {
+                        self.animator.lock().unwrap().log.iter().for_each(|line| {
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new(format!("Frame {}:", line.frame)).strong());
+                                ui.label(RichText::new(&line.text));
+                                ui.add_space(ui.available_width());
+                            });
+                        });
+                    });
+                }
+            });
+
             let r = CodeEditor::default()
                 .id_source("code editor")
                 .with_rows(12)
@@ -332,18 +351,14 @@ impl Document for AnimationEditor {
                 .with_syntax(highlighting::lua())
                 .with_numlines(true)
                 .show(ui, &mut self.txt);
-            if !self.animator.lock().unwrap().error.is_empty() {
-                TopBottomPanel::bottom("code_error_bottom_panel").exact_height(100.).show_inside(ui, |ui| {
-                    ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.animator.lock().unwrap().error).small());
-                });
-            }
 
             if self.shedule_update && self.last_update.elapsed().as_millis() > 1000 {
                 self.shedule_update = false;
 
                 let path = self.parent_path.clone();
                 let txt = self.txt.clone();
-                self.animator = Animator::run(&path, txt);
+                self.set_frame = self.animator.lock().unwrap().get_cur_frame();
+                self.next_animator = Some(Animator::run(&path, txt));
             }
 
             if r.response.changed {

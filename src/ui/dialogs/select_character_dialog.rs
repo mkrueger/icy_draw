@@ -94,6 +94,11 @@ impl ModalDialog for SelectCharacterDialog {
                         self.selected_ch = unsafe { char::from_u32_unchecked(hovered_char as u32) };
                     }
 
+                    if ui.input(|i| i.pointer.button_double_clicked(egui::PointerButton::Primary)) {
+                        self.should_commit = true;
+                        result = true;
+                    }
+
                     for i in 0..font.length {
                         let is_selected = i == self.selected_ch as i32;
                         let col = if hovered_char >= 0 && i == hovered_char {

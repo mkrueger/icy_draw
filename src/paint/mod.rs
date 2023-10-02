@@ -49,7 +49,10 @@ impl BrushMode {
         ui.horizontal(|ui| {
             ui.radio_value(self, BrushMode::Char(char_code.clone()), fl!(crate::LANGUAGE_LOADER, "tool-character"));
             if let Some(editor) = editor_opt {
-                draw_glyph(ui, editor, &char_code);
+                let msg2 = draw_glyph(ui, editor, &char_code);
+                if msg.is_none() {
+                    msg = msg2;
+                }
             }
         });
         ui.radio_value(self, BrushMode::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
