@@ -195,7 +195,7 @@ impl Document for AnimationEditor {
             .exact_width(ui.available_width() / 2.0)
             .resizable(false)
             .show_inside(ui, |ui| {
-                TopBottomPanel::top("move_top_panel").exact_height(24.).show_inside(ui, |ui| {
+                TopBottomPanel::top("move_top_panel").exact_height(34.).show_inside(ui, |ui| {
                     ui.horizontal(|ui| {
                         if !self.animator.lock().unwrap().error.is_empty() {
                             ui.set_enabled(false);
@@ -236,13 +236,13 @@ impl Document for AnimationEditor {
                                 animator.display_frame(self.buffer_view.clone());
                             }
 
-                            if ui.add(Button::new("-")).clicked() {
+                            if ui.add_enabled(animator.get_cur_frame() > 0, ImageButton::new(crate::NAVIGATE_PREV.clone())).clicked() {
                                 let cf = animator.get_cur_frame() - 1;
                                 animator.set_cur_frame(cf);
                                 animator.display_frame(self.buffer_view.clone());
                             }
 
-                            if ui.add(Button::new("+")).clicked() {
+                            if ui.add_enabled(animator.get_cur_frame() < animator.frames.len() - 1, ImageButton::new(crate::NAVIGATE_NEXT.clone())).clicked()  { 
                                 let cf = animator.get_cur_frame() + 1;
                                 animator.set_cur_frame(cf);
                                 animator.display_frame(self.buffer_view.clone());

@@ -30,6 +30,8 @@ lazy_static::lazy_static! {
     pub static ref PLAY_PAUSE_SVG: Image<'static> = Image::new(egui::include_image!("../../data/icons/play_pause.svg")).fit_to_exact_size(SIZE);
     pub static ref SKIP_NEXT_SVG: Image<'static> = Image::new(egui::include_image!("../../data/icons/skip_next.svg")).fit_to_exact_size(SIZE);
     pub static ref REPEAT_SVG: Image<'static> = Image::new(egui::include_image!("../../data/icons/repeat.svg")).fit_to_exact_size(SIZE);
+    pub static ref NAVIGATE_NEXT: Image<'static> = Image::new(egui::include_image!("../../data/icons/navigate_next.svg")).fit_to_exact_size(SIZE);
+    pub static ref NAVIGATE_PREV: Image<'static> = Image::new(egui::include_image!("../../data/icons/navigate_prev.svg")).fit_to_exact_size(SIZE);
 
     pub static ref ANSI_TEMPLATE_IMG: Image<'static> = Image::new(egui::include_image!("../../data/file_template_icons/ansi.png"));
     pub static ref ANSIMATION_TEMPLATE_IMG: Image<'static> = Image::new(egui::include_image!("../../data/file_template_icons/ansimation.png"));
