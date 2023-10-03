@@ -2,7 +2,7 @@ use std::{
     fs::File,
     path::{Path, PathBuf},
     sync::Arc,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use crate::{model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, UndoHandler};
@@ -15,12 +15,14 @@ use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
 use icy_engine::{Buffer, EngineResult, Size, TextPane};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
-
+use ndarray::{Array, Array3};
+use video_rs::{EncoderSettings, Locator, RawFrame, Time};
 mod highlighting;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ExportType {
     Gif,
+    MP4,
 }
 pub struct AnimationEditor {
     gl: Arc<glow::Context>,
@@ -106,6 +108,60 @@ impl AnimationEditor {
                             let gif_frame = ::gif::Frame::from_rgba(size.x as u16, size.y as u16, &mut data);
                             encoder.write_frame(&gif_frame)?;
                         }
+                    } else {
+                        return Err(anyhow::anyhow!("Could not create file"));
+                    }
+                }
+            }
+
+            ExportType::MP4 => {
+                // if let Ok(mut image) = File::create(&self.export_path)
+                {
+                    if self.animator.lock().unwrap().success() {
+                        let size = self.buffer_view.lock().get_buffer().get_size();
+                        let dim = self.buffer_view.lock().get_buffer().get_font_dimensions();
+                        let forced_height = self.buffer_view.lock().calc.forced_height;
+
+                        let ls = self.buffer_view.lock().get_buffer_mut().use_letter_spacing();
+                        let w = dim.width + if ls { 1 } else { 0 };
+
+                        let width = (size.width * w) as usize;
+                        let height = (forced_height * dim.height) as usize;
+                        let height = height - (height % 2);
+
+                        let destination: Locator = PathBuf::from(&self.export_path).into();
+
+                        println!("{}x{}", width, height);
+
+                        let settings = EncoderSettings::for_h264_yuv420p(width, height, false);
+
+                        let mut encoder = video_rs::Encoder::new(&destination, settings).expect("failed to create encoder");
+
+                        let mut position = Time::zero();
+
+                        let frame_count = self.animator.lock().unwrap().frames.len();
+
+                        for frame in 0..frame_count {
+                            println!("encode {}", frame);
+                            self.animator.lock().unwrap().set_cur_frame(frame);
+                            let monitor_settings = self.animator.lock().unwrap().display_frame(self.buffer_view.clone());
+                            let opt = icy_engine_egui::TerminalOptions {
+                                stick_to_bottom: false,
+                                scale: Some(Vec2::new(1.0, 1.0)),
+                                monitor_settings,
+
+                                id: Some(Id::new(self.id + 20000)),
+                                ..Default::default()
+                            };
+                            let (size, data) = self.buffer_view.lock().render_buffer(&self.gl, &opt);
+                            let frame = Array3::from_shape_fn((height, width, 3), |(y, x, c)| data[x * 4 + y * width * 4 + c]);
+                            println!("{:?} {}x{}", size, width, height);
+                            encoder.encode(&frame, &position).expect("failed to encode frame");
+
+                            let duration: Time = Time::from_secs(1.0 / 1000.0 * self.animator.lock().unwrap().get_delay() as f32);
+                            position = position.aligned_with(&duration).add();
+                        }
+                        encoder.finish().expect("failed to finish encoding");
                     } else {
                         return Err(anyhow::anyhow!("Could not create file"));
                     }
@@ -280,6 +336,11 @@ impl Document for AnimationEditor {
                         {
                             self.export_type = ExportType::Gif;
                             self.export_path.set_extension("gif");
+                        }
+
+                        if ui.selectable_label(self.export_type == ExportType::MP4, "MP4").clicked() {
+                            self.export_type = ExportType::MP4;
+                            self.export_path.set_extension("mp4");
                         }
                     });
                     ui.add_space(8.0);

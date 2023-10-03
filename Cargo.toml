@@ -31,6 +31,9 @@ gif = "0.12.0"
 thiserror = "1.0"
 anyhow = "1.0.75"
 
+video-rs = { version = "0.4", features = ["ndarray"] }
+ndarray = "0.15.6"
+
 icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
 icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
 view_library = { git ="https://github.com/mkrueger/icy_view" }
