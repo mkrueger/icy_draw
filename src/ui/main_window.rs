@@ -21,7 +21,7 @@ use glow::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{BitFont, Buffer, EngineResult, Palette, TextAttribute, TheDrawFont};
 
-pub struct MainWindow {
+pub struct MainWindow<'a> {
     pub document_tree: egui_tiles::Tree<DocumentTab>,
     pub tool_tree: egui_tiles::Tree<ToolTab>,
     pub toasts: egui_notify::Toasts,
@@ -48,7 +48,7 @@ pub struct MainWindow {
     pub is_fullscreen: bool,
 
     pub in_open_file_mode: bool,
-    pub open_file_window: view_library::MainWindow,
+    pub open_file_window: view_library::MainWindow<'a>,
 }
 
 pub const PASTE_TOOL: usize = 0;
@@ -56,7 +56,7 @@ pub const FIRST_TOOL: usize = 1;
 pub const BRUSH_TOOL: usize = 3;
 pub const PIPETTE_TOOL: usize = 6;
 
-impl MainWindow {
+impl<'a> MainWindow<'a> {
     pub fn create_id(&mut self) -> usize {
         self.id += 1;
         self.id
@@ -418,7 +418,7 @@ impl MainWindow {
         self.modal_dialog = Some(Box::new(dialog));
     }
 
-    pub(crate) fn run_editor_command<T>(&mut self, param: T, func: fn(&mut MainWindow, &mut AnsiEditor, T) -> Option<Message>) {
+    pub(crate) fn run_editor_command<T>(&mut self, param: T, func: fn(&mut MainWindow<'_>, &mut AnsiEditor, T) -> Option<Message>) {
         let mut msg = None;
         if let Some(doc) = self.get_active_document() {
             if let Ok(mut doc) = doc.lock() {
@@ -549,7 +549,7 @@ pub fn button_with_shortcut(ui: &mut Ui, enabled: bool, label: impl Into<String>
     ui.add_enabled(enabled, button)
 }
 
-impl eframe::App for MainWindow {
+impl<'a> eframe::App for MainWindow<'a> {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if self.in_open_file_mode {
             if self.open_file_window.show_file_chooser(ctx) {

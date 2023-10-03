@@ -16,7 +16,7 @@ trait Template {
     fn image(&self) -> &Image<'static>;
     fn title(&self) -> String;
     fn description(&self) -> String;
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>>;
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>>;
 
     fn show_ui(&mut self, ui: &mut Ui);
 }
@@ -51,7 +51,7 @@ impl Template for Dos16Template {
         show_file_ui(ui, &mut self.width, &mut self.height);
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let mut buf = Buffer::create((self.width, self.height));
         buf.ice_mode = icy_engine::IceMode::Blink;
         buf.palette_mode = icy_engine::PaletteMode::Fixed16;
@@ -86,7 +86,7 @@ impl Template for Ice16Template {
         show_file_ui(ui, &mut self.width, &mut self.height);
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let mut buf = Buffer::create((self.width, self.height));
         buf.ice_mode = icy_engine::IceMode::Ice;
         buf.palette_mode = icy_engine::PaletteMode::Fixed16;
@@ -121,7 +121,7 @@ impl Template for XB16Template {
         show_file_ui(ui, &mut self.width, &mut self.height);
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let mut buf = Buffer::create((self.width, self.height));
         buf.ice_mode = icy_engine::IceMode::Ice;
         buf.palette_mode = icy_engine::PaletteMode::Free16;
@@ -156,7 +156,7 @@ impl Template for XBExtTemplate {
         show_file_ui(ui, &mut self.width, &mut self.height);
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let mut buf = Buffer::create((self.width, self.height));
         buf.ice_mode = icy_engine::IceMode::Ice;
         buf.palette_mode = icy_engine::PaletteMode::Free16;
@@ -191,7 +191,7 @@ impl Template for AnsiTemplate {
         show_file_ui(ui, &mut self.width, &mut self.height);
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let mut buf = Buffer::create((self.width, self.height));
         buf.ice_mode = icy_engine::IceMode::Unlimited;
         buf.palette_mode = icy_engine::PaletteMode::RGB;
@@ -226,7 +226,7 @@ impl Template for FileIdTemplate {
         show_file_ui(ui, &mut self.width, &mut self.height);
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let mut buf = Buffer::create((self.width, self.height));
         buf.ice_mode = icy_engine::IceMode::Blink;
         buf.palette_mode = icy_engine::PaletteMode::Fixed16;
@@ -277,7 +277,7 @@ impl Template for AnsiMationTemplate {
         fl!(crate::LANGUAGE_LOADER, "new-file-template-ansimation-description")
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let id = window.create_id();
         let txt = r#"local buf = new_buffer(80, 25)
 
@@ -317,7 +317,7 @@ impl Template for BitFontTemplate {
         fl!(crate::LANGUAGE_LOADER, "new-file-template-bit_font-description")
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let id = window.create_id();
         let font = if self.width == 8 && self.height == 16 {
             BitFont::default()
@@ -385,7 +385,7 @@ impl Template for TdfFontTemplate {
         }
     }
 
-    fn create_file(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         let id = window.create_id();
         let fonts = vec![TheDrawFont::new(self.title(), self.font_type, 1)];
         let editor = crate::CharFontEditor::new(&window.gl, id, fonts);
@@ -454,10 +454,7 @@ impl crate::ModalDialog for NewFileDialog {
                                         .rect_filled(rect.expand(1.0), Rounding::same(4.0), ui.style().visuals.extreme_bg_color);
                                 }
                                 let image = template.image();
-                                let r = Rect::from_min_size(
-                                    Pos2::new(rect.left() + 4.0, rect.top() + 4.0), 
-                                    Vec2::new(32.0, 32.0)
-                                );
+                                let r = Rect::from_min_size(Pos2::new(rect.left() + 4.0, rect.top() + 4.0), Vec2::new(32.0, 32.0));
                                 image.paint_at(ui, r);
 
                                 let font_id = FontId::new(20.0, eframe::epaint::FontFamily::Proportional);
@@ -521,7 +518,7 @@ impl crate::ModalDialog for NewFileDialog {
         self.create
     }
 
-    fn commit_self(&self, window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn commit_self(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         self.templates[self.selected].create_file(window)
     }
 }

@@ -52,7 +52,7 @@ pub trait ModalDialog {
         Ok(None)
     }
 
-    fn commit_self(&self, _window: &mut MainWindow) -> TerminalResult<Option<Message>> {
+    fn commit_self(&self, _window: &mut MainWindow<'_>) -> TerminalResult<Option<Message>> {
         Ok(None)
     }
 }

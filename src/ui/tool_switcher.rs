@@ -4,7 +4,7 @@ use eframe::{
     epaint::{Rect, Rounding, Vec2},
 };
 
-pub fn add_tool_switcher(_ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWindow) -> Option<Message> {
+pub fn add_tool_switcher(_ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWindow<'_>) -> Option<Message> {
     let mut msg = None;
     let spacing = 4.0;
     let icon_size = 28.0;

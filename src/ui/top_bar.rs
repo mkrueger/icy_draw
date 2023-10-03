@@ -26,7 +26,7 @@ impl TopBar {
     }
 }
 
-impl MainWindow {
+impl<'a> MainWindow<'a> {
     pub fn show_top_bar(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) -> Option<Message> {
         let mut result = None;
 

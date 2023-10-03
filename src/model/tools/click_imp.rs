@@ -293,7 +293,7 @@ impl Tool for ClickTool {
             MKey::F1 => {
                 if matches!(modifier, MModifiers::None) {
                     if editor.outline_font_mode {
-                        editor.type_key(VALID_OUTLINE_CHARS.chars().nth(0).unwrap());
+                        editor.type_key(VALID_OUTLINE_CHARS.chars().next().unwrap());
                     } else {
                         editor.type_char_set_key(0);
                     }

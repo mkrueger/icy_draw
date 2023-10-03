@@ -113,7 +113,7 @@ impl SelectFontDialog {
             let text = fl!(crate::LANGUAGE_LOADER, "select-font-dialog-preview-text");
             let lowercase = text.to_ascii_lowercase();
 
-            let b = if font.has_char(text.chars().nth(0).unwrap() as u8) {
+            let b = if font.has_char(text.chars().next().unwrap() as u8) {
                 text.bytes()
             } else {
                 lowercase.bytes()
@@ -310,7 +310,7 @@ impl crate::ModalDialog for SelectFontDialog {
         self.do_select
     }
 
-    fn commit_self(&self, _window: &mut MainWindow) -> crate::TerminalResult<Option<Message>> {
+    fn commit_self(&self, _window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
         *self.selected_font_arc.lock().unwrap() = self.selected_font;
         Ok(None)
     }

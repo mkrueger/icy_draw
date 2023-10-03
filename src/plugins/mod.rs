@@ -26,7 +26,7 @@ impl Plugin {
         Err(anyhow::anyhow!("No plugin file"))
     }
 
-    pub(crate) fn run_plugin(&self, _window: &mut crate::MainWindow, editor: &crate::AnsiEditor) -> anyhow::Result<()> {
+    pub(crate) fn run_plugin(&self, _window: &mut crate::MainWindow<'_>, editor: &crate::AnsiEditor) -> anyhow::Result<()> {
         let lua = Lua::new();
         let globals = lua.globals();
 

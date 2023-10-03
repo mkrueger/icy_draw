@@ -164,7 +164,7 @@ pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
     command: false,
 };
 
-impl MainWindow {
+impl<'a> MainWindow<'a> {
     pub fn handle_message(&mut self, msg_opt: Option<Message>) {
         if msg_opt.is_none() {
             return;
