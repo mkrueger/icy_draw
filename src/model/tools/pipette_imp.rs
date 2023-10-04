@@ -2,7 +2,7 @@ use eframe::{
     emath::Align2,
     epaint::{Color32, FontId, Rounding, Vec2},
 };
-use egui::{load::SizedTexture, Image, Rect, TextureHandle};
+use egui::{Image, TextureHandle, Widget};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Buffer, TextAttribute};
 
@@ -52,10 +52,8 @@ impl Tool for PipetteTool {
                 }
 
                 if let Some(image) = &self.char_image {
-                    let sized_texture: SizedTexture = (image).into();
-                    let image = Image::from_texture(sized_texture);
-                    let r = Rect::from_min_size(ui.min_rect().min, sized_texture.size * 2.0);
-                    image.paint_at(ui, r);
+                    let image = Image::from_texture(image).fit_to_original_size(2.0);
+                    image.ui(ui);
                 }
 
                 ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_foreground", fg = ch.attribute.get_foreground()));

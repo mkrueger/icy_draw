@@ -351,9 +351,9 @@ impl FontSelector {
         }
 
         if let Some(image) = self.image_cache.get(&cur_font) {
-            let sized_texture: SizedTexture = (image).into();
-            let w = (sized_texture.size.x).floor();
-            let h = (sized_texture.size.y).floor();
+            let sized_texture: SizedTexture = image.into();
+            let w = sized_texture.size.x.floor();
+            let h = sized_texture.size.y.floor();
             let r = Rect::from_min_size(Pos2::new((rect.left() + 4.0).floor(), (rect.top() + 24.0).floor()), Vec2::new(w, h));
             let image = Image::from_texture(sized_texture);
             image.paint_at(ui, r);

@@ -159,7 +159,7 @@ impl Tool for BrushTool {
         if self.custom_brush.is_some() {
             ui.radio_value(&mut self.brush_type, BrushType::Custom, fl!(crate::LANGUAGE_LOADER, "tool-custom-brush"));
             if let Some(image) = &self.image {
-                let sized_texture: SizedTexture = (image).into();
+                let sized_texture: SizedTexture = image.into();
                 let w = ui.available_width() - 16.0;
                 let scale = w / sized_texture.size.x;
                 let image = Image::from_texture(sized_texture).fit_to_original_size(scale);

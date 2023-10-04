@@ -131,7 +131,7 @@ impl SelectFontDialog {
         }
 
         if let Some(image) = self.image_cache.get(&cur_font) {
-            let sized_texture: SizedTexture = (image).into();
+            let sized_texture: SizedTexture = image.into();
             let w = (sized_texture.size.x / 2.0).floor();
             let h = (sized_texture.size.y / 2.0).floor();
             let r = Rect::from_min_size(
