@@ -346,8 +346,8 @@ font-editor-flip_y=Flip Y
 
 animation_editor_path_label=Path:
 animation_editor_export_button=Export
-animation_editor_gif_label=Gif
 animation_editor_ansi_label=Ansimation
+animation_encoding_frame=Encoding frame { $cur } of { $total }
 
 new-file-template-cp437-title=CP437 ANSI
 new-file-template-cp437-description=

@@ -350,9 +350,8 @@ font-editor-flip_y=Y Spiegeln
 
 animation_editor_path_label=Datei:
 animation_editor_export_button=Export
-animation_editor_gif_label=Gif
 animation_editor_ansi_label=Ansimation
-
+animation_encoding_frame=Berechne Bild { $cur } von { $total }
 
 new-file-template-cp437-title=CP437 ANSI
 new-file-template-cp437-description=

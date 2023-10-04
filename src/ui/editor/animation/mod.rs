@@ -1,8 +1,7 @@
 use std::{
-    fs::File,
     path::{Path, PathBuf},
-    sync::Arc,
-    time::{Duration, Instant},
+    sync::{mpsc::Receiver, Arc},
+    time::Instant,
 };
 
 use crate::{model::Tool, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, UndoHandler};
@@ -10,20 +9,18 @@ use eframe::{
     egui::{self, Id, ImageButton, RichText, Slider, TextEdit, TopBottomPanel},
     epaint::Vec2,
 };
-use egui::Image;
+use egui::{Image, ProgressBar};
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
-use icy_engine::{Buffer, EngineResult, Size, TextPane};
+use icy_engine::{Buffer, EngineResult, Size};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
-use ndarray::{Array, Array3};
-use video_rs::{EncoderSettings, Locator, RawFrame, Time};
-mod highlighting;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum ExportType {
-    Gif,
-    MP4,
-}
+use self::encoding::{start_encoding_thread, ENCODERS};
+mod encoding;
+mod gif_encoder;
+mod highlighting;
+mod mp4_encoder;
+
 pub struct AnimationEditor {
     gl: Arc<glow::Context>,
     id: usize,
@@ -38,12 +35,18 @@ pub struct AnimationEditor {
 
     parent_path: Option<PathBuf>,
     export_path: PathBuf,
-    export_type: ExportType,
+    export_type: usize,
 
     first_frame: bool,
 
     shedule_update: bool,
     last_update: Instant,
+
+    rx: Option<Receiver<usize>>,
+    thread: Option<std::thread::JoinHandle<TerminalResult<()>>>,
+    cur_encoding_frame: usize,
+    encoding_frames: usize,
+    encoding_error: String,
 }
 
 impl AnimationEditor {
@@ -64,110 +67,26 @@ impl AnimationEditor {
             txt,
             undostack: 0,
             export_path,
-            export_type: ExportType::Gif,
+            export_type: 0,
             parent_path,
             set_frame: 0,
             next_animator: None,
             shedule_update: false,
             last_update: Instant::now(),
             first_frame: true,
+            rx: None,
+            thread: None,
+            cur_encoding_frame: 0,
+            encoding_frames: 0,
+            encoding_error: String::new(),
         }
     }
 
     fn export(&mut self) -> TerminalResult<()> {
-        match self.export_type {
-            ExportType::Gif => {
-                if let Ok(mut image) = File::create(&self.export_path) {
-                    if self.animator.lock().unwrap().success() {
-                        let size = self.buffer_view.lock().get_buffer().get_size();
-                        let dim = self.buffer_view.lock().get_buffer().get_font_dimensions();
-                        let width = (size.width * dim.width) as u16;
-                        let height = (size.height * dim.height) as u16;
-
-                        let Ok(mut encoder) = ::gif::Encoder::new(&mut image, width, height, &[]) else {
-                            return Err(anyhow::anyhow!("Could not create encoder"));
-                        };
-                        encoder.set_repeat(::gif::Repeat::Infinite).unwrap();
-
-                        let frame_count = self.animator.lock().unwrap().frames.len();
-
-                        for frame in 0..frame_count {
-                            self.animator.lock().unwrap().set_cur_frame(frame);
-                            let monitor_settings = self.animator.lock().unwrap().display_frame(self.buffer_view.clone());
-                            let opt = icy_engine_egui::TerminalOptions {
-                                stick_to_bottom: false,
-                                scale: Some(Vec2::new(1.0, 1.0)),
-                                monitor_settings,
-
-                                id: Some(Id::new(self.id + 20000)),
-                                ..Default::default()
-                            };
-
-                            let (size, mut data) = self.buffer_view.lock().render_buffer(&self.gl, &opt);
-
-                            let gif_frame = ::gif::Frame::from_rgba(size.x as u16, size.y as u16, &mut data);
-                            encoder.write_frame(&gif_frame)?;
-                        }
-                    } else {
-                        return Err(anyhow::anyhow!("Could not create file"));
-                    }
-                }
-            }
-
-            ExportType::MP4 => {
-                // if let Ok(mut image) = File::create(&self.export_path)
-                {
-                    if self.animator.lock().unwrap().success() {
-                        let size = self.buffer_view.lock().get_buffer().get_size();
-                        let dim = self.buffer_view.lock().get_buffer().get_font_dimensions();
-                        let forced_height = self.buffer_view.lock().calc.forced_height;
-
-                        let ls = self.buffer_view.lock().get_buffer_mut().use_letter_spacing();
-                        let w = dim.width + if ls { 1 } else { 0 };
-
-                        let width = (size.width * w) as usize;
-                        let height = (forced_height * dim.height) as usize;
-                        let height = height - (height % 2);
-
-                        let destination: Locator = PathBuf::from(&self.export_path).into();
-
-                        println!("{}x{}", width, height);
-
-                        let settings = EncoderSettings::for_h264_yuv420p(width, height, false);
-
-                        let mut encoder = video_rs::Encoder::new(&destination, settings).expect("failed to create encoder");
-
-                        let mut position = Time::zero();
-
-                        let frame_count = self.animator.lock().unwrap().frames.len();
-
-                        for frame in 0..frame_count {
-                            println!("encode {}", frame);
-                            self.animator.lock().unwrap().set_cur_frame(frame);
-                            let monitor_settings = self.animator.lock().unwrap().display_frame(self.buffer_view.clone());
-                            let opt = icy_engine_egui::TerminalOptions {
-                                stick_to_bottom: false,
-                                scale: Some(Vec2::new(1.0, 1.0)),
-                                monitor_settings,
-
-                                id: Some(Id::new(self.id + 20000)),
-                                ..Default::default()
-                            };
-                            let (size, data) = self.buffer_view.lock().render_buffer(&self.gl, &opt);
-                            let frame = Array3::from_shape_fn((height, width, 3), |(y, x, c)| data[x * 4 + y * width * 4 + c]);
-                            println!("{:?} {}x{}", size, width, height);
-                            encoder.encode(&frame, &position).expect("failed to encode frame");
-
-                            let duration: Time = Time::from_secs(1.0 / 1000.0 * self.animator.lock().unwrap().get_delay() as f32);
-                            position = position.aligned_with(&duration).add();
-                        }
-                        encoder.finish().expect("failed to finish encoding");
-                    } else {
-                        return Err(anyhow::anyhow!("Could not create file"));
-                    }
-                }
-            }
-        }
+        let (rx, handle) = start_encoding_thread(self.export_type, self.gl.clone(), self.export_path.clone(), self.animator.clone());
+        self.rx = Some(rx);
+        self.thread = Some(handle);
+        self.encoding_frames = self.animator.lock().unwrap().frames.len();
         Ok(())
     }
 }
@@ -319,34 +238,72 @@ impl Document for AnimationEditor {
                 });
 
                 TopBottomPanel::bottom("export_panel").exact_height(100.).show_inside(ui, |ui| {
-                    ui.horizontal(|ui| {
-                        ui.label(fl!(crate::LANGUAGE_LOADER, "animation_editor_path_label"));
-                        let mut path_edit = self.export_path.to_str().unwrap().to_string();
-                        let response = ui.add(
-                            //    ui.available_size(),
-                            TextEdit::singleline(&mut path_edit),
-                        );
-                        if response.changed() {
-                            self.export_path = path_edit.into();
+                    if let Some(rx) = &self.rx {
+                        if let Ok(x) = rx.recv() {
+                            self.cur_encoding_frame = x;
                         }
 
-                        if ui
-                            .selectable_label(self.export_type == ExportType::Gif, fl!(crate::LANGUAGE_LOADER, "animation_editor_gif_label"))
-                            .clicked()
-                        {
-                            self.export_type = ExportType::Gif;
-                            self.export_path.set_extension("gif");
+                        ui.label(fl!(
+                            crate::LANGUAGE_LOADER,
+                            "animation_encoding_frame",
+                            cur = self.cur_encoding_frame,
+                            total = self.encoding_frames
+                        ));
+                        ui.add(ProgressBar::new(self.cur_encoding_frame as f32 / self.encoding_frames as f32));
+                        if self.cur_encoding_frame >= self.encoding_frames {
+                            if let Some(thread) = self.thread.take() {
+                                if let Ok(Err(err)) = thread.join() {
+                                    log::error!("Error during encoding: {err}");
+                                    self.encoding_error = format!("{err}");
+                                }
+                            }
+                            self.rx = None;
+                        } else if let Some(thread) = &self.thread {
+                            if thread.is_finished() {
+                                if let Err(err) = self.thread.take().unwrap().join() {
+                                    let msg = if let Some(msg) = err.downcast_ref::<&'static str>() {
+                                        msg.to_string()
+                                    } else if let Some(msg) = err.downcast_ref::<String>() {
+                                        msg.clone()
+                                    } else {
+                                        format!("?{:?}", err)
+                                    };
+                                    log::error!("Error during encoding: {:?}", msg);
+                                    self.encoding_error = format!("Thread aborted: {:?}", msg);
+                                }
+                                self.rx = None;
+                            }
                         }
+                    } else {
+                        ui.horizontal(|ui| {
+                            ui.label(fl!(crate::LANGUAGE_LOADER, "animation_editor_path_label"));
+                            let mut path_edit = self.export_path.to_str().unwrap().to_string();
+                            let response = ui.add(
+                                //    ui.available_size(),
+                                TextEdit::singleline(&mut path_edit).desired_width(f32::INFINITY),
+                            );
+                            if response.changed() {
+                                self.export_path = path_edit.into();
+                            }
+                        });
+                        ui.add_space(8.0);
+                        ui.horizontal(|ui| {
+                            for (i, enc) in ENCODERS.iter().enumerate() {
+                                if ui.selectable_label(self.export_type == i, enc.label()).clicked() {
+                                    self.export_type = i;
+                                    self.export_path.set_extension(enc.extension());
+                                }
+                            }
 
-                        if ui.selectable_label(self.export_type == ExportType::MP4, "MP4").clicked() {
-                            self.export_type = ExportType::MP4;
-                            self.export_path.set_extension("mp4");
-                        }
-                    });
-                    ui.add_space(8.0);
-                    if ui.button(fl!(crate::LANGUAGE_LOADER, "animation_editor_export_button")).clicked() {
-                        if let Err(err) = self.export() {
-                            message = Some(Message::ShowError(format!("Could not export: {}", err)));
+                            if ui.button(fl!(crate::LANGUAGE_LOADER, "animation_editor_export_button")).clicked() {
+                                if let Err(err) = self.export() {
+                                    message = Some(Message::ShowError(format!("Could not export: {}", err)));
+                                }
+                            }
+                        });
+
+                        if !self.encoding_error.is_empty() {
+                            ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.encoding_error));
                         }
                     }
                 });
