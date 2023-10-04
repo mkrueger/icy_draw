@@ -24,13 +24,15 @@ impl AnimationEncoder for AsciiCast {
     }
 
     fn direct_encoding(&self, path: &Path, animator: Arc<std::sync::Mutex<Animator>>) -> TerminalResult<bool> {
+        let name = path.file_stem().unwrap().to_str().unwrap();
         let mut f = File::create(path)?;
         let frame_count = animator.lock().unwrap().frames.len();
         {
             let buf = &animator.lock().unwrap().frames[0].0;
-            f.write_all(format!("{{\"version\": 2, \"width\": {}, \"height\": {}, \"timestamp\": 0, \"title\": \"Demo\", \"env\": {{\"TERM\": \"xterm-256color\", \"SHELL\": \"/bin/bash\"}}, \"theme\": {{ \"fg\": \"{}\", \"bg\": \"{}\", \"palette\": \"{}\" }}  }}\n", 
+            f.write_all(format!("{{\"version\": 2, \"width\": {}, \"height\": {}, \"timestamp\": 0, \"title\": \"{}\", \"env\": {{\"TERM\": \"IcyTerm\", \"SHELL\": \"/bin/icy_play\"}}, \"theme\": {{ \"fg\": \"{}\", \"bg\": \"{}\", \"palette\": \"{}\" }}  }}\n", 
                 buf.get_width(),
                 buf.get_height(),
+                name,
                 buf.palette.get_color(0).to_hex(),
                 buf.palette.get_color(7).to_hex(),
                 buf.palette.color_iter().take(16).fold(String::new(), |mut s, x| {
