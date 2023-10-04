@@ -39,6 +39,7 @@ pub struct AnsiEditor {
     pub is_inactive: bool,
 
     pub outline_font_mode: bool,
+    last_selected_tool: usize,
 
     pub reference_image: Option<PathBuf>,
     // pub outline_changed: std::boxed::Box<dyn Fn(&Editor)>,
@@ -149,8 +150,15 @@ impl Document for AnsiEditor {
         Ok(bytes)
     }
 
-    fn show_ui(&mut self, ui: &mut egui::Ui, cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, options: &DocumentOptions) -> Option<Message> {
+    fn show_ui(&mut self, ui: &mut egui::Ui, cur_tool: &mut Box<dyn Tool>, selected_tool: usize, options: &DocumentOptions) -> Option<Message> {
         let mut message = None;
+
+        // clear tool overlays on tool change
+        if self.last_selected_tool != selected_tool {
+            self.last_selected_tool = selected_tool;
+            self.buffer_view.lock().get_edit_state_mut().get_tool_overlay_mask_mut().clear();
+            self.buffer_view.lock().get_edit_state_mut().is_buffer_dirty = true;
+        }
 
         let mut scale = options.get_scale();
         self.buffer_view.lock().get_caret_mut().set_is_visible(cur_tool.use_caret());
@@ -218,6 +226,7 @@ impl AnsiEditor {
             next_scroll_x_position: Some(0.0),
             next_scroll_y_position: Some(0.0),
             half_block_click_pos: Position::default(),
+            last_selected_tool: 0,
         }
     }
 
