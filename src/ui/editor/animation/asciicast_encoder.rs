@@ -1,4 +1,4 @@
-use icy_engine::{SaveOptions, StringGenerator, TextPane};
+use icy_engine::{SaveOptions, StringGenerator, TextPane, ColorOptimizer};
 use icy_engine_egui::animations::Animator;
 use std::{
     fs::File,
@@ -33,8 +33,8 @@ impl AnimationEncoder for AsciiCast {
                 buf.get_width(),
                 buf.get_height(),
                 name,
-                buf.palette.get_color(0).to_hex(),
                 buf.palette.get_color(7).to_hex(),
+                buf.palette.get_color(0).to_hex(),
                 buf.palette.color_iter().take(16).fold(String::new(), |mut s, x| {
                     if !s.is_empty() {
                         s.push(':');
@@ -54,10 +54,11 @@ impl AnimationEncoder for AsciiCast {
             opt.preserve_line_length = true;
             opt.modern_terminal_output = true;
 
-            let mut gen = StringGenerator::new(opt);
+            let mut gen = StringGenerator::new(opt.clone());
             {
-                let buf = &animator.lock().unwrap().frames[frame].0;
-                gen.generate(buf, buf);
+                let optimizer = ColorOptimizer::new(&animator.lock().unwrap().frames[frame].0, &opt);
+                let buf = optimizer.optimize(&animator.lock().unwrap().frames[frame].0);
+                gen.generate(&buf, &buf);
             }
             gen.line_offsets.push(gen.get_data().len());
 
