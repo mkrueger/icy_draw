@@ -83,7 +83,7 @@ impl AnimationEditor {
     }
 
     fn export(&mut self) -> TerminalResult<()> {
-        let (rx, handle) = start_encoding_thread(self.export_type, self.gl.clone(), self.export_path.clone(), self.animator.clone());
+        let (rx, handle) = start_encoding_thread(self.export_type, self.gl.clone(), self.export_path.clone(), self.animator.clone())?;
         self.rx = Some(rx);
         self.thread = Some(handle);
         self.encoding_frames = self.animator.lock().unwrap().frames.len();

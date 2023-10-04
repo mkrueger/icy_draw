@@ -25,7 +25,10 @@ pub fn start_encoding_thread(
     gl: Arc<glow::Context>,
     path: PathBuf,
     animator: Arc<std::sync::Mutex<Animator>>,
-) -> (Receiver<usize>, JoinHandle<TerminalResult<()>>) {
+) -> TerminalResult<(Receiver<usize>, JoinHandle<TerminalResult<()>>)> {
+    if !animator.lock().unwrap().success() {
+        return Err(anyhow::anyhow!("Animation is not finished."));
+    }
     let (tx, rx) = std::sync::mpsc::channel();
     let mut buffer = Buffer::new((80, 25));
     buffer.is_terminal_buffer = false;
@@ -58,11 +61,9 @@ pub fn start_encoding_thread(
     let dim = buffer_view.lock().get_buffer().get_font_dimensions();
     let width = (size.width * dim.width) as usize;
     let height = (size.height * dim.height) as usize;
+    let t = thread::Builder::new()
+    .name("Encoding".into())
+    .spawn(move || ENCODERS[encoder].encode(&path, data, width, height, tx))?;
 
-    (
-        rx,
-        thread::Builder::new()
-            .name("named thread".into())
-            .spawn(move || ENCODERS[encoder].encode(&path, data, width, height, tx)),
-    )
+    Ok((rx, t))
 }
