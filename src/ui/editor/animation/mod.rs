@@ -208,7 +208,14 @@ impl Document for AnimationEditor {
                             }
 
                             let mut cf = animator.get_cur_frame() + 1;
-                            if frame_count > 0 && ui.add(Slider::new(&mut cf, 1..=frame_count).text(format!("of {}", frame_count))).changed() {
+
+                            
+
+                            if frame_count > 0 && ui.add(Slider::new(&mut cf, 1..=frame_count).text(fl!(
+                                crate::LANGUAGE_LOADER,
+                                "animation_of_frame_count",
+                                total = frame_count
+                            ))).changed() {
                                 animator.set_cur_frame(cf - 1);
                                 animator.display_frame(self.buffer_view.clone());
                             }
@@ -304,6 +311,11 @@ impl Document for AnimationEditor {
 
                         if !self.encoding_error.is_empty() {
                             ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.encoding_error));
+                        } else {
+                            ui.horizontal(|ui| {
+                                ui.label(fl!(crate::LANGUAGE_LOADER, "animation_icy_play_note"));
+                                ui.hyperlink_to("Icy Play", "https://github.com/mkrueger/icy_play");
+                            });
                         }
                     }
                 });

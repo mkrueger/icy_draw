@@ -352,6 +352,8 @@ animation_editor_path_label=Datei:
 animation_editor_export_button=Export
 animation_editor_ansi_label=Ansimation
 animation_encoding_frame=Berechne Bild { $cur } von { $total }
+animation_of_frame_count=von { $total }
+animation_icy_play_note=Für Animationen in der Konsole/BBS (oder zum Ansi honvertieren) braucht man:
 
 new-file-template-cp437-title=CP437 ANSI
 new-file-template-cp437-description=

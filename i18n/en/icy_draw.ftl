@@ -348,6 +348,8 @@ animation_editor_path_label=Path:
 animation_editor_export_button=Export
 animation_editor_ansi_label=Ansimation
 animation_encoding_frame=Encoding frame { $cur } of { $total }
+animation_of_frame_count=of { $total }
+animation_icy_play_note=Note: For playing the animation in the console/bbs or ansi conversion use:
 
 new-file-template-cp437-title=CP437 ANSI
 new-file-template-cp437-description=
