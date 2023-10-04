@@ -67,11 +67,18 @@ impl Tool for PipetteTool {
         None
     }
 
-    fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, _cur_abs: Position) -> egui::Response {
+    fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, cur_abs: Position) -> egui::Response {
         unsafe {
             CUR_CHAR = Some(editor.get_char(cur));
         }
-        self.cur_pos = Some(cur);
+        if self.cur_pos != Some(cur) {
+            self.cur_pos = Some(cur);
+            let lock = &mut editor.buffer_view.lock();
+            let get_tool_overlay_mask_mut = lock.get_edit_state_mut().get_tool_overlay_mask_mut();
+            get_tool_overlay_mask_mut.clear();
+            get_tool_overlay_mask_mut.set_is_selected(cur_abs, true);
+            lock.get_edit_state_mut().is_buffer_dirty = true;
+        }
 
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
@@ -84,11 +91,18 @@ impl Tool for PipetteTool {
         }
     }
 
-    fn handle_no_hover(&mut self, _editor: &mut AnsiEditor) {
+    fn handle_no_hover(&mut self, editor: &mut AnsiEditor) {
         unsafe {
             CUR_CHAR = None;
         }
         self.cur_pos = None;
+
+        let lock: &mut eframe::epaint::mutex::MutexGuard<'_, icy_engine_egui::BufferView> = &mut editor.buffer_view.lock();
+        let get_edit_state_mut = lock.get_edit_state_mut();
+        if !get_edit_state_mut.get_tool_overlay_mask_mut().is_empty() {
+            get_edit_state_mut.get_tool_overlay_mask_mut().clear();
+            get_edit_state_mut.is_buffer_dirty = true;
+        }
     }
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {

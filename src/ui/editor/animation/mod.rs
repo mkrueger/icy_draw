@@ -147,7 +147,7 @@ impl Document for AnimationEditor {
         self.undostack
     }
 
-    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, options: &DocumentOptions) -> Option<Message> {
+    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, _options: &DocumentOptions) -> Option<Message> {
         let mut message = None;
 
         if self.first_frame && self.animator.lock().unwrap().success() {
@@ -160,7 +160,7 @@ impl Document for AnimationEditor {
             self.first_frame = false;
         }
         if let Some(next) = &self.next_animator {
-            if next.lock().unwrap().success() || !next.lock().unwrap().error.is_empty()  {
+            if next.lock().unwrap().success() || !next.lock().unwrap().error.is_empty() {
                 self.animator = next.clone();
                 self.next_animator = None;
                 let animator = &mut self.animator.lock().unwrap();
@@ -173,237 +173,233 @@ impl Document for AnimationEditor {
             .default_width(ui.available_width() / 2.0)
             .min_width(660.0)
             .show_inside(ui, |ui| {
-             
-            ui.horizontal(|ui| {
-                if !self.animator.lock().unwrap().error.is_empty() {
-                    ui.set_enabled(false);
-                }
+                ui.horizontal(|ui| {
+                    if !self.animator.lock().unwrap().error.is_empty() {
+                        ui.set_enabled(false);
+                    }
+
+                    if self.animator.lock().unwrap().success() {
+                        let animator = &mut self.animator.lock().unwrap();
+                        let frame_count = animator.frames.len();
+                        if animator.is_playing() {
+                            if ui.add(ImageButton::new(crate::PAUSE_SVG.clone())).clicked() {
+                                animator.set_is_playing(false);
+                            }
+                        } else {
+                            let image: &Image<'static> = if animator.get_cur_frame() + 1 < frame_count {
+                                &crate::PLAY_SVG
+                            } else {
+                                &crate::REPLAY_SVG
+                            };
+                            if ui.add(ImageButton::new(image.clone())).clicked() {
+                                if animator.get_cur_frame() + 1 >= frame_count {
+                                    animator.set_cur_frame(0);
+                                }
+                                animator.start_playback(self.buffer_view.clone());
+                            }
+                        }
+                        if ui
+                            .add_enabled(animator.get_cur_frame() + 1 < frame_count, ImageButton::new(crate::SKIP_NEXT_SVG.clone()))
+                            .clicked()
+                        {
+                            animator.set_cur_frame(frame_count - 1);
+                            animator.display_frame(self.buffer_view.clone());
+                        }
+                        let is_loop = animator.get_is_loop();
+                        if ui.add(ImageButton::new(crate::REPEAT_SVG.clone()).selected(is_loop)).clicked() {
+                            animator.set_is_loop(!is_loop);
+                        }
+
+                        let mut cf = animator.get_cur_frame() + 1;
+
+                        if frame_count > 0
+                            && ui
+                                .add(Slider::new(&mut cf, 1..=frame_count).text(fl!(crate::LANGUAGE_LOADER, "animation_of_frame_count", total = frame_count)))
+                                .changed()
+                        {
+                            animator.set_cur_frame(cf - 1);
+                            animator.display_frame(self.buffer_view.clone());
+                        }
+
+                        if ui
+                            .add_enabled(animator.get_cur_frame() > 0, ImageButton::new(crate::NAVIGATE_PREV.clone()))
+                            .clicked()
+                        {
+                            let cf = animator.get_cur_frame() - 1;
+                            animator.set_cur_frame(cf);
+                            animator.display_frame(self.buffer_view.clone());
+                        }
+
+                        if ui
+                            .add_enabled(
+                                animator.get_cur_frame() + 1 < animator.frames.len(),
+                                ImageButton::new(crate::NAVIGATE_NEXT.clone()),
+                            )
+                            .clicked()
+                        {
+                            let cf = animator.get_cur_frame() + 1;
+                            animator.set_cur_frame(cf);
+                            animator.display_frame(self.buffer_view.clone());
+                        }
+
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.button(if self.scale < 2.0 { "2x" } else { "1x" }).clicked() {
+                                if self.scale < 2.0 {
+                                    self.scale = 2.0;
+                                } else {
+                                    self.scale = 1.0;
+                                }
+                            }
+                        });
+                    }
+                });
 
                 if self.animator.lock().unwrap().success() {
-                    let animator = &mut self.animator.lock().unwrap();
-                    let frame_count = animator.frames.len();
-                    if animator.is_playing() {
-                        if ui.add(ImageButton::new(crate::PAUSE_SVG.clone())).clicked() {
-                            animator.set_is_playing(false);
-                        }
+                    let cur_frame = self.animator.lock().unwrap().get_cur_frame();
+
+                    let monitor_settings = if let Some((_, settings, _)) = self.animator.lock().unwrap().frames.get(cur_frame) {
+                        settings.clone()
                     } else {
-                        let image: &Image<'static> = if animator.get_cur_frame() + 1 < frame_count {
-                            &crate::PLAY_SVG
-                        } else {
-                            &crate::REPLAY_SVG
-                        };
-                        if ui.add(ImageButton::new(image.clone())).clicked() {
-                            if animator.get_cur_frame() + 1 >= frame_count {
-                                animator.set_cur_frame(0);
-                            }
-                            animator.start_playback(self.buffer_view.clone());
-                        }
+                        MonitorSettings::default()
+                    };
+                    let mut scale = Vec2::splat(self.scale);
+                    if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
+                        scale.y *= 1.35;
                     }
-                    if ui
-                        .add_enabled(animator.get_cur_frame() + 1 < frame_count, ImageButton::new(crate::SKIP_NEXT_SVG.clone()))
-                        .clicked()
-                    {
-                        animator.set_cur_frame(frame_count - 1);
-                        animator.display_frame(self.buffer_view.clone());
-                    }
-                    let is_loop = animator.get_is_loop();
-                    if ui.add(ImageButton::new(crate::REPEAT_SVG.clone()).selected(is_loop)).clicked() {
-                        animator.set_is_loop(!is_loop);
+                    let opt = icy_engine_egui::TerminalOptions {
+                        stick_to_bottom: false,
+                        scale: Some(scale),
+                        monitor_settings,
+                        id: Some(Id::new(self.id + 20000)),
+                        ..Default::default()
+                    };
+                    ui.allocate_ui(Vec2::new(ui.available_width(), ui.available_height() - 100.0), |ui| {
+                        self.buffer_view.lock().get_caret_mut().set_is_visible(false);
+                        let (_, _) = show_terminal_area(ui, self.buffer_view.clone(), opt);
+                    });
+                    ui.add_space(8.0);
+                }
+
+                if let Some(rx) = &self.rx {
+                    if let Ok(x) = rx.recv() {
+                        self.cur_encoding_frame = x;
                     }
 
-                    let mut cf = animator.get_cur_frame() + 1;
-
-                    
-
-                    if frame_count > 0 && ui.add(Slider::new(&mut cf, 1..=frame_count).text(fl!(
+                    ui.label(fl!(
                         crate::LANGUAGE_LOADER,
-                        "animation_of_frame_count",
-                        total = frame_count
-                    ))).changed() {
-                        animator.set_cur_frame(cf - 1);
-                        animator.display_frame(self.buffer_view.clone());
-                    }
-
-                    if ui
-                        .add_enabled(animator.get_cur_frame() > 0, ImageButton::new(crate::NAVIGATE_PREV.clone()))
-                        .clicked()
-                    {
-                        let cf = animator.get_cur_frame() - 1;
-                        animator.set_cur_frame(cf);
-                        animator.display_frame(self.buffer_view.clone());
-                    }
-
-                    if ui
-                        .add_enabled(
-                            animator.get_cur_frame() + 1 < animator.frames.len(),
-                            ImageButton::new(crate::NAVIGATE_NEXT.clone()),
-                        )
-                        .clicked()
-                    {
-                        let cf = animator.get_cur_frame() + 1;
-                        animator.set_cur_frame(cf);
-                        animator.display_frame(self.buffer_view.clone());
-                    }
-
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button(if self.scale < 2.0 { "2x" } else { "1x" }).clicked() {
-                            if self.scale < 2.0 {
-                                self.scale = 2.0;
-                            } else {
-                                self.scale = 1.0;
+                        "animation_encoding_frame",
+                        cur = self.cur_encoding_frame,
+                        total = self.encoding_frames
+                    ));
+                    ui.add(ProgressBar::new(self.cur_encoding_frame as f32 / self.encoding_frames as f32));
+                    if self.cur_encoding_frame >= self.encoding_frames {
+                        if let Some(thread) = self.thread.take() {
+                            if let Ok(Err(err)) = thread.join() {
+                                log::error!("Error during encoding: {err}");
+                                self.encoding_error = format!("{err}");
                             }
                         }
+                        self.rx = None;
+                    } else if let Some(thread) = &self.thread {
+                        if thread.is_finished() {
+                            if let Err(err) = self.thread.take().unwrap().join() {
+                                let msg = if let Some(msg) = err.downcast_ref::<&'static str>() {
+                                    msg.to_string()
+                                } else if let Some(msg) = err.downcast_ref::<String>() {
+                                    msg.clone()
+                                } else {
+                                    format!("?{:?}", err)
+                                };
+                                log::error!("Error during encoding: {:?}", msg);
+                                self.encoding_error = format!("Thread aborted: {:?}", msg);
+                            }
+                            self.rx = None;
+                        }
+                    }
+                } else {
+                    ui.horizontal(|ui| {
+                        ui.label(fl!(crate::LANGUAGE_LOADER, "animation_editor_path_label"));
+                        let mut path_edit = self.export_path.to_str().unwrap().to_string();
+                        let response = ui.add(
+                            //    ui.available_size(),
+                            TextEdit::singleline(&mut path_edit).desired_width(f32::INFINITY),
+                        );
+                        if response.changed() {
+                            self.export_path = path_edit.into();
+                        }
+                    });
+                    ui.add_space(8.0);
+                    ui.horizontal(|ui| {
+                        for (i, enc) in ENCODERS.iter().enumerate() {
+                            if ui.selectable_label(self.export_type == i, enc.label()).clicked() {
+                                self.export_type = i;
+                                self.export_path.set_extension(enc.extension());
+                            }
+                        }
+
+                        if ui.button(fl!(crate::LANGUAGE_LOADER, "animation_editor_export_button")).clicked() {
+                            if let Err(err) = self.export() {
+                                message = Some(Message::ShowError(format!("Could not export: {}", err)));
+                            }
+                        }
+                    });
+
+                    if !self.encoding_error.is_empty() {
+                        ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.encoding_error));
+                    } else {
+                        ui.horizontal(|ui| {
+                            ui.small(fl!(crate::LANGUAGE_LOADER, "animation_icy_play_note"));
+                            ui.hyperlink_to(RichText::new("Icy Play").small(), "https://github.com/mkrueger/icy_play");
+                        });
+                    }
+                }
+            });
+
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            TopBottomPanel::bottom("code_error_bottom_panel").exact_height(200.).show_inside(ui, |ui| {
+                if !self.animator.lock().unwrap().error.is_empty() {
+                    ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.animator.lock().unwrap().error).small());
+                } else {
+                    egui::ScrollArea::vertical().max_width(f32::INFINITY).show(ui, |ui| {
+                        self.animator.lock().unwrap().log.iter().for_each(|line| {
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new(format!("Frame {}:", line.frame)).strong());
+                                ui.label(RichText::new(&line.text));
+                                ui.add_space(ui.available_width());
+                            });
+                        });
                     });
                 }
             });
 
-
-            if self.animator.lock().unwrap().success() {
-                let cur_frame = self.animator.lock().unwrap().get_cur_frame();
-
-                let monitor_settings = if let Some((_, settings, _)) = self.animator.lock().unwrap().frames.get(cur_frame) {
-                    settings.clone()
+            let r = CodeEditor::default()
+                .id_source("code editor")
+                .with_rows(12)
+                .with_fontsize(14.0)
+                .with_theme(if ui.style().visuals.dark_mode {
+                    egui_code_editor::ColorTheme::GITHUB_DARK
                 } else {
-                    MonitorSettings::default()
-                };
-                let mut scale = Vec2::splat(self.scale);
-                if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
-                    scale.y *= 1.35;
-                }
-                let opt = icy_engine_egui::TerminalOptions {
-                    stick_to_bottom: false,
-                    scale: Some(scale),
-                    monitor_settings,
-                    id: Some(Id::new(self.id + 20000)),
-                    ..Default::default()
-                };
-                ui.allocate_ui(Vec2::new(ui.available_width(), ui.available_height() - 100.0), |ui|  {
-                    self.buffer_view.lock().get_caret_mut().set_is_visible(false);
-                    let (_, _) = show_terminal_area(ui, self.buffer_view.clone(), opt);
-                });
-                ui.add_space(8.0);
+                    egui_code_editor::ColorTheme::GITHUB_LIGHT
+                })
+                .with_syntax(highlighting::lua())
+                .with_numlines(true)
+                .show(ui, &mut self.txt);
+
+            if self.shedule_update && self.last_update.elapsed().as_millis() > 1000 {
+                self.shedule_update = false;
+
+                let path = self.parent_path.clone();
+                let txt = self.txt.clone();
+                self.set_frame = self.animator.lock().unwrap().get_cur_frame();
+                self.next_animator = Some(Animator::run(&path, txt));
             }
 
-            if let Some(rx) = &self.rx {
-                if let Ok(x) = rx.recv() {
-                    self.cur_encoding_frame = x;
-                }
-
-                ui.label(fl!(
-                    crate::LANGUAGE_LOADER,
-                    "animation_encoding_frame",
-                    cur = self.cur_encoding_frame,
-                    total = self.encoding_frames
-                ));
-                ui.add(ProgressBar::new(self.cur_encoding_frame as f32 / self.encoding_frames as f32));
-                if self.cur_encoding_frame >= self.encoding_frames {
-                    if let Some(thread) = self.thread.take() {
-                        if let Ok(Err(err)) = thread.join() {
-                            log::error!("Error during encoding: {err}");
-                            self.encoding_error = format!("{err}");
-                        }
-                    }
-                    self.rx = None;
-                } else if let Some(thread) = &self.thread {
-                    if thread.is_finished() {
-                        if let Err(err) = self.thread.take().unwrap().join() {
-                            let msg = if let Some(msg) = err.downcast_ref::<&'static str>() {
-                                msg.to_string()
-                            } else if let Some(msg) = err.downcast_ref::<String>() {
-                                msg.clone()
-                            } else {
-                                format!("?{:?}", err)
-                            };
-                            log::error!("Error during encoding: {:?}", msg);
-                            self.encoding_error = format!("Thread aborted: {:?}", msg);
-                        }
-                        self.rx = None;
-                    }
-                }
-            } else {
-                ui.horizontal(|ui| {
-                    ui.label(fl!(crate::LANGUAGE_LOADER, "animation_editor_path_label"));
-                    let mut path_edit = self.export_path.to_str().unwrap().to_string();
-                    let response = ui.add(
-                        //    ui.available_size(),
-                        TextEdit::singleline(&mut path_edit).desired_width(f32::INFINITY),
-                    );
-                    if response.changed() {
-                        self.export_path = path_edit.into();
-                    }
-                });
-                ui.add_space(8.0);
-                ui.horizontal(|ui| {
-                    for (i, enc) in ENCODERS.iter().enumerate() {
-                        if ui.selectable_label(self.export_type == i, enc.label()).clicked() {
-                            self.export_type = i;
-                            self.export_path.set_extension(enc.extension());
-                        }
-                    }
-
-                    if ui.button(fl!(crate::LANGUAGE_LOADER, "animation_editor_export_button")).clicked() {
-                        if let Err(err) = self.export() {
-                            message = Some(Message::ShowError(format!("Could not export: {}", err)));
-                        }
-                    }
-                });
-
-                if !self.encoding_error.is_empty() {
-                    ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.encoding_error));
-                } else {
-                    ui.horizontal(|ui| {
-                        ui.small(fl!(crate::LANGUAGE_LOADER, "animation_icy_play_note"));
-                        ui.hyperlink_to(RichText::new("Icy Play").small(), "https://github.com/mkrueger/icy_play");
-                    });
-                }
+            if r.response.changed {
+                self.shedule_update = true;
+                self.last_update = Instant::now();
+                self.undostack += 1;
             }
         });
-
-        egui::CentralPanel::default().show_inside(ui, |ui| {
-            TopBottomPanel::bottom("code_error_bottom_panel").exact_height(200.).show_inside(ui, |ui| {
-            if !self.animator.lock().unwrap().error.is_empty() {
-                ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.animator.lock().unwrap().error).small());
-            } else {
-                egui::ScrollArea::vertical().max_width(f32::INFINITY).show(ui, |ui| {
-                    self.animator.lock().unwrap().log.iter().for_each(|line| {
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new(format!("Frame {}:", line.frame)).strong());
-                            ui.label(RichText::new(&line.text));
-                            ui.add_space(ui.available_width());
-                        });
-                    });
-                });
-            }
-        });
-
-        let r = CodeEditor::default()
-            .id_source("code editor")
-            .with_rows(12)
-            .with_fontsize(14.0)
-            .with_theme(if ui.style().visuals.dark_mode {
-                egui_code_editor::ColorTheme::GITHUB_DARK
-            } else {
-                egui_code_editor::ColorTheme::GITHUB_LIGHT
-            })
-            .with_syntax(highlighting::lua())
-            .with_numlines(true)
-            .show(ui, &mut self.txt);
-
-        if self.shedule_update && self.last_update.elapsed().as_millis() > 1000 {
-            self.shedule_update = false;
-
-            let path = self.parent_path.clone();
-            let txt = self.txt.clone();
-            self.set_frame = self.animator.lock().unwrap().get_cur_frame();
-            self.next_animator = Some(Animator::run(&path, txt));
-        }
-
-        if r.response.changed {
-            self.shedule_update = true;
-            self.last_update = Instant::now();
-            self.undostack += 1;
-        }
-    });
 
         let buffer_view = self.buffer_view.clone();
         if self.animator.lock().unwrap().success() {

@@ -580,12 +580,12 @@ impl<'a> MainWindow<'a> {
 
     fn top_bar_ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let right = medium_toggle_button(ui, &DOCK_LEFT_SVG, self.right_panel);
+            let right = medium_toggle_button(ui, &DOCK_RIGHT_SVG, self.right_panel);
             if right.clicked() {
                 self.right_panel = !self.right_panel;
             }
 
-            let left = medium_toggle_button(ui, &DOCK_RIGHT_SVG, self.left_panel);
+            let left = medium_toggle_button(ui, &DOCK_LEFT_SVG, self.left_panel);
             if left.clicked() {
                 self.left_panel = !self.left_panel;
             }

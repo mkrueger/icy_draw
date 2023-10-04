@@ -56,7 +56,7 @@ fn main() {
         initial_window_size: Some(egui::vec2(1280., 841.)),
         multisampling: 0,
         renderer: eframe::Renderer::Glow,
-        icon_data: Some(IconData::try_from_png_bytes(&include_bytes!("../build/linux/256x256.png")[..]).unwrap(),),
+        icon_data: Some(IconData::try_from_png_bytes(&include_bytes!("../build/linux/256x256.png")[..]).unwrap()),
         ..Default::default()
     };
 
