@@ -1,4 +1,4 @@
-use std::{fs::File, path::Path, sync::mpsc::Sender};
+use std::{path::Path, sync::mpsc::Sender};
 
 use gifski::{progress::NoProgress, Repeat};
 use imgref::ImgVec;
