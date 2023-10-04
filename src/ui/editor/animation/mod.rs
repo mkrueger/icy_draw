@@ -16,6 +16,7 @@ use icy_engine::{Buffer, EngineResult, Size};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
 
 use self::encoding::{start_encoding_thread, ENCODERS};
+mod asciicast_encoder;
 mod encoding;
 mod gif_encoder;
 mod highlighting;
@@ -86,10 +87,11 @@ impl AnimationEditor {
     }
 
     fn export(&mut self) -> TerminalResult<()> {
-        let (rx, handle) = start_encoding_thread(self.export_type, self.gl.clone(), self.export_path.clone(), self.animator.clone())?;
-        self.rx = Some(rx);
-        self.thread = Some(handle);
-        self.encoding_frames = self.animator.lock().unwrap().frames.len();
+        if let Some((rx, handle)) = start_encoding_thread(self.export_type, self.gl.clone(), self.export_path.clone(), self.animator.clone())? {
+            self.rx = Some(rx);
+            self.thread = Some(handle);
+            self.encoding_frames = self.animator.lock().unwrap().frames.len();
+        }
         Ok(())
     }
 }

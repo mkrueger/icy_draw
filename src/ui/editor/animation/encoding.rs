@@ -10,24 +10,31 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use super::{gif_encoder::GifEncoder, mp4_encoder::Mp4Encoder};
+use super::{asciicast_encoder::AsciiCast, gif_encoder::GifEncoder, mp4_encoder::Mp4Encoder};
 use crate::TerminalResult;
 
 pub trait AnimationEncoder {
     fn label(&self) -> String;
     fn extension(&self) -> String;
     fn encode(&self, path: &Path, frames: Vec<(Vec<u8>, u32)>, width: usize, height: usize, sender: Sender<usize>) -> TerminalResult<()>;
+
+    fn direct_encoding(&self, _path: &Path, _animator: Arc<std::sync::Mutex<Animator>>) -> TerminalResult<bool> {
+        Ok(false)
+    }
 }
-pub const ENCODERS: &[&dyn AnimationEncoder] = &[&GifEncoder {}, &Mp4Encoder {}];
+pub const ENCODERS: &[&dyn AnimationEncoder] = &[&GifEncoder {}, &Mp4Encoder {}, &AsciiCast {}];
 
 pub fn start_encoding_thread(
     encoder: usize,
     gl: Arc<glow::Context>,
     path: PathBuf,
     animator: Arc<std::sync::Mutex<Animator>>,
-) -> TerminalResult<(Receiver<usize>, JoinHandle<TerminalResult<()>>)> {
+) -> TerminalResult<Option<(Receiver<usize>, JoinHandle<TerminalResult<()>>)>> {
     if !animator.lock().unwrap().success() {
         return Err(anyhow::anyhow!("Animation is not finished."));
+    }
+    if ENCODERS[encoder].direct_encoding(&path, animator.clone())? {
+        return Ok(None);
     }
     let (tx, rx) = std::sync::mpsc::channel();
     let mut buffer = Buffer::new((80, 25));
@@ -65,5 +72,5 @@ pub fn start_encoding_thread(
         .name("Encoding".into())
         .spawn(move || ENCODERS[encoder].encode(&path, data, width, height, tx))?;
 
-    Ok((rx, t))
+    Ok(Some((rx, t)))
 }
