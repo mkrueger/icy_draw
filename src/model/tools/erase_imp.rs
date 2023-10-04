@@ -115,12 +115,12 @@ impl Tool for EraseTool {
     }
 
     fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, cur_abs: Position) -> egui::Response {
-        if self.cur_pos != cur {
-            self.cur_pos = cur;
+        let mid: Position = Position::new(-(self.size / 2), -(self.size / 2));
+        if self.cur_pos != cur + mid {
+            self.cur_pos = cur + mid;
             let lock = &mut editor.buffer_view.lock();
             let get_tool_overlay_mask_mut = lock.get_edit_state_mut().get_tool_overlay_mask_mut();
             get_tool_overlay_mask_mut.clear();
-            let mid: Position = Position::new(-(self.size / 2), -(self.size / 2));
             for y in 0..self.size {
                 for x in 0..self.size {
                     let pos = cur_abs + Position::new(x, y) + mid;

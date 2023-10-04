@@ -2,7 +2,7 @@ use eframe::{
     egui::{self, Response, RichText, Sense},
     epaint::{Color32, Pos2, Rect, Rounding, Vec2},
 };
-use egui::{load::SizedTexture, Image, TextureHandle};
+use egui::{load::SizedTexture, Image, TextureHandle, Widget};
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Layer, TextPane};
 use icy_engine_egui::TerminalCalc;
@@ -162,9 +162,8 @@ impl Tool for BrushTool {
                 let sized_texture: SizedTexture = (image).into();
                 let w = ui.available_width() - 16.0;
                 let scale = w / sized_texture.size.x;
-                let image = Image::from_texture(sized_texture);
-                let r = Rect::from_min_size(ui.min_rect().min, sized_texture.size * scale);
-                image.paint_at(ui, r);
+                let image = Image::from_texture(sized_texture).fit_to_original_size(scale);
+                image.ui(ui);
             }
         }
         result
@@ -181,25 +180,13 @@ impl Tool for BrushTool {
     }
 
     fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, cur_abs: Position) -> egui::Response {
-        if self.cur_pos != cur {
-            self.cur_pos = cur;
-            let mid = Position::new(-(self.size / 2), -(self.size / 2));
-            let lock = &mut editor.buffer_view.lock();
-            let get_tool_overlay_mask_mut = lock.get_edit_state_mut().get_tool_overlay_mask_mut();
-            get_tool_overlay_mask_mut.clear();
-            for y in 0..self.size {
-                for x in 0..self.size {
-                    let pos = cur_abs + Position::new(x, y) + mid;
-                    get_tool_overlay_mask_mut.set_is_selected(pos, true);
-                }
-            }
-            lock.get_edit_state_mut().is_buffer_dirty = true;
-        }
         if matches!(self.brush_type, BrushType::Custom) {
             editor.clear_overlay_layer();
-            if let Some(layer) = editor.buffer_view.lock().get_buffer_mut().get_overlay_layer() {
+            let lock = &mut editor.buffer_view.lock();
+            if let Some(layer) = lock.get_buffer_mut().get_overlay_layer() {
                 if let Some(brush) = &self.custom_brush {
                     let mid = Position::new(-(brush.get_width() / 2), -(brush.get_height() / 2));
+                    self.cur_pos = cur + mid;
                     for y in 0..brush.get_height() {
                         for x in 0..brush.get_width() {
                             let pos = Position::new(x, y);
@@ -207,9 +194,25 @@ impl Tool for BrushTool {
                             layer.set_char(cur + pos + mid, AttributedChar::new(ch.ch, ch.attribute));
                         }
                     }
+                    lock.get_edit_state_mut().is_buffer_dirty = true;
                 }
             }
         } else {
+            let mid = Position::new(-(self.size / 2), -(self.size / 2));
+
+            if self.cur_pos != cur + mid {
+                self.cur_pos = cur + mid;
+                let lock = &mut editor.buffer_view.lock();
+                let get_tool_overlay_mask_mut = lock.get_edit_state_mut().get_tool_overlay_mask_mut();
+                get_tool_overlay_mask_mut.clear();
+                for y in 0..self.size {
+                    for x in 0..self.size {
+                        let pos = cur_abs + Position::new(x, y) + mid;
+                        get_tool_overlay_mask_mut.set_is_selected(pos, true);
+                    }
+                }
+                lock.get_edit_state_mut().is_buffer_dirty = true;
+            }
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         }
         response.on_hover_cursor(egui::CursorIcon::Crosshair)

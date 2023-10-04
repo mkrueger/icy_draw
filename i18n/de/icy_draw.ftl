@@ -225,7 +225,7 @@ about-dialog-description =
     Icy Draw ist ein Tool, um Ansis & Asciis zu erstellen.
     Entwickelt wurde es mit Rust und egui.
 
-    Icy Draw is freie Software unter der Apache 2 Lizens.
+    Icy Draw is freie Software unter der Apache 2 Lizenz.
     Die Homepage ist unter www.github.com/mkrueger/icy_draw
 about-dialog-created_by = Erstellt von { $authors }
 
