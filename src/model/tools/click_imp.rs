@@ -212,13 +212,13 @@ impl Tool for ClickTool {
             }
             MKey::PageDown => {
                 let height = editor.buffer_view.lock().calc.terminal_rect.height();
-                let char_height = editor.buffer_view.lock().calc.font_height;
+                let char_height = editor.buffer_view.lock().calc.char_size.y;
                 let pg_size = (height / char_height) as i32;
                 editor.set_caret(pos.x, pos.y + pg_size);
             }
             MKey::PageUp => {
                 let height = editor.buffer_view.lock().calc.terminal_rect.height();
-                let char_height = editor.buffer_view.lock().calc.font_height;
+                let char_height = editor.buffer_view.lock().calc.char_size.y;
                 let pg_size = (height / char_height) as i32;
                 editor.set_caret(pos.x, pos.y - pg_size);
             }
