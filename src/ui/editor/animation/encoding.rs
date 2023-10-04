@@ -62,8 +62,8 @@ pub fn start_encoding_thread(
     let width = (size.width * dim.width) as usize;
     let height = (size.height * dim.height) as usize;
     let t = thread::Builder::new()
-    .name("Encoding".into())
-    .spawn(move || ENCODERS[encoder].encode(&path, data, width, height, tx))?;
+        .name("Encoding".into())
+        .spawn(move || ENCODERS[encoder].encode(&path, data, width, height, tx))?;
 
     Ok((rx, t))
 }
