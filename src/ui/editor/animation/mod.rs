@@ -42,6 +42,8 @@ pub struct AnimationEditor {
     shedule_update: bool,
     last_update: Instant,
 
+    scale: f32,
+
     rx: Option<Receiver<usize>>,
     thread: Option<std::thread::JoinHandle<TerminalResult<()>>>,
     cur_encoding_frame: usize,
@@ -70,6 +72,7 @@ impl AnimationEditor {
             export_type: 0,
             parent_path,
             set_frame: 0,
+            scale: 1.0,
             next_animator: None,
             shedule_update: false,
             last_update: Instant::now(),
@@ -157,7 +160,7 @@ impl Document for AnimationEditor {
             self.first_frame = false;
         }
         if let Some(next) = &self.next_animator {
-            if next.lock().unwrap().success() {
+            if next.lock().unwrap().success() || !next.lock().unwrap().error.is_empty()  {
                 self.animator = next.clone();
                 self.next_animator = None;
                 let animator = &mut self.animator.lock().unwrap();
@@ -168,54 +171,8 @@ impl Document for AnimationEditor {
 
         egui::SidePanel::right("movie_panel")
             .default_width(ui.available_width() / 2.0)
-         //   .resizable(false)
+            .min_width(660.0)
             .show_inside(ui, |ui| {
-                TopBottomPanel::bottom("code_error_bottom_panel").exact_height(200.).show_inside(ui, |ui| {
-                if !self.animator.lock().unwrap().error.is_empty() {
-                    ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.animator.lock().unwrap().error).small());
-                } else {
-                    egui::ScrollArea::vertical().max_width(f32::INFINITY).show(ui, |ui| {
-                        self.animator.lock().unwrap().log.iter().for_each(|line| {
-                            ui.horizontal(|ui| {
-                                ui.label(RichText::new(format!("Frame {}:", line.frame)).strong());
-                                ui.label(RichText::new(&line.text));
-                                ui.add_space(ui.available_width());
-                            });
-                        });
-                    });
-                }
-            });
-
-            let r = CodeEditor::default()
-                .id_source("code editor")
-                .with_rows(12)
-                .with_fontsize(14.0)
-                .with_theme(if ui.style().visuals.dark_mode {
-                    egui_code_editor::ColorTheme::GITHUB_DARK
-                } else {
-                    egui_code_editor::ColorTheme::GITHUB_LIGHT
-                })
-                .with_syntax(highlighting::lua())
-                .with_numlines(true)
-                .show(ui, &mut self.txt);
-
-            if self.shedule_update && self.last_update.elapsed().as_millis() > 1000 {
-                self.shedule_update = false;
-
-                let path = self.parent_path.clone();
-                let txt = self.txt.clone();
-                self.set_frame = self.animator.lock().unwrap().get_cur_frame();
-                self.next_animator = Some(Animator::run(&path, txt));
-            }
-
-            if r.response.changed {
-                self.shedule_update = true;
-                self.last_update = Instant::now();
-                self.undostack += 1;
-            }
-        });
-
-        egui::CentralPanel::default().show_inside(ui, |ui| {
              
             ui.horizontal(|ui| {
                 if !self.animator.lock().unwrap().error.is_empty() {
@@ -287,13 +244,19 @@ impl Document for AnimationEditor {
                         animator.set_cur_frame(cf);
                         animator.display_frame(self.buffer_view.clone());
                     }
+
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button(if self.scale < 2.0 { "2x" } else { "1x" }).clicked() {
+                            if self.scale < 2.0 {
+                                self.scale = 2.0;
+                            } else {
+                                self.scale = 1.0;
+                            }
+                        }
+                    });
                 }
             });
 
-            let mut scale = options.get_scale();
-            if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
-                scale.y *= 1.35;
-            }
 
             if self.animator.lock().unwrap().success() {
                 let cur_frame = self.animator.lock().unwrap().get_cur_frame();
@@ -303,10 +266,13 @@ impl Document for AnimationEditor {
                 } else {
                     MonitorSettings::default()
                 };
-
+                let mut scale = Vec2::splat(self.scale);
+                if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
+                    scale.y *= 1.35;
+                }
                 let opt = icy_engine_egui::TerminalOptions {
                     stick_to_bottom: false,
-                    scale: Some(Vec2::new(1.0, 1.0)),
+                    scale: Some(scale),
                     monitor_settings,
                     id: Some(Id::new(self.id + 20000)),
                     ..Default::default()
@@ -392,6 +358,53 @@ impl Document for AnimationEditor {
                 }
             }
         });
+
+        egui::CentralPanel::default().show_inside(ui, |ui| {
+            TopBottomPanel::bottom("code_error_bottom_panel").exact_height(200.).show_inside(ui, |ui| {
+            if !self.animator.lock().unwrap().error.is_empty() {
+                ui.colored_label(ui.style().visuals.error_fg_color, RichText::new(&self.animator.lock().unwrap().error).small());
+            } else {
+                egui::ScrollArea::vertical().max_width(f32::INFINITY).show(ui, |ui| {
+                    self.animator.lock().unwrap().log.iter().for_each(|line| {
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new(format!("Frame {}:", line.frame)).strong());
+                            ui.label(RichText::new(&line.text));
+                            ui.add_space(ui.available_width());
+                        });
+                    });
+                });
+            }
+        });
+
+        let r = CodeEditor::default()
+            .id_source("code editor")
+            .with_rows(12)
+            .with_fontsize(14.0)
+            .with_theme(if ui.style().visuals.dark_mode {
+                egui_code_editor::ColorTheme::GITHUB_DARK
+            } else {
+                egui_code_editor::ColorTheme::GITHUB_LIGHT
+            })
+            .with_syntax(highlighting::lua())
+            .with_numlines(true)
+            .show(ui, &mut self.txt);
+
+        if self.shedule_update && self.last_update.elapsed().as_millis() > 1000 {
+            self.shedule_update = false;
+
+            let path = self.parent_path.clone();
+            let txt = self.txt.clone();
+            self.set_frame = self.animator.lock().unwrap().get_cur_frame();
+            self.next_animator = Some(Animator::run(&path, txt));
+        }
+
+        if r.response.changed {
+            self.shedule_update = true;
+            self.last_update = Instant::now();
+            self.undostack += 1;
+        }
+    });
+
         let buffer_view = self.buffer_view.clone();
         if self.animator.lock().unwrap().success() {
             self.animator.lock().unwrap().update_frame(buffer_view);
