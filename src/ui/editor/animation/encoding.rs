@@ -23,13 +23,14 @@ pub trait AnimationEncoder {
     }
 }
 pub const ENCODERS: &[&dyn AnimationEncoder] = &[&GifEncoder {}, &Mp4Encoder {}, &AsciiCast {}];
+type EncodingThread = (Receiver<usize>, JoinHandle<TerminalResult<()>>);
 
 pub fn start_encoding_thread(
     encoder: usize,
     gl: Arc<glow::Context>,
     path: PathBuf,
     animator: Arc<std::sync::Mutex<Animator>>,
-) -> TerminalResult<Option<(Receiver<usize>, JoinHandle<TerminalResult<()>>)>> {
+) -> TerminalResult<Option<EncodingThread>> {
     if !animator.lock().unwrap().success() {
         return Err(anyhow::anyhow!("Animation is not finished."));
     }

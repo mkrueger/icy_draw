@@ -116,7 +116,7 @@ impl<'a> MainWindow<'a> {
         let gl = cc.gl.clone().unwrap();
 
         let mut tool_tree = egui_tiles::Tree::<ToolTab>::empty("tool_tree");
-        let layers = tool_tree.tiles.insert_pane(ToolTab::new(LayerToolWindow::default()));
+        let layers = tool_tree.tiles.insert_pane(ToolTab::new(LayerToolWindow::new(gl.clone())));
         let channels = tool_tree.tiles.insert_pane(ToolTab::new(ChannelToolWindow::default()));
         let minimap = tool_tree.tiles.insert_pane(ToolTab::new(MinimapToolWindow::new(gl.clone())));
         let char_table = tool_tree.tiles.insert_pane(ToolTab::new(CharTableToolWindow::new(ctx, 16)));

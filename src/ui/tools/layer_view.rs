@@ -7,114 +7,141 @@ use eframe::{
 };
 use egui::Image;
 use i18n_embed_fl::fl;
+use icy_engine_egui::BufferView;
 
 use crate::{AnsiEditor, Document, Message, ToolWindow, INVISIBLE_SVG, VISIBLE_SVG};
 
-#[derive(Default)]
-pub struct LayerToolWindow {}
-
-impl ToolWindow for LayerToolWindow {
-    fn get_title(&self) -> String {
-        fl!(crate::LANGUAGE_LOADER, "layer_tool_title")
-    }
-
-    fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message> {
-        if let Some(doc) = active_document {
-            if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
-                return show_layer_view(ui, editor);
-            }
-        }
-        ui.vertical_centered(|ui| {
-            ui.add_space(8.0);
-            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "no_document_selected")).small());
-        });
-        None
-    }
+pub struct LayerToolWindow {
+    gl: Arc<glow::Context>,
+    view_cache: Vec<Arc<eframe::epaint::mutex::Mutex<BufferView>>>,
 }
 
-fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
-    let row_height = 24.0;
-    let mut result = None;
+impl LayerToolWindow {
+    pub(crate) fn new(gl: Arc<glow::Context>) -> Self {
+        Self { gl, view_cache: Vec::new() }
+    }
 
-    let max = editor.buffer_view.lock().get_buffer().layers.len();
-    let cur_layer = editor.get_cur_layer_index();
+    pub fn get_buffer_view(&mut self, i: usize) -> Arc<eframe::epaint::mutex::Mutex<BufferView>> {
+        while self.view_cache.len() <= i {
+            let mut buffer_view = BufferView::new(&self.gl);
+            buffer_view.interactive = false;
+            buffer_view.get_buffer_mut().is_terminal_buffer = false;
+            buffer_view.get_caret_mut().set_is_visible(false);
+            self.view_cache.push(Arc::new(eframe::epaint::mutex::Mutex::new(buffer_view)));
+        }
 
-    let paste_mode = editor.buffer_view.lock().get_buffer().layers.iter().position(|layer| layer.role.is_paste());
+        self.view_cache[i].clone()
+    }
 
-    TopBottomPanel::bottom("layer_bottom").show_inside(ui, |ui| {
-        ui.horizontal(|ui| {
-            ui.add_space(4.0);
-            ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+    fn show_layer_view(&mut self, ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
+        let row_height = 48.0;
+        let mut result = None;
 
-            if paste_mode.is_some() {
-                let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
-                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
-                });
+        let max = editor.buffer_view.lock().get_buffer().layers.len();
+        let cur_layer = editor.get_cur_layer_index();
 
-                if r.clicked() {
-                    result = Some(Message::AddFloatingLayer);
-                }
-                let role = editor.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().role;
-                if matches!(role, icy_engine::Role::PastePreview) {
-                    let r = medium_hover_button(ui, &crate::ANCHOR_SVG).on_hover_ui(|ui| {
-                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "anchor_layer_tooltip")).small());
+        let paste_mode = editor.buffer_view.lock().get_buffer().layers.iter().position(|layer| layer.role.is_paste());
+
+        TopBottomPanel::bottom("layer_bottom").show_inside(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.add_space(4.0);
+                ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
+
+                if paste_mode.is_some() {
+                    let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
+                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
+                    });
+
+                    if r.clicked() {
+                        result = Some(Message::AddFloatingLayer);
+                    }
+                    let role = editor.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().role;
+                    if matches!(role, icy_engine::Role::PastePreview) {
+                        let r = medium_hover_button(ui, &crate::ANCHOR_SVG).on_hover_ui(|ui| {
+                            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "anchor_layer_tooltip")).small());
+                        });
+
+                        if r.clicked() && cur_layer < max {
+                            result = Some(Message::AnchorLayer);
+                        }
+                    }
+
+                    let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
+                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small());
                     });
 
                     if r.clicked() && cur_layer < max {
-                        result = Some(Message::AnchorLayer);
+                        result = Some(Message::RemoveFloatingLayer);
+                    }
+                } else {
+                    let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
+                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
+                    });
+
+                    if r.clicked() {
+                        result = Some(Message::AddNewLayer(cur_layer));
+                    }
+
+                    let r = medium_hover_button(ui, &crate::MOVE_UP_SVG).on_hover_ui(|ui| {
+                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_up_tooltip")).small());
+                    });
+
+                    if r.clicked() {
+                        result = Some(Message::RaiseLayer(cur_layer));
+                    }
+
+                    let r = medium_hover_button(ui, &crate::MOVE_DOWN_SVG).on_hover_ui(|ui| {
+                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_down_tooltip")).small());
+                    });
+
+                    if r.clicked() {
+                        result = Some(Message::LowerLayer(cur_layer));
+                    }
+
+                    let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
+                        ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small());
+                    });
+
+                    if r.clicked() && cur_layer < max {
+                        result = Some(Message::RemoveLayer(cur_layer));
                     }
                 }
-
-                let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
-                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small());
-                });
-
-                if r.clicked() && cur_layer < max {
-                    result = Some(Message::RemoveFloatingLayer);
-                }
-            } else {
-                let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
-                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
-                });
-
-                if r.clicked() {
-                    result = Some(Message::AddNewLayer(cur_layer));
-                }
-
-                let r = medium_hover_button(ui, &crate::MOVE_UP_SVG).on_hover_ui(|ui| {
-                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_up_tooltip")).small());
-                });
-
-                if r.clicked() {
-                    result = Some(Message::RaiseLayer(cur_layer));
-                }
-
-                let r = medium_hover_button(ui, &crate::MOVE_DOWN_SVG).on_hover_ui(|ui| {
-                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "move_layer_down_tooltip")).small());
-                });
-
-                if r.clicked() {
-                    result = Some(Message::LowerLayer(cur_layer));
-                }
-
-                let r = medium_hover_button(ui, &crate::DELETE_SVG).on_hover_ui(|ui| {
-                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "delete_layer_tooltip")).small());
-                });
-
-                if r.clicked() && cur_layer < max {
-                    result = Some(Message::RemoveLayer(cur_layer));
-                }
-            }
+            });
         });
-    });
 
-    CentralPanel::default().show_inside(ui, |ui| {
-        egui::ScrollArea::vertical()
-            .id_source("layer_view_scroll_area")
-            .show_rows(ui, row_height, max, |ui, range| {
-                for i in range.rev() {
+        CentralPanel::default().show_inside(ui, |ui| {
+            egui::ScrollArea::vertical().id_source("layer_view_scroll_area").show(ui, |ui| {
+                for i in (0..max).rev() {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
+                        let dims = editor.buffer_view.lock().get_buffer().get_font_dimensions();
+                        let size = dims.height as f32 * 25.0;
+                        let scale = row_height / size;
+
+                        ui.allocate_ui(Vec2::new(scale * dims.width as f32 * 80.0, row_height), |ui| {
+                            let opt = icy_engine_egui::TerminalOptions {
+                                filter: glow::LINEAR as i32,
+                                stick_to_bottom: false,
+                                scale: Some(Vec2::new(scale, scale)),
+                                use_terminal_height: false,
+                                hide_scrollbars: true,
+                                id: Some(ui.id().with(i)),
+                                clip_rect: Some(ui.clip_rect()),
+                                ..Default::default()
+                            };
+                            let view = self.get_buffer_view(i);
+                            {
+                                view.lock().get_buffer_mut().layers.clear();
+                                if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.get(i) {
+                                    let mut l = layer.clone();
+                                    l.is_visible = true;
+                                    view.lock().get_buffer_mut().layers.push(l);
+                                    view.lock().get_edit_state_mut().is_buffer_dirty = true;
+                                }
+                            }
+                            let (_, _) = icy_engine_egui::show_terminal_area(ui, view, opt);
+                        });
+
                         let (is_visible, title, color) = {
                             let lock = editor.buffer_view.lock();
                             let layer = &lock.get_buffer().layers[i];
@@ -133,7 +160,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                             back_painter.rect_filled(back_rect, Rounding::ZERO, ui.style().visuals.extreme_bg_color);
                         }
 
-                        let stroke_rect = Rect::from_min_size(back_rect.min + Vec2::new(0.0, 1.0), Vec2::new(22.0, 22.0));
+                        let stroke_rect = Rect::from_min_size(back_rect.min + Vec2::new(0.0, (row_height - 22.0) / 2.0), Vec2::new(22.0, 22.0));
                         let visible_icon_response = ui.interact(stroke_rect, id.with("visible"), Sense::click());
 
                         let painter = ui.painter_at(stroke_rect);
@@ -213,8 +240,28 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                     });
                 }
             });
-    });
-    result
+        });
+        result
+    }
+}
+
+impl ToolWindow for LayerToolWindow {
+    fn get_title(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "layer_tool_title")
+    }
+
+    fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message> {
+        if let Some(doc) = active_document {
+            if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                return self.show_layer_view(ui, editor);
+            }
+        }
+        ui.vertical_centered(|ui| {
+            ui.add_space(8.0);
+            ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "no_document_selected")).small());
+        });
+        None
+    }
 }
 
 pub fn medium_hover_button(ui: &mut egui::Ui, image: &Image<'_>) -> egui::Response {
