@@ -22,7 +22,7 @@ pub trait AnimationEncoder {
         Ok(false)
     }
 }
-pub const ENCODERS: &[&dyn AnimationEncoder] = &[&GifEncoder {}, &Mp4Encoder {}, &AsciiCast {}];
+pub const ENCODERS: &[&dyn AnimationEncoder] = &[&GifEncoder {}, /*&Mp4Encoder {},*/ &AsciiCast {}];
 type EncodingThread = (Receiver<usize>, JoinHandle<TerminalResult<()>>);
 
 pub fn start_encoding_thread(
