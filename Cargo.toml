@@ -33,12 +33,12 @@ rgb = "0.8.36"
 thiserror = "1.0"
 anyhow = "1.0.75"
 
-icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
-icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
-view_library = { git ="https://github.com/mkrueger/icy_view" }
-#icy_engine = { path = "../icy_engine" }
-#icy_engine_egui = { path = "../icy_engine_egui" }
-#view_library = { path = "../icy_view/view_library" }
+#icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
+#icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }
+#view_library = { git ="https://github.com/mkrueger/icy_view" }
+icy_engine = { path = "../icy_engine" }
+icy_engine_egui = { path = "../icy_engine_egui" }
+view_library = { path = "../icy_view/view_library" }
 
 egui_code_editor = "0.1.8"
 mlua = { version = "0.9.1", features = ["lua54", "vendored"] }
