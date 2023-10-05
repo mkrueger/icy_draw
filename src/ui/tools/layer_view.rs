@@ -39,17 +39,14 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
     let max = editor.buffer_view.lock().get_buffer().layers.len();
     let cur_layer = editor.get_cur_layer_index();
 
-    let mut paste_mode = false;
+    let paste_mode = editor.buffer_view.lock().get_buffer().layers.iter().position(|layer| layer.role.is_paste());
 
-    if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.last() {
-        paste_mode = layer.role.is_paste();
-    }
     TopBottomPanel::bottom("layer_bottom").show_inside(ui, |ui| {
         ui.horizontal(|ui| {
             ui.add_space(4.0);
             ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
 
-            if paste_mode {
+            if paste_mode.is_some() {
                 let r = medium_hover_button(ui, &crate::ADD_LAYER_SVG).on_hover_ui(|ui| {
                     ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "add_layer_tooltip")).small());
                 });
@@ -169,7 +166,7 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                             result = Some(Message::ToggleLayerVisibility(i));
                         }
 
-                        if !paste_mode {
+                        if paste_mode.is_none() {
                             response = response.context_menu(|ui| {
                                 ui.set_width(250.);
                                 if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_layer_properties")).clicked() {
@@ -206,11 +203,11 @@ fn show_layer_view(ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
                             });
                         }
 
-                        if !paste_mode && response.clicked() {
+                        if paste_mode.is_none() && response.clicked() {
                             result = Some(Message::SelectLayer(i));
                         }
 
-                        if !paste_mode && response.double_clicked() {
+                        if paste_mode.is_none() && response.double_clicked() {
                             result = Some(Message::EditLayer(i));
                         }
                     });

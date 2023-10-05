@@ -1,4 +1,4 @@
-use icy_engine::{SaveOptions, StringGenerator, TextPane, ColorOptimizer};
+use icy_engine::{ColorOptimizer, SaveOptions, StringGenerator, TextPane};
 use icy_engine_egui::animations::Animator;
 use std::{
     fs::File,

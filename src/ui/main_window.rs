@@ -698,17 +698,16 @@ impl<'a> eframe::App for MainWindow<'a> {
                 ui.set_width(ui.available_width() - 250.0);
                 self.document_tree.ui(&mut self.document_behavior, ui);
 
-                if let Some(doc) = self.get_active_document() {
-                    if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
-                        let lock = &mut editor.buffer_view.lock();
-                        let last = lock.get_buffer().layers.len().saturating_sub(1);
-                        if let Some(layer) = lock.get_buffer().layers.last() {
-                            if layer.role.is_paste() && self.document_behavior.get_selected_tool() != PASTE_TOOL {
+                if self.document_behavior.get_selected_tool() != PASTE_TOOL {
+                    if let Some(doc) = self.get_active_document() {
+                        if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                            let lock = &mut editor.buffer_view.lock();
+                            let paste_mode = lock.get_buffer().layers.iter().position(|layer| layer.role.is_paste());
+                            if let Some(layer) = paste_mode {
                                 self.document_behavior.tools.lock().unwrap()[PASTE_TOOL] =
                                     Box::new(crate::model::paste_tool::PasteTool::new(self.document_behavior.get_selected_tool()));
                                 self.document_behavior.set_selected_tool(PASTE_TOOL);
-
-                                lock.get_edit_state_mut().set_current_layer(last);
+                                lock.get_edit_state_mut().set_current_layer(layer);
                             }
                         }
                     }
