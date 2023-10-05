@@ -27,14 +27,11 @@ open = "5.0.0"
 dark-light = "1.0.0"
 zip = "0.6.6"
 notify = "6.1.1"
-gifski = "1.12.2"
+gifski = { version="1.12.2", features=["gifsicle"], default-features = false}
 imgref = "1.9.4"
 rgb = "0.8.36"
 thiserror = "1.0"
 anyhow = "1.0.75"
-
-video-rs = { version = "0.4", features = ["ndarray"] }
-ndarray = "0.15.6"
 
 icy_engine = { git ="https://github.com/mkrueger/icy_engine" }
 icy_engine_egui = { git ="https://github.com/mkrueger/icy_engine_egui" }

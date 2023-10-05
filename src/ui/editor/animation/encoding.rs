@@ -10,7 +10,7 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-use super::{asciicast_encoder::AsciiCast, gif_encoder::GifEncoder, mp4_encoder::Mp4Encoder};
+use super::{asciicast_encoder::AsciiCast, gif_encoder::GifEncoder /*, mp4_encoder::Mp4Encoder*/};
 use crate::TerminalResult;
 
 pub trait AnimationEncoder {

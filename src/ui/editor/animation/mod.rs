@@ -20,7 +20,7 @@ mod asciicast_encoder;
 mod encoding;
 mod gif_encoder;
 mod highlighting;
-mod mp4_encoder;
+//mod mp4_encoder;
 
 pub struct AnimationEditor {
     gl: Arc<glow::Context>,
