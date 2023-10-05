@@ -67,7 +67,7 @@ impl Tool for PipetteTool {
 
     fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, cur_abs: Position) -> egui::Response {
         unsafe {
-            CUR_CHAR = Some(editor.get_char(cur));
+            CUR_CHAR = Some(editor.get_char(cur_abs));
         }
         if self.cur_pos != Some(cur) {
             self.cur_pos = Some(cur);
