@@ -15,7 +15,7 @@ pub struct Plugin {
 
 impl Plugin {
     pub fn load(path: &Path) -> anyhow::Result<Self> {
-        let text = fs::read_to_string(path).unwrap();
+        let text = fs::read_to_string(path)?;
 
         let re = Regex::new(r"--\s*Title:\s*(.*)")?;
 
@@ -30,15 +30,13 @@ impl Plugin {
         let lua = Lua::new();
         let globals = lua.globals();
 
-        globals
-            .set(
-                "log",
-                lua.create_function(move |_lua, txt: String| {
-                    log::info!("{txt}");
-                    Ok(())
-                })?,
-            )
-            .unwrap();
+        globals.set(
+            "log",
+            lua.create_function(move |_lua, txt: String| {
+                log::info!("{txt}");
+                Ok(())
+            })?,
+        )?;
 
         globals.set(
             "buf",
@@ -79,7 +77,11 @@ impl Plugin {
     }
 
     pub fn read_plugin_directory() {
-        let walker = WalkDir::new(Settings::get_plugin_directory().unwrap()).into_iter();
+        let Ok(root) = Settings::get_plugin_directory() else {
+            log::error!("Can't read plugin directory.");
+            return
+        };
+        let walker = WalkDir::new(root).into_iter();
         for entry in walker.filter_entry(|e| !FontTool::is_hidden(e)) {
             match entry {
                 Ok(entry) => {
@@ -232,7 +234,12 @@ impl UserData for LuaBufferView {
             let attr = this.buffer_view.lock().get_caret_mut().get_attribute();
             let ch = AttributedChar::new(this.convert_from_unicode(ch)?, attr);
 
-            this.buffer_view.lock().get_edit_state_mut().set_char((x, y), ch).unwrap();
+            if let Err(err) = this.buffer_view.lock().get_edit_state_mut().set_char((x, y), ch) {
+                return Err(mlua::Error::SyntaxError {
+                    message: format!("Error setting char: {}", err),
+                    incomplete_input: false,
+                });
+            };
             Ok(())
         });
 

@@ -98,7 +98,7 @@ impl ModalDialog for ExportFileDialog {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "export-file-label"));
                         });
                         ui.horizontal(|ui| {
-                            let mut path_edit = self.file_name.to_str().unwrap().to_string();
+                            let mut path_edit = self.file_name.to_string_lossy().to_string();
                             let response = ui.add(TextEdit::singleline(&mut path_edit).desired_width(450.));
                             if response.changed() {
                                 self.file_name = path_edit.into();

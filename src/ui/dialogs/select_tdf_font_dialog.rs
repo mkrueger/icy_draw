@@ -189,8 +189,12 @@ impl crate::ModalDialog for SelectFontDialog {
                 if let Some(res) = ed.path() {
                     let mut res = res.to_path_buf();
                     res.set_extension("tdf");
-                    if let Err(err) = fs::write(res, self.export_data.take().unwrap()) {
-                        log::error!("Failed to write font: {}", err);
+                    if let Some(data) = self.export_data.take() {
+                        if let Err(err) = fs::write(res, data) {
+                            log::error!("Failed to write font: {}", err);
+                        }
+                    } else {
+                        log::error!("Export data == None");
                     }
                 }
                 self.export_dialog = None

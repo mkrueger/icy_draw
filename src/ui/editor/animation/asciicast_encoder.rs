@@ -24,7 +24,12 @@ impl AnimationEncoder for AsciiCast {
     }
 
     fn direct_encoding(&self, path: &Path, animator: Arc<std::sync::Mutex<Animator>>) -> TerminalResult<bool> {
-        let name = path.file_stem().unwrap().to_str().unwrap();
+        let Some(file_stem) = path.file_stem() else {
+            return Err(anyhow::anyhow!("invalid file name"));
+        };
+        let Some(name) = file_stem.to_str() else {
+            return Err(anyhow::anyhow!("invalid file name"));
+        };
         let mut f = File::create(path)?;
         let frame_count = animator.lock().unwrap().frames.len();
         {

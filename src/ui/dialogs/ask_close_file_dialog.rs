@@ -31,7 +31,7 @@ impl crate::ModalDialog for AskCloseFileDialog {
 
         modal.show(|ui| {
             let file_name = if let Some(file_name) = &self.path {
-                file_name.file_name().unwrap().to_str().unwrap().to_string()
+                file_name.file_name().unwrap().to_string_lossy().to_string()
             } else {
                 fl!(crate::LANGUAGE_LOADER, "unsaved-title")
             };

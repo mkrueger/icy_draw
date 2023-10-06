@@ -44,7 +44,7 @@ impl DocumentTab {
         match doc.get_bytes(path) {
             Ok(bytes) => {
                 let mut tmp_file = path.clone();
-                let ext = path.extension().unwrap_or_default().to_str().unwrap().to_ascii_lowercase();
+                let ext = path.extension().unwrap_or_default().to_str().unwrap_or_default().to_ascii_lowercase();
 
                 tmp_file.with_extension(format!("{}~", ext));
                 let mut num = 1;
@@ -165,7 +165,7 @@ impl DocumentBehavior {
 impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
     fn tab_title_for_pane(&mut self, pane: &DocumentTab) -> egui::WidgetText {
         let mut title = if let Some(file_name) = &pane.full_path {
-            file_name.file_name().unwrap().to_str().unwrap().to_string()
+            file_name.file_name().unwrap_or_default().to_str().unwrap_or_default().to_string()
         } else {
             fl!(crate::LANGUAGE_LOADER, "unsaved-title")
         };
@@ -221,7 +221,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
             if ui.button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-copy_path")).clicked() {
                 if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(tile_id) {
                     if let Some(path) = &pane.full_path {
-                        let text = path.to_str().unwrap().to_string();
+                        let text = path.to_string_lossy().to_string();
                         ui.output_mut(|o| o.copied_text = text);
                     }
                 }
@@ -369,14 +369,16 @@ pub fn add_child(tree: &mut egui_tiles::Tree<DocumentTab>, full_path: Option<Pat
     };
     let new_child = tree.tiles.insert_pane(tile);
 
-    if tree.root.is_none() {
-        tree.root = Some(new_child);
-    } else if let Some(egui_tiles::Tile::Container(egui_tiles::Container::Tabs(tabs))) = tree.tiles.get_mut(tree.root.unwrap()) {
-        tabs.add_child(new_child);
-        tabs.set_active(new_child);
-    } else if let Some(egui_tiles::Tile::Pane(_)) = tree.tiles.get(tree.root.unwrap()) {
-        let new_id = tree.tiles.insert_tab_tile(vec![new_child, tree.root.unwrap()]);
-        tree.root = Some(new_id);
+    if let Some(root) = tree.root {
+        if let Some(egui_tiles::Tile::Container(egui_tiles::Container::Tabs(tabs))) = tree.tiles.get_mut(root) {
+            tabs.add_child(new_child);
+            tabs.set_active(new_child);
+        } else if let Some(egui_tiles::Tile::Pane(_)) = tree.tiles.get(root) {
+            let new_id = tree.tiles.insert_tab_tile(vec![new_child, root]);
+            tree.root = Some(new_id);
+        } else {
+            tree.root = Some(new_child);
+        }
     } else {
         tree.root = Some(new_child);
     }

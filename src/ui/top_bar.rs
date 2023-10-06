@@ -78,7 +78,7 @@ impl<'a> MainWindow<'a> {
                     let get_recent_files = SETTINGS.get_recent_files();
                     if !get_recent_files.is_empty() {
                         for file in get_recent_files.iter().rev() {
-                            let button = ui.button(file.file_name().unwrap().to_str().unwrap());
+                            let button = ui.button(file.file_name().unwrap().to_string_lossy());
                             if button.clicked() {
                                 result = Some(Message::TryLoadFile(file.clone()));
                                 ui.close_menu();
@@ -108,7 +108,11 @@ impl<'a> MainWindow<'a> {
                         let button = button_with_shortcut(
                             ui,
                             enabled,
-                            fl!(crate::LANGUAGE_LOADER, "menu-undo-op", op = doc.lock().undo_description().unwrap()),
+                            fl!(
+                                crate::LANGUAGE_LOADER,
+                                "menu-undo-op",
+                                op = doc.lock().undo_description().unwrap_or("No undo description".to_string())
+                            ),
                             "Ctrl+Z",
                         );
                         if button.clicked() {
@@ -123,7 +127,11 @@ impl<'a> MainWindow<'a> {
                         let button = button_with_shortcut(
                             ui,
                             true,
-                            fl!(crate::LANGUAGE_LOADER, "menu-redo-op", op = doc.lock().redo_description().unwrap()),
+                            fl!(
+                                crate::LANGUAGE_LOADER,
+                                "menu-redo-op",
+                                op = doc.lock().redo_description().unwrap_or("No redo description".to_string())
+                            ),
                             "Ctrl+Shift+Z",
                         );
                         if button.clicked() {
@@ -232,89 +240,89 @@ impl<'a> MainWindow<'a> {
                 if has_buffer {
                     if let Some(pane) = self.get_active_pane_mut() {
                         let lock = &mut pane.doc.lock();
-                        let editor = lock.get_ansi_editor_mut().unwrap();
-                        let lock = &mut editor.buffer_view.lock();
-                        ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-ice-mode"), |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(240.0);
+                        if let Some(editor) = lock.get_ansi_editor_mut() {
+                            let lock = &mut editor.buffer_view.lock();
+                            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-ice-mode"), |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(240.0);
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().ice_mode == IceMode::Unlimited,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-unrestricted"),
-                                )
-                                .clicked()
-                            {
-                                result = Some(Message::SwitchIceMode(IceMode::Unlimited));
-                                ui.close_menu();
-                            }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().ice_mode == IceMode::Unlimited,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-unrestricted"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchIceMode(IceMode::Unlimited));
+                                    ui.close_menu();
+                                }
 
-                            if ui
-                                .selectable_label(lock.get_buffer().ice_mode == IceMode::Blink, fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-blink"))
-                                .clicked()
-                            {
-                                result = Some(Message::SwitchIceMode(IceMode::Blink));
-                                ui.close_menu();
-                            }
+                                if ui
+                                    .selectable_label(lock.get_buffer().ice_mode == IceMode::Blink, fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-blink"))
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchIceMode(IceMode::Blink));
+                                    ui.close_menu();
+                                }
 
-                            if ui
-                                .selectable_label(lock.get_buffer().ice_mode == IceMode::Ice, fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-ice"))
-                                .clicked()
-                            {
-                                result = Some(Message::SwitchIceMode(IceMode::Ice));
-                                ui.close_menu();
-                            }
-                        });
+                                if ui
+                                    .selectable_label(lock.get_buffer().ice_mode == IceMode::Ice, fl!(crate::LANGUAGE_LOADER, "menu-ice-mode-ice"))
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchIceMode(IceMode::Ice));
+                                    ui.close_menu();
+                                }
+                            });
 
-                        ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-palette-mode"), |ui| {
-                            ui.style_mut().wrap = Some(false);
-                            ui.set_min_width(240.0);
+                            ui.menu_button(fl!(crate::LANGUAGE_LOADER, "menu-palette-mode"), |ui| {
+                                ui.style_mut().wrap = Some(false);
+                                ui.set_min_width(240.0);
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().palette_mode == PaletteMode::RGB,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-unrestricted"),
-                                )
-                                .clicked()
-                            {
-                                result = Some(Message::SwitchPaletteMode(PaletteMode::RGB));
-                                ui.close_menu();
-                            }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().palette_mode == PaletteMode::RGB,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-unrestricted"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchPaletteMode(PaletteMode::RGB));
+                                    ui.close_menu();
+                                }
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().palette_mode == PaletteMode::Fixed16,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-dos"),
-                                )
-                                .clicked()
-                            {
-                                result = Some(Message::SwitchPaletteMode(PaletteMode::Fixed16));
-                                ui.close_menu();
-                            }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().palette_mode == PaletteMode::Fixed16,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-dos"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchPaletteMode(PaletteMode::Fixed16));
+                                    ui.close_menu();
+                                }
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().palette_mode == PaletteMode::Free16,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free"),
-                                )
-                                .clicked()
-                            {
-                                result = Some(Message::SwitchPaletteMode(PaletteMode::Free16));
-                                ui.close_menu();
-                            }
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().palette_mode == PaletteMode::Free16,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchPaletteMode(PaletteMode::Free16));
+                                    ui.close_menu();
+                                }
 
-                            if ui
-                                .selectable_label(
-                                    lock.get_buffer().palette_mode == PaletteMode::Free8,
-                                    fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free8"),
-                                )
-                                .clicked()
-                            {
-                                result = Some(Message::SwitchPaletteMode(PaletteMode::Free8));
-                                ui.close_menu();
-                            }
-                        });
-
+                                if ui
+                                    .selectable_label(
+                                        lock.get_buffer().palette_mode == PaletteMode::Free8,
+                                        fl!(crate::LANGUAGE_LOADER, "menu-palette-mode-free8"),
+                                    )
+                                    .clicked()
+                                {
+                                    result = Some(Message::SwitchPaletteMode(PaletteMode::Free8));
+                                    ui.close_menu();
+                                }
+                            });
+                        }
                         ui.separator();
                     }
                 }

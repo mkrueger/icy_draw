@@ -48,9 +48,11 @@ struct FillOperation {
 
 impl FillOperation {
     pub fn new(fill_tool: &FillTool, editor: &AnsiEditor, base_char: AttributedChar, new_ch: AttributedChar) -> Self {
-        let size = editor.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().get_size();
-        let use_selection = editor.buffer_view.lock().get_edit_state().is_something_selected();
-        let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
+        let lock = &editor.buffer_view.lock();
+        let state = lock.get_edit_state();
+        let size = state.get_cur_layer().unwrap().get_size();
+        let use_selection = state.is_something_selected();
+        let offset = if let Some(layer) = state.get_cur_layer() {
             layer.get_offset()
         } else {
             Position::default()
@@ -152,7 +154,11 @@ impl Tool for FillTool {
                 return None;
             }
             let attr = editor.buffer_view.lock().get_caret().get_attribute();
-            let ch = editor.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().get_char(pos);
+            let ch = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
+                layer.get_char(pos)
+            } else {
+                return None;
+            };
             if self.color_mode.use_fore() || self.color_mode.use_back() || matches!(self.fill_type, FillType::Character) {
                 let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-bucket-fill"));
                 let mut op = FillOperation::new(self, editor, ch, AttributedChar::new(*self.char_code.borrow(), attr));

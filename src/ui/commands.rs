@@ -407,9 +407,10 @@ impl CommandWrapper {
     }
 
     pub fn update_state(&mut self, result_map: &HashMap<&u32, (bool, Option<bool>)>) {
-        let (is_enabled, is_checked) = result_map.get(&self.state_key).unwrap();
-        self.is_enabled = *is_enabled;
-        self.is_checked = *is_checked;
+        if let Some((is_enabled, is_checked)) = result_map.get(&self.state_key) {
+            self.is_enabled = *is_enabled;
+            self.is_checked = *is_checked;
+        }
     }
 
     pub fn is_pressed(&self, ctx: &egui::Context) -> bool {

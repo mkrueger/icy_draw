@@ -229,7 +229,7 @@ impl FontSelector {
                 log::error!("Can't load font library: {e}");
                 break;
             }
-            let entry = entry.unwrap();
+            let Ok(entry) = entry else { continue; };
             let path = entry.path();
 
             if path.is_dir() {
@@ -239,11 +239,9 @@ impl FontSelector {
             if extension.is_none() {
                 continue;
             }
-            let extension = extension.unwrap().to_str();
-            if extension.is_none() {
-                continue;
-            }
-            let ext = extension.unwrap().to_lowercase().to_string();
+            let Some(extension) = extension else { continue; };
+            let Some(extension) = extension.to_str() else { continue; };
+            let ext = extension.to_lowercase().to_string();
 
             if is_font_extensions(&ext) {
                 if let Ok(font) = BitFont::load(path) {

@@ -82,8 +82,7 @@ impl ModalDialog for ResizeLayerDialog {
             .buffer_view
             .lock()
             .get_edit_state_mut()
-            .set_layer_size(self.layer, (self.width, self.height))
-            .unwrap();
+            .set_layer_size(self.layer, (self.width, self.height))?;
         Ok(None)
     }
 }

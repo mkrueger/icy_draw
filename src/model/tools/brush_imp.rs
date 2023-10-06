@@ -144,19 +144,19 @@ impl Tool for BrushTool {
         unsafe {
             if CUSTOM_BRUSH.is_some() {
                 self.custom_brush = CUSTOM_BRUSH.take();
-
-                let mut layer = self.custom_brush.as_ref().unwrap().clone();
-                layer.set_offset((0, 0));
-                layer.role = icy_engine::Role::Normal;
-                let mut buf = icy_engine::Buffer::new(layer.get_size());
-                layer.title = buf.layers[0].title.clone();
-                buf.layers.clear();
-                buf.layers.push(layer);
-                self.image = Some(create_image(ctx, &buf));
             }
         }
 
-        if self.custom_brush.is_some() {
+        if let Some(custom_brush) = &self.custom_brush {
+            let mut layer = custom_brush.clone();
+            layer.set_offset((0, 0));
+            layer.role = icy_engine::Role::Normal;
+            let mut buf = icy_engine::Buffer::new(layer.get_size());
+            layer.title = buf.layers[0].title.clone();
+            buf.layers.clear();
+            buf.layers.push(layer);
+            self.image = Some(create_image(ctx, &buf));
+
             ui.radio_value(&mut self.brush_type, BrushType::Custom, fl!(crate::LANGUAGE_LOADER, "tool-custom-brush"));
             if let Some(image) = &self.image {
                 let sized_texture: SizedTexture = image.into();

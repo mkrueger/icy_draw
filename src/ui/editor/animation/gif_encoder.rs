@@ -31,7 +31,8 @@ impl AnimationEncoder for GifEncoder {
         let mut time = 0.0;
         let mut pb = NoProgress {};
         let path = path.to_path_buf();
-        std::thread::spawn(move || w.write(std::fs::File::create(path).unwrap(), &mut pb).unwrap());
+        let fs = std::fs::File::create(path)?;
+        std::thread::spawn(move || w.write(fs, &mut pb).unwrap());
 
         for (frame_idx, (data, duration)) in frames.into_iter().enumerate() {
             sender.send(frame_idx)?;

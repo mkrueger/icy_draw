@@ -164,13 +164,13 @@ impl<'a> MainWindow<'a> {
         let full_path = path.to_path_buf();
         Settings::add_recent_file(path);
         if let Some(ext) = path.extension() {
-            let ext = ext.to_str().unwrap().to_ascii_lowercase();
+            let ext = ext.to_str().unwrap_or_default().to_ascii_lowercase();
             if is_font_extensions(&ext) {
                 let file_name = path.file_name();
                 if file_name.is_none() {
                     return;
                 }
-                let file_name_str = file_name.unwrap().to_str().unwrap().to_string();
+                let file_name_str = file_name.unwrap_or_default().to_str().unwrap_or_default().to_string();
                 if let Ok(font) = BitFont::from_bytes(file_name_str, data) {
                     let id = self.create_id();
                     add_child(&mut self.document_tree, Some(full_path), Box::new(BitFontEditor::new(&self.gl, id, font)));
@@ -180,12 +180,18 @@ impl<'a> MainWindow<'a> {
 
             if "icyanim" == ext {
                 let id = self.create_id();
-                let txt = std::str::from_utf8(data).unwrap().to_string();
-                add_child(
-                    &mut self.document_tree,
-                    Some(full_path),
-                    Box::new(crate::AnimationEditor::new(&self.gl, id, path, txt)),
-                );
+                match std::str::from_utf8(data) {
+                    Ok(txt) => {
+                        add_child(
+                            &mut self.document_tree,
+                            Some(full_path),
+                            Box::new(crate::AnimationEditor::new(&self.gl, id, path, txt.to_string())),
+                        );
+                    }
+                    Err(err) => {
+                        self.show_error(format!("{err}"));
+                    }
+                }
                 return;
             }
 
@@ -426,13 +432,17 @@ impl<'a> MainWindow<'a> {
         self.handle_message(msg);
     }
 
+    pub fn show_error(&mut self, str: String) {
+        log::error!("Error: {str}");
+        self.toasts
+            .error(fl!(crate::LANGUAGE_LOADER, "error-load-file", error = str))
+            .set_duration(Some(Duration::from_secs(5)));
+    }
+
     pub(crate) fn handle_result<T>(&mut self, result: EngineResult<T>) -> Option<T> {
         match result {
             Err(err) => {
-                log::error!("Error: {}", err);
-                self.toasts
-                    .error(fl!(crate::LANGUAGE_LOADER, "error-load-file", error = err.to_string()))
-                    .set_duration(Some(Duration::from_secs(5)));
+                self.show_error(format!("{err}"));
                 None
             }
             Ok(res) => Some(res),
@@ -504,11 +514,15 @@ impl<'a> MainWindow<'a> {
                     frame.set_window_title(&format!(
                         "{}{} - iCY DRAW {}",
                         directory,
-                        path.file_name().unwrap().to_str().unwrap(),
+                        path.file_name().unwrap_or_default().to_str().unwrap_or_default(),
                         &crate::VERSION
                     ));
                 } else {
-                    frame.set_window_title(&format!("{} - iCY DRAW {}", path.file_name().unwrap().to_str().unwrap(), &crate::VERSION));
+                    frame.set_window_title(&format!(
+                        "{} - iCY DRAW {}",
+                        path.file_name().unwrap_or_default().to_str().unwrap_or_default(),
+                        &crate::VERSION
+                    ));
                 }
             }
         }
@@ -559,7 +573,7 @@ impl<'a> eframe::App for MainWindow<'a> {
                             if let Some(dir) = user.document_dir() {
                                 path = dir.join(path);
                                 while path.exists() {
-                                    path = path.with_extension(format!("1.{}", file.path.extension().unwrap().to_str().unwrap()));
+                                    path = path.with_extension(format!("1.{}", file.path.extension().unwrap().to_string_lossy()));
                                 }
                             }
                         }
@@ -707,35 +721,36 @@ impl<'a> eframe::App for MainWindow<'a> {
         if self.modal_dialog.is_some() {
             self.dialog_open = true;
             if self.modal_dialog.as_mut().unwrap().show(ctx) {
-                let modal_dialog = self.modal_dialog.take().unwrap();
-                if modal_dialog.should_commit() {
-                    if let Some(doc) = self.get_active_document() {
-                        if let Some(editor) = doc.lock().get_ansi_editor_mut() {
-                            match modal_dialog.commit(editor) {
-                                Ok(msg) => {
+                if let Some(modal_dialog) = self.modal_dialog.take() {
+                    if modal_dialog.should_commit() {
+                        if let Some(doc) = self.get_active_document() {
+                            if let Some(editor) = doc.lock().get_ansi_editor_mut() {
+                                match modal_dialog.commit(editor) {
+                                    Ok(msg) => {
+                                        dialog_message = msg;
+                                    }
+                                    Err(err) => {
+                                        log::error!("Error: {}", err);
+                                        self.toasts.error(format!("{err}")).set_duration(Some(Duration::from_secs(5)));
+                                    }
+                                }
+                            }
+                        }
+                        match modal_dialog.commit_self(self) {
+                            Ok(msg) => {
+                                if dialog_message.is_none() {
                                     dialog_message = msg;
                                 }
-                                Err(err) => {
-                                    log::error!("Error: {}", err);
-                                    self.toasts.error(format!("{err}")).set_duration(Some(Duration::from_secs(5)));
-                                }
                             }
-                        }
-                    }
-                    match modal_dialog.commit_self(self) {
-                        Ok(msg) => {
-                            if dialog_message.is_none() {
-                                dialog_message = msg;
+                            Err(err) => {
+                                log::error!("Error: {}", err);
+                                self.toasts.error(format!("{err}")).set_duration(Some(Duration::from_secs(5)));
                             }
-                        }
-                        Err(err) => {
-                            log::error!("Error: {}", err);
-                            self.toasts.error(format!("{err}")).set_duration(Some(Duration::from_secs(5)));
                         }
                     }
                 }
             }
-            if self.modal_dialog.is_some() && ctx.input(|i| i.key_pressed(Key::Escape)) {
+            if ctx.input(|i| i.key_pressed(Key::Escape)) {
                 self.modal_dialog = None;
             }
         }

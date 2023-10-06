@@ -103,25 +103,23 @@ impl SelectPaletteDialog {
                 log::error!("Can't load palette library: {e}");
                 break;
             }
-            let entry = entry.unwrap();
+            let Ok(entry) = entry else { continue; };
             let path = entry.path();
 
             if path.is_dir() {
                 continue;
             }
-            let extension = path.extension();
-            if extension.is_none() {
+            let Some(extension) = path.extension() else {
                 continue;
-            }
-            let extension = extension.unwrap().to_str();
-            if extension.is_none() {
+            };
+            let Some(extension) = extension.to_str() else {
                 continue;
-            }
+            };
 
             if let Ok(palette) = Palette::import_palette(path, &fs::read(path)?) {
                 add_palette(&mut palettes, mode, (palette, PaletteSource::Library));
             }
-            let ext = extension.unwrap().to_lowercase();
+            let ext = extension.to_lowercase();
             if ext == "zip" {
                 match fs::File::open(path) {
                     Ok(mut file) => {

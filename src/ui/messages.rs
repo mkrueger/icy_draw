@@ -273,29 +273,37 @@ impl<'a> MainWindow<'a> {
                 self.open_dialog(crate::SelectFontDialog::new(fonts, selected_font));
             }
             Message::EditSauce => {
-                if let Some(editor) = self.get_active_document().unwrap().lock().get_ansi_editor() {
-                    let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::EditSauceDialog::new(view.lock().get_buffer()));
+                if let Some(doc) = self.get_active_document() {
+                    if let Some(editor) = doc.lock().get_ansi_editor() {
+                        let view = editor.buffer_view.clone();
+                        self.open_dialog(crate::EditSauceDialog::new(view.lock().get_buffer()));
+                    }
                 }
             }
 
             Message::SetCanvasSize => {
-                if let Some(editor) = self.get_active_document().unwrap().lock().get_ansi_editor() {
-                    let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::SetCanvasSizeDialog::new(view.lock().get_buffer()));
+                if let Some(doc) = self.get_active_document() {
+                    if let Some(editor) = doc.lock().get_ansi_editor() {
+                        let view = editor.buffer_view.clone();
+                        self.open_dialog(crate::SetCanvasSizeDialog::new(view.lock().get_buffer()));
+                    }
                 }
             }
 
             Message::EditLayer(i) => {
-                if let Some(editor) = self.get_active_document().unwrap().lock().get_ansi_editor() {
-                    let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::EditLayerDialog::new(view.lock().get_buffer(), i));
+                if let Some(doc) = self.get_active_document() {
+                    if let Some(editor) = doc.lock().get_ansi_editor() {
+                        let view = editor.buffer_view.clone();
+                        self.open_dialog(crate::EditLayerDialog::new(view.lock().get_buffer(), i));
+                    }
                 }
             }
             Message::ResizeLayer(i) => {
-                if let Some(editor) = self.get_active_document().unwrap().lock().get_ansi_editor_mut() {
-                    let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::ResizeLayerDialog::new(view.lock().get_buffer(), i));
+                if let Some(doc) = self.get_active_document() {
+                    if let Some(editor) = doc.lock().get_ansi_editor_mut() {
+                        let view = editor.buffer_view.clone();
+                        self.open_dialog(crate::ResizeLayerDialog::new(view.lock().get_buffer(), i));
+                    }
                 }
             }
             Message::AddNewLayer(cur_layer) => {
@@ -1044,8 +1052,10 @@ pub fn set_default_initial_directory_opt(initial_directory: &mut Option<PathBuf>
     }
     *initial_directory = if let Some(user) = UserDirs::new() {
         Some(user.home_dir().to_path_buf())
+    } else if let Ok(cur) = std::env::current_dir() {
+        Some(cur)
     } else {
-        Some(std::env::current_dir().unwrap())
+        return;
     };
 }
 

@@ -357,7 +357,7 @@ impl AnsiEditor {
         match File::create(file_name) {
             Ok(mut f) => {
                 let content = if let Some(ext) = file_name.extension() {
-                    let ext = OsStr::to_str(ext).unwrap().to_lowercase();
+                    let ext = OsStr::to_string_lossy(ext).to_lowercase();
                     self.buffer_view.lock().get_buffer().to_bytes(ext.as_str(), options)?
                 } else {
                     self.buffer_view.lock().get_buffer().to_bytes(ICED_EXT, options)?

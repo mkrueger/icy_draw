@@ -120,7 +120,7 @@ impl Default for CharSetMapping {
         };
         for i in crate::DEFAULT_CHAR_SET_TABLE {
             default_char_set.table.push(i.iter().fold(Vec::new(), |mut s, c| {
-                s.push(char::from_u32(*c as u32).unwrap());
+                s.push(*c as char);
                 s
             }));
         }
@@ -210,7 +210,7 @@ impl Settings {
             }
             return Ok(dir);
         }
-        Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
+        Err(IcyDrawError::ErrorCreatingDirectory("tdf directory".to_string()).into())
     }
 
     pub(crate) fn get_palettes_diretory() -> TerminalResult<PathBuf> {
@@ -234,7 +234,7 @@ impl Settings {
             }
             return Ok(dir);
         }
-        Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
+        Err(IcyDrawError::ErrorCreatingDirectory("autosave directory".to_string()).into())
     }
 
     pub(crate) fn get_log_file() -> TerminalResult<PathBuf> {
@@ -250,7 +250,7 @@ impl Settings {
             let dir = proj_dirs.config_dir().join("settings.json");
             return Ok(dir);
         }
-        Err(IcyDrawError::ErrorCreatingDirectory("log_file".to_string()).into())
+        Err(IcyDrawError::ErrorCreatingDirectory("settings file".to_string()).into())
     }
 
     pub(crate) fn get_plugin_directory() -> TerminalResult<PathBuf> {
@@ -265,7 +265,7 @@ impl Settings {
             }
             return Ok(dir);
         }
-        Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
+        Err(IcyDrawError::ErrorCreatingDirectory("plugin directory".to_string()).into())
     }
 
     pub(crate) fn load(path: &PathBuf) -> io::Result<Settings> {

@@ -405,9 +405,13 @@ impl BitFontEditor {
         }
         if let Some(number) = self.selected_char_opt {
             if let Some(glyph) = self.font.get_glyph(number) {
-                let op = undo::Edit::new(number, glyph.data.clone(), self.old_data.take().unwrap());
-                self.undo_stack.lock().push(Box::new(op));
-                self.redo_stack.clear();
+                if let Some(old_data) = self.old_data.take() {
+                    let op = undo::Edit::new(number, glyph.data.clone(), old_data);
+                    self.undo_stack.lock().push(Box::new(op));
+                    self.redo_stack.clear();
+                } else {
+                    log::error!("no old_data for BitFontEditor:end_edit");
+                }
             }
         }
     }

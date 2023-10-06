@@ -46,7 +46,11 @@ impl Tool for PipetteTool {
 
                     let mut buf = Buffer::new((1, 1));
                     buf.clear_font_table();
-                    buf.set_font(0, editor.buffer_view.lock().get_buffer().get_font(ch.get_font_page()).unwrap().clone());
+                    if let Some(font) = editor.buffer_view.lock().get_buffer().get_font(ch.get_font_page()) {
+                        buf.set_font(0, font.clone());
+                    } else {
+                        log::error!("Pipette tool: font page {} not found", ch.get_font_page());
+                    }
                     buf.layers[0].set_char((0, 0), AttributedChar::new(ch.ch, TextAttribute::default()));
                     self.char_image = Some(create_image(ctx, &buf));
                 }

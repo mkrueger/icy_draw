@@ -16,7 +16,7 @@ pub fn get_autosave_file(path: &Path) -> PathBuf {
     //    let u64result = sha256hasher.finish();
 
     // crc32 should be enough -if not the alternative rs_sha256 is available
-    let key = get_crc32(path.as_os_str().to_str().unwrap().as_bytes());
+    let key = get_crc32(path.as_os_str().to_string_lossy().as_bytes());
     auto_save_directory.join(path::Path::new(format!("{:x}.sav", key).as_str()))
 }
 
