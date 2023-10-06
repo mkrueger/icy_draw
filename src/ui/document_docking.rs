@@ -4,13 +4,13 @@ use crate::{
     create_image,
     model::Tool,
     util::autosave::{remove_autosave, store_auto_save},
-    Document, DocumentOptions, Message, Settings, FIRST_TOOL,
+    Document, DocumentOptions, Message, Settings, DEFAULT_CHAR_SET_TABLE, FIRST_TOOL,
 };
 use eframe::{
     egui::{self, Response, Ui},
     epaint::Rgba,
 };
-use egui::{mutex::Mutex, TextureHandle, Widget};
+use egui::{mutex::Mutex, Sense, TextureHandle, Widget};
 use egui_tiles::{Tabs, TileId, Tiles};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Buffer, TextAttribute, TextPane};
@@ -306,8 +306,15 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                         self.char_set_img = Some(create_image(ui.ctx(), &buffer));
                     }
 
-                    if let Some(img) = &self.char_set_img {
-                        egui::Image::from_texture(img).ui(ui);
+                    if let Some(handle) = &self.char_set_img {
+                        let mut img = egui::Image::from_texture(handle);
+                        img = img.sense(Sense::click());
+                        let res = img.ui(ui);
+                        if res.clicked_by(egui::PointerButton::Primary) {
+                            Settings::set_character_set((char_set + 1) % DEFAULT_CHAR_SET_TABLE.len())
+                        } else if res.clicked_by(egui::PointerButton::Secondary) {
+                            Settings::set_character_set((char_set + DEFAULT_CHAR_SET_TABLE.len() - 1) % DEFAULT_CHAR_SET_TABLE.len())
+                        }
                     }
 
                     let txt = self.tools.lock()[self.selected_tool].get_toolbar_location_text(editor);
