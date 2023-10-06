@@ -13,7 +13,7 @@ use crate::{CharSetMapping, CharTableToolWindow, Commands, FontSelector, ModalDi
 pub struct SettingsDialog {
     settings_category: usize,
     select_outline_dialog: SelectOutlineDialog,
-
+    is_dark_mode: Option<bool>,
     monitor_settings: MonitorSettings,
     marker_settings: MarkerSettings,
     key_filter: String,
@@ -78,6 +78,7 @@ impl SettingsDialog {
             views,
             char_view,
             font_selector: None,
+            is_dark_mode: unsafe { SETTINGS.is_dark_mode },
         }
     }
 
@@ -118,6 +119,8 @@ impl SettingsDialog {
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     egui::widgets::global_dark_light_mode_switch(ui);
+                    self.is_dark_mode = Some(ui.visuals().dark_mode);
+
                     let settings_category = self.settings_category;
 
                     if ui
@@ -211,6 +214,10 @@ impl SettingsDialog {
                                     log::error!("Error saving character sets: {}", err);
                                 }
                             }
+                            SETTINGS.is_dark_mode = self.is_dark_mode;
+                            if let Err(err) = Settings::save() {
+                                log::error!("Error saving settings: {err}");
+                            }
                         }
                         dialog_open = false;
                     }
@@ -219,6 +226,9 @@ impl SettingsDialog {
                         unsafe {
                             SETTINGS.monitor_settings = self.monitor_settings.clone();
                             SETTINGS.marker_settings = self.marker_settings.clone();
+                            if let Some(dark_mode) = SETTINGS.is_dark_mode {
+                                ui.visuals_mut().dark_mode = dark_mode;
+                            }
                         }
                         dialog_open = false;
                     }

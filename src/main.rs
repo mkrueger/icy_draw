@@ -144,6 +144,5 @@ fn main() {
     if let Err(err) = eframe::run_native(&DEFAULT_TITLE, options, Box::new(|cc| Box::new(MainWindow::new(cc)))) {
         log::error!("Error returned by run_native: {}", err);
     }
-    let _ = Settings::save();
     log::info!("shutting down.");
 }

@@ -8,7 +8,7 @@ use std::{
 use crate::{
     add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor, ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands,
     Document, DocumentBehavior, DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, SettingsDialog, ToolBehavior, ToolTab, TopBar,
-    KEYBINDINGS,
+    KEYBINDINGS, SETTINGS,
 };
 use directories::UserDirs;
 use eframe::egui::{Button, PointerButton};
@@ -93,11 +93,8 @@ impl<'a> MainWindow<'a> {
         let ctx: &egui::Context = &cc.egui_ctx;
 
         // try to detect dark vs light mode from the host system; default to dark
-        ctx.set_visuals(if dark_light::detect() == dark_light::Mode::Light {
-            egui::Visuals::light()
-        } else {
-            egui::Visuals::dark()
-        });
+
+        ctx.set_visuals(unsafe { SETTINGS.get_theme() });
 
         let mut style: egui::Style = (*ctx.style()).clone();
         style.spacing.window_margin = egui::Margin::same(8.0);

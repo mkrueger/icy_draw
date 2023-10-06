@@ -19,6 +19,9 @@ pub struct Settings {
     font_outline_style: usize,
     character_set: usize,
 
+    #[serde(default)]
+    pub is_dark_mode: Option<bool>,
+
     pub show_layer_borders: bool,
     pub show_line_numbers: bool,
 
@@ -295,6 +298,20 @@ impl Settings {
         self.recent_files.retain(|p| p.exists());
         &self.recent_files
     }
+
+    pub(crate) fn get_theme(&self) -> egui::Visuals {
+        let is_dark = if let Some(dark_mode) = unsafe { SETTINGS.is_dark_mode } {
+            dark_mode
+        } else {
+            dark_light::detect() != dark_light::Mode::Light
+        };
+
+        if is_dark {
+            egui::Visuals::dark()
+        } else {
+            egui::Visuals::light()
+        }
+    }
 }
 
 pub static mut PLUGINS: Vec<Plugin> = Vec::new();
@@ -310,6 +327,7 @@ pub static mut SETTINGS: Settings = Settings {
     show_line_numbers: false,
     recent_files: Vec::new(),
     save_options: SaveOptions::new(),
+    is_dark_mode: None,
     monitor_settings: MonitorSettings {
         use_filter: false,
         monitor_type: 0,
