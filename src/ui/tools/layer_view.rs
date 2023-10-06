@@ -1,11 +1,11 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use eframe::{
     egui::{self, CentralPanel, RichText, Sense, TextStyle, TopBottomPanel},
     emath::Align2,
     epaint::{Color32, Rect, Rounding, Vec2},
 };
-use egui::Image;
+use egui::{mutex::Mutex, Image};
 use i18n_embed_fl::fl;
 use icy_engine_egui::BufferView;
 
@@ -252,7 +252,7 @@ impl ToolWindow for LayerToolWindow {
 
     fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message> {
         if let Some(doc) = active_document {
-            if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+            if let Some(editor) = doc.lock().get_ansi_editor() {
                 return self.show_layer_view(ui, editor);
             }
         }

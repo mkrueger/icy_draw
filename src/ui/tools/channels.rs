@@ -1,6 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use eframe::egui::{self, RichText};
+use egui::mutex::Mutex;
 use i18n_embed_fl::fl;
 
 use crate::{Document, Message, ToolWindow};
@@ -15,7 +16,7 @@ impl ToolWindow for ChannelToolWindow {
 
     fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message> {
         if let Some(doc) = active_document {
-            if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+            if let Some(editor) = doc.lock().get_ansi_editor() {
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
                     ui.add_space(4.0);

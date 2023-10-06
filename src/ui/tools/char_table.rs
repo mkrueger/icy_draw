@@ -1,10 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use eframe::{
     egui::{self, RichText, Sense},
     epaint::{Color32, FontId, Pos2, Rect, Vec2},
 };
-use egui::{load::SizedTexture, Context, Image, TextureHandle};
+use egui::{load::SizedTexture, mutex::Mutex, Context, Image, TextureHandle};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, TextAttribute};
 
@@ -215,7 +215,7 @@ impl ToolWindow for CharTableToolWindow {
 
     fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message> {
         if let Some(doc) = active_document {
-            if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+            if let Some(editor) = doc.lock().get_ansi_editor() {
                 return self.show_char_table(ui, editor);
             }
         }

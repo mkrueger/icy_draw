@@ -1,6 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use eframe::egui::{self, WidgetText};
+use egui::mutex::Mutex;
 
 use crate::{Document, Message};
 

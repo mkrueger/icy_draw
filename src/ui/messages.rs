@@ -1,15 +1,11 @@
-use std::{
-    cell::RefCell,
-    path::PathBuf,
-    rc::Rc,
-    sync::{Arc, Mutex},
-};
+use std::{cell::RefCell, path::PathBuf, rc::Rc, sync::Arc};
 
 use directories::UserDirs;
 use eframe::{
     egui::{self},
     epaint::Vec2,
 };
+use egui::mutex::Mutex;
 use icy_engine::{util::pop_data, BitFont, EngineResult, IceMode, Layer, PaletteMode, SauceData, Size, TextAttribute, TextPane, TheDrawFont};
 
 use crate::{
@@ -166,10 +162,10 @@ pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
 
 impl<'a> MainWindow<'a> {
     pub fn handle_message(&mut self, msg_opt: Option<Message>) {
-        if msg_opt.is_none() {
+        let Some(msg) = msg_opt else {
             return;
-        }
-        match msg_opt.unwrap() {
+        };
+        match msg {
             Message::NewFileDialog => {
                 self.open_dialog(NewFileDialog::default());
             }
@@ -223,9 +219,11 @@ impl<'a> MainWindow<'a> {
                     window.open_dialog(crate::ExportFileDialog::new(view.lock().get_buffer()));
                     None
                 });
-                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
-                    let view = editor.buffer_view.clone();
-                    self.open_dialog(crate::ExportFileDialog::new(view.lock().get_buffer()));
+                if let Some(doc) = self.get_active_document() {
+                    if let Some(editor) = doc.lock().get_ansi_editor() {
+                        let view = editor.buffer_view.clone();
+                        self.open_dialog(crate::ExportFileDialog::new(view.lock().get_buffer()));
+                    }
                 }
             }
             Message::ShowOutlineDialog => {
@@ -234,14 +232,14 @@ impl<'a> MainWindow<'a> {
             Message::Undo => {
                 let mut msg = None;
                 if let Some(editor) = self.get_active_document() {
-                    msg = self.handle_result(editor.lock().unwrap().undo()).unwrap_or(None);
+                    msg = self.handle_result(editor.lock().undo()).unwrap_or(None);
                 }
                 self.handle_message(msg);
             }
             Message::Redo => {
                 let mut msg = None;
                 if let Some(editor) = self.get_active_document() {
-                    msg = self.handle_result(editor.lock().unwrap().redo()).unwrap_or(None);
+                    msg = self.handle_result(editor.lock().redo()).unwrap_or(None);
                 }
                 self.handle_message(msg);
             }
@@ -275,27 +273,27 @@ impl<'a> MainWindow<'a> {
                 self.open_dialog(crate::SelectFontDialog::new(fonts, selected_font));
             }
             Message::EditSauce => {
-                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().get_ansi_editor() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::EditSauceDialog::new(view.lock().get_buffer()));
                 }
             }
 
             Message::SetCanvasSize => {
-                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().get_ansi_editor() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::SetCanvasSizeDialog::new(view.lock().get_buffer()));
                 }
             }
 
             Message::EditLayer(i) => {
-                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().get_ansi_editor() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::EditLayerDialog::new(view.lock().get_buffer(), i));
                 }
             }
             Message::ResizeLayer(i) => {
-                if let Some(editor) = self.get_active_document().unwrap().lock().unwrap().get_ansi_editor_mut() {
+                if let Some(editor) = self.get_active_document().unwrap().lock().get_ansi_editor_mut() {
                     let view = editor.buffer_view.clone();
                     self.open_dialog(crate::ResizeLayerDialog::new(view.lock().get_buffer(), i));
                 }
@@ -438,18 +436,18 @@ impl<'a> MainWindow<'a> {
 
             Message::Paste => {
                 if let Some(doc) = self.get_active_document() {
-                    self.handle_result(doc.lock().unwrap().paste());
+                    self.handle_result(doc.lock().paste());
                 }
             }
 
             Message::Cut => {
                 if let Some(doc) = self.get_active_document() {
-                    self.handle_result(doc.lock().unwrap().cut());
+                    self.handle_result(doc.lock().cut());
                 }
             }
             Message::Copy => {
                 if let Some(doc) = self.get_active_document() {
-                    self.handle_result(doc.lock().unwrap().copy());
+                    self.handle_result(doc.lock().copy());
                 }
             }
 
@@ -871,7 +869,7 @@ impl<'a> MainWindow<'a> {
             Message::UpdateFont(font_box) => {
                 let (old, new) = font_box.as_ref();
                 self.enumerate_documents(|_, pane| {
-                    if let Some(editor) = pane.doc.lock().unwrap().get_ansi_editor() {
+                    if let Some(editor) = pane.doc.lock().get_ansi_editor() {
                         editor.buffer_view.lock().get_buffer_mut().font_iter_mut().for_each(|(_, font)| {
                             if font.glyphs == old.glyphs {
                                 *font = new.clone();

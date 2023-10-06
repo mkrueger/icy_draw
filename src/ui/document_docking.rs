@@ -1,9 +1,4 @@
-use std::{
-    fs,
-    path::PathBuf,
-    sync::{Arc, Mutex},
-    time::Instant,
-};
+use std::{fs, path::PathBuf, sync::Arc, time::Instant};
 
 use crate::{
     create_image,
@@ -15,7 +10,7 @@ use eframe::{
     egui::{self, Response, Ui},
     epaint::Rgba,
 };
-use egui::{TextureHandle, Widget};
+use egui::{mutex::Mutex, TextureHandle, Widget};
 use egui_tiles::{Tabs, TileId, Tiles};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Buffer, TextAttribute, TextPane};
@@ -33,12 +28,8 @@ pub struct DocumentTab {
 }
 impl DocumentTab {
     pub fn is_dirty(&self) -> bool {
-        if let Ok(doc) = self.doc.lock() {
-            let undo_stack_len = doc.undo_stack_len();
-            self.last_save != undo_stack_len
-        } else {
-            false
-        }
+        let undo_stack_len = self.doc.lock().undo_stack_len();
+        self.last_save != undo_stack_len
     }
 
     pub(crate) fn save(&mut self) -> Option<Message> {
@@ -46,10 +37,7 @@ impl DocumentTab {
             log::error!("No path to save to");
             return None;
         };
-        let Ok(doc) = &mut self.doc.lock() else {
-            log::error!("No document to save");
-            return None;
-        };
+        let doc = &mut self.doc.lock();
         Settings::add_recent_file(path);
 
         let mut msg = None;
@@ -93,10 +81,7 @@ impl DocumentTab {
     }
 
     pub fn set_path(&mut self, mut path: PathBuf) {
-        let Ok(doc) = &mut self.doc.lock() else {
-            log::error!("No document to save");
-            return;
-        };
+        let doc = &mut self.doc.lock();
         path.set_extension(doc.default_extension());
         if let Some(old_path) = &self.full_path {
             remove_autosave(old_path);
@@ -117,11 +102,7 @@ impl DocumentTab {
             return None;
         }
         self.destroyed = true;
-        if let Ok(doc) = self.doc.lock() {
-            doc.destroy(gl)
-        } else {
-            None
-        }
+        self.doc.lock().destroy(gl)
     }
 }
 
@@ -199,27 +180,21 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
             return egui_tiles::UiResponse::None;
         }
 
-        if let Ok(doc) = &mut pane.doc.lock() {
-            self.message = doc.show_ui(
-                ui,
-                &mut self.tools.lock().unwrap()[self.selected_tool],
-                self.selected_tool,
-                &self.document_options,
-            );
+        let doc = &mut pane.doc.lock();
+        self.message = doc.show_ui(ui, &mut self.tools.lock()[self.selected_tool], self.selected_tool, &self.document_options);
 
-            let undo_stack_len = doc.undo_stack_len();
-            if let Some(path) = &pane.full_path {
-                if undo_stack_len != pane.auto_save_status {
-                    if pane.last_change_autosave_timer != undo_stack_len {
-                        pane.instant = Instant::now();
-                    }
-                    pane.last_change_autosave_timer = undo_stack_len;
+        let undo_stack_len = doc.undo_stack_len();
+        if let Some(path) = &pane.full_path {
+            if undo_stack_len != pane.auto_save_status {
+                if pane.last_change_autosave_timer != undo_stack_len {
+                    pane.instant = Instant::now();
+                }
+                pane.last_change_autosave_timer = undo_stack_len;
 
-                    if pane.instant.elapsed().as_secs() > 5 {
-                        pane.auto_save_status = undo_stack_len;
-                        if let Ok(bytes) = doc.get_bytes(path) {
-                            store_auto_save(path, &bytes);
-                        }
+                if pane.instant.elapsed().as_secs() > 5 {
+                    pane.auto_save_status = undo_stack_len;
+                    if let Ok(bytes) = doc.get_bytes(path) {
+                        store_auto_save(path, &bytes);
                     }
                 }
             }
@@ -273,109 +248,108 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
     fn top_bar_rtl_ui(&mut self, tiles: &Tiles<DocumentTab>, ui: &mut Ui, _tile_id: TileId, tabs: &Tabs) {
         if let Some(id) = tabs.active {
             if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(id) {
-                if let Ok(doc) = &mut pane.doc.lock() {
-                    if let Some(editor) = doc.get_ansi_editor() {
-                        ui.add_space(4.0);
-                        let mut buffer = Buffer::new((48, 1));
-                        let font_page = editor.buffer_view.lock().get_caret().get_font_page();
-                        if let Some(font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
-                            buffer.set_font(1, font.clone());
+                let doc = &mut pane.doc.lock();
+                if let Some(editor) = doc.get_ansi_editor() {
+                    ui.add_space(4.0);
+                    let mut buffer = Buffer::new((48, 1));
+                    let font_page = editor.buffer_view.lock().get_caret().get_font_page();
+                    if let Some(font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
+                        buffer.set_font(1, font.clone());
+                    }
+
+                    let char_set = Settings::get_character_set();
+                    if self.cur_char_set != char_set || self.dark_mode != ui.style().visuals.dark_mode {
+                        let c = if ui.style().visuals.dark_mode {
+                            ui.style().visuals.extreme_bg_color
+                        } else {
+                            (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8)).into()
+                        };
+
+                        let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+
+                        let c = ui.style().visuals.strong_text_color();
+                        let fg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+
+                        let mut attr: TextAttribute = TextAttribute::default();
+                        attr.set_background(bg_color);
+                        attr.set_foreground(fg_color);
+                        let s = format!("Set {:2} ", char_set + 1);
+                        let mut i = 0;
+                        for c in s.chars() {
+                            buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
+                            i += 1;
+                        }
+                        attr.set_foreground(15);
+                        attr.set_background(4);
+
+                        for j in i..buffer.get_width() {
+                            buffer.layers[0].set_char((j, 0), AttributedChar::new(' ', attr));
                         }
 
-                        let char_set = Settings::get_character_set();
-                        if self.cur_char_set != char_set || self.dark_mode != ui.style().visuals.dark_mode {
-                            let c = if ui.style().visuals.dark_mode {
-                                ui.style().visuals.extreme_bg_color
-                            } else {
-                                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8)).into()
-                            };
-
-                            let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
-
-                            let c = ui.style().visuals.strong_text_color();
-                            let fg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
-
-                            let mut attr: TextAttribute = TextAttribute::default();
-                            attr.set_background(bg_color);
-                            attr.set_foreground(fg_color);
-                            let s = format!("Set {:2} ", char_set + 1);
-                            let mut i = 0;
+                        for j in 0..10 {
+                            if j == 9 {
+                                i += 1;
+                            }
+                            let s = format!("{:-2}=", j + 1);
+                            attr.set_foreground(0);
                             for c in s.chars() {
                                 buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
                                 i += 1;
                             }
                             attr.set_foreground(15);
-                            attr.set_background(4);
-
-                            for j in i..buffer.get_width() {
-                                buffer.layers[0].set_char((j, 0), AttributedChar::new(' ', attr));
-                            }
-
-                            for j in 0..10 {
-                                if j == 9 {
-                                    i += 1;
-                                }
-                                let s = format!("{:-2}=", j + 1);
-                                attr.set_foreground(0);
-                                for c in s.chars() {
-                                    buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
-                                    i += 1;
-                                }
-                                attr.set_foreground(15);
-                                attr.set_font_page(1);
-                                buffer.layers[0].set_char((i, 0), AttributedChar::new(editor.get_char_set_key(j), attr));
-                                attr.set_font_page(0);
-                                i += 1;
-                            }
-
-                            self.char_set_img = Some(create_image(ui.ctx(), &buffer));
+                            attr.set_font_page(1);
+                            buffer.layers[0].set_char((i, 0), AttributedChar::new(editor.get_char_set_key(j), attr));
+                            attr.set_font_page(0);
+                            i += 1;
                         }
 
-                        if let Some(img) = &self.char_set_img {
-                            egui::Image::from_texture(img).ui(ui);
-                        }
+                        self.char_set_img = Some(create_image(ui.ctx(), &buffer));
+                    }
 
-                        let txt = self.tools.lock().unwrap()[self.selected_tool].get_toolbar_location_text(editor);
-                        if txt != self.cur_line_col_txt || self.dark_mode != ui.style().visuals.dark_mode {
-                            self.cur_line_col_txt = txt;
-                            self.dark_mode = ui.style().visuals.dark_mode;
-                            let mut txt2 = String::new();
-                            let mut char_count = 0;
-                            for c in self.cur_line_col_txt.chars() {
-                                if (c as u32) < 255 {
-                                    txt2.push(c);
-                                    char_count += 1;
-                                }
+                    if let Some(img) = &self.char_set_img {
+                        egui::Image::from_texture(img).ui(ui);
+                    }
+
+                    let txt = self.tools.lock()[self.selected_tool].get_toolbar_location_text(editor);
+                    if txt != self.cur_line_col_txt || self.dark_mode != ui.style().visuals.dark_mode {
+                        self.cur_line_col_txt = txt;
+                        self.dark_mode = ui.style().visuals.dark_mode;
+                        let mut txt2 = String::new();
+                        let mut char_count = 0;
+                        for c in self.cur_line_col_txt.chars() {
+                            if (c as u32) < 255 {
+                                txt2.push(c);
+                                char_count += 1;
                             }
+                        }
 
-                            let mut buffer = Buffer::new((char_count, 1));
-                            buffer.is_terminal_buffer = false;
-                            let mut attr: TextAttribute = TextAttribute::default();
-                            let c = if ui.style().visuals.dark_mode {
-                                ui.style().visuals.extreme_bg_color
-                            } else {
-                                (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8)).into()
-                            };
+                        let mut buffer = Buffer::new((char_count, 1));
+                        buffer.is_terminal_buffer = false;
+                        let mut attr: TextAttribute = TextAttribute::default();
+                        let c = if ui.style().visuals.dark_mode {
+                            ui.style().visuals.extreme_bg_color
+                        } else {
+                            (Rgba::from(ui.style().visuals.panel_fill) * Rgba::from_gray(0.8)).into()
+                        };
 
-                            let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
-                            attr.set_background(bg_color);
+                        let bg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+                        attr.set_background(bg_color);
 
-                            let c = ui.style().visuals.text_color();
-                            let fg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
-                            attr.set_foreground(fg_color);
+                        let c = ui.style().visuals.text_color();
+                        let fg_color = buffer.palette.insert_color_rgb(c.r(), c.g(), c.b());
+                        attr.set_foreground(fg_color);
 
-                            for (i, mut c) in txt2.chars().enumerate() {
-                                if c as u32 > 255 {
-                                    c = ' ';
-                                }
-                                buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
+                        for (i, mut c) in txt2.chars().enumerate() {
+                            if c as u32 > 255 {
+                                c = ' ';
                             }
-                            self.pos_img = Some(create_image(ui.ctx(), &buffer));
+                            buffer.layers[0].set_char((i, 0), AttributedChar::new(c, attr));
                         }
+                        self.pos_img = Some(create_image(ui.ctx(), &buffer));
+                    }
 
-                        if let Some(img) = &self.pos_img {
-                            egui::Image::from_texture(img).ui(ui);
-                        }
+                    if let Some(img) = &self.pos_img {
+                        egui::Image::from_texture(img).ui(ui);
                     }
                 }
             }

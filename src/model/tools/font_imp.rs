@@ -1,10 +1,4 @@
-use std::{
-    fs,
-    io::Read,
-    path::Path,
-    sync::{Arc, Mutex},
-    thread,
-};
+use std::{fs, io::Read, path::Path, sync::Arc, thread};
 
 use crate::{AnsiEditor, Message, Settings};
 
@@ -13,6 +7,7 @@ use eframe::{
     egui::{self, Button, RichText},
     epaint::{FontFamily, FontId},
 };
+use egui::mutex::Mutex;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::OperationType, Size, TextPane, TheDrawFont};
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
@@ -58,7 +53,7 @@ fn load_fonts(tdf_dir: &Path) -> Vec<TheDrawFont> {
             log::error!("Can't load tdf font library: {e}");
             break;
         }
-        let entry = entry.unwrap();
+        let Ok(entry) = entry else { continue ;};
         let path = entry.path();
 
         if path.is_dir() {
@@ -68,11 +63,15 @@ fn load_fonts(tdf_dir: &Path) -> Vec<TheDrawFont> {
         if extension.is_none() {
             continue;
         }
-        let extension = extension.unwrap().to_str();
-        if extension.is_none() {
+        let Some(extension) = extension else {
             continue;
-        }
-        let extension = extension.unwrap().to_lowercase();
+        };
+        let extension = extension.to_str();
+        let Some(extension) = extension else {
+            continue;
+        };
+
+        let extension = extension.to_lowercase();
 
         if extension == "tdf" {
             if let Ok(loaded_fonts) = TheDrawFont::load(path) {
@@ -141,8 +140,8 @@ impl Tool for FontTool {
 
     fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         let mut select = false;
-        let font_count = self.fonts.lock().unwrap().len();
-        let selected_font = *self.selected_font.lock().unwrap();
+        let font_count = self.fonts.lock().len();
+        let selected_font = *self.selected_font.lock();
 
         ui.vertical_centered(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "font_tool_current_font_label"));
@@ -150,7 +149,7 @@ impl Tool for FontTool {
             let mut selected_text = fl!(crate::LANGUAGE_LOADER, "font_tool_no_font");
 
             if selected_font >= 0 && (selected_font as usize) < font_count {
-                if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                if let Some(font) = self.fonts.lock().get(selected_font as usize) {
                     selected_text = font.name.clone();
                 }
             }
@@ -179,7 +178,7 @@ impl Tool for FontTool {
                 ui.horizontal(|ui| {
                     ui.add_space(left_border);
 
-                    if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                    if let Some(font) = self.fonts.lock().get(selected_font as usize) {
                         for ch in '!'..'9' {
                             ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
                             let color = if font.has_char(ch as u8) {
@@ -196,7 +195,7 @@ impl Tool for FontTool {
                 ui.horizontal(|ui| {
                     ui.add_space(left_border);
 
-                    if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                    if let Some(font) = self.fonts.lock().get(selected_font as usize) {
                         for ch in '9'..'Q' {
                             ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
                             let color = if font.has_char(ch as u8) {
@@ -212,7 +211,7 @@ impl Tool for FontTool {
 
                 ui.horizontal(|ui| {
                     ui.add_space(left_border);
-                    if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                    if let Some(font) = self.fonts.lock().get(selected_font as usize) {
                         ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
                         for ch in 'Q'..'i' {
                             let color = if font.has_char(ch as u8) {
@@ -227,7 +226,7 @@ impl Tool for FontTool {
                 });
                 ui.horizontal(|ui| {
                     ui.add_space(left_border);
-                    if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+                    if let Some(font) = self.fonts.lock().get(selected_font as usize) {
                         ui.spacing_mut().item_spacing = eframe::epaint::Vec2::new(0.0, 0.0);
                         for ch in 'i'..='~' {
                             let color = if font.has_char(ch as u8) {
@@ -244,7 +243,7 @@ impl Tool for FontTool {
         }
 
         if font_count > 0 {
-            if let Some(font) = self.fonts.lock().unwrap().get(selected_font as usize) {
+            if let Some(font) = self.fonts.lock().get(selected_font as usize) {
                 if matches!(font.font_type, icy_engine::FontType::Outline) {
                     ui.add_space(32.0);
                     let mut msg = None;
@@ -280,12 +279,12 @@ impl Tool for FontTool {
     }
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
-        let selected_font = *self.selected_font.lock().unwrap();
+        let selected_font = *self.selected_font.lock();
 
-        if selected_font < 0 || selected_font >= self.fonts.lock().unwrap().len() as i32 {
+        if selected_font < 0 || selected_font >= self.fonts.lock().len() as i32 {
             return Event::None;
         }
-        let font = &self.fonts.lock().unwrap()[selected_font as usize];
+        let font = &self.fonts.lock()[selected_font as usize];
         let pos = editor.buffer_view.lock().get_caret().get_position();
 
         match key {
@@ -436,8 +435,8 @@ fn watch(path: &Path, fonts: &Arc<Mutex<Vec<TheDrawFont>>>) -> notify::Result<()
     for res in rx {
         match res {
             Ok(_) => {
-                fonts.lock().unwrap().clear();
-                fonts.lock().unwrap().extend(load_fonts(path));
+                fonts.lock().clear();
+                fonts.lock().extend(load_fonts(path));
 
                 break;
             }

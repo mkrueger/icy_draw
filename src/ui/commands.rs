@@ -26,9 +26,7 @@ pub struct BufferOpenState {}
 impl CommandState for BufferOpenState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                return doc.get_ansi_editor().is_some();
-            }
+            return pane.doc.lock().get_ansi_editor().is_some();
         }
         false
     }
@@ -40,10 +38,8 @@ pub struct CanSwitchPaletteState {}
 impl CommandState for CanSwitchPaletteState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                if let Some(editor) = doc.get_ansi_editor() {
-                    return !matches!(editor.buffer_view.lock().get_buffer().palette_mode, PaletteMode::Fixed16);
-                }
+            if let Some(editor) = pane.doc.lock().get_ansi_editor() {
+                return !matches!(editor.buffer_view.lock().get_buffer().palette_mode, PaletteMode::Fixed16);
             }
         }
         false
@@ -113,9 +109,7 @@ pub struct CanUndoState {}
 impl CommandState for CanUndoState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                return doc.can_undo();
-            }
+            return pane.doc.lock().can_undo();
         }
         false
     }
@@ -126,9 +120,7 @@ pub struct CanRedoState {}
 impl CommandState for CanRedoState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                return doc.can_redo();
-            }
+            return pane.doc.lock().can_redo();
         }
         false
     }
@@ -140,9 +132,7 @@ pub struct CanCutState {}
 impl CommandState for CanCutState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                return doc.can_cut();
-            }
+            return pane.doc.lock().can_cut();
         }
         false
     }
@@ -154,9 +144,7 @@ pub struct CanCopyState {}
 impl CommandState for CanCopyState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                return doc.can_copy();
-            }
+            return pane.doc.lock().can_copy();
         }
         false
     }
@@ -168,9 +156,7 @@ pub struct CanPasteState {}
 impl CommandState for CanPasteState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                return doc.can_paste();
-            }
+            return pane.doc.lock().can_paste();
         }
         false
     }
@@ -182,18 +168,14 @@ pub struct LGAFontState {}
 impl CommandState for LGAFontState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                return doc.get_ansi_editor().is_some();
-            }
+            return pane.doc.lock().get_ansi_editor().is_some();
         }
         false
     }
     fn is_checked(&self, open_tab_opt: Option<&DocumentTab>) -> Option<bool> {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                if let Some(editor) = doc.get_ansi_editor() {
-                    return Some(editor.buffer_view.lock().get_buffer().use_letter_spacing());
-                }
+            if let Some(editor) = pane.doc.lock().get_ansi_editor() {
+                return Some(editor.buffer_view.lock().get_buffer().use_letter_spacing());
             }
         }
         Some(false)
@@ -205,18 +187,14 @@ pub struct AspectRatioState {}
 impl CommandState for AspectRatioState {
     fn is_enabled(&self, open_tab_opt: Option<&DocumentTab>) -> bool {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                return doc.get_ansi_editor().is_some();
-            }
+            return pane.doc.lock().get_ansi_editor().is_some();
         }
         false
     }
     fn is_checked(&self, open_tab_opt: Option<&DocumentTab>) -> Option<bool> {
         if let Some(pane) = open_tab_opt {
-            if let Ok(doc) = pane.doc.lock() {
-                if let Some(editor) = doc.get_ansi_editor() {
-                    return Some(editor.buffer_view.lock().get_buffer().use_aspect_ratio());
-                }
+            if let Some(editor) = pane.doc.lock().get_ansi_editor() {
+                return Some(editor.buffer_view.lock().get_buffer().use_aspect_ratio());
             }
         }
         Some(false)

@@ -1,13 +1,10 @@
-use std::{
-    fs,
-    sync::{Arc, Mutex},
-};
+use std::{fs, sync::Arc};
 
 use eframe::{
     egui::{self, Response, Sense, TextEdit, TextStyle, WidgetText},
     epaint::{ahash::HashMap, ColorImage, FontFamily, FontId, Pos2, Rect, Rounding, Stroke, Vec2},
 };
-use egui::{load::SizedTexture, Image, TextureHandle, TextureOptions};
+use egui::{load::SizedTexture, mutex::Mutex, Image, TextureHandle, TextureOptions};
 use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
@@ -33,7 +30,7 @@ pub struct SelectFontDialog {
 
 impl SelectFontDialog {
     pub fn new(fonts: Arc<Mutex<Vec<TheDrawFont>>>, selected_font_arc: Arc<Mutex<i32>>) -> Self {
-        let selected_font = *selected_font_arc.lock().unwrap();
+        let selected_font = *selected_font_arc.lock();
 
         Self {
             do_select: false,
@@ -51,7 +48,7 @@ impl SelectFontDialog {
     }
 
     pub fn draw_font_row(&mut self, ui: &mut egui::Ui, cur_font: usize, row_height: f32, is_selected: bool) -> Response {
-        let font = &self.fonts.lock().unwrap()[cur_font];
+        let font = &self.fonts.lock()[cur_font];
         let (id, rect) = ui.allocate_space([ui.available_width(), row_height].into());
         let response = ui.interact(rect, id, Sense::click());
         if response.hovered() {
@@ -204,7 +201,7 @@ impl crate::ModalDialog for SelectFontDialog {
 
         let mut result = false;
         let modal = Modal::new(ctx, "select_font_dialog2");
-        let font_count = self.fonts.lock().unwrap().len();
+        let font_count = self.fonts.lock().len();
         modal.show(|ui| {
             ui.set_width(700.);
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "select-font-dialog-title", fontcount = font_count));
@@ -240,7 +237,7 @@ impl crate::ModalDialog for SelectFontDialog {
                 let mut filtered_fonts = Vec::new();
 
                 for i in 0..font_count {
-                    let font = &self.fonts.lock().unwrap()[i];
+                    let font = &self.fonts.lock()[i];
                     if font.name.to_lowercase().contains(&self.filter.to_lowercase())
                         && (self.show_outline && matches!(font.font_type, icy_engine::FontType::Outline)
                             || self.show_block && matches!(font.font_type, icy_engine::FontType::Block)
@@ -286,7 +283,7 @@ impl crate::ModalDialog for SelectFontDialog {
                 }
 
                 if ui.button(fl!(crate::LANGUAGE_LOADER, "export-button-title")).clicked() {
-                    match self.fonts.lock().unwrap()[self.selected_font as usize].as_tdf_bytes() {
+                    match self.fonts.lock()[self.selected_font as usize].as_tdf_bytes() {
                         Ok(data) => {
                             let mut initial_path = None;
                             crate::set_default_initial_directory_opt(&mut initial_path);
@@ -311,7 +308,7 @@ impl crate::ModalDialog for SelectFontDialog {
     }
 
     fn commit_self(&self, _window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
-        *self.selected_font_arc.lock().unwrap() = self.selected_font;
+        *self.selected_font_arc.lock() = self.selected_font;
         Ok(None)
     }
 }

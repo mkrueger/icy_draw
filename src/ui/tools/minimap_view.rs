@@ -1,9 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use eframe::{
     egui::{self, RichText},
     epaint::{Color32, Rect, Stroke, Vec2},
 };
+use egui::mutex::Mutex;
 use i18n_embed_fl::fl;
 use icy_engine::TextPane;
 use icy_engine_egui::BufferView;
@@ -25,7 +26,7 @@ impl ToolWindow for MinimapToolWindow {
 
     fn show_ui(&mut self, ui: &mut egui::Ui, active_document: Option<Arc<Mutex<Box<dyn Document>>>>) -> Option<Message> {
         if let Some(doc) = active_document {
-            if let Some(editor) = doc.lock().unwrap().get_ansi_editor_mut() {
+            if let Some(editor) = doc.lock().get_ansi_editor_mut() {
                 return self.show_minimap(ui, editor);
             }
         }

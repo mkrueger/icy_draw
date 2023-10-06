@@ -1,7 +1,7 @@
 use std::{
     fs,
     path::Path,
-    sync::{Arc, Mutex},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -16,6 +16,7 @@ use eframe::{
     egui::{self, Key, Response, SidePanel, Ui},
     epaint::FontId,
 };
+use egui::mutex::Mutex;
 use egui_tiles::{Container, TileId};
 use glow::Context;
 use i18n_embed_fl::fl;
@@ -418,10 +419,8 @@ impl<'a> MainWindow<'a> {
     pub(crate) fn run_editor_command<T>(&mut self, param: T, func: fn(&mut MainWindow<'_>, &mut AnsiEditor, T) -> Option<Message>) {
         let mut msg = None;
         if let Some(doc) = self.get_active_document() {
-            if let Ok(mut doc) = doc.lock() {
-                if let Some(editor) = doc.get_ansi_editor_mut() {
-                    msg = func(self, editor, param);
-                }
+            if let Some(editor) = doc.lock().get_ansi_editor_mut() {
+                msg = func(self, editor, param);
             }
         }
         self.handle_message(msg);
@@ -598,7 +597,7 @@ impl<'a> eframe::App for MainWindow<'a> {
                 let mut font_mode = icy_engine::FontMode::Unlimited;
 
                 if let Some(doc) = self.get_active_document() {
-                    if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                    if let Some(editor) = doc.lock().get_ansi_editor() {
                         caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
                         palette = editor.buffer_view.lock().get_buffer().palette.clone();
                         ice_mode = editor.buffer_view.lock().get_buffer().ice_mode;
@@ -626,7 +625,7 @@ impl<'a> eframe::App for MainWindow<'a> {
                         .clicked()
                 {
                     if let Some(doc) = self.get_active_document() {
-                        if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                        if let Some(editor) = doc.lock().get_ansi_editor() {
                             caret_attr.set_is_blinking(!caret_attr.is_blinking());
                             editor.buffer_view.lock().get_caret_mut().set_attr(caret_attr);
                         }
@@ -641,20 +640,13 @@ impl<'a> eframe::App for MainWindow<'a> {
                 self.handle_message(msg);
 
                 let mut tool_result = None;
-                if let Some(tool) = self
-                    .document_behavior
-                    .tools
-                    .clone()
-                    .lock()
-                    .unwrap()
-                    .get_mut(self.document_behavior.get_selected_tool())
-                {
+                if let Some(tool) = self.document_behavior.tools.clone().lock().get_mut(self.document_behavior.get_selected_tool()) {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
                         ui.vertical(|ui| {
                             let mut shown = false;
                             if let Some(doc) = self.get_active_document() {
-                                if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                                if let Some(editor) = doc.lock().get_ansi_editor() {
                                     shown = true;
                                     tool_result = tool.show_ui(ctx, ui, Some(editor))
                                 }
@@ -697,11 +689,11 @@ impl<'a> eframe::App for MainWindow<'a> {
 
                 if self.document_behavior.get_selected_tool() != PASTE_TOOL {
                     if let Some(doc) = self.get_active_document() {
-                        if let Some(editor) = doc.lock().unwrap().get_ansi_editor() {
+                        if let Some(editor) = doc.lock().get_ansi_editor() {
                             let lock = &mut editor.buffer_view.lock();
                             let paste_mode = lock.get_buffer().layers.iter().position(|layer| layer.role.is_paste());
                             if let Some(layer) = paste_mode {
-                                self.document_behavior.tools.lock().unwrap()[PASTE_TOOL] =
+                                self.document_behavior.tools.lock()[PASTE_TOOL] =
                                     Box::new(crate::model::paste_tool::PasteTool::new(self.document_behavior.get_selected_tool()));
                                 self.document_behavior.set_selected_tool(PASTE_TOOL);
                                 lock.get_edit_state_mut().set_current_layer(layer);
@@ -718,7 +710,7 @@ impl<'a> eframe::App for MainWindow<'a> {
                 let modal_dialog = self.modal_dialog.take().unwrap();
                 if modal_dialog.should_commit() {
                     if let Some(doc) = self.get_active_document() {
-                        if let Some(editor) = doc.lock().unwrap().get_ansi_editor_mut() {
+                        if let Some(editor) = doc.lock().get_ansi_editor_mut() {
                             match modal_dialog.commit(editor) {
                                 Ok(msg) => {
                                     dialog_message = msg;
