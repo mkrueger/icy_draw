@@ -129,6 +129,16 @@ fn main() {
         }
     }
 
+    if let Ok(settings_file) = MostRecentlyUsedFiles::get_mru_file() {
+        if settings_file.exists() {
+            if let Ok(character_sets) = MostRecentlyUsedFiles::load(&settings_file) {
+                unsafe {
+                    MRU_FILES = character_sets;
+                }
+            }
+        }
+    }
+
     unsafe {
         if KEYBINDINGS.key_bindings.is_empty() {
             KEYBINDINGS.key_bindings = Commands::default_keybindings();

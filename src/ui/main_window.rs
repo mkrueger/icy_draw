@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor, ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands,
-    Document, DocumentBehavior, DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, Settings, SettingsDialog, ToolBehavior, ToolTab, TopBar,
+    Document, DocumentBehavior, DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, SettingsDialog, ToolBehavior, ToolTab, TopBar,
     KEYBINDINGS, SETTINGS,
 };
 use directories::UserDirs;
@@ -162,7 +162,7 @@ impl<'a> MainWindow<'a> {
 
     pub fn open_data(&mut self, path: &Path, data: &[u8]) {
         let full_path = path.to_path_buf();
-        Settings::add_recent_file(path);
+        unsafe { crate::MRU_FILES.add_recent_file(path) };
         if let Some(ext) = path.extension() {
             let ext = ext.to_str().unwrap_or_default().to_ascii_lowercase();
             if is_font_extensions(&ext) {

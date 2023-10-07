@@ -5,7 +5,7 @@ use egui_bind::{BindTarget, KeyOrPointer};
 use i18n_embed_fl::fl;
 use icy_engine::PaletteMode;
 
-use crate::{button_with_shortcut, DocumentTab, Message, SETTINGS};
+use crate::{button_with_shortcut, DocumentTab, Message, MRU_FILES, SETTINGS};
 
 pub trait CommandState {
     fn is_enabled(&self, _open_tab_opt: Option<&DocumentTab>) -> bool {
@@ -99,7 +99,7 @@ pub struct HasRecentFilesState {}
 
 impl CommandState for HasRecentFilesState {
     fn is_enabled(&self, _open_tab_opt: Option<&DocumentTab>) -> bool {
-        unsafe { !SETTINGS.get_recent_files().is_empty() }
+        unsafe { !MRU_FILES.get_recent_files().is_empty() }
     }
 }
 
@@ -531,7 +531,7 @@ keys![
     ),
     (switch_to_default_color, "menu-default_color", SwitchToDefaultColor, BufferOpenState, D, CTRL),
     (toggle_color, "menu-toggle_color", ToggleColor, BufferOpenState, X, ALT),
-    (fullscreen, "menu-toggle_fullscreen", ToggleFullScreen, AlwaysEnabledState, F11, NONE),
+    (fullscreen, "menu-toggle_fullscreen", ToggleFullScreen, AlwaysEnabledState, Enter, ALT),
     (zoom_reset, "menu-zoom_reset", ZoomReset, BufferOpenState, Num0, CTRL),
     (zoom_in, "menu-zoom_in", ZoomIn, BufferOpenState, PlusEquals, CTRL),
     (zoom_out, "menu-zoom_out", ZoomOut, BufferOpenState, Minus, CTRL),

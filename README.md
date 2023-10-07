@@ -48,6 +48,7 @@ There are several folders:
 | settings.json  | IcyDraw settings
 | character_sets.json  | Character set mappings
 | key_bindings.json  | Keybind settings
+| recent_files.json  | MRU file list
 | icy_draw.log   | IcyDraw log file
 
 Note that fonts/palettes etc. do not need to be unzipped. Just throw a .zip file in there containing fonts and IcyDraw will pick them up.

@@ -4,7 +4,7 @@ use crate::{
     create_image,
     model::Tool,
     util::autosave::{remove_autosave, store_auto_save},
-    Document, DocumentOptions, Message, Settings, DEFAULT_CHAR_SET_TABLE, FIRST_TOOL,
+    Document, DocumentOptions, Message, Settings, DEFAULT_CHAR_SET_TABLE, FIRST_TOOL, MRU_FILES,
 };
 use eframe::{
     egui::{self, Response, Ui},
@@ -38,7 +38,7 @@ impl DocumentTab {
             return None;
         };
         let doc = &mut self.doc.lock();
-        Settings::add_recent_file(path);
+        unsafe { MRU_FILES.add_recent_file(path) };
 
         let mut msg = None;
         match doc.get_bytes(path) {

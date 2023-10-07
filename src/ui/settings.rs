@@ -28,8 +28,6 @@ pub struct Settings {
     pub monitor_settings: MonitorSettings,
     pub marker_settings: MarkerSettings,
     pub save_options: SaveOptions,
-
-    recent_files: Vec<PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -137,29 +135,6 @@ impl Settings {
 
     pub fn get_font_outline_style() -> usize {
         unsafe { SETTINGS.font_outline_style }
-    }
-
-    pub fn add_recent_file(file: &Path) {
-        unsafe {
-            let file = file.to_path_buf();
-            for i in 0..SETTINGS.recent_files.len() {
-                if SETTINGS.recent_files[i] == file {
-                    SETTINGS.recent_files.remove(i);
-                    break;
-                }
-            }
-
-            SETTINGS.recent_files.push(file);
-            while SETTINGS.recent_files.len() > MAX_RECENT_FILES {
-                SETTINGS.recent_files.remove(0);
-            }
-        }
-    }
-
-    pub fn clear_recent_files() {
-        unsafe {
-            SETTINGS.recent_files.clear();
-        }
     }
 
     pub fn get_character_set_char(&self, checksum: u32, ch: usize) -> char {
@@ -294,11 +269,6 @@ impl Settings {
         }
     }
 
-    pub(crate) fn get_recent_files(&mut self) -> &Vec<PathBuf> {
-        self.recent_files.retain(|p| p.exists());
-        &self.recent_files
-    }
-
     pub(crate) fn get_theme(&self) -> egui::Visuals {
         let is_dark = if let Some(dark_mode) = unsafe { SETTINGS.is_dark_mode } {
             dark_mode
@@ -314,18 +284,81 @@ impl Settings {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MostRecentlyUsedFiles {
+    files: Vec<PathBuf>,
+}
+
+impl MostRecentlyUsedFiles {
+    pub fn get_mru_file() -> TerminalResult<PathBuf> {
+        if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
+            let dir = proj_dirs.config_dir().join("recent_files.json");
+            return Ok(dir);
+        }
+        Err(IcyDrawError::ErrorCreatingDirectory("mru file".to_string()).into())
+    }
+
+    pub fn get_recent_files(&mut self) -> &Vec<PathBuf> {
+        self.files.retain(|p| p.exists());
+        &self.files
+    }
+
+    pub fn add_recent_file(&mut self, file: &Path) {
+        let file = file.to_path_buf();
+        for i in 0..self.files.len() {
+            if self.files[i] == file {
+                self.files.remove(i);
+                break;
+            }
+        }
+
+        self.files.push(file);
+        while self.files.len() > MAX_RECENT_FILES {
+            self.files.remove(0);
+        }
+        if let Err(err) = self.save() {
+            log::error!("Error saving recent files: {}", err);
+        }
+    }
+
+    pub fn clear_recent_files(&mut self) {
+        self.files.clear();
+        if let Err(err) = self.save() {
+            log::error!("Error saving recent files: {}", err);
+        }
+    }
+
+    pub(crate) fn load(path: &PathBuf) -> io::Result<Self> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+        Ok(serde_json::from_reader(reader)?)
+    }
+
+    pub(crate) fn save(&self) -> io::Result<()> {
+        let Ok(path) = MostRecentlyUsedFiles::get_mru_file() else {
+            return Ok(());
+        };
+
+        let file = File::create(path)?;
+        let reader = BufWriter::new(file);
+        serde_json::to_writer_pretty(reader, &self)?;
+        Ok(())
+    }
+}
+
 pub static mut PLUGINS: Vec<Plugin> = Vec::new();
 
 pub static mut KEYBINDINGS: KeyBindings = KeyBindings { key_bindings: Vec::new() };
 
 pub static mut CHARACTER_SETS: CharacterSets = CharacterSets { character_sets: Vec::new() };
 
+pub static mut MRU_FILES: MostRecentlyUsedFiles = MostRecentlyUsedFiles { files: Vec::new() };
+
 pub static mut SETTINGS: Settings = Settings {
     font_outline_style: 0,
     character_set: 5,
     show_layer_borders: true,
     show_line_numbers: false,
-    recent_files: Vec::new(),
     save_options: SaveOptions::new(),
     is_dark_mode: None,
     monitor_settings: MonitorSettings {

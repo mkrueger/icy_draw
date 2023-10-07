@@ -10,7 +10,7 @@ use icy_engine::{util::pop_data, BitFont, EngineResult, IceMode, Layer, PaletteM
 
 use crate::{
     util::autosave::{self},
-    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog, SelectOutlineDialog, Settings, PLUGINS, SETTINGS,
+    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog, SelectOutlineDialog, Settings, MRU_FILES, PLUGINS, SETTINGS,
 };
 
 #[derive(Clone)]
@@ -839,7 +839,7 @@ impl<'a> MainWindow<'a> {
             }
 
             Message::ClearRecentOpenFiles => {
-                Settings::clear_recent_files();
+                unsafe { MRU_FILES.clear_recent_files() };
             }
 
             Message::InverseSelection => {
