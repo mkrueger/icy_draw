@@ -49,7 +49,8 @@ pub struct AnsiEditor {
     pub next_scroll_y_position: Option<f32>,
     pub guide: Option<Vec2>,
     pub raster: Option<Vec2>, //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
-                              //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
+    //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
+    pub request_focus: bool,
 }
 
 impl UndoHandler for AnsiEditor {
@@ -182,8 +183,10 @@ impl Document for AnsiEditor {
             scroll_offset_x: self.next_scroll_x_position.take(),
             show_layer_borders: unsafe { SETTINGS.show_layer_borders },
             show_line_numbers: unsafe { SETTINGS.show_line_numbers },
+            request_focus: self.request_focus,
             ..Default::default()
         };
+        self.request_focus = false;
         let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
 
         let response = response.context_menu(|ui| {
@@ -227,6 +230,7 @@ impl AnsiEditor {
             next_scroll_y_position: Some(0.0),
             half_block_click_pos: Position::default(),
             last_selected_tool: 0,
+            request_focus: false,
         }
     }
 
@@ -441,6 +445,7 @@ impl AnsiEditor {
         let attr = self.buffer_view.lock().get_caret().get_attribute();
         self.set_char(pos, AttributedChar::new(char_code, attr));
         self.set_caret(pos.x + 1, pos.y);
+        self.request_focus = true;
     }
 
     pub fn switch_fg_bg_color(&mut self) {

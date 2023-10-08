@@ -13,7 +13,7 @@ pub fn add_tool_switcher(_ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWind
     if tools[arg.document_behavior.get_selected_tool()].is_exclusive() {
         return msg;
     }
-    let (id, back_rect) = ui.allocate_space(Vec2::new(200., 68.0));
+    let (id, back_rect) = ui.allocate_space(Vec2::new(230., 68.0));
     let mut pos = back_rect.min + Vec2::new(spacing, spacing);
 
     for i in 0..tools.len() {

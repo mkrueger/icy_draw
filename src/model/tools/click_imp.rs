@@ -3,7 +3,7 @@ use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle, TextPane};
 use icy_engine_egui::TerminalCalc;
 
-use crate::{model::MKey, AnsiEditor, Message};
+use crate::{model::MKey, AnsiEditor, CharTableToolWindow, Message};
 
 use super::{Event, MModifiers, Position, Tool};
 
@@ -28,6 +28,8 @@ pub struct ClickTool {
     start_selection: Rectangle,
     selection_drag: SelectionDrag,
     undo_op: Option<AtomicUndoGuard>,
+
+    char_table: Option<CharTableToolWindow>,
 }
 pub const VALID_OUTLINE_CHARS: &str = "ABCDEFGHIJKLMNO@&\u{F7} ";
 
@@ -36,8 +38,16 @@ impl Tool for ClickTool {
         &super::icons::CURSOR_SVG
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, _ui: &mut egui::Ui, _buffer_opt: Option<&AnsiEditor>) -> Option<Message> {
-        None
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+        if self.char_table.is_none() {
+            self.char_table = Some(CharTableToolWindow::new(ctx, 16));
+        }
+        if let Some(editor) = editor_opt {
+            ui.set_height(16.0 * 256.0 * 2.0);
+            self.char_table.as_mut().unwrap().show_char_table(ui, editor)
+        } else {
+            None
+        }
     }
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, cur_abs: Position, _response: &egui::Response) -> Option<Message> {

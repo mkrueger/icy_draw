@@ -6,9 +6,9 @@ use std::{
 };
 
 use crate::{
-    add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor, ChannelToolWindow, CharFontEditor, CharTableToolWindow, Commands,
-    Document, DocumentBehavior, DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, SettingsDialog, ToolBehavior, ToolTab, TopBar,
-    KEYBINDINGS, SETTINGS,
+    add_child, model::Tool, util::autosave, AnsiEditor, AskCloseFileDialog, BitFontEditor, ChannelToolWindow, CharFontEditor, Commands, Document,
+    DocumentBehavior, DocumentTab, LayerToolWindow, Message, MinimapToolWindow, ModalDialog, SettingsDialog, ToolBehavior, ToolTab, TopBar, KEYBINDINGS,
+    SETTINGS,
 };
 use directories::UserDirs;
 use eframe::egui::{Button, PointerButton};
@@ -117,9 +117,8 @@ impl<'a> MainWindow<'a> {
         let layers = tool_tree.tiles.insert_pane(ToolTab::new(LayerToolWindow::new(gl.clone())));
         let channels = tool_tree.tiles.insert_pane(ToolTab::new(ChannelToolWindow::default()));
         let minimap = tool_tree.tiles.insert_pane(ToolTab::new(MinimapToolWindow::new(gl.clone())));
-        let char_table = tool_tree.tiles.insert_pane(ToolTab::new(CharTableToolWindow::new(ctx, 16)));
 
-        let tab = tool_tree.tiles.insert_tab_tile(vec![minimap, char_table]);
+        let tab = tool_tree.tiles.insert_tab_tile(vec![minimap]);
         let tab2 = tool_tree.tiles.insert_tab_tile(vec![layers, channels]);
         let vert_id = tool_tree.tiles.insert_vertical_tile(vec![tab, tab2]);
         if let Some(egui_tiles::Tile::Container(Container::Linear(linear))) = tool_tree.tiles.get_mut(vert_id) {
@@ -595,7 +594,7 @@ impl<'a> eframe::App for MainWindow<'a> {
             frame.close();
         }
         SidePanel::left("left_panel")
-            .exact_width(240.0)
+            .exact_width(264.0)
             .resizable(false)
             .frame(egui::Frame {
                 fill: ctx.style().visuals.panel_fill,

@@ -1,5 +1,5 @@
 use eframe::egui::{self, RichText};
-use egui::{load::SizedTexture, Color32, Image, Rect, Rounding, Sense, Stroke, TextureHandle, Vec2, Widget};
+use egui::{load::SizedTexture, Color32, FontId, Image, Rect, Rounding, Sense, Stroke, TextureHandle, Vec2, Widget};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Position, TextAttribute, TextPane, TheDrawFont};
 use icy_engine_egui::BufferView;
@@ -97,9 +97,60 @@ impl BrushMode {
         });
 
         if let Some(editor) = editor_opt {
-            let scale = 1.5;
+            let scale = 2.0;
             let lock = &editor.buffer_view.lock();
             let font_page = lock.get_caret().get_font_page();
+            let font_count = lock.get_buffer().font_count();
+            if font_count > 1 {
+                ui.add_space(8.0);
+
+                ui.horizontal(|ui| {
+                    ui.add_space(12.0);
+
+                    ui.label(fl!(crate::LANGUAGE_LOADER, "font-view-font_page_label"));
+                    if ui.selectable_label(false, RichText::new("◀").font(FontId::proportional(14.))).clicked() {
+                        let mut prev = font_page;
+                        let mut last = 0;
+                        for (page, _) in lock.get_buffer().font_iter() {
+                            last = last.max(*page);
+                            if *page < font_page {
+                                if prev == font_page {
+                                    prev = *page;
+                                } else {
+                                    prev = prev.max(*page);
+                                }
+                            }
+                        }
+                        if prev == font_page {
+                            msg = Some(Message::SetFontPage(last));
+                        } else {
+                            msg = Some(Message::SetFontPage(prev));
+                        }
+                    }
+                    ui.label(RichText::new(font_page.to_string()));
+
+                    if ui.selectable_label(false, RichText::new("▶").font(FontId::proportional(14.))).clicked() {
+                        let mut next = font_page;
+                        let mut first = usize::MAX;
+                        for (page, _) in lock.get_buffer().font_iter() {
+                            first = first.min(*page);
+                            if *page > font_page {
+                                if next == font_page {
+                                    next = *page;
+                                } else {
+                                    next = next.min(*page);
+                                }
+                            }
+                        }
+                        if next == font_page {
+                            msg = Some(Message::SetFontPage(first));
+                        } else {
+                            msg = Some(Message::SetFontPage(next));
+                        }
+                    }
+                });
+            }
+
             let font = lock.get_buffer().get_font(font_page).unwrap();
 
             unsafe {
@@ -158,6 +209,12 @@ impl BrushMode {
                     }
                 }
             }
+
+            ui.horizontal(|ui| {
+                ui.add_space(4.0);
+                ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "font-view-font_label")).small());
+                ui.label(RichText::new(font.name.to_string()).small().color(Color32::WHITE));
+            });
         }
 
         msg
