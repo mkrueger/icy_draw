@@ -82,6 +82,7 @@ impl<'a> MainWindow<'a> {
             Box::<crate::model::erase_imp::EraseTool>::default(),
             Box::<crate::model::pipette_imp::PipetteTool>::default(),
             Box::<crate::model::line_imp::LineTool>::default(),
+            Box::<crate::model::flip_imp::FlipTool>::default(),
             Box::<crate::model::draw_rectangle_imp::DrawRectangleTool>::default(),
             Box::<crate::model::draw_rectangle_filled_imp::DrawRectangleFilledTool>::default(),
             Box::<crate::model::draw_ellipse_imp::DrawEllipseTool>::default(),

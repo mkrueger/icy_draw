@@ -147,6 +147,8 @@ tool-select-background=Hintergrund
 tool-select-description=Shift halten, um Auswahl hinzuzufügen. Control/Cmd zum Entfernen.
 
 tool-fill-exact_match_label=Exakte Übereinstimmung
+tool-flip_horizontal=Horizontal
+tool-flip_vertical=Vertical
 
 toolbar-new=Neu
 

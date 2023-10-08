@@ -143,6 +143,8 @@ tool-select-background=Background
 tool-select-description=Hold shift to add to a selection. Control/Cmd to remove.
 
 tool-fill-exact_match_label=Exact match
+tool-flip_horizontal=Horizontal
+tool-flip_vertical=Vertical
 
 toolbar-new=New
 
