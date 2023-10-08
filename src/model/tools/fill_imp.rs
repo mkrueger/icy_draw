@@ -4,37 +4,35 @@ use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Size, TextPane};
 
-use crate::{paint::ColorMode, AnsiEditor, Message};
+use crate::{
+    paint::{BrushMode, ColorMode},
+    AnsiEditor, Message,
+};
 
-use super::{brush_imp::draw_glyph, Position, Tool};
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum FillType {
-    Character,
-    Colorize,
-}
+use super::{Position, Tool};
 
 pub struct FillTool {
     color_mode: ColorMode,
 
     char_code: std::rc::Rc<std::cell::RefCell<char>>,
-    fill_type: FillType,
+    fill_type: BrushMode,
     use_exact_matching: bool,
 }
 
 impl FillTool {
     pub fn new() -> Self {
+        let c = Rc::new(RefCell::new('\u{00B0}'));
         Self {
             color_mode: ColorMode::Both,
-            char_code: Rc::new(RefCell::new('\u{00B0}')),
-            fill_type: crate::model::fill_imp::FillType::Character,
+            char_code: c.clone(),
+            fill_type: BrushMode::Char(c),
             use_exact_matching: false,
         }
     }
 }
 #[allow(clippy::struct_excessive_bools)]
 struct FillOperation {
-    fill_type: FillType,
+    fill_type: BrushMode,
     color_mode: ColorMode,
     use_exact_matching: bool,
 
@@ -61,7 +59,7 @@ impl FillOperation {
         Self {
             size,
             color_mode: fill_tool.color_mode,
-            fill_type: fill_tool.fill_type,
+            fill_type: fill_tool.fill_type.clone(),
             use_selection,
             base_char,
             offset,
@@ -81,19 +79,20 @@ impl FillOperation {
 
             let mut repl_ch = cur_char;
 
-            match self.fill_type {
-                FillType::Character => {
+            match &self.fill_type {
+                BrushMode::Char(_) => {
                     if self.use_exact_matching && cur_char != self.base_char || !self.use_exact_matching && cur_char.ch != self.base_char.ch {
                         return;
                     }
                     repl_ch.ch = self.new_char.ch;
                     repl_ch.set_font_page(self.new_char.get_font_page());
                 }
-                FillType::Colorize => {
+                BrushMode::Colorize => {
                     if self.use_exact_matching && cur_char != self.base_char || !self.use_exact_matching && cur_char.attribute != self.base_char.attribute {
                         return;
                     }
                 }
+                _ => {}
             }
             if self.color_mode.use_fore() {
                 repl_ch.attribute.set_foreground(self.new_char.attribute.get_foreground());
@@ -128,20 +127,11 @@ impl Tool for FillTool {
         false
     }
     fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
-        let mut result = None;
         self.color_mode.show_ui(ui);
-
-        ui.horizontal(|ui| {
-            ui.radio_value(&mut self.fill_type, FillType::Character, fl!(crate::LANGUAGE_LOADER, "tool-character"));
-            if let Some(editor) = editor_opt {
-                result = draw_glyph(ui, editor, &self.char_code);
-            }
-        });
-        ui.radio_value(&mut self.fill_type, FillType::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
 
         ui.checkbox(&mut self.use_exact_matching, fl!(crate::LANGUAGE_LOADER, "tool-fill-exact_match_label"));
 
-        result
+        self.fill_type.show_ui(ui, editor_opt, self.char_code.clone(), crate::paint::BrushUi::Fill)
     }
 
     fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, _editor: &mut AnsiEditor, _cur: Position, _cur_abs: Position) -> egui::Response {
@@ -159,7 +149,7 @@ impl Tool for FillTool {
             } else {
                 return None;
             };
-            if self.color_mode.use_fore() || self.color_mode.use_back() || matches!(self.fill_type, FillType::Character) {
+            if self.color_mode.use_fore() || self.color_mode.use_back() || matches!(self.fill_type, BrushMode::Char(_)) {
                 let _undo = editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-bucket-fill"));
                 let mut op = FillOperation::new(self, editor, ch, AttributedChar::new(*self.char_code.borrow(), attr));
                 op.fill(editor, pos);

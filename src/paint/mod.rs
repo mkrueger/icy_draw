@@ -1,9 +1,10 @@
 use eframe::egui::{self, RichText};
+use egui::{load::SizedTexture, Color32, Image, Rect, Rounding, Sense, Stroke, TextureHandle, Vec2, Widget};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Position, TextAttribute, TextPane, TheDrawFont};
 use icy_engine_egui::BufferView;
 
-use crate::{model::brush_imp::draw_glyph, AnsiEditor, Message};
+use crate::{create_font_image, create_hover_image, AnsiEditor, Message};
 
 use self::half_block::get_half_block;
 
@@ -23,6 +24,36 @@ pub enum BrushMode {
     Char(std::rc::Rc<std::cell::RefCell<char>>),
     Shade,
     Colorize,
+    Custom,
+}
+
+static mut HOVER_CHAR: Option<char> = None;
+static mut FONT_CHECKSUM: u32 = 0;
+static mut FONT_IMG: Option<TextureHandle> = None;
+static mut SEL_CHAR: usize = 0;
+
+pub enum BrushUi {
+    All,
+    HideOutline,
+    Brush,
+    Fill,
+}
+impl BrushUi {
+    fn has_half_block(&self) -> bool {
+        matches!(self, BrushUi::All | BrushUi::HideOutline)
+    }
+
+    fn has_outline(&self) -> bool {
+        matches!(self, BrushUi::All)
+    }
+
+    fn has_full_block(&self) -> bool {
+        matches!(self, BrushUi::All | BrushUi::HideOutline)
+    }
+
+    fn has_shade(&self) -> bool {
+        !matches!(self, BrushUi::Fill)
+    }
 }
 
 impl BrushMode {
@@ -31,13 +62,16 @@ impl BrushMode {
         ui: &mut egui::Ui,
         editor_opt: Option<&AnsiEditor>,
         char_code: std::rc::Rc<std::cell::RefCell<char>>,
-        show_outline: bool,
+        brush_ui: BrushUi,
     ) -> Option<Message> {
         let mut msg = None;
-        ui.radio_value(self, BrushMode::HalfBlock, fl!(crate::LANGUAGE_LOADER, "tool-half-block"));
-        ui.radio_value(self, BrushMode::Block, fl!(crate::LANGUAGE_LOADER, "tool-full-block"));
-
-        if show_outline {
+        if brush_ui.has_half_block() {
+            ui.radio_value(self, BrushMode::HalfBlock, fl!(crate::LANGUAGE_LOADER, "tool-half-block"));
+        }
+        if brush_ui.has_full_block() {
+            ui.radio_value(self, BrushMode::Block, fl!(crate::LANGUAGE_LOADER, "tool-full-block"));
+        }
+        if brush_ui.has_outline() {
             ui.horizontal(|ui| {
                 ui.radio_value(self, BrushMode::Outline, fl!(crate::LANGUAGE_LOADER, "tool-outline"));
                 if ui.button(fl!(crate::LANGUAGE_LOADER, "font_tool_select_outline_button")).clicked() {
@@ -46,17 +80,85 @@ impl BrushMode {
             });
         }
 
+        if brush_ui.has_shade() {
+            ui.radio_value(self, BrushMode::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
+        }
+
+        ui.radio_value(self, BrushMode::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
+
         ui.horizontal(|ui| {
             ui.radio_value(self, BrushMode::Char(char_code.clone()), fl!(crate::LANGUAGE_LOADER, "tool-character"));
-            if let Some(editor) = editor_opt {
+            /*  if let Some(editor) = editor_opt {
                 let msg2 = draw_glyph(ui, editor, &char_code);
                 if msg.is_none() {
                     msg = msg2;
                 }
-            }
+            }*/
         });
-        ui.radio_value(self, BrushMode::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
-        ui.radio_value(self, BrushMode::Colorize, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
+
+        if let Some(editor) = editor_opt {
+            let scale = 1.5;
+            let lock = &editor.buffer_view.lock();
+            let font_page = lock.get_caret().get_font_page();
+            let font = lock.get_buffer().get_font(font_page).unwrap();
+
+            unsafe {
+                if FONT_CHECKSUM != font.get_checksum() || FONT_IMG.is_none() || SEL_CHAR != *char_code.borrow() as usize {
+                    FONT_CHECKSUM = font.get_checksum();
+                    let attr = TextAttribute::new(8, 0);
+                    let sel_attr = TextAttribute::new(15, 0);
+                    SEL_CHAR = *char_code.borrow() as usize;
+                    FONT_IMG = Some(create_font_image(ui.ctx(), font, 16, attr, sel_attr, SEL_CHAR));
+                }
+            }
+            let img_handle = unsafe { FONT_IMG.as_ref().unwrap() };
+            let sized_texture: SizedTexture = img_handle.into();
+            let image = Image::from_texture(sized_texture).fit_to_original_size(scale).sense(Sense::click());
+            let response = image.ui(ui);
+
+            let fw = scale * font.size.width as f32;
+            let fh = scale * font.size.height as f32;
+            let x = *char_code.borrow() as u32;
+            let stroke = Stroke::new(1.0, Color32::from_rgba_premultiplied(255, 255, 255, 175));
+            let min = response.rect.min;
+            let r = Rect::from_min_size(
+                min + Vec2::new((fw * (x % 16) as f32).floor() + 0.5, (fh * (x / 16) as f32).floor() + 0.5),
+                Vec2::new(fw, fh),
+            );
+            ui.painter().rect_stroke(r, Rounding::ZERO, stroke);
+
+            unsafe {
+                HOVER_CHAR = None;
+            }
+            if response.hovered() {
+                if let Some(pos) = response.hover_pos() {
+                    let pos = pos - response.rect.min;
+                    let ch = (pos.x / fw) as usize + 16 * (pos.y / fh) as usize;
+                    let ch = unsafe { char::from_u32_unchecked(ch as u32) };
+                    let hover_char_image = create_hover_image(ui.ctx(), font, ch, 14);
+
+                    let x = (ch as usize) % 16;
+                    let y = (ch as usize) / 16;
+
+                    let rect = Rect::from_min_size(response.rect.min + Vec2::new(x as f32 * fw, y as f32 * fh), Vec2::new(fw, fh));
+                    let sized_texture: SizedTexture = (&hover_char_image).into();
+                    let image = Image::from_texture(sized_texture);
+                    image.paint_at(ui, rect.expand(2.0));
+
+                    unsafe {
+                        HOVER_CHAR = Some(ch);
+                    }
+                }
+            }
+            if response.clicked() {
+                unsafe {
+                    if let Some(ch) = HOVER_CHAR {
+                        *char_code.borrow_mut() = ch;
+                        *self = BrushMode::Char(char_code.clone());
+                    }
+                }
+            }
+        }
 
         msg
     }
@@ -199,6 +301,7 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
         BrushMode::Colorize => {
             layer.set_char(text_pos, AttributedChar::new(ch.ch, attribute));
         }
+        _ => {}
     }
 }
 

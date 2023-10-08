@@ -21,7 +21,7 @@ pub struct CharTableToolWindow {
 impl CharTableToolWindow {
     pub fn new(ctx: &Context, buffer_width: usize) -> Self {
         let font = BitFont::default();
-        let char_table = create_font_image(ctx, &font, buffer_width);
+        let char_table = create_font_image(ctx, &font, buffer_width, TextAttribute::default(), TextAttribute::default(), 0);
         let hover_char_image = create_hover_image(ctx, &font, ' ', 14);
         Self {
             font,
@@ -38,7 +38,7 @@ impl CharTableToolWindow {
 
     pub fn set_font(&mut self, ctx: &Context, font: BitFont) {
         self.font = font;
-        self.char_table = create_font_image(ctx, &self.font, self.buffer_width);
+        self.char_table = create_font_image(ctx, &self.font, self.buffer_width, TextAttribute::default(), TextAttribute::default(), 0);
         self.hover_char = None;
     }
 
@@ -121,7 +121,7 @@ impl CharTableToolWindow {
         if let Some(cur_font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
             if cur_font.name != self.font.name {
                 self.font = cur_font.clone();
-                self.char_table = create_font_image(ui.ctx(), &self.font, self.buffer_width);
+                self.char_table = create_font_image(ui.ctx(), &self.font, self.buffer_width, TextAttribute::default(), TextAttribute::default(), 0);
                 self.hover_char = None;
             }
         }
@@ -186,19 +186,29 @@ impl CharTableToolWindow {
     }
 }
 
-fn create_font_image(ctx: &Context, font: &BitFont, buffer_width: usize) -> TextureHandle {
+pub fn create_font_image(
+    ctx: &Context,
+    font: &BitFont,
+    buffer_width: usize,
+    attribute: TextAttribute,
+    selected_attribute: TextAttribute,
+    selected: usize,
+) -> TextureHandle {
     let mut buffer = Buffer::new((buffer_width, 256 / buffer_width));
     buffer.set_font(0, font.clone());
     for ch in 0..256 {
         buffer.layers[0].set_char(
             (ch % buffer_width, ch / buffer_width),
-            AttributedChar::new(unsafe { char::from_u32_unchecked(ch as u32) }, TextAttribute::default()),
+            AttributedChar::new(
+                unsafe { char::from_u32_unchecked(ch as u32) },
+                if ch == selected { selected_attribute } else { attribute },
+            ),
         );
     }
     create_image(ctx, &buffer)
 }
 
-fn create_hover_image(ctx: &Context, font: &BitFont, ch: char, color: u32) -> TextureHandle {
+pub fn create_hover_image(ctx: &Context, font: &BitFont, ch: char, color: u32) -> TextureHandle {
     let mut buffer = Buffer::new((1, 1));
     buffer.set_font(0, font.clone());
     let mut attr = TextAttribute::default();

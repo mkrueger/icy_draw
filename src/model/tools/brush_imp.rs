@@ -1,25 +1,17 @@
-use eframe::{
-    egui::{self, Response, RichText, Sense},
-    epaint::{Color32, Pos2, Rect, Rounding, Vec2},
-};
+use eframe::egui::Response;
 use egui::{load::SizedTexture, Image, TextureHandle, Widget};
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Layer, TextPane};
 use icy_engine_egui::TerminalCalc;
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{create_image, paint::ColorMode, AnsiEditor, Event, Message};
+use crate::{
+    create_image,
+    paint::{BrushMode, ColorMode},
+    AnsiEditor, Event, Message,
+};
 
 use super::{Position, Tool};
-
-#[derive(PartialEq, Eq, Default)]
-pub enum BrushType {
-    #[default]
-    Shade,
-    Solid,
-    Color,
-    Custom,
-}
 
 pub static mut CUSTOM_BRUSH: Option<Layer> = None;
 
@@ -32,7 +24,7 @@ pub struct BrushTool {
     cur_pos: Position,
     custom_brush: Option<Layer>,
     image: Option<TextureHandle>,
-    brush_type: BrushType,
+    brush_mode: BrushMode,
 }
 
 impl Default for BrushTool {
@@ -43,7 +35,7 @@ impl Default for BrushTool {
             undo_op: None,
             custom_brush: None,
             image: None,
-            brush_type: crate::model::brush_imp::BrushType::Shade,
+            brush_mode: BrushMode::Shade,
             char_code: Rc::new(RefCell::new('\u{00B0}')),
             cur_pos: Position::default(),
         }
@@ -56,7 +48,7 @@ impl BrushTool {
         let center = pos + mid;
         let gradient = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
         let caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
-        if matches!(self.brush_type, BrushType::Custom) {
+        if matches!(self.brush_mode, BrushMode::Custom) {
             editor.join_overlay("brush");
             return;
         }
@@ -87,8 +79,8 @@ impl BrushTool {
                     attribute.set_background(caret_attr.get_background());
                 }
 
-                match self.brush_type {
-                    BrushType::Shade => {
+                match &self.brush_mode {
+                    BrushMode::Shade => {
                         let mut char_code = gradient[0];
                         if ch.ch == gradient[gradient.len() - 1] {
                             char_code = gradient[gradient.len() - 1];
@@ -102,13 +94,13 @@ impl BrushTool {
                         }
                         editor.set_char(pos, AttributedChar::new(char_code, attribute));
                     }
-                    BrushType::Solid => {
-                        editor.set_char(center + Position::new(x, y), AttributedChar::new(*self.char_code.borrow(), attribute));
+                    BrushMode::Char(ch) => {
+                        editor.set_char(center + Position::new(x, y), AttributedChar::new(*ch.borrow(), attribute));
                     }
-                    BrushType::Color => {
+                    BrushMode::Colorize => {
                         editor.set_char(pos, AttributedChar::new(ch.ch, attribute));
                     }
-                    BrushType::Custom => {}
+                    _ => {}
                 }
             }
         }
@@ -124,22 +116,24 @@ impl Tool for BrushTool {
         false
     }
 
-    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, buffer_opt: Option<&AnsiEditor>) -> Option<Message> {
-        let mut result = None;
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         self.color_mode.show_ui(ui);
 
         ui.horizontal(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
             ui.add(egui::DragValue::new(&mut self.size).clamp_range(1..=20).speed(1));
         });
-        ui.radio_value(&mut self.brush_type, BrushType::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
-        ui.horizontal(|ui| {
-            ui.radio_value(&mut self.brush_type, BrushType::Solid, fl!(crate::LANGUAGE_LOADER, "tool-character"));
-            if let Some(buffer_opt) = buffer_opt {
-                result = draw_glyph(ui, buffer_opt, &self.char_code);
-            }
-        });
-        ui.radio_value(&mut self.brush_type, BrushType::Color, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
+        /*
+                ui.radio_value(&mut self.brush_type, BrushType::Shade, fl!(crate::LANGUAGE_LOADER, "tool-shade"));
+                ui.horizontal(|ui| {
+                    ui.radio_value(&mut self.brush_type, BrushType::Solid, fl!(crate::LANGUAGE_LOADER, "tool-character"));
+                    if let Some(buffer_opt) = buffer_opt {
+                        result = draw_glyph(ui, buffer_opt, &self.char_code);
+                    }
+                });
+                ui.radio_value(&mut self.brush_type, BrushType::Color, fl!(crate::LANGUAGE_LOADER, "tool-colorize"));
+        */
+        let result = self.brush_mode.show_ui(ui, editor_opt, self.char_code.clone(), crate::paint::BrushUi::Brush);
 
         unsafe {
             if CUSTOM_BRUSH.is_some() {
@@ -157,7 +151,7 @@ impl Tool for BrushTool {
             buf.layers.push(layer);
             self.image = Some(create_image(ctx, &buf));
 
-            ui.radio_value(&mut self.brush_type, BrushType::Custom, fl!(crate::LANGUAGE_LOADER, "tool-custom-brush"));
+            ui.radio_value(&mut self.brush_mode, BrushMode::Custom, fl!(crate::LANGUAGE_LOADER, "tool-custom-brush"));
             if let Some(image) = &self.image {
                 let sized_texture: SizedTexture = image.into();
                 let w = ui.available_width() - 16.0;
@@ -180,7 +174,7 @@ impl Tool for BrushTool {
     }
 
     fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, cur_abs: Position) -> egui::Response {
-        if matches!(self.brush_type, BrushType::Custom) {
+        if matches!(self.brush_mode, BrushMode::Custom) {
             editor.clear_overlay_layer();
             let lock = &mut editor.buffer_view.lock();
             if let Some(layer) = lock.get_buffer_mut().get_overlay_layer() {
@@ -247,50 +241,4 @@ impl Tool for BrushTool {
         let pos = self.cur_pos;
         fl!(crate::LANGUAGE_LOADER, "toolbar-position", line = (pos.y + 1), column = (pos.x + 1))
     }
-}
-
-pub fn draw_glyph(ui: &mut egui::Ui, editor: &AnsiEditor, ch: &Rc<RefCell<char>>) -> Option<Message> {
-    let font_page = editor.buffer_view.lock().get_caret().get_font_page();
-    if let Some(font) = editor.buffer_view.lock().get_buffer().get_font(font_page) {
-        let scale = 1.5;
-        let (id, stroke_rect) = ui.allocate_space(Vec2::new(scale * font.size.width as f32, scale * font.size.height as f32));
-        let response = ui.interact(stroke_rect, id, Sense::click());
-
-        let col = if response.hovered() { Color32::WHITE } else { Color32::GRAY };
-
-        if response.clicked() {
-            return Some(crate::Message::ShowCharacterSelectionDialog(ch.clone()));
-        }
-        let painter = ui.painter_at(stroke_rect);
-        painter.rect_filled(stroke_rect, Rounding::ZERO, Color32::BLACK);
-        let s = font.size;
-        let ch = *ch.borrow();
-        if let Some(glyph) = font.get_glyph(ch) {
-            for y in 0..s.height {
-                for x in 0..s.width {
-                    if glyph.data[y as usize] & (128 >> x) != 0 {
-                        painter.rect_filled(
-                            Rect::from_min_size(
-                                Pos2::new(stroke_rect.left() + x as f32 * scale, stroke_rect.top() + y as f32 * scale),
-                                Vec2::new(scale, scale),
-                            ),
-                            Rounding::ZERO,
-                            col,
-                        );
-                    }
-                }
-            }
-            response.on_hover_ui(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-char-label")).small());
-                    ui.label(RichText::new(format!("{0}/0x{0:02X}", ch as u32)).small().color(Color32::WHITE));
-                });
-                ui.horizontal(|ui| {
-                    ui.label(RichText::new(fl!(crate::LANGUAGE_LOADER, "glyph-font-label")).small());
-                    ui.label(RichText::new(font.name.to_string()).small().color(Color32::WHITE));
-                });
-            });
-        }
-    }
-    None
 }

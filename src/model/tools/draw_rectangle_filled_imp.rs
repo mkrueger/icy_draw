@@ -40,7 +40,8 @@ impl Tool for DrawRectangleFilledTool {
 
     fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
         self.color_mode.show_ui(ui);
-        self.draw_mode.show_ui(ui, editor_opt, self.char_code.clone(), false)
+        self.draw_mode
+            .show_ui(ui, editor_opt, self.char_code.clone(), crate::paint::BrushUi::HideOutline)
     }
 
     fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, _editor: &mut AnsiEditor, _cur: Position, _cur_abs: Position) -> egui::Response {
