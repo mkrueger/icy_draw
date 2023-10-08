@@ -134,9 +134,12 @@ impl LayerToolWindow {
                             let view = self.get_buffer_view(i);
                             {
                                 view.lock().get_buffer_mut().layers.clear();
-                                if let Some(layer) = editor.buffer_view.lock().get_buffer().layers.get(i) {
+                                let lock = &editor.buffer_view.lock();
+                                if let Some(layer) = lock.get_buffer().layers.get(i) {
                                     let mut l = layer.clone();
                                     l.is_visible = true;
+                                    view.lock().get_buffer_mut().set_font_table(lock.get_buffer().get_font_table());
+                                    view.lock().get_buffer_mut().palette = lock.get_buffer().palette.clone();
                                     view.lock().get_buffer_mut().layers.push(l);
                                     view.lock().get_edit_state_mut().is_buffer_dirty = true;
                                 }
