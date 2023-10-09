@@ -85,6 +85,7 @@ Input/Output
 | `bg_rgb(#rrggbb)`                      | u32     | Sets the caret bg rgb color with html style notation , returns color palette number
 | `set_char(x, y, string)`               | -       | Sets a specific char at a given position (uses caret color)
 | `get_char(x, y)`                       | string  | Gets a specific char at a given position
+| `clear_char(x, y)`                     | -       | Clears a char (sets to invisible)
 | `pickup_char(x, y)`                    | string  | Like get char but sets all attributes to the char attributes
 | `get_fg(x, y)`                         | u32     | Gets the foreground at a given positon
 | `set_fg(x, y, fg)`                     | -       | Sets a specific foreground at a given layer position

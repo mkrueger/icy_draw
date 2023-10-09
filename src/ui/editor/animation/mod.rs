@@ -409,7 +409,7 @@ impl Document for AnimationEditor {
             }
 
             if let Some(range) = r.cursor_range {
-                if let Some((i, ch)) = self.txt.char_indices().nth(range.as_sorted_char_range().start) {
+                if let Some((i, _)) = self.txt.char_indices().nth(range.as_sorted_char_range().start) {
                     self.cursor_index = i;
                 } else {
                     self.cursor_index = 0;
