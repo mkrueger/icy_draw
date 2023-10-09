@@ -294,7 +294,7 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
     }
 
     buffer_view.get_edit_state_mut().is_buffer_dirty = true;
-    let Some(layer) = buffer_view.get_buffer_mut().get_overlay_layer() else {
+    let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() else {
         return;
     };
 

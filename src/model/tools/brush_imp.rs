@@ -177,7 +177,7 @@ impl Tool for BrushTool {
         if matches!(self.brush_mode, BrushMode::Custom) {
             editor.clear_overlay_layer();
             let lock = &mut editor.buffer_view.lock();
-            if let Some(layer) = lock.get_buffer_mut().get_overlay_layer() {
+            if let Some(layer) = lock.get_edit_state_mut().get_overlay_layer() {
                 if let Some(brush) = &self.custom_brush {
                     let mid = Position::new(-(brush.get_width() / 2), -(brush.get_height() / 2));
                     self.cur_pos = cur + mid;

@@ -683,7 +683,7 @@ impl AnsiEditor {
     pub(crate) fn clear_overlay_layer(&self) {
         let cur_offset = self.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().get_offset();
 
-        if let Some(layer) = self.buffer_view.lock().get_buffer_mut().get_overlay_layer() {
+        if let Some(layer) = self.buffer_view.lock().get_edit_state_mut().get_overlay_layer() {
             layer.set_offset(cur_offset);
             layer.clear();
         }
