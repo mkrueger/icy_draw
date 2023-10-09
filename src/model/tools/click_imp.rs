@@ -6,7 +6,7 @@ use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle, TextPane};
 use icy_engine_egui::TerminalCalc;
 
-use crate::{model::MKey, AnsiEditor, CharTableToolWindow, Message, Document};
+use crate::{model::MKey, AnsiEditor, CharTableToolWindow, Document, Message};
 
 use super::{Event, MModifiers, Position, Tool};
 
@@ -72,7 +72,6 @@ impl Tool for ClickTool {
                 doc.lock().paste_char(ui, ch);
             }
         });
-
 
         None
     }

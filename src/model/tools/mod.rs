@@ -25,7 +25,7 @@ use i18n_embed_fl::fl;
 use icy_engine::Position;
 use icy_engine_egui::TerminalCalc;
 
-use crate::{AnsiEditor, Event, Message, Document};
+use crate::{AnsiEditor, Document, Event, Message};
 
 #[derive(Copy, Clone, Debug)]
 pub enum MKey {

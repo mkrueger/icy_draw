@@ -658,8 +658,7 @@ impl<'a> eframe::App for MainWindow<'a> {
                     ui.horizontal(|ui| {
                         ui.add_space(4.0);
                         ui.vertical(|ui| {
-                            if let Some(doc) = self.get_active_document() 
-                            {
+                            if let Some(doc) = self.get_active_document() {
                                 let mut shown = false;
                                 if let Some(editor) = doc.lock().get_ansi_editor_mut() {
                                     shown = true;
@@ -667,7 +666,7 @@ impl<'a> eframe::App for MainWindow<'a> {
                                 }
                                 if !shown {
                                     tool_result = tool.show_doc_ui(ctx, ui, doc.clone());
-                                }    
+                                }
                             }
                         });
                     });

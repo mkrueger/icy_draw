@@ -65,8 +65,7 @@ pub trait Document: UndoHandler + ClipboardHandler {
     fn can_paste_char(&self) -> bool {
         false
     }
-    fn paste_char(&mut self, _ui: &mut eframe::egui::Ui, _ch: char) {        
-    }
+    fn paste_char(&mut self, _ui: &mut eframe::egui::Ui, _ch: char) {}
 
     fn inform_save(&mut self) {}
 }

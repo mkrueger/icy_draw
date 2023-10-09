@@ -364,7 +364,11 @@ impl Tool for FontTool {
                                 }
                             }
                         }
-                        stack[reverse_count].try_clone()
+                        if reverse_count < stack.len() {
+                            stack[reverse_count].try_clone()
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     };

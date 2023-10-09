@@ -12,7 +12,7 @@ use eframe::{
 use egui::{Image, ProgressBar};
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
-use icy_engine::{Buffer, EngineResult, Size, ascii, AttributedChar, TextAttribute, BufferParser};
+use icy_engine::{ascii, AttributedChar, Buffer, BufferParser, EngineResult, Size, TextAttribute};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
 
 use self::encoding::{start_encoding_thread, ENCODERS};
@@ -414,7 +414,6 @@ impl Document for AnimationEditor {
                 } else {
                     self.cursor_index = 0;
                 }
-
             }
             if r.response.changed {
                 self.shedule_update = true;
