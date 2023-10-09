@@ -1,3 +1,4 @@
+#![allow(clippy::comparison_chain)]
 use icy_engine::Position;
 use icy_engine_egui::BufferView;
 
@@ -35,7 +36,97 @@ fn get_line_points(from: Position, to: Position) -> Vec<Position> {
 pub fn draw_line(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
     let from = from.into();
     let to = to.into();
-    for point in get_line_points(from, to) {
-        plot_point(buffer_view, point, mode.clone(), color_mode, PointRole::Line);
+    let mut v = get_line_points(from, to);
+    if v.is_empty() {
+        return;
+    }
+    if !matches!(mode, BrushMode::Outline) {
+        for point in get_line_points(from, to) {
+            plot_point(buffer_view, point, mode.clone(), color_mode, PointRole::Line);
+        }
+        return;
+    }
+    let mut n = Vec::new();
+    for pt in v {
+        let p = Position::new(pt.x, 2 * (pt.y / 2));
+        if let Some(l) = n.last() {
+            if p == *l {
+                continue;
+            }
+        }
+        n.push(p);
+    }
+    v = n;
+    let mut last = v[0];
+    println!("------------");
+    let mut i = 0;
+    while i < v.len() {
+        let is_last = i + 1 >= v.len();
+        let next = if is_last {
+            Position::new(v[i].x + v[i].x - last.x, v[i].y + v[i].y + last.y)
+        } else {
+            v[i + 1]
+        };
+        let point = v[i];
+        last = point;
+        let cy2 = point.y;
+        let ny2 = next.y;
+
+        let role = if point.x > next.x {
+            // Left side
+            if ny2 < cy2 {
+                println!("plot ne corner above");
+                plot_point(buffer_view, point + Position::new(0, -1), mode.clone(), color_mode, PointRole::NECorner);
+                PointRole::SWCorner
+            } else if ny2 > cy2 {
+                println!("plot se corner below");
+                plot_point(buffer_view, point + Position::new(0, 2), mode.clone(), color_mode, PointRole::SECorner);
+                PointRole::NWCorner
+            } else {
+                PointRole::TopSide
+            }
+        } else if point.x < next.x {
+            // Right Side
+            if ny2 < cy2 {
+                println!("plot nw corner above");
+                plot_point(buffer_view, point + Position::new(0, -1), mode.clone(), color_mode, PointRole::NWCorner);
+                PointRole::SECorner
+            } else if ny2 > cy2 {
+                println!("plot sw corner below");
+                plot_point(buffer_view, point + Position::new(0, 2), mode.clone(), color_mode, PointRole::SWCorner);
+                PointRole::NECorner
+            } else {
+                // telel
+                if point.x < next.x {
+                    if point.y == next.y {
+                        println!("top side right 1");
+                        PointRole::TopSide
+                    } else {
+                        println!("plot ne corner right");
+                        i += 1;
+                        plot_point(buffer_view, point + Position::new(1, 0), mode.clone(), color_mode, PointRole::NECorner);
+                        PointRole::SWCorner
+                    }
+                } else if point.x > next.x {
+                    println!("plot nw corner left");
+                    plot_point(buffer_view, point + Position::new(-1, 0), mode.clone(), color_mode, PointRole::NWCorner);
+                    PointRole::SECorner
+                } else {
+                    if last.y == point.y {
+                        println!("top side right 2");
+                        PointRole::TopSide
+                    } else {
+                        println!("plot ne corner right");
+                        plot_point(buffer_view, point + Position::new(1, 0), mode.clone(), color_mode, PointRole::NECorner);
+                        PointRole::SWCorner
+                    }
+                }
+            }
+        } else {
+            PointRole::LeftSide
+        };
+        println!("{point} : {role:?}");
+        plot_point(buffer_view, point, mode.clone(), color_mode, role);
+        i += 1;
     }
 }

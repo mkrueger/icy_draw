@@ -58,6 +58,7 @@ impl CharTableToolWindow {
                 let response = ui.interact(rect, id, Sense::click());
                 let r = Rect::from_min_size(Pos2::new(rect.left(), rect.top()), Vec2::new(width, height));
                 let image = Image::from_texture(sized_texture);
+
                 image.paint_at(ui, r);
 
                 let fw = scale * self.font.size.width as f32;

@@ -188,9 +188,11 @@ impl Document for AnsiEditor {
             request_focus: self.request_focus,
             ..Default::default()
         };
-        self.request_focus = false;
         let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
 
+        if calc.has_focus {
+            self.request_focus = false;
+        }
         let response = response.context_menu(|ui| {
             message = terminal_context_menu(self, &options.commands, ui);
         });

@@ -318,27 +318,7 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
         }
 
         BrushMode::Outline => {
-            if overlay_ch.is_visible() {
-                return;
-            }
-            let ch = match point_role {
-                PointRole::NWCorner => 'E',
-                PointRole::NECorner => 'F',
-                PointRole::SWCorner => 'K',
-                PointRole::SECorner => 'L',
-                PointRole::LeftSide => 'C',
-                PointRole::RightSide => 'D',
-                PointRole::TopSide => 'A',
-                PointRole::BottomSide => 'B',
-                _ => {
-                    return;
-                }
-            };
-            let outline_style = crate::Settings::get_font_outline_style();
-            layer.set_char(
-                text_pos,
-                AttributedChar::new(TheDrawFont::transform_outline(outline_style, ch as u8) as char, attribute),
-            );
+            layer.set_char(text_pos, AttributedChar::new(get_outline_char(ch, point_role), attribute));
         }
 
         BrushMode::Shade => {
@@ -362,7 +342,27 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
     }
 }
 
+fn get_outline_char(ch: AttributedChar, point_role: PointRole) -> char {
+    let ch = match point_role {
+        PointRole::NWCorner => 'E',
+        PointRole::NECorner => 'F',
+        PointRole::SWCorner => 'K',
+        PointRole::SECorner => 'L',
+        PointRole::LeftSide => 'C',
+        PointRole::RightSide => 'D',
+        PointRole::TopSide => 'A',
+        PointRole::BottomSide => 'B',
+        _ => {
+            return ' ';
+        }
+    };
+    let outline_style = crate::Settings::get_font_outline_style();
+    TheDrawFont::transform_outline(outline_style, ch as u8) as char
+}
+
 pub static SHADE_GRADIENT: [char; 4] = ['\u{00B0}', '\u{00B1}', '\u{00B2}', '\u{00DB}'];
+
+#[derive(Debug)]
 pub enum PointRole {
     NWCorner,
     NECorner,
