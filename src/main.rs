@@ -2,6 +2,8 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
+use std::path::PathBuf;
+
 use eframe::egui;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 mod model;
@@ -43,13 +45,20 @@ static LANGUAGE_LOADER: Lazy<FluentLanguageLoader> = Lazy::new(|| {
     let _result = i18n_embed::select(&loader, &Localizations, &requested_languages);
     loader
 });
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+pub struct Cli {
+    path: Option<PathBuf>,
+}
 
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
+    use eframe::IconData;
     use std::fs;
 
-    use eframe::IconData;
+    let args = Cli::parse();
 
     use crate::plugins::Plugin;
     let options = eframe::NativeOptions {
@@ -151,7 +160,20 @@ fn main() {
 
     log::info!("Starting iCY DRAW {}", VERSION);
     Plugin::read_plugin_directory();
-    if let Err(err) = eframe::run_native(&DEFAULT_TITLE, options, Box::new(|cc| Box::new(MainWindow::new(cc)))) {
+    if let Err(err) = eframe::run_native(
+        &DEFAULT_TITLE,
+        options,
+        Box::new(|cc| {
+            let mut window = MainWindow::new(cc);
+            if let Some(mut path) = args.path {
+                if path.is_relative() {
+                    path = std::env::current_dir().unwrap().join(path);
+                }
+                window.open_file(&path, false);
+            }
+            Box::new(window)
+        }),
+    ) {
         log::error!("Error returned by run_native: {}", err);
     }
     log::info!("shutting down.");
