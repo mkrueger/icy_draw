@@ -100,6 +100,7 @@ menu-guides-off=Aus
 menu-zoom-fit_size=Größe anpassen
 menu-show_layer_borders=Ebenenrahmen anzeigen
 menu-show_line_numbers=Zeilennummern anzeigen
+menu-toggle_grid=Gitter/Linien umschalten
 
 menu-pick_attribute_under_caret=Attribut aufheben
 menu-default_color=Standardfarbe

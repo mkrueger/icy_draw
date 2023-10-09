@@ -560,4 +560,5 @@ keys![
     (prev_bg_color, "menu-prev_bg_color", PreviousBgColor, BufferOpenState, ArrowLeft, CTRL),
     (lga_font, "menu-9px-font", ToggleLGAFont, LGAFontState),
     (aspect_ratio, "menu-aspect-ratio", ToggleAspectRatio, AspectRatioState),
+    (toggle_grid_guides, "menu-toggle_grid", ToggleGrid, BufferOpenState),
 ];

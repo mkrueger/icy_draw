@@ -518,6 +518,7 @@ impl<'a> MainWindow<'a> {
                         ui.close_menu();
                     }
                 });
+                self.commands[0].toggle_grid_guides.ui(ui, &mut result);
 
                 self.commands[0].show_layer_borders.ui(ui, &mut result);
                 self.commands[0].show_line_numbers.ui(ui, &mut result);

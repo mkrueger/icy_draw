@@ -56,7 +56,7 @@ menu-scroll_area_up=Scroll Area Up
 menu-scroll_area_down=Scroll Area Down
 menu-scroll_area_left=Scroll Area Left
 menu-scroll_area_right=Scroll Area Right
-menu-mirror_mode=Mirror mode
+menu-mirror_mode=Mirror Mode
 menu-area_operations=Area
 
 menu-selection=Selection
@@ -96,6 +96,7 @@ menu-guides-off=Off
 menu-zoom-fit_size=Fit Size
 menu-show_layer_borders=Show Layer Borders
 menu-show_line_numbers=Show Line Numbers
+menu-toggle_grid=Toggle Grid/Guides
 
 menu-pick_attribute_under_caret=Pick up Attribute
 menu-default_color=Default Color

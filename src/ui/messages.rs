@@ -150,6 +150,7 @@ pub enum Message {
     AddFont(Box<BitFont>),
     AddAnsiFont(usize),
     SetSauceFont(String),
+    ToggleGrid,
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -815,6 +816,7 @@ impl<'a> MainWindow<'a> {
                         editor.guide = None;
                     } else {
                         editor.guide = Some(Vec2::new(x as f32, y as f32));
+                        editor.buffer_view.lock().set_show_guide(true);
                     }
                     None
                 });
@@ -825,6 +827,7 @@ impl<'a> MainWindow<'a> {
                         editor.raster = None;
                     } else {
                         editor.raster = Some(Vec2::new(x as f32, y as f32));
+                        editor.buffer_view.lock().set_show_raster(true);
                     }
                     None
                 });
@@ -1040,6 +1043,30 @@ impl<'a> MainWindow<'a> {
             Message::SwitchIceMode(mode) => {
                 self.run_editor_command(mode, |_, editor, mode| {
                     to_message(editor.buffer_view.lock().get_edit_state_mut().set_ice_mode(mode))
+                });
+            }
+
+            Message::ToggleGrid => {
+                self.run_editor_command(0, |_, editor, _| {
+                    let lock = &mut editor.buffer_view.lock();
+                    let show_raster = lock.get_show_raster();
+                    let show_guide = lock.get_show_guide();
+
+                    if editor.raster.is_some() && editor.guide.is_some() {
+                        if show_raster && show_guide {
+                            lock.set_show_raster(false);
+                            lock.set_show_guide(false);
+                        } else if show_raster {
+                            lock.set_show_guide(true);
+                        } else {
+                            lock.set_show_raster(true);
+                        }
+                    } else if editor.raster.is_some() {
+                        lock.set_show_raster(!show_raster);
+                    } else if editor.guide.is_some() {
+                        lock.set_show_guide(!show_guide);
+                    }
+                    None
                 });
             }
         }
