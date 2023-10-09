@@ -138,7 +138,7 @@ impl Tool for FontTool {
         false
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         let mut select = false;
         let font_count = self.fonts.lock().len();
         let selected_font = *self.selected_font.lock();

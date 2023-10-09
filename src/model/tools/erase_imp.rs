@@ -94,7 +94,7 @@ impl Tool for EraseTool {
         false
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         ui.horizontal(|ui| {
             ui.label(fl!(crate::LANGUAGE_LOADER, "tool-size-label"));
             ui.add(egui::DragValue::new(&mut self.size).clamp_range(1..=20).speed(1));

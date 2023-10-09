@@ -116,7 +116,7 @@ impl Tool for BrushTool {
         false
     }
 
-    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         self.color_mode.show_ui(ui);
 
         ui.horizontal(|ui| {

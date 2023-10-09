@@ -23,7 +23,7 @@ impl Tool for MoveLayer {
     fn use_selection(&self) -> bool {
         false
     }
-    fn show_ui(&mut self, _ctx: &egui::Context, _ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, _ui: &mut egui::Ui, _editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         None
     }
 

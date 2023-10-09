@@ -33,7 +33,7 @@ impl Tool for FlipTool {
         false
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         self.color_mode.show_ui(ui);
 
         ui.radio_value(&mut self.flip_horizontal, true, fl!(crate::LANGUAGE_LOADER, "tool-flip_horizontal"));

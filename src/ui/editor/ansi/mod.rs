@@ -22,6 +22,7 @@ use icy_engine_egui::{show_terminal_area, BufferView, TerminalCalc};
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
+    paint::ColorMode,
     ClipboardHandler, Commands, Document, DocumentOptions, Message, SavingError, TerminalResult, UndoHandler, SETTINGS,
 };
 
@@ -51,6 +52,7 @@ pub struct AnsiEditor {
     pub raster: Option<Vec2>, //pub pos_changed: std::boxed::Box<dyn Fn(&Editor, Position)>,
     //pub attr_changed: std::boxed::Box<dyn Fn(TextAttribute)>
     pub request_focus: bool,
+    pub color_mode: ColorMode,
 }
 
 impl UndoHandler for AnsiEditor {
@@ -231,6 +233,7 @@ impl AnsiEditor {
             half_block_click_pos: Position::default(),
             last_selected_tool: 0,
             request_focus: false,
+            color_mode: ColorMode::Both,
         }
     }
 
@@ -442,7 +445,16 @@ impl AnsiEditor {
                 self.set_char(Position::new(i, pos.y), next);
             }
         }
-        let attr = self.buffer_view.lock().get_caret().get_attribute();
+        let mut attr = self.get_char(pos).attribute;
+        let caret_attr = self.buffer_view.lock().get_caret().get_attribute();
+        attr.attr = caret_attr.attr;
+        if self.color_mode.use_fore() {
+            attr.set_foreground(caret_attr.get_foreground());
+        }
+        if self.color_mode.use_back() {
+            attr.set_background(caret_attr.get_background());
+        }
+
         self.set_char(pos, AttributedChar::new(char_code, attr));
         self.set_caret(pos.x + 1, pos.y);
         self.request_focus = true;

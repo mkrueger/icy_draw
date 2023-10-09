@@ -42,7 +42,7 @@ impl Tool for PasteTool {
         false
     }
 
-    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         let mut result = None;
         if let Some(editor) = editor_opt {
             if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {

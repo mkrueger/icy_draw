@@ -60,7 +60,7 @@ impl BrushMode {
     pub fn show_ui(
         &mut self,
         ui: &mut egui::Ui,
-        editor_opt: Option<&AnsiEditor>,
+        editor_opt: Option<&mut AnsiEditor>,
         char_code: std::rc::Rc<std::cell::RefCell<char>>,
         brush_ui: BrushUi,
     ) -> Option<Message> {

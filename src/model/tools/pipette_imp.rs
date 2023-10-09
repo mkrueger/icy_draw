@@ -32,7 +32,7 @@ impl Tool for PipetteTool {
         false
     }
 
-    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         let Some(editor) = editor_opt else {
             return None;
         };

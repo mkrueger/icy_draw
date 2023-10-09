@@ -40,7 +40,7 @@ impl Tool for LineTool {
         false
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         self.color_mode.show_ui(ui);
         self.draw_mode
             .show_ui(ui, editor_opt, self.char_code.clone(), crate::paint::BrushUi::HideOutline)

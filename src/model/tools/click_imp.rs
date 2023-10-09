@@ -28,9 +28,9 @@ pub struct ClickTool {
     start_selection: Rectangle,
     selection_drag: SelectionDrag,
     undo_op: Option<AtomicUndoGuard>,
-
     char_table: Option<CharTableToolWindow>,
 }
+
 pub const VALID_OUTLINE_CHARS: &str = "ABCDEFGHIJKLMNO@&\u{F7} ";
 
 impl Tool for ClickTool {
@@ -38,16 +38,20 @@ impl Tool for ClickTool {
         &super::icons::CURSOR_SVG
     }
 
-    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         if self.char_table.is_none() {
             self.char_table = Some(CharTableToolWindow::new(ctx, 16));
         }
+        let mut msg = None;
         if let Some(editor) = editor_opt {
-            ui.set_height(16.0 * 256.0 * 2.0);
-            self.char_table.as_mut().unwrap().show_char_table(ui, editor)
-        } else {
-            None
+            editor.color_mode.show_ui(ui);
+
+            ui.vertical(|ui| {
+                ui.set_height(16.0 * 256.0 * 2.0);
+                msg = self.char_table.as_mut().unwrap().show_char_table(ui, editor);
+            });
         }
+        msg
     }
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, cur_abs: Position, _response: &egui::Response) -> Option<Message> {
@@ -195,7 +199,6 @@ impl Tool for ClickTool {
 
     fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: MModifiers) -> Event {
         // TODO Keys:
-
         // ctrl+pgup  - upper left corner
         // ctrl+pgdn  - lower left corner
         let pos = editor.buffer_view.lock().get_caret().get_position();

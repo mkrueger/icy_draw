@@ -660,7 +660,7 @@ impl<'a> eframe::App for MainWindow<'a> {
                         ui.vertical(|ui| {
                             let mut shown = false;
                             if let Some(doc) = self.get_active_document() {
-                                if let Some(editor) = doc.lock().get_ansi_editor() {
+                                if let Some(editor) = doc.lock().get_ansi_editor_mut() {
                                     shown = true;
                                     tool_result = tool.show_ui(ctx, ui, Some(editor))
                                 }

@@ -126,7 +126,7 @@ impl Tool for FillTool {
     fn use_caret(&self) -> bool {
         false
     }
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         self.color_mode.show_ui(ui);
 
         ui.checkbox(&mut self.use_exact_matching, fl!(crate::LANGUAGE_LOADER, "tool-fill-exact_match_label"));

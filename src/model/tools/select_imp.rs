@@ -76,7 +76,7 @@ impl Tool for SelectTool {
         false
     }
 
-    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&AnsiEditor>) -> Option<Message> {
+    fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, _editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         ui.label(fl!(crate::LANGUAGE_LOADER, "tool-select-label"));
         ui.radio_value(&mut self.mode, SelectionMode::Normal, fl!(crate::LANGUAGE_LOADER, "tool-select-normal"));
         ui.radio_value(&mut self.mode, SelectionMode::Character, fl!(crate::LANGUAGE_LOADER, "tool-select-character"));
