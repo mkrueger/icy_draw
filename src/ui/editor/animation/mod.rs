@@ -12,7 +12,7 @@ use eframe::{
 use egui::{Image, ProgressBar};
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
-use icy_engine::{Buffer, EngineResult, Size};
+use icy_engine::{Buffer, EngineResult, Size, ascii, AttributedChar, TextAttribute, BufferParser};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
 
 use self::encoding::{start_encoding_thread, ENCODERS};
@@ -42,7 +42,7 @@ pub struct AnimationEditor {
 
     shedule_update: bool,
     last_update: Instant,
-
+    cursor_index: usize,
     scale: f32,
 
     rx: Option<Receiver<usize>>,
@@ -82,6 +82,7 @@ impl AnimationEditor {
             thread: None,
             cur_encoding_frame: 0,
             encoding_frames: 0,
+            cursor_index: 0,
             encoding_error: String::new(),
         }
     }
@@ -147,6 +148,18 @@ impl Document for AnimationEditor {
 
     fn undo_stack_len(&self) -> usize {
         self.undostack
+    }
+
+    fn can_paste_char(&self) -> bool {
+        true
+    }
+
+    fn paste_char(&mut self, _ui: &mut eframe::egui::Ui, ch: char) {
+        let ch = ascii::Parser::default().convert_to_unicode(AttributedChar::new(ch, TextAttribute::default()));
+        self.txt.insert(self.cursor_index, ch);
+        if let Some((i, _)) = self.txt.char_indices().nth(self.cursor_index + 1) {
+            self.cursor_index = i;
+        }
     }
 
     fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, _options: &DocumentOptions) -> Option<Message> {
@@ -386,7 +399,6 @@ impl Document for AnimationEditor {
                 .with_syntax(highlighting::lua())
                 .with_numlines(true)
                 .show(ui, &mut self.txt);
-
             if self.shedule_update && self.last_update.elapsed().as_millis() > 1000 {
                 self.shedule_update = false;
 
@@ -396,6 +408,14 @@ impl Document for AnimationEditor {
                 self.next_animator = Some(Animator::run(&path, txt));
             }
 
+            if let Some(range) = r.cursor_range {
+                if let Some((i, ch)) = self.txt.char_indices().nth(range.as_sorted_char_range().start) {
+                    self.cursor_index = i;
+                } else {
+                    self.cursor_index = 0;
+                }
+
+            }
             if r.response.changed {
                 self.shedule_update = true;
                 self.last_update = Instant::now();

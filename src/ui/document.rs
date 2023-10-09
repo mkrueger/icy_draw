@@ -62,6 +62,12 @@ pub trait Document: UndoHandler + ClipboardHandler {
     fn get_ansi_editor_mut(&mut self) -> Option<&mut AnsiEditor>;
     fn get_ansi_editor(&self) -> Option<&AnsiEditor>;
 
+    fn can_paste_char(&self) -> bool {
+        false
+    }
+    fn paste_char(&mut self, _ui: &mut eframe::egui::Ui, _ch: char) {        
+    }
+
     fn inform_save(&mut self) {}
 }
 

@@ -148,7 +148,9 @@ impl Document for AnsiEditor {
         } else {
             ICED_EXT.to_string()
         };
-        let options = SaveOptions::new();
+        let mut options = SaveOptions::new();
+        options.compress = false;
+        options.lossles_output = true;
         let bytes = self.buffer_view.lock().get_buffer().to_bytes(&ext, &options)?;
         Ok(bytes)
     }

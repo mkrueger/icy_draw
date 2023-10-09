@@ -114,6 +114,7 @@ impl CharTableToolWindow {
         }
         result
     }
+
     pub fn show_char_table(&mut self, ui: &mut egui::Ui, editor: &AnsiEditor) -> Option<Message> {
         let mut result = None;
 

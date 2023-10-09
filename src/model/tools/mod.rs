@@ -17,12 +17,15 @@ pub mod select_imp;
 
 mod icons;
 
+use std::sync::Arc;
+
 use eframe::egui::{self, Response};
+use egui::mutex::Mutex;
 use i18n_embed_fl::fl;
 use icy_engine::Position;
 use icy_engine_egui::TerminalCalc;
 
-use crate::{AnsiEditor, Event, Message};
+use crate::{AnsiEditor, Event, Message, Document};
 
 #[derive(Copy, Clone, Debug)]
 pub enum MKey {
@@ -107,6 +110,10 @@ pub trait Tool {
     }
 
     fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message>;
+
+    fn show_doc_ui(&mut self, _ctx: &egui::Context, _ui: &mut egui::Ui, _doc: Arc<Mutex<Box<dyn Document>>>) -> Option<Message> {
+        None
+    }
 
     fn handle_key(&mut self, _editor: &mut AnsiEditor, _key: MKey, _modifier: MModifiers) -> Event {
         Event::None

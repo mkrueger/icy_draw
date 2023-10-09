@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use eframe::egui;
+use egui::mutex::Mutex;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle, TextPane};
 use icy_engine_egui::TerminalCalc;
 
-use crate::{model::MKey, AnsiEditor, CharTableToolWindow, Message};
+use crate::{model::MKey, AnsiEditor, CharTableToolWindow, Message, Document};
 
 use super::{Event, MModifiers, Position, Tool};
 
@@ -52,6 +55,26 @@ impl Tool for ClickTool {
             });
         }
         msg
+    }
+
+    fn show_doc_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, doc: Arc<Mutex<Box<dyn Document>>>) -> Option<Message> {
+        if !doc.lock().can_paste_char() {
+            return None;
+        }
+        if self.char_table.is_none() {
+            self.char_table = Some(CharTableToolWindow::new(ctx, 16));
+        }
+        ui.vertical(|ui| {
+            ui.set_height(16.0 * 256.0 * 2.0);
+            let ch: Option<char> = self.char_table.as_mut().unwrap().show_plain_char_table(ui);
+
+            if let Some(ch) = ch {
+                doc.lock().paste_char(ui, ch);
+            }
+        });
+
+
+        None
     }
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, cur_abs: Position, _response: &egui::Response) -> Option<Message> {
