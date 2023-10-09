@@ -192,9 +192,14 @@ impl Settings {
         if let Some(proj_dirs) = ProjectDirs::from("com", "GitHub", "icy_draw") {
             let dir = proj_dirs.config_dir().join("data/palettes");
 
-            if !dir.exists() && fs::create_dir_all(&dir).is_err() {
-                return Err(IcyDrawError::ErrorCreatingDirectory(format!("{dir:?}")).into());
+            if !dir.exists() {
+                if fs::create_dir_all(&dir).is_err() {
+                    return Err(IcyDrawError::ErrorCreatingDirectory(format!("{dir:?}")).into());
+                }
+                fs::write(dir.join("ansi32.gpl"), include_bytes!("../../data/palettes/ansi32.gpl"))?;
+                fs::write(dir.join("ANSI32-EHB-64.gpl"), include_bytes!("../../data/palettes/ANSI32-EHB-64.gpl"))?;
             }
+
             return Ok(dir);
         }
         Err(IcyDrawError::ErrorCreatingDirectory("font directory".to_string()).into())
