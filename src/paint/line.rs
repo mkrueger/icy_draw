@@ -112,6 +112,7 @@ pub fn draw_line(buffer_view: &mut BufferView, from: impl Into<Position>, to: im
                     plot_point(buffer_view, point + Position::new(-1, 0), mode.clone(), color_mode, PointRole::NWCorner);
                     PointRole::SECorner
                 } else {
+                    // case 4
                     if last.y == point.y {
                         println!("top side right 2");
                         PointRole::TopSide

@@ -342,7 +342,7 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
     }
 }
 
-fn get_outline_char(ch: AttributedChar, point_role: PointRole) -> char {
+fn get_outline_char(_ch: AttributedChar, point_role: PointRole) -> char {
     let ch = match point_role {
         PointRole::NWCorner => 'E',
         PointRole::NECorner => 'F',
