@@ -6,9 +6,6 @@ use icy_engine_egui::BufferView;
 
 use crate::{create_font_image, create_hover_image, AnsiEditor, Message};
 
-use self::half_block::get_half_block;
-
-mod half_block;
 mod rectangle;
 pub use rectangle::*;
 mod line;
@@ -308,7 +305,7 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
     }
     match mode {
         BrushMode::HalfBlock => {
-            layer.set_char(text_pos, get_half_block(ch, pos, attribute.get_foreground()));
+            layer.set_char(text_pos, icy_engine::paint::get_halfblock(ch, pos, attribute.get_foreground(), true));
         }
         BrushMode::Block => {
             layer.set_char(text_pos, AttributedChar::new(219 as char, attribute));

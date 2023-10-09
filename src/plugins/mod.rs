@@ -79,7 +79,7 @@ impl Plugin {
     pub fn read_plugin_directory() {
         let Ok(root) = Settings::get_plugin_directory() else {
             log::error!("Can't read plugin directory.");
-            return
+            return;
         };
         let walker = WalkDir::new(root).into_iter();
         for entry in walker.filter_entry(|e| !FontTool::is_hidden(e)) {
