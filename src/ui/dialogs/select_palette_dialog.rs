@@ -103,7 +103,9 @@ impl SelectPaletteDialog {
                 log::error!("Can't load palette library: {e}");
                 break;
             }
-            let Ok(entry) = entry else { continue; };
+            let Ok(entry) = entry else {
+                continue;
+            };
             let path = entry.path();
 
             if path.is_dir() {

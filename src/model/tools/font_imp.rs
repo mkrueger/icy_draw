@@ -53,7 +53,9 @@ fn load_fonts(tdf_dir: &Path) -> Vec<TheDrawFont> {
             log::error!("Can't load tdf font library: {e}");
             break;
         }
-        let Ok(entry) = entry else { continue ;};
+        let Ok(entry) = entry else {
+            continue;
+        };
         let path = entry.path();
 
         if path.is_dir() {
