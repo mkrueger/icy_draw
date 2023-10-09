@@ -58,7 +58,6 @@ pub fn draw_line(buffer_view: &mut BufferView, from: impl Into<Position>, to: im
     }
     v = n;
     let mut last = v[0];
-    println!("------------");
     let mut i = 0;
     while i < v.len() {
         let is_last = i + 1 >= v.len();

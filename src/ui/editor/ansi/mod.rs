@@ -701,6 +701,7 @@ impl AnsiEditor {
             layer.set_offset(cur_offset);
             layer.clear();
         }
+        self.buffer_view.lock().get_edit_state_mut().is_buffer_dirty = true;
     }
 
     pub fn backspace(&mut self) {
