@@ -69,7 +69,7 @@ impl crate::ModalDialog for AskCloseFileDialog {
         let mut msg = None;
         if self.save {
             if self.path.is_none() {
-                window.open_dialog(SaveFileDialog::default());
+                window.open_dialog(SaveFileDialog::new(None));
                 return Ok(None);
             }
             if let Some(egui_tiles::Tile::Pane(pane)) = window.document_tree.tiles.get_mut(self.id) {

@@ -198,7 +198,7 @@ impl<'a> MainWindow<'a> {
 
             Message::SaveFile => {
                 let msg = if let Some(pane) = self.get_active_pane_mut() {
-                    if pane.is_untitled() {
+                    if pane.is_untitled() || pane.doc.lock().get_ansi_editor().is_some() && !is_icy_file(pane.get_path()) {
                         Some(Message::SaveFileAs)
                     } else {
                         pane.save()
@@ -210,8 +210,9 @@ impl<'a> MainWindow<'a> {
                 self.handle_message(msg);
             }
             Message::SaveFileAs => {
-                if self.get_active_document().is_some() {
-                    self.open_dialog(SaveFileDialog::default());
+                if let Some((_, tab)) = self.get_active_pane() {
+                    let path = tab.get_path();
+                    self.open_dialog(SaveFileDialog::new(path));
                 }
             }
             Message::ExportFile => {
@@ -1071,6 +1072,16 @@ impl<'a> MainWindow<'a> {
             }
         }
     }
+}
+
+fn is_icy_file(get_path: Option<PathBuf>) -> bool {
+    let Some(path) = get_path else {
+        return false;
+    };
+    let Some(ext) = path.extension() else {
+        return false;
+    };
+    ext == "icy"
 }
 
 pub fn set_default_initial_directory_opt(initial_directory: &mut Option<PathBuf>) {

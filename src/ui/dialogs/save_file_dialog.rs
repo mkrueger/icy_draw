@@ -10,9 +10,9 @@ pub struct SaveFileDialog {
     opened_file: Option<PathBuf>,
 }
 
-impl Default for SaveFileDialog {
-    fn default() -> Self {
-        let mut dialog = FileDialog::save_file(None);
+impl SaveFileDialog {
+    pub fn new(initial_path: Option<PathBuf>) -> Self {
+        let mut dialog = FileDialog::save_file(initial_path);
         dialog.open();
 
         Self {
