@@ -38,7 +38,7 @@ pub const VALID_OUTLINE_CHARS: &str = "ABCDEFGHIJKLMNO@&\u{F7} ";
 
 impl Tool for ClickTool {
     fn get_icon(&self) -> &'static egui::Image<'static> {
-        &super::icons::CURSOR_SVG
+        &super::icons::TEXT_SVG
     }
 
     fn tool_name(&self) -> String {

@@ -4,6 +4,7 @@ lazy_static::lazy_static! {
     pub static ref ADD_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/add.svg"));
     pub static ref PENCIL_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/pencil.svg"));
     pub static ref BRUSH_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/paint_brush.svg"));
+    pub static ref TEXT_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/text.svg"));
     pub static ref CURSOR_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/cursor.svg"));
     pub static ref DROPPER_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/dropper.svg"));
     pub static ref ELLIPSE_FILLED_SVG: Image<'static> = Image::new(egui::include_image!("../../../data/icons/ellipse_filled.svg"));

@@ -180,6 +180,7 @@ impl<'a> MainWindow<'a> {
 
                     self.open_file_window.file_view.set_path(path);
                 }
+                self.open_file_window.reset();
                 self.in_open_file_mode = true;
             }
 
