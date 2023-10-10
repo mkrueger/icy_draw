@@ -76,7 +76,7 @@ impl Tool for FlipTool {
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 {
-            let mut ch = editor.get_char(pos);
+            let mut ch = editor.get_char_from_cur_layer(pos);
             if self.color_mode.use_fore() {
                 ch.attribute
                     .set_foreground(editor.buffer_view.lock().get_caret().get_attribute().get_foreground());
