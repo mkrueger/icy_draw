@@ -1,4 +1,4 @@
-use super::{move_layer_imp::get_layer_offset_text, Event, Position, Tool};
+use super::{move_layer_imp::get_layer_offset_text, Event, MKey, Position, Tool};
 use crate::{to_message, AnsiEditor, Message};
 use eframe::egui::{self, Key};
 use i18n_embed_fl::fl;
@@ -116,6 +116,7 @@ impl Tool for PasteTool {
 
         if let Some(layer) = editor.buffer_view.lock().get_edit_state_mut().get_cur_layer_mut() {
             self.start_offset = layer.get_offset();
+            self.drag_offset = self.start_offset;
             self.drag_started = true;
         }
         Event::None
@@ -145,5 +146,30 @@ impl Tool for PasteTool {
             return None;
         }
         to_message(editor.buffer_view.lock().get_edit_state_mut().move_layer(self.drag_offset))
+    }
+
+    fn handle_key(&mut self, editor: &mut AnsiEditor, key: MKey, modifier: super::MModifiers) -> Event {
+        let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state_mut().get_cur_layer_mut() {
+            layer.get_offset()
+        } else {
+            return Event::None;
+        };
+        let i = if matches!(modifier, super::MModifiers::Shift) { 2 } else { 1 };
+        match key {
+            MKey::Down => {
+                let _ = editor.buffer_view.lock().get_edit_state_mut().move_layer(offset + Position::new(0, i));
+            }
+            MKey::Up => {
+                let _ = editor.buffer_view.lock().get_edit_state_mut().move_layer(offset - Position::new(0, i));
+            }
+            MKey::Left => {
+                let _ = editor.buffer_view.lock().get_edit_state_mut().move_layer(offset - Position::new(i, 0));
+            }
+            MKey::Right => {
+                let _ = editor.buffer_view.lock().get_edit_state_mut().move_layer(offset + Position::new(i, 0));
+            }
+            _ => {}
+        }
+        Event::None
     }
 }
