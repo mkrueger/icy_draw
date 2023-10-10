@@ -34,15 +34,22 @@ fn get_line_points(from: Position, to: Position) -> Vec<Position> {
 }
 
 pub fn draw_line(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
-    let from = from.into();
-    let to = to.into();
+    let mut from = from.into();
+    let mut to = to.into();
+    let mut y_mul = 1;
+    if !matches!(mode, BrushMode::HalfBlock) {
+        from.y /= 2;
+        to.y /= 2;
+        y_mul = 2;
+    }
+
     let mut v = get_line_points(from, to);
     if v.is_empty() {
         return;
     }
     if !matches!(mode, BrushMode::Outline) {
         for point in get_line_points(from, to) {
-            plot_point(buffer_view, point, mode.clone(), color_mode, PointRole::Line);
+            plot_point(buffer_view, (point.x, point.y * y_mul), mode.clone(), color_mode, PointRole::Line);
         }
         return;
     }

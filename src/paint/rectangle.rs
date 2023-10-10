@@ -13,7 +13,6 @@ pub fn draw_rectangle(buffer_view: &mut BufferView, from: impl Into<Position>, t
         y_mul = 2;
     }
 
-    
     for x in from.x + 1..to.x {
         plot_point(buffer_view, (x, from.y * y_mul), mode.clone(), color_mode, PointRole::TopSide);
         plot_point(buffer_view, (x, to.y * y_mul), mode.clone(), color_mode, PointRole::BottomSide);
@@ -21,7 +20,7 @@ pub fn draw_rectangle(buffer_view: &mut BufferView, from: impl Into<Position>, t
 
     for y in from.y + 1..to.y {
         plot_point(buffer_view, (from.x, y * y_mul), mode.clone(), color_mode, PointRole::LeftSide);
-        plot_point(buffer_view, (to.x, y  * y_mul), mode.clone(), color_mode, PointRole::RightSide);
+        plot_point(buffer_view, (to.x, y * y_mul), mode.clone(), color_mode, PointRole::RightSide);
     }
 
     plot_point(buffer_view, (from.x, from.y * y_mul), mode.clone(), color_mode, PointRole::NWCorner);
@@ -29,7 +28,6 @@ pub fn draw_rectangle(buffer_view: &mut BufferView, from: impl Into<Position>, t
 
     plot_point(buffer_view, (from.x, to.y * y_mul), mode.clone(), color_mode, PointRole::SWCorner);
     plot_point(buffer_view, (to.x, to.y * y_mul), mode.clone(), color_mode, PointRole::SECorner);
-
 }
 
 pub fn fill_rectangle(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
