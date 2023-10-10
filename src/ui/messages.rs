@@ -352,8 +352,11 @@ impl<'a> MainWindow<'a> {
             Message::RemoveFloatingLayer => {
                 self.run_editor_command(0, |_, editor: &mut crate::AnsiEditor, _| {
                     let mut lock = editor.buffer_view.lock();
-                    let layer = lock.get_edit_state().get_current_layer();
-                    to_message(lock.get_edit_state_mut().remove_layer(layer))
+                    if let Ok(layer) = lock.get_edit_state().get_current_layer() {
+                        to_message(lock.get_edit_state_mut().remove_layer(layer))
+                    } else {
+                        Some(Message::ShowError("No floating layer to remove".to_string()))
+                    }
                 });
             }
             Message::ClearSelection => {

@@ -241,7 +241,7 @@ impl AnsiEditor {
         }
     }
 
-    pub fn get_cur_layer_index(&self) -> usize {
+    pub fn get_cur_layer_index(&self) -> TerminalResult<usize> {
         self.buffer_view.lock().get_edit_state_mut().get_current_layer()
     }
 
@@ -301,19 +301,23 @@ impl AnsiEditor {
     pub fn delete_line(&mut self, line: i32) {
         // TODO: Undo
         let mut lock = self.buffer_view.lock();
-        let cur_layer = self.get_cur_layer_index();
-
-        let layer = &mut lock.get_buffer_mut().layers[cur_layer];
-        layer.remove_line(line);
+        if let Ok(cur_layer) = self.get_cur_layer_index() {
+            let layer = &mut lock.get_buffer_mut().layers[cur_layer];
+            layer.remove_line(line);
+        } else {
+            log::error!("can't get current layer!");
+        }
     }
 
     pub fn insert_line(&mut self, line: i32) {
         // TODO: Undo
         let mut binding = self.buffer_view.lock();
-        let cur_layer = self.get_cur_layer_index();
-
-        let layer = &mut binding.get_buffer_mut().layers[cur_layer];
-        layer.insert_line(line, Line::new());
+        if let Ok(cur_layer) = self.get_cur_layer_index() {
+            let layer = &mut binding.get_buffer_mut().layers[cur_layer];
+            layer.insert_line(line, Line::new());
+        } else {
+            log::error!("can't get current layer!");
+        }
     }
 
     pub fn pickup_color(&mut self, pos: Position) {
@@ -411,11 +415,15 @@ impl AnsiEditor {
     }
 
     pub fn get_char_from_cur_layer(&self, pos: Position) -> AttributedChar {
-        if self.get_cur_layer_index() >= self.buffer_view.lock().get_buffer().layers.len() {
-            return AttributedChar::invisible();
+        if let Ok(cur_layer) = self.get_cur_layer_index() {
+            if cur_layer >= self.buffer_view.lock().get_buffer().layers.len() {
+                return AttributedChar::invisible();
+            }
+            self.buffer_view.lock().get_buffer().layers[cur_layer].get_char(pos)
+        } else {
+            log::error!("can't get current layer!");
+            AttributedChar::invisible()
         }
-        let cur_layer = self.get_cur_layer_index();
-        self.buffer_view.lock().get_buffer().layers[cur_layer].get_char(pos)
     }
 
     pub fn set_char(&mut self, pos: impl Into<Position>, attributed_char: AttributedChar) {

@@ -165,7 +165,7 @@ impl UserData for LuaBufferView {
             Ok(())
         });
 
-        fields.add_field_method_get("layer", |_, this| Ok(this.buffer_view.lock().get_edit_state_mut().get_current_layer()));
+        fields.add_field_method_get("layer", |_, this| Ok(this.buffer_view.lock().get_edit_state_mut().get_current_layer().unwrap()));
         fields.add_field_method_set("layer", |_, this, val| {
             if val < this.buffer_view.lock().get_buffer_mut().layers.len() {
                 this.buffer_view.lock().get_edit_state_mut().set_current_layer(val);
@@ -223,7 +223,7 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("set_char", |_, this, (x, y, ch): (i32, i32, String)| {
-            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer().unwrap();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
@@ -244,7 +244,7 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("get_char", |_, this, (x, y): (i32, i32)| {
-            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer().unwrap();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
@@ -258,7 +258,7 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("pickup_char", |_, this, (x, y): (i32, i32)| {
-            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer().unwrap();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
@@ -274,7 +274,7 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("set_fg", |_, this, (x, y, col): (i32, i32, u32)| {
-            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer().unwrap();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
@@ -289,7 +289,7 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("get_fg", |_, this, (x, y): (i32, i32)| {
-            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer().unwrap();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
@@ -303,7 +303,7 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("set_bg", |_, this, (x, y, col): (i32, i32, u32)| {
-            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer().unwrap();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {
@@ -318,7 +318,7 @@ impl UserData for LuaBufferView {
         });
 
         methods.add_method_mut("get_bg", |_, this, (x, y): (i32, i32)| {
-            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer();
+            let cur_layer = this.buffer_view.lock().get_edit_state_mut().get_current_layer().unwrap();
             let layer_len = this.buffer_view.lock().get_buffer_mut().layers.len();
             if cur_layer >= layer_len {
                 return Err(mlua::Error::SyntaxError {

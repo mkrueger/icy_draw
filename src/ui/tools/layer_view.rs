@@ -38,7 +38,10 @@ impl LayerToolWindow {
         let mut result = None;
 
         let max = editor.buffer_view.lock().get_buffer().layers.len();
-        let cur_layer = editor.get_cur_layer_index();
+        let Ok(cur_layer) = editor.get_cur_layer_index() else {
+            log::error!("Invalid layer index");
+            return result;
+        };
 
         let paste_mode = editor.buffer_view.lock().get_buffer().layers.iter().position(|layer| layer.role.is_paste());
 

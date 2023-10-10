@@ -1,3 +1,4 @@
+use egui::ahash::HashSet;
 use icy_engine::Position;
 use icy_engine_egui::BufferView;
 
@@ -57,29 +58,48 @@ fn get_ellipse_points(from: Position, to: Position) -> Vec<Position> {
             d2 += dx - dy + (rx * rx);
         }
     }
-
     result
 }
 
 pub fn draw_ellipse(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
-    let from = from.into();
-    let to = to.into();
+    let mut from = from.into();
+    let mut to = to.into();
+    let mut y_mul = 1;
+    if !matches!(mode, BrushMode::HalfBlock) {
+        from.y /= 2;
+        to.y /= 2;
+        y_mul = 2;
+    }
+    let mut visited = HashSet::default();
     for point in get_ellipse_points(from, to) {
-        plot_point(buffer_view, point, mode.clone(), color_mode, PointRole::Line);
+        let pos = (point.x, point.y * y_mul);
+        if visited.insert(pos) {
+            plot_point(buffer_view, pos, mode.clone(), color_mode, PointRole::Line);
+        }
     }
 }
 
 pub fn fill_ellipse(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
-    let from = from.into();
-    let to = to.into();
+    let mut from = from.into();
+    let mut to = to.into();
+    let mut y_mul = 1;
+    if !matches!(mode, BrushMode::HalfBlock) {
+        from.y /= 2;
+        to.y /= 2;
+        y_mul = 2;
+    }
     let points = get_ellipse_points(from, to);
+    let mut visited = HashSet::default();
 
     for i in 0..points.len() / 2 {
         let mut x1 = points[i * 2];
         let x2 = points[i * 2 + 1];
+        if !visited.insert(x1.y) {
+            continue;
+        }
 
         while x1.x < x2.x {
-            plot_point(buffer_view, x1, mode.clone(), color_mode, PointRole::Line);
+            plot_point(buffer_view, (x1.x, x1.y * y_mul), mode.clone(), color_mode, PointRole::Line);
 
             x1.x += 1;
         }
