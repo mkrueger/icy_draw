@@ -6,11 +6,6 @@ use super::{plot_point, BrushMode, ColorMode, PointRole};
 pub fn draw_rectangle(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
     let from = from.into();
     let to = to.into();
-    plot_point(buffer_view, from, mode.clone(), color_mode, PointRole::NWCorner);
-    plot_point(buffer_view, (to.x, from.y), mode.clone(), color_mode, PointRole::NECorner);
-
-    plot_point(buffer_view, (from.x, to.y), mode.clone(), color_mode, PointRole::SWCorner);
-    plot_point(buffer_view, (to.x, to.y), mode.clone(), color_mode, PointRole::SECorner);
 
     for x in from.x + 1..to.x {
         plot_point(buffer_view, (x, from.y), mode.clone(), color_mode, PointRole::TopSide);
@@ -21,6 +16,12 @@ pub fn draw_rectangle(buffer_view: &mut BufferView, from: impl Into<Position>, t
         plot_point(buffer_view, (from.x, y), mode.clone(), color_mode, PointRole::LeftSide);
         plot_point(buffer_view, (to.x, y), mode.clone(), color_mode, PointRole::RightSide);
     }
+
+    plot_point(buffer_view, from, mode.clone(), color_mode, PointRole::NWCorner);
+    plot_point(buffer_view, (to.x, from.y), mode.clone(), color_mode, PointRole::NECorner);
+
+    plot_point(buffer_view, (from.x, to.y), mode.clone(), color_mode, PointRole::SWCorner);
+    plot_point(buffer_view, (to.x, to.y), mode.clone(), color_mode, PointRole::SECorner);
 }
 
 pub fn fill_rectangle(buffer_view: &mut BufferView, from: impl Into<Position>, to: impl Into<Position>, mode: BrushMode, color_mode: ColorMode) {
