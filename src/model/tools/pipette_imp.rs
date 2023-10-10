@@ -131,7 +131,7 @@ impl Tool for PipetteTool {
         }
     }
 
-    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, _pos: Position, _pos_abs: Position, response: &egui::Response) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, _pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 {
             unsafe {
                 if let Some(ch) = CUR_CHAR {
