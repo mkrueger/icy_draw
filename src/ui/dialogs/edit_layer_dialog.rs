@@ -172,7 +172,7 @@ impl ModalDialog for EditLayerDialog {
         layer.has_alpha_channel = self.has_alpha_channel;
         layer.is_alpha_channel_locked = self.is_alpha_channel_locked;
         layer.mode = self.mode;
-
+        bv.get_edit_state_mut().is_buffer_dirty = true;
         Ok(None)
     }
 }
