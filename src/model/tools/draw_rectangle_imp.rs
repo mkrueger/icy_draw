@@ -26,9 +26,18 @@ impl Default for DrawRectangleTool {
 }
 
 impl Tool for DrawRectangleTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::RECTANGLE_OUTLINE_SVG
     }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-rectangle_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-rectangle_tooltip")
+    }
+
     fn use_caret(&self) -> bool {
         false
     }

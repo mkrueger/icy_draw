@@ -20,8 +20,16 @@ pub struct PipetteTool {
 }
 
 impl Tool for PipetteTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::DROPPER_SVG
+    }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-pipette_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-pipette_tooltip")
     }
 
     fn use_caret(&self) -> bool {

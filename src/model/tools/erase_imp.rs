@@ -86,8 +86,15 @@ impl EraseTool {
 }
 
 impl Tool for EraseTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::ERASER_SVG
+    }
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-eraser_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-eraser_tooltip")
     }
 
     fn use_caret(&self) -> bool {

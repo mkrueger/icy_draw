@@ -68,8 +68,16 @@ pub struct SelectTool {
 }
 
 impl Tool for SelectTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::SELECT_SVG
+    }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-select_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-select_tooltip")
     }
 
     fn use_caret(&self) -> bool {

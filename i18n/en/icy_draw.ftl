@@ -147,6 +147,37 @@ tool-fill-exact_match_label=Exact match
 tool-flip_horizontal=Horizontal
 tool-flip_vertical=Vertical
 
+tool-paint_brush_name=Paint Brush
+tool-paint_brush_tooltip=Paint strokes using a brush
+tool-click_name=Text input
+tool-click_tooltip=Input text & rectangular selections
+tool-ellipse_name=Ellipse
+tool-ellipse_tooltip=Draw ellipse
+tool-filled_ellipse_name=Filled ellipse
+tool-filled_ellipse_tooltip=Draw filled ellipse
+tool-rectangle_name=Rectangle
+tool-rectangle_tooltip=Draw rectangle
+tool-filled_rectangle_name=Filled rectangle
+tool-filled_rectangle_tooltip=Draw filled rectangle
+tool-eraser_name=Eraser
+tool-eraser_tooltip=Erase to background using a brush
+tool-fill_name=Fill
+tool-fill_tooltip=Fill area with color or char
+tool-flip_name=Switcher
+tool-flip_tooltip=Switch vertical or horizontal half blocks
+tool-tdf_name=The Draw Fonts
+tool-tdf_tooltip=Text input using The Draw Fonts
+tool-line_name=Draw line
+tool-line_tooltip=Draw lines
+tool-move_layer_name=Move Layer
+tool-move_layer_tooltip=Move layers
+tool-pencil_name=Pencil
+tool-pencil_tooltip=Paint strokes using a pencil
+tool-pipette_name=Color picker
+tool-pipette_tooltip=Pick up a color
+tool-select_name=Select Tool
+tool-select_tooltip=Mutliple and non rectangular selections
+
 toolbar-new=New
 
 new-file-title=New File

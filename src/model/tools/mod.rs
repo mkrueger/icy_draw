@@ -91,7 +91,11 @@ pub struct DragPos {
 }
 
 pub trait Tool {
-    fn get_icon_name(&self) -> &egui::Image<'static>;
+    fn get_icon(&self) -> &egui::Image<'static>;
+
+    fn tool_name(&self) -> String;
+
+    fn tooltip(&self) -> String;
 
     fn use_caret(&self) -> bool {
         true

@@ -21,8 +21,16 @@ impl Default for FlipTool {
 }
 
 impl Tool for FlipTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::FLIP_TOOL_SVG
+    }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-flip_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-flip_tooltip")
     }
 
     fn use_caret(&self) -> bool {

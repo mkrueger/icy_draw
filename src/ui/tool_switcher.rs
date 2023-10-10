@@ -3,6 +3,7 @@ use eframe::{
     egui::{self, Sense},
     epaint::{Rect, Rounding, Vec2},
 };
+use egui::RichText;
 
 pub fn add_tool_switcher(_ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWindow<'_>) -> Option<Message> {
     let mut msg = None;
@@ -43,10 +44,13 @@ pub fn add_tool_switcher(_ctx: &egui::Context, ui: &mut egui::Ui, arg: &MainWind
         } else {
             ui.visuals().widgets.inactive.fg_stroke.color
         };
-        let mut image = t.get_icon_name().clone();
+        let mut image = t.get_icon().clone();
         image = image.tint(tint);
         image.paint_at(ui, rect);
-
+        let response = response.on_hover_ui(|ui| {
+            ui.strong(RichText::new(t.tool_name()).small());
+            ui.label(RichText::new(t.tooltip()).small());
+        });
         pos.x += icon_size + spacing;
         if pos.x - back_rect.min.x - spacing > back_rect.width() {
             pos.x = back_rect.min.x + spacing;

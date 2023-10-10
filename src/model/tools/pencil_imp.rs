@@ -38,8 +38,16 @@ impl Default for PencilTool {
 }
 
 impl Tool for PencilTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::PENCIL_SVG
+    }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-pencil_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-pencil_tooltip")
     }
 
     fn use_caret(&self) -> bool {

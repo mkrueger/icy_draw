@@ -23,9 +23,18 @@ impl PasteTool {
 }
 
 impl Tool for PasteTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::MOVE_SVG
     }
+
+    fn tool_name(&self) -> String {
+        String::new()
+    }
+
+    fn tooltip(&self) -> String {
+        String::new()
+    }
+
     fn use_caret(&self) -> bool {
         false
     }

@@ -37,8 +37,16 @@ pub struct ClickTool {
 pub const VALID_OUTLINE_CHARS: &str = "ABCDEFGHIJKLMNO@&\u{F7} ";
 
 impl Tool for ClickTool {
-    fn get_icon_name(&self) -> &'static egui::Image<'static> {
+    fn get_icon(&self) -> &'static egui::Image<'static> {
         &super::icons::CURSOR_SVG
+    }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-click_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-click_tooltip")
     }
 
     fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {

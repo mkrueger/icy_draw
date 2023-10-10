@@ -108,8 +108,16 @@ impl BrushTool {
 }
 
 impl Tool for BrushTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::BRUSH_SVG
+    }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-paint_brush_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-paint_brush_tooltip")
     }
 
     fn use_caret(&self) -> bool {

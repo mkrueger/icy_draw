@@ -151,6 +151,37 @@ tool-fill-exact_match_label=Exakte Übereinstimmung
 tool-flip_horizontal=Horizontal
 tool-flip_vertical=Vertical
 
+tool-paint_brush_name=Pinsel
+tool-paint_brush_tooltip=Strecken mit einem Pinsel zeichnen
+tool-click_name=Texteingabe
+tool-click_tooltip=Text & rechteckige Auswahl
+tool-ellipse_name=Ellipse
+tool-ellipse_tooltip=Ellipsen malen
+tool-filled_ellipse_name=Gefüllte Ellipse
+tool-filled_ellipse_tooltip=Gefüllte Ellipsen malen
+tool-rectangle_name=Rechteck
+tool-rectangle_tooltip=Rechtecke malen
+tool-filled_rectangle_name=Gefülltes Rechteck
+tool-filled_rectangle_tooltip=Gefüllte Rechtecke malen
+tool-eraser_name=Radierer
+tool-eraser_tooltip=Bis zum Hintergrund löschen
+tool-fill_name=Füllen
+tool-fill_tooltip=Auswahl mit Farbe oder Zeichen füllen
+tool-flip_name=Schalter
+tool-flip_tooltip=Vertikale oder horizontale Halbblöcke umschalten
+tool-tdf_name=The Draw Fonts
+tool-tdf_tooltip=Texteingabe mit The Draw Fonts
+tool-line_name=Linie
+tool-line_tooltip=Linien malen
+tool-move_layer_name=Ebene verschieben
+tool-move_layer_tooltip=Ebenen verschieben
+tool-pencil_name=Stift
+tool-pencil_tooltip=Strecken mit Stift zeichnen
+tool-pipette_name=Farbpipette
+tool-pipette_tooltip=Farben von einer Position aufnehmen
+tool-select_name=Auswahl
+tool-select_tooltip=Mehrfachauswahl oder nicht rechteckige Auswahl
+
 toolbar-new=Neu
 
 new-file-title=Neue Datei

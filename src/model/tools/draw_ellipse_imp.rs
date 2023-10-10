@@ -26,8 +26,16 @@ impl Default for DrawEllipseTool {
 }
 
 impl Tool for DrawEllipseTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::ELLIPSE_OUTLINE_SVG
+    }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-ellipse_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-ellipse_tooltip")
     }
 
     fn use_caret(&self) -> bool {

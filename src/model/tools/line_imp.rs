@@ -33,9 +33,18 @@ impl Default for LineTool {
 // copy/moxe
 // fill, delete
 impl Tool for LineTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::LINE_SVG
     }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-line_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-line_tooltip")
+    }
+
     fn use_selection(&self) -> bool {
         false
     }

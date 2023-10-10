@@ -120,9 +120,18 @@ impl FillOperation {
 // Character
 // Both
 impl Tool for FillTool {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::FILL_SVG
     }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-fill_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-fill_tooltip")
+    }
+
     fn use_caret(&self) -> bool {
         false
     }

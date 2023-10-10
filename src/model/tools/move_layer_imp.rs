@@ -14,9 +14,18 @@ pub struct MoveLayer {
 impl MoveLayer {}
 
 impl Tool for MoveLayer {
-    fn get_icon_name(&self) -> &egui::Image<'static> {
+    fn get_icon(&self) -> &egui::Image<'static> {
         &super::icons::MOVE_SVG
     }
+
+    fn tool_name(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-move_layer_name")
+    }
+
+    fn tooltip(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "tool-move_layer_tooltip")
+    }
+
     fn use_caret(&self) -> bool {
         false
     }
