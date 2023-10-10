@@ -17,6 +17,8 @@ pub struct PipetteTool {
     ch: Option<char>,
     char_image: Option<TextureHandle>,
     cur_pos: Option<Position>,
+    take_fg: bool,
+    take_bg: bool,
 }
 
 impl Tool for PipetteTool {
@@ -68,11 +70,20 @@ impl Tool for PipetteTool {
                     image.ui(ui);
                 }
 
-                ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_foreground", fg = ch.attribute.get_foreground()));
-                paint_color(ui, &editor.buffer_view.lock().get_buffer().palette.get_color(ch.attribute.get_foreground()));
-                ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_background", bg = ch.attribute.get_background()));
-                paint_color(ui, &editor.buffer_view.lock().get_buffer().palette.get_color(ch.attribute.get_background()));
+                self.take_fg = !ui.input(|i| i.modifiers.ctrl) || ui.input(|i| i.modifiers.shift);
+                if self.take_fg {
+                    ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_foreground", fg = ch.attribute.get_foreground()));
+                    paint_color(ui, &editor.buffer_view.lock().get_buffer().palette.get_color(ch.attribute.get_foreground()));
+                }
+
+                self.take_bg = !ui.input(|i| i.modifiers.shift) || ui.input(|i| i.modifiers.ctrl);
+
+                if self.take_bg {
+                    ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_background", bg = ch.attribute.get_background()));
+                    paint_color(ui, &editor.buffer_view.lock().get_buffer().palette.get_color(ch.attribute.get_background()));
+                }
             });
+
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 ui.add_space(8.0);
@@ -125,12 +136,12 @@ impl Tool for PipetteTool {
             unsafe {
                 if let Some(ch) = CUR_CHAR {
                     let mut attr = editor.buffer_view.lock().get_caret_mut().get_attribute();
-                    if response.ctx.input(|i| i.modifiers.shift) {
+                    if self.take_fg {
                         attr.set_foreground(ch.attribute.get_foreground());
-                    } else if response.ctx.input(|i| i.modifiers.ctrl) {
+                    }
+
+                    if self.take_bg {
                         attr.set_background(ch.attribute.get_background());
-                    } else {
-                        attr = ch.attribute;
                     }
                     editor.set_caret_attribute(attr);
                 }
