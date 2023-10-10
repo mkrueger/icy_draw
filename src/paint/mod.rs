@@ -291,13 +291,13 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
     }
 
     buffer_view.get_edit_state_mut().is_buffer_dirty = true;
-    let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() else {
+    if let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() {
+        let overlay_ch = layer.get_char(text_pos);
+        if overlay_ch.is_visible() {
+            ch = overlay_ch;
+        }
+    } else {
         return;
-    };
-
-    let overlay_ch = layer.get_char(text_pos);
-    if overlay_ch.is_visible() {
-        ch = overlay_ch;
     }
 
     if matches!(mode, BrushMode::HalfBlock) && matches!(point_role, PointRole::Fill) {
@@ -305,17 +305,26 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
     }
     match mode {
         BrushMode::HalfBlock => {
-            layer.set_char(text_pos, icy_engine::paint::get_halfblock(ch, pos, attribute.get_foreground(), true));
+            let half_block = icy_engine::paint::get_halfblock(buffer_view.get_buffer(), ch, pos, attribute.get_foreground(), true);
+            if let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() {
+                layer.set_char(text_pos, half_block);
+            }
         }
         BrushMode::Block => {
-            layer.set_char(text_pos, AttributedChar::new(219 as char, attribute));
+            if let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() {
+                layer.set_char(text_pos, AttributedChar::new(219 as char, attribute));
+            }
         }
         BrushMode::Char(ch) => {
-            layer.set_char(text_pos, AttributedChar::new(*ch.borrow(), attribute));
+            if let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() {
+                layer.set_char(text_pos, AttributedChar::new(*ch.borrow(), attribute));
+            }
         }
 
         BrushMode::Outline => {
-            layer.set_char(text_pos, AttributedChar::new(get_outline_char(ch, point_role), attribute));
+            if let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() {
+                layer.set_char(text_pos, AttributedChar::new(get_outline_char(ch, point_role), attribute));
+            }
         }
 
         BrushMode::Shade => {
@@ -330,10 +339,14 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
                     }
                 }
             }
-            layer.set_char(text_pos, AttributedChar::new(char_code, attribute));
+            if let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() {
+                layer.set_char(text_pos, AttributedChar::new(char_code, attribute));
+            }
         }
         BrushMode::Colorize => {
-            layer.set_char(text_pos, AttributedChar::new(ch.ch, attribute));
+            if let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() {
+                layer.set_char(text_pos, AttributedChar::new(ch.ch, attribute));
+            }
         }
         _ => {}
     }
