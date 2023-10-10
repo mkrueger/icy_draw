@@ -304,6 +304,12 @@ font_tool_open_directory_button=Open font directory
 pipette_tool_char_code=Code { $code }
 pipette_tool_foreground=Foreground { $fg }
 pipette_tool_background=Background { $bg }
+pipette_tool_keys=
+    Hold shift to pick up
+    foreground color
+
+    Hold control to pick up
+    background color
 
 char_table_tool_title=Char table
 minimap_tool_title=Preview

@@ -73,6 +73,11 @@ impl Tool for PipetteTool {
                 ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_background", bg = ch.attribute.get_background()));
                 paint_color(ui, &editor.buffer_view.lock().get_buffer().palette.get_color(ch.attribute.get_background()));
             });
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                ui.add_space(8.0);
+                ui.label(fl!(crate::LANGUAGE_LOADER, "pipette_tool_keys"));
+            });
         }
         None
     }
@@ -115,10 +120,21 @@ impl Tool for PipetteTool {
         }
     }
 
-    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
+    fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, _pos: Position, _pos_abs: Position, response: &egui::Response) -> Option<Message> {
         if button == 1 {
-            let ch = editor.get_char(pos);
-            editor.set_caret_attribute(ch.attribute);
+            unsafe {
+                if let Some(ch) = CUR_CHAR {
+                    let mut attr = editor.buffer_view.lock().get_caret_mut().get_attribute();
+                    if response.ctx.input(|i| i.modifiers.shift) {
+                        attr.set_foreground(ch.attribute.get_foreground());
+                    } else if response.ctx.input(|i| i.modifiers.ctrl) {
+                        attr.set_background(ch.attribute.get_background());
+                    } else {
+                        attr = ch.attribute;
+                    }
+                    editor.set_caret_attribute(attr);
+                }
+            }
             return Some(Message::SelectPreviousTool);
         }
         None

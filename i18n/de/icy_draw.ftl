@@ -309,6 +309,16 @@ font_tool_no_fonts_label=
     Installiere Fonts in das Fontverzeichnis
 font_tool_open_directory_button=Fontverzeichnis öffnen
 
+pipette_tool_char_code=Code { $code }
+pipette_tool_foreground=Vordergrund { $fg }
+pipette_tool_background=Hintergrund { $bg }
+pipette_tool_keys=
+    Shift halten für
+    Vordergrund Farbe
+
+    Strg halten für 
+    Hintergrund Farbe
+
 char_table_tool_title=Zeichentabelle
 minimap_tool_title=Übersicht
 
