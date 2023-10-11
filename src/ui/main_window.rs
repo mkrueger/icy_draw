@@ -565,15 +565,15 @@ impl<'a> eframe::App for MainWindow<'a> {
             if self.open_file_window.show_file_chooser(ctx) {
                 let file = self.open_file_window.opened_file.take();
                 if let Some(file) = &file {
-                    if file.path.exists() {
-                        self.open_file(&file.path, false);
+                    if file.file_info.path.exists() {
+                        self.open_file(&file.file_info.path, false);
                     } else if let Some(data) = &file.file_data {
-                        let mut path = file.path.clone();
+                        let mut path = file.file_info.path.clone();
                         if let Some(user) = UserDirs::new() {
                             if let Some(dir) = user.document_dir() {
                                 path = dir.join(path);
                                 while path.exists() {
-                                    path = path.with_extension(format!("1.{}", file.path.extension().unwrap().to_string_lossy()));
+                                    path = path.with_extension(format!("1.{}", file.file_info.path.extension().unwrap().to_string_lossy()));
                                 }
                             }
                         }
