@@ -10,7 +10,7 @@ IcyDraw is a full features ansi drawing tool doing things a bit different than o
  - Full CP437 support
  - Runs on Linux, Mac & Windows (Linux recommended - but looks best on Mac)
  - The model is more like modern graphic tools rather than AcidDraw (draw lines/fill/brushes etc.)
- - File formats import/export: Ansi, Ascii, Artworx ADF, Avatar, BIN, XBIN, PCBoard, iCE, Tundra Draw
+ - File formats import/export: Ansi, Ascii, Artworx ADF, Avatar, BIN, XBIN, PCBoard, iCE, Tundra Draw, CtrlA and Renegade
  - Export files to .png
  - Own custom .png based file format: .ice
  - Layer model & transparent chars
