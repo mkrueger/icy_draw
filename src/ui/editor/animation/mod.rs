@@ -12,7 +12,7 @@ use eframe::{
 use egui::{Image, ProgressBar};
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
-use icy_engine::{ascii, AttributedChar, Buffer, BufferParser, EngineResult, Size, TextAttribute};
+use icy_engine::{ascii, AttributedChar, Buffer, EngineResult, Size, TextAttribute, UnicodeConverter};
 use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
 
 use self::encoding::{start_encoding_thread, ENCODERS};
@@ -155,7 +155,7 @@ impl Document for AnimationEditor {
     }
 
     fn paste_char(&mut self, _ui: &mut eframe::egui::Ui, ch: char) {
-        let ch = ascii::Parser::default().convert_to_unicode(AttributedChar::new(ch, TextAttribute::default()));
+        let ch = ascii::CP437Converter::default().convert_to_unicode(AttributedChar::new(ch, TextAttribute::default()));
         self.txt.insert(self.cursor_index, ch);
         if let Some((i, _)) = self.txt.char_indices().nth(self.cursor_index + 1) {
             self.cursor_index = i;
