@@ -346,9 +346,16 @@ impl AnsiEditor {
         self.set_caret_position(Position::new(min(max(0, x), w), y));
 
         let font_dim = self.buffer_view.lock().get_buffer().get_font_dimensions();
-        let x = x as f32 * font_dim.width as f32;
 
-        let y = y as f32 * font_dim.height as f32;
+        let pos = self.buffer_view.lock().get_caret().get_position();
+        let offset = if let Some(layer) = self.buffer_view.lock().get_edit_state().get_cur_layer() {
+            layer.get_offset()
+        } else {
+            Position::default()
+        };
+
+        let x = (offset.x + pos.x) as f32 * font_dim.width as f32;
+        let y = (offset.y + pos.y) as f32 * font_dim.height as f32;
         let mut next_y = None;
         let mut next_x = None;
         if y < char_scroll_position.y {
@@ -363,6 +370,7 @@ impl AnsiEditor {
         if x > (char_scroll_position.x + buffer_char_width - font_dim.width as f32) {
             next_x = Some((x - buffer_char_width + font_dim.width as f32).max(0.0));
         }
+        println!("next_x {:?} next_y {:?}", next_x, next_y);
         self.next_scroll_x_position = next_x;
         self.next_scroll_y_position = next_y;
         Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())
@@ -715,6 +723,11 @@ impl AnsiEditor {
     }
 
     pub fn backspace(&mut self) {
+        let _op: AtomicUndoGuard = self
+            .buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-backspace"));
         self.buffer_view.lock().clear_selection();
         let pos = self.get_caret_position();
         if pos.x > 0 {
@@ -733,7 +746,13 @@ impl AnsiEditor {
             }
         }
     }
+
     pub fn delete(&mut self) {
+        let _op: AtomicUndoGuard = self
+            .buffer_view
+            .lock()
+            .get_edit_state_mut()
+            .begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-delete"));
         self.buffer_view.lock().clear_selection();
         let pos = self.get_caret_position();
         if pos.x >= 0 {

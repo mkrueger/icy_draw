@@ -335,6 +335,8 @@ undo-bitfont-inverse=Inverse
 undo-bitfont-clear=Clear
 undo-bitfont-edit=Edit
 undo-bitfont-resize=Resize
+undo-delete=Delete
+undo-backspace=Backspace
 
 undo-render_character=Render character
 undo-delete_character=Delete character
