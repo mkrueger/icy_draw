@@ -253,7 +253,9 @@ about-dialog-description =
 
     Icy Draw is free software, licensed under the Apache 2 license.
     Source code is available at www.github.com/mkrueger/icy_draw
-about-dialog-created_by = Created by { $authors }
+about-dialog-created_by =
+    Created by { $authors }
+    Help & testing: NuSkooler, Grymmjack
 
 edit-layer-dialog-title=Layer properties
 edit-layer-dialog-name-label=Name:

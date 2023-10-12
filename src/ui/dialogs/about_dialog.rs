@@ -13,6 +13,9 @@ impl crate::ModalDialog for AboutDialog {
         let modal = Modal::new(ctx, "help_dialog");
 
         modal.show(|ui| {
+            ui.set_height(280.0);
+            ui.set_width(600.0);
+
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "about-dialog-title"));
 
             modal.frame(ui, |ui| {
