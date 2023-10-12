@@ -329,8 +329,16 @@ impl AnsiEditor {
 
     pub fn set_caret(&mut self, x: i32, y: i32) -> Event {
         let old = self.buffer_view.lock().get_caret().get_position();
-        let w = self.buffer_view.lock().get_buffer().get_width() - 1;
-        let h = self.buffer_view.lock().get_buffer().get_height() - 1;
+        let mut w = self.buffer_view.lock().get_buffer().get_width() - 1;
+        let mut h = self.buffer_view.lock().get_buffer().get_height() - 1;
+        let offset: Position = if let Some(layer) = self.buffer_view.lock().get_edit_state().get_cur_layer() {
+            w = layer.get_width() - 1;
+            h = layer.get_height() - 1;
+            layer.get_offset()
+        } else {
+            Position::default()
+        };
+
 
         let char_scroll_position = self.buffer_view.lock().calc.char_scroll_position;
         let terminal_rect = self.buffer_view.lock().calc.terminal_rect;
@@ -348,12 +356,6 @@ impl AnsiEditor {
         let font_dim = self.buffer_view.lock().get_buffer().get_font_dimensions();
 
         let pos = self.buffer_view.lock().get_caret().get_position();
-        let offset = if let Some(layer) = self.buffer_view.lock().get_edit_state().get_cur_layer() {
-            layer.get_offset()
-        } else {
-            Position::default()
-        };
-
         let x = (offset.x + pos.x) as f32 * font_dim.width as f32;
         let y = (offset.y + pos.y) as f32 * font_dim.height as f32;
         let mut next_y = None;
