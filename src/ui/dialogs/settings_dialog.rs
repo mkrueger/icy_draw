@@ -316,7 +316,7 @@ impl SettingsDialog {
             {
                 self.char_sets[0] = CharSetMapping::default();
                 for view in self.views.iter() {
-                    view.lock().get_edit_state_mut().is_buffer_dirty = true;
+                    view.lock().get_edit_state_mut().set_is_buffer_dirty();
                 }
             }
         });
@@ -380,7 +380,7 @@ impl SettingsDialog {
                 self.views[self.selected_view].lock().get_buffer_mut().layers[0].set_char((x, 0), AttributedChar::new(ch, TextAttribute::default()));
             }
 
-            self.views[self.selected_view].lock().get_edit_state_mut().is_buffer_dirty = true;
+            self.views[self.selected_view].lock().get_edit_state_mut().set_is_buffer_dirty();
         }
 
         if ui.input(|i| i.key_pressed(egui::Key::ArrowLeft)) {

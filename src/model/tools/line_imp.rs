@@ -4,7 +4,7 @@ use icy_engine_egui::TerminalCalc;
 
 use crate::{
     paint::{draw_line, BrushMode, ColorMode},
-    AnsiEditor, Message,
+    AnsiEditor, Event, Message,
 };
 
 use super::{Position, Tool};
@@ -66,12 +66,23 @@ impl Tool for LineTool {
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
+    fn handle_drag_begin(&mut self, _editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
+        self.old_pos = Position::new(-1, -1);
+        Event::None
+    }
+
     fn handle_drag(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _calc: &TerminalCalc) -> egui::Response {
+        let p2 = editor.half_block_click_pos;
+        if self.old_pos == p2 {
+            return response;
+        }
+        self.old_pos = p2;
+
         editor.clear_overlay_layer();
         draw_line(
             &mut editor.buffer_view.lock(),
             editor.drag_pos.start_half_block,
-            editor.half_block_click_pos,
+            p2,
             self.draw_mode.clone(),
             self.color_mode,
         );

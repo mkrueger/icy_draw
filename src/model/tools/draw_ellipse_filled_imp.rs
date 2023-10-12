@@ -4,7 +4,7 @@ use icy_engine_egui::TerminalCalc;
 
 use crate::{
     paint::{fill_ellipse, BrushMode, ColorMode},
-    AnsiEditor, Message,
+    AnsiEditor, Event, Message,
 };
 
 use super::{Position, Tool};
@@ -13,6 +13,7 @@ pub struct DrawEllipseFilledTool {
     draw_mode: BrushMode,
     color_mode: ColorMode,
     char_code: std::rc::Rc<std::cell::RefCell<char>>,
+    old_pos: Position,
 }
 
 impl Default for DrawEllipseFilledTool {
@@ -21,6 +22,7 @@ impl Default for DrawEllipseFilledTool {
             draw_mode: BrushMode::HalfBlock,
             color_mode: crate::paint::ColorMode::Both,
             char_code: std::rc::Rc::new(std::cell::RefCell::new('\u{00B0}')),
+            old_pos: Position::default(),
         }
     }
 }
@@ -55,10 +57,20 @@ impl Tool for DrawEllipseFilledTool {
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }
 
+    fn handle_drag_begin(&mut self, _editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
+        self.old_pos = Position::new(-1, -1);
+        Event::None
+    }
+
     fn handle_drag(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _calc: &TerminalCalc) -> egui::Response {
+        let p2 = editor.half_block_click_pos;
+        if self.old_pos == p2 {
+            return response;
+        }
+        self.old_pos = p2;
+
         editor.clear_overlay_layer();
         let p1 = editor.drag_pos.start_half_block;
-        let p2 = editor.half_block_click_pos;
         let start = Position::new(p1.x.min(p2.x), p1.y.min(p2.y));
         let end = Position::new(p1.x.max(p2.x), p1.y.max(p2.y));
         fill_ellipse(&mut editor.buffer_view.lock(), start, end, self.draw_mode.clone(), self.color_mode);

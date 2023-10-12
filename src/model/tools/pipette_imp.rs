@@ -103,7 +103,7 @@ impl Tool for PipetteTool {
             let get_tool_overlay_mask_mut = lock.get_edit_state_mut().get_tool_overlay_mask_mut();
             get_tool_overlay_mask_mut.clear();
             get_tool_overlay_mask_mut.set_is_selected(cur_abs, true);
-            lock.get_edit_state_mut().is_buffer_dirty = true;
+            lock.get_edit_state_mut().set_is_buffer_dirty();
         }
 
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
@@ -127,7 +127,7 @@ impl Tool for PipetteTool {
         let get_edit_state_mut = lock.get_edit_state_mut();
         if !get_edit_state_mut.get_tool_overlay_mask_mut().is_empty() {
             get_edit_state_mut.get_tool_overlay_mask_mut().clear();
-            get_edit_state_mut.is_buffer_dirty = true;
+            get_edit_state_mut.set_is_buffer_dirty();
         }
     }
 

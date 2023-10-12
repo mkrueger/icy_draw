@@ -290,7 +290,6 @@ pub fn plot_point(buffer_view: &mut BufferView, pos: impl Into<Position>, mut mo
         attribute.set_background(editor_attr.get_background());
     }
 
-    buffer_view.get_edit_state_mut().is_buffer_dirty = true;
     if let Some(layer) = buffer_view.get_edit_state_mut().get_overlay_layer() {
         let overlay_ch = layer.get_char(text_pos);
         if overlay_ch.is_visible() {

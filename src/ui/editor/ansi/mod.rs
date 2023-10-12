@@ -162,7 +162,7 @@ impl Document for AnsiEditor {
         if self.last_selected_tool != selected_tool {
             self.last_selected_tool = selected_tool;
             self.buffer_view.lock().get_edit_state_mut().get_tool_overlay_mask_mut().clear();
-            self.buffer_view.lock().get_edit_state_mut().is_buffer_dirty = true;
+            self.buffer_view.lock().get_edit_state_mut().set_is_buffer_dirty();
         }
 
         let mut scale = options.get_scale();
@@ -338,7 +338,6 @@ impl AnsiEditor {
         } else {
             Position::default()
         };
-
 
         let char_scroll_position = self.buffer_view.lock().calc.char_scroll_position;
         let terminal_rect = self.buffer_view.lock().calc.terminal_rect;
@@ -721,7 +720,7 @@ impl AnsiEditor {
             layer.set_offset(cur_offset);
             layer.clear();
         }
-        self.buffer_view.lock().get_edit_state_mut().is_buffer_dirty = true;
+        self.buffer_view.lock().get_edit_state_mut().set_is_buffer_dirty();
     }
 
     pub fn backspace(&mut self) {

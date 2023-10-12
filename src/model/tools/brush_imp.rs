@@ -54,7 +54,7 @@ impl BrushTool {
         }
 
         let use_selection = editor.buffer_view.lock().get_edit_state().is_something_selected();
-        editor.buffer_view.lock().get_edit_state_mut().is_buffer_dirty = true;
+        editor.buffer_view.lock().get_edit_state_mut().set_is_buffer_dirty();
 
         let offset = if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
             layer.get_offset()
@@ -178,7 +178,7 @@ impl Tool for BrushTool {
             return;
         }
         get_edit_state_mut.get_tool_overlay_mask_mut().clear();
-        get_edit_state_mut.is_buffer_dirty = true;
+        get_edit_state_mut.set_is_buffer_dirty();
     }
 
     fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, cur_abs: Position) -> egui::Response {
@@ -196,7 +196,7 @@ impl Tool for BrushTool {
                             layer.set_char(cur + pos + mid, AttributedChar::new(ch.ch, ch.attribute));
                         }
                     }
-                    lock.get_edit_state_mut().is_buffer_dirty = true;
+                    lock.get_edit_state_mut().set_is_buffer_dirty();
                 }
             }
         } else {
@@ -213,7 +213,7 @@ impl Tool for BrushTool {
                         get_tool_overlay_mask_mut.set_is_selected(pos, true);
                     }
                 }
-                lock.get_edit_state_mut().is_buffer_dirty = true;
+                lock.get_edit_state_mut().set_is_buffer_dirty();
             }
             editor.buffer_view.lock().get_buffer_mut().remove_overlay();
         }

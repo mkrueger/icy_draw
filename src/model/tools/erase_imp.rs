@@ -43,7 +43,7 @@ impl EraseTool {
         } else {
             Position::default()
         };
-        editor.buffer_view.lock().get_edit_state_mut().is_buffer_dirty = true;
+        editor.buffer_view.lock().get_edit_state_mut().set_is_buffer_dirty();
         for y in 0..self.size {
             for x in 0..self.size {
                 let pos = center + Position::new(x, y);
@@ -118,7 +118,7 @@ impl Tool for EraseTool {
             return;
         }
         get_edit_state_mut.get_tool_overlay_mask_mut().clear();
-        get_edit_state_mut.is_buffer_dirty = true;
+        get_edit_state_mut.set_is_buffer_dirty();
     }
 
     fn handle_hover(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, cur: Position, cur_abs: Position) -> egui::Response {
@@ -134,7 +134,7 @@ impl Tool for EraseTool {
                     get_tool_overlay_mask_mut.set_is_selected(pos, true);
                 }
             }
-            lock.get_edit_state_mut().is_buffer_dirty = true;
+            lock.get_edit_state_mut().set_is_buffer_dirty();
         }
         response.on_hover_cursor(egui::CursorIcon::Crosshair)
     }

@@ -13,12 +13,19 @@ use crate::{AnsiEditor, Document, Message, ToolWindow, INVISIBLE_SVG, VISIBLE_SV
 
 pub struct LayerToolWindow {
     gl: Arc<glow::Context>,
+    view_cache_id: usize,
+    stack_len: usize,
     view_cache: Vec<Arc<eframe::epaint::mutex::Mutex<BufferView>>>,
 }
 
 impl LayerToolWindow {
     pub(crate) fn new(gl: Arc<glow::Context>) -> Self {
-        Self { gl, view_cache: Vec::new() }
+        Self {
+            gl,
+            view_cache: Vec::new(),
+            view_cache_id: usize::MAX,
+            stack_len: usize::MAX,
+        }
     }
 
     pub fn get_buffer_view(&mut self, i: usize) -> Arc<eframe::epaint::mutex::Mutex<BufferView>> {
@@ -58,6 +65,7 @@ impl LayerToolWindow {
                     if r.clicked() {
                         result = Some(Message::AddFloatingLayer);
                     }
+
                     if let Some(layer) = editor.buffer_view.lock().get_edit_state().get_cur_layer() {
                         let role = layer.role;
                         if matches!(role, icy_engine::Role::PastePreview) {
@@ -115,6 +123,12 @@ impl LayerToolWindow {
         });
 
         CentralPanel::default().show_inside(ui, |ui| {
+            let redraw_layer_views = self.view_cache_id != editor.buffer_view.lock().id || editor.undo_stack_len() != self.stack_len;
+            if redraw_layer_views {
+                self.view_cache_id = editor.buffer_view.lock().id;
+                self.stack_len = editor.undo_stack_len();
+            }
+
             egui::ScrollArea::vertical().id_source("layer_view_scroll_area").show(ui, |ui| {
                 for i in (0..max).rev() {
                     ui.horizontal(|ui| {
@@ -135,7 +149,7 @@ impl LayerToolWindow {
                                 ..Default::default()
                             };
                             let view = self.get_buffer_view(i);
-                            {
+                            if redraw_layer_views {
                                 view.lock().get_buffer_mut().layers.clear();
                                 let lock = &editor.buffer_view.lock();
                                 if let Some(layer) = lock.get_buffer().layers.get(i) {
@@ -144,9 +158,10 @@ impl LayerToolWindow {
                                     view.lock().get_buffer_mut().set_font_table(lock.get_buffer().get_font_table());
                                     view.lock().get_buffer_mut().palette = lock.get_buffer().palette.clone();
                                     view.lock().get_buffer_mut().layers.push(l);
-                                    view.lock().get_edit_state_mut().is_buffer_dirty = true;
+                                    view.lock().get_edit_state_mut().set_is_buffer_dirty();
                                 }
                             }
+
                             let (_, _) = icy_engine_egui::show_terminal_area(ui, view, opt);
                         });
 
