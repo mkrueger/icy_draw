@@ -77,7 +77,7 @@ impl EraseTool {
                         }
                     }
                     EraseType::Solid => {
-                        editor.set_char(pos, AttributedChar::new(' ', TextAttribute::default()));
+                        editor.set_char(pos, AttributedChar::invisible());
                     }
                 }
             }

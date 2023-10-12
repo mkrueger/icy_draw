@@ -82,6 +82,9 @@ impl Tool for PencilTool {
     }
 
     fn handle_drag(&mut self, _ui: &egui::Ui, response: egui::Response, editor: &mut AnsiEditor, _calc: &TerminalCalc) -> egui::Response {
+        if self.last_pos == editor.half_block_click_pos {
+            return response;
+        }
         plot_point(
             &mut editor.buffer_view.lock(),
             editor.half_block_click_pos,
@@ -90,15 +93,16 @@ impl Tool for PencilTool {
             PointRole::Line,
         );
 
-        self.last_pos = editor.drag_pos.cur;
+        self.last_pos = editor.half_block_click_pos;
         self.cur_pos = editor.drag_pos.cur;
+        editor.buffer_view.lock().get_edit_state_mut().set_is_buffer_dirty();
 
         response
     }
 
     fn handle_drag_begin(&mut self, editor: &mut AnsiEditor, _response: &egui::Response) -> Event {
         self.undo_op = Some(editor.begin_atomic_undo(fl!(crate::LANGUAGE_LOADER, "undo-pencil")));
-        self.last_pos = editor.drag_pos.cur;
+        self.last_pos = editor.half_block_click_pos;
         self.cur_pos = editor.drag_pos.cur;
         editor.clear_overlay_layer();
         plot_point(
@@ -108,7 +112,7 @@ impl Tool for PencilTool {
             self.color_mode,
             PointRole::Line,
         );
-
+        editor.buffer_view.lock().get_edit_state_mut().set_is_buffer_dirty();
         Event::None
     }
 
