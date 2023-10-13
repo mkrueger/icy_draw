@@ -149,9 +149,7 @@ impl Tool for FillTool {
 
     fn handle_click(&mut self, editor: &mut AnsiEditor, button: i32, pos: Position, _pos_abs: Position, _response: &egui::Response) -> Option<Message> {
         if button == 1 {
-            let Ok(layer) = editor.get_cur_layer_index() else {
-                return None
-            };
+            let Ok(layer) = editor.get_cur_layer_index() else { return None };
             if layer >= editor.buffer_view.lock().get_buffer().layers.len() {
                 return None;
             }
