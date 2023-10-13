@@ -32,6 +32,11 @@ IcyDraw is a full features ansi drawing tool doing things a bit different than o
  - Full SAUCE support including 9px & aspect ratio display
  - 3d accelerated output & output filters
 
+# Get binaries
+
+Get the latest release here:
+https://github.com/mkrueger/icy_draw/releases/latest
+
 ## File structure
 
 IcyDraw stores data only in one directory (~/.config/icy_draw on linux) - it doesn't scatter data around.
