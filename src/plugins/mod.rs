@@ -1,7 +1,7 @@
 use std::{fs, path::Path, sync::Arc};
 
 use i18n_embed_fl::fl;
-use icy_engine::{AttributedChar, Position, TextPane, UnicodeConverter};
+use icy_engine::{attribute, AttributedChar, Position, TextPane, UnicodeConverter};
 use mlua::{Lua, UserData};
 use regex::Regex;
 use walkdir::WalkDir;
@@ -233,7 +233,8 @@ impl UserData for LuaBufferView {
                     incomplete_input: false,
                 });
             }
-            let attr = this.buffer_view.lock().get_caret_mut().get_attribute();
+            let mut attr = this.buffer_view.lock().get_caret_mut().get_attribute();
+            attr.attr &= !attribute::INVISIBLE;
             let ch = AttributedChar::new(this.convert_from_unicode(ch)?, attr);
 
             if let Err(err) = this.buffer_view.lock().get_edit_state_mut().set_char((x, y), ch) {
@@ -270,7 +271,9 @@ impl UserData for LuaBufferView {
             }
 
             let ch = this.buffer_view.lock().get_buffer_mut().layers[cur_layer].get_char((x, y));
-            this.buffer_view.lock().get_caret_mut().set_attr(ch.attribute);
+            let mut attr = ch.attribute;
+            attr.attr &= !attribute::INVISIBLE;
+            this.buffer_view.lock().get_caret_mut().set_attr(attr);
 
             Ok(this.convert_to_unicode(ch))
         });
@@ -335,7 +338,8 @@ impl UserData for LuaBufferView {
         methods.add_method_mut("print", |_, this, str: String| {
             for c in str.chars() {
                 let mut pos = this.buffer_view.lock().get_caret_mut().get_position();
-                let attribute = this.buffer_view.lock().get_caret_mut().get_attribute();
+                let mut attribute = this.buffer_view.lock().get_caret_mut().get_attribute();
+                attribute.attr &= !attribute::INVISIBLE;
                 let ch = AttributedChar::new(this.convert_from_unicode(c.to_string())?, attribute);
                 let _ = this.buffer_view.lock().get_edit_state_mut().set_char(pos, ch);
                 pos.x += 1;
