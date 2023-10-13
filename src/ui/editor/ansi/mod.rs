@@ -13,6 +13,7 @@ use eframe::{
 };
 use i18n_embed_fl::fl;
 use icy_engine::{
+    attribute,
     editor::{AtomicUndoGuard, UndoState},
     util::{pop_data, pop_sixel_image, push_data, BUFFER_DATA},
     AttributedChar, Buffer, EngineResult, Line, Position, Rectangle, SaveOptions, TextAttribute, TextPane,
@@ -468,7 +469,7 @@ impl AnsiEditor {
         }
         let mut attr = self.get_char(pos).attribute;
         let caret_attr = self.buffer_view.lock().get_caret().get_attribute();
-        attr.attr = caret_attr.attr;
+        attr.attr = caret_attr.attr & !attribute::INVISIBLE;
         if self.color_mode.use_fore() {
             attr.set_foreground(caret_attr.get_foreground());
         }
