@@ -148,6 +148,7 @@ pub fn palette_editor_16(
             ui.available_width() - right_border,
             height * upper_limit as f32 / items_per_row as f32,
         ));
+
         let mut response = ui.interact(stroke_rect, id, Sense::click());
         let painter = ui.painter_at(stroke_rect);
 
@@ -228,6 +229,5 @@ pub fn palette_editor_16(
             }
         }
     });
-
     result
 }

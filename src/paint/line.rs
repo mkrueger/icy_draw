@@ -132,7 +132,6 @@ pub fn draw_line(buffer_view: &mut BufferView, from: impl Into<Position>, to: im
         } else {
             PointRole::LeftSide
         };
-        println!("{point} : {role:?}");
         plot_point(buffer_view, point, mode.clone(), color_mode, role);
         i += 1;
     }

@@ -19,7 +19,7 @@ use icy_engine::{
     AttributedChar, Buffer, EngineResult, Line, Position, Rectangle, SaveOptions, TextAttribute, TextPane,
 };
 
-use icy_engine_egui::{show_terminal_area, BufferView, TerminalCalc};
+use icy_engine_egui::{show_terminal_area, BufferView, TerminalCalc, CaretShape};
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
@@ -189,6 +189,7 @@ impl Document for AnsiEditor {
             show_layer_borders: unsafe { SETTINGS.show_layer_borders },
             show_line_numbers: unsafe { SETTINGS.show_line_numbers },
             request_focus: self.request_focus,
+            caret_shape: CaretShape::Block,
             ..Default::default()
         };
         let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
@@ -372,7 +373,6 @@ impl AnsiEditor {
         if x > (char_scroll_position.x + buffer_char_width - font_dim.width as f32) {
             next_x = Some((x - buffer_char_width + font_dim.width as f32).max(0.0));
         }
-        println!("next_x {:?} next_y {:?}", next_x, next_y);
         self.next_scroll_x_position = next_x;
         self.next_scroll_y_position = next_y;
         Event::CursorPositionChange(old, self.buffer_view.lock().get_caret().get_position())

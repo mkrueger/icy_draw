@@ -561,6 +561,8 @@ pub fn button_with_shortcut(ui: &mut Ui, enabled: bool, label: impl Into<String>
 
 impl<'a> eframe::App for MainWindow<'a> {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        let focus = ctx.memory(|r| r.focus());
+
         if self.in_open_file_mode {
             if self.open_file_window.show_file_chooser(ctx) {
                 let file = self.open_file_window.opened_file.take();
@@ -826,6 +828,15 @@ impl<'a> eframe::App for MainWindow<'a> {
                 unsafe {
                     self.commands[0].apply_key_bindings(&KEYBINDINGS.key_bindings);
                 }
+            }
+        }
+
+
+        if let Some(id) = focus {
+            if ctx.memory(|r| r.focus()).is_none() {
+                ctx.memory_mut(|r| {
+                    r.request_focus(id);
+                });
             }
         }
 
