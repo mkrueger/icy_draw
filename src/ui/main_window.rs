@@ -515,13 +515,13 @@ impl<'a> MainWindow<'a> {
                         "{}{} - iCY DRAW {}",
                         directory,
                         path.file_name().unwrap_or_default().to_str().unwrap_or_default(),
-                        &crate::VERSION
+                        *crate::VERSION
                     ));
                 } else {
                     frame.set_window_title(&format!(
                         "{} - iCY DRAW {}",
                         path.file_name().unwrap_or_default().to_str().unwrap_or_default(),
-                        &crate::VERSION
+                        *crate::VERSION
                     ));
                 }
             }

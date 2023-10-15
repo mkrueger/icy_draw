@@ -5,7 +5,6 @@
 use std::path::PathBuf;
 
 use eframe::egui;
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 mod model;
 mod paint;
 mod plugins;
@@ -28,10 +27,24 @@ use i18n_embed::{
     DesktopLanguageRequester,
 };
 use rust_embed::RustEmbed;
+use semver::Version;
 pub use ui::*;
 
 lazy_static::lazy_static! {
-    static ref DEFAULT_TITLE: String = format!("iCY DRAW {}", crate::VERSION);
+    static ref VERSION: Version = Version::parse( env!("CARGO_PKG_VERSION")).unwrap();
+
+    static ref DEFAULT_TITLE: String = format!("iCY DRAW {}", *crate::VERSION);
+}
+
+lazy_static::lazy_static! {
+    static ref LATEST_VERSION: Version = {
+        let github = github_release_check::GitHub::new().unwrap();
+        if let Ok(latest) = github.get_latest_version("mkrueger/icy_draw") {
+            latest
+        } else {
+            VERSION.clone()
+        }
+    };
 }
 
 #[derive(RustEmbed)]
@@ -158,7 +171,7 @@ fn main() {
         }
     }
 
-    log::info!("Starting iCY DRAW {}", VERSION);
+    log::info!("Starting iCY DRAW {}", *VERSION);
     Plugin::read_plugin_directory();
     if let Err(err) = eframe::run_native(
         &DEFAULT_TITLE,

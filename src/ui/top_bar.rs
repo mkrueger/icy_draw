@@ -11,7 +11,7 @@ use icy_engine::{
     FontMode, IceMode, PaletteMode,
 };
 
-use crate::{button_with_shortcut, MainWindow, Message, Settings, MRU_FILES, PLUGINS};
+use crate::{button_with_shortcut, MainWindow, Message, Settings, LATEST_VERSION, MRU_FILES, PLUGINS, VERSION};
 
 lazy_static::lazy_static! {
     pub static ref DOCK_LEFT_SVG: Image<'static> = Image::new(egui::include_image!("../../data/icons/dock_left.svg"));
@@ -592,6 +592,13 @@ impl<'a> MainWindow<'a> {
             let left = medium_toggle_button(ui, &DOCK_LEFT_SVG, self.left_panel);
             if left.clicked() {
                 self.left_panel = !self.left_panel;
+            }
+
+            if *VERSION < *LATEST_VERSION {
+                ui.hyperlink_to(
+                    format!("Upgrade to {}", *LATEST_VERSION),
+                    "https://github.com/mkrueger/icy_draw/releases/latest",
+                );
             }
         });
     }
