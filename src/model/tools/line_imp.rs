@@ -45,6 +45,10 @@ impl Tool for LineTool {
         fl!(crate::LANGUAGE_LOADER, "tool-line_tooltip")
     }
 
+    fn use_caret(&self) -> bool {
+        false
+    }
+
     fn use_selection(&self) -> bool {
         false
     }
