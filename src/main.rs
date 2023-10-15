@@ -32,7 +32,6 @@ pub use ui::*;
 
 lazy_static::lazy_static! {
     static ref VERSION: Version = Version::parse( env!("CARGO_PKG_VERSION")).unwrap();
-
     static ref DEFAULT_TITLE: String = format!("iCY DRAW {}", *crate::VERSION);
 }
 

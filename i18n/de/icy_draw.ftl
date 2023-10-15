@@ -127,6 +127,8 @@ menu-about=Info…
 menu-plugins=Erweiterungen
 menu-open_plugin_directory=Erweiterungsverzeichnis öffnen…
 
+menu-upgrade_version=Neue Version { $version }
+
 tool-fg=Fg
 tool-bg=Bg
 tool-solid=Solid

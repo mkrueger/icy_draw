@@ -596,7 +596,7 @@ impl<'a> MainWindow<'a> {
 
             if *VERSION < *LATEST_VERSION {
                 ui.hyperlink_to(
-                    format!("Upgrade to {}", *LATEST_VERSION),
+                    fl!(crate::LANGUAGE_LOADER, "menu-upgrade_version", version= LATEST_VERSION.to_string()),
                     "https://github.com/mkrueger/icy_draw/releases/latest",
                 );
             }
