@@ -35,7 +35,7 @@ impl Tool for PasteTool {
         String::new()
     }
 
-    fn use_caret(&self) -> bool {
+    fn use_caret(&self, _editor: &AnsiEditor) -> bool {
         false
     }
 

@@ -40,7 +40,7 @@ impl Tool for DrawRectangleTool {
         fl!(crate::LANGUAGE_LOADER, "tool-rectangle_tooltip")
     }
 
-    fn use_caret(&self) -> bool {
+    fn use_caret(&self, _editor: &AnsiEditor) -> bool {
         false
     }
     fn use_selection(&self) -> bool {

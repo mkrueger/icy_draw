@@ -26,7 +26,7 @@ impl Tool for MoveLayer {
         fl!(crate::LANGUAGE_LOADER, "tool-move_layer_tooltip")
     }
 
-    fn use_caret(&self) -> bool {
+    fn use_caret(&self, _editor: &AnsiEditor) -> bool {
         false
     }
     fn use_selection(&self) -> bool {

@@ -50,7 +50,7 @@ impl Tool for PencilTool {
         fl!(crate::LANGUAGE_LOADER, "tool-pencil_tooltip")
     }
 
-    fn use_caret(&self) -> bool {
+    fn use_caret(&self, _editor: &AnsiEditor) -> bool {
         false
     }
 

@@ -45,7 +45,7 @@ impl Tool for LineTool {
         fl!(crate::LANGUAGE_LOADER, "tool-line_tooltip")
     }
 
-    fn use_caret(&self) -> bool {
+    fn use_caret(&self, _editor: &AnsiEditor) -> bool {
         false
     }
 

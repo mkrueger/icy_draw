@@ -19,7 +19,7 @@ use icy_engine::{
     AttributedChar, Buffer, EngineResult, Line, Position, Rectangle, SaveOptions, TextAttribute, TextPane,
 };
 
-use icy_engine_egui::{show_terminal_area, BufferView, TerminalCalc, CaretShape};
+use icy_engine_egui::{show_terminal_area, BufferView, CaretShape, TerminalCalc};
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
@@ -167,7 +167,8 @@ impl Document for AnsiEditor {
         }
 
         let mut scale = options.get_scale();
-        self.buffer_view.lock().get_caret_mut().set_is_visible(cur_tool.use_caret());
+        let is_visible = cur_tool.use_caret(self);
+        self.buffer_view.lock().get_caret_mut().set_is_visible(is_visible);
         if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
             if self.buffer_view.lock().get_buffer().use_letter_spacing() {
                 scale.y *= 1.2;
@@ -460,6 +461,7 @@ impl AnsiEditor {
 
     pub fn type_key(&mut self, char_code: char) {
         let pos = self.buffer_view.lock().get_caret().get_position();
+        self.buffer_view.lock().clear_selection();
         if self.buffer_view.lock().get_caret().insert_mode {
             let end = self.buffer_view.lock().get_buffer().get_width();
             for i in (pos.x..end).rev() {

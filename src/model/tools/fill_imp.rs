@@ -132,7 +132,7 @@ impl Tool for FillTool {
         fl!(crate::LANGUAGE_LOADER, "tool-fill_tooltip")
     }
 
-    fn use_caret(&self) -> bool {
+    fn use_caret(&self, _editor: &AnsiEditor) -> bool {
         false
     }
     fn show_ui(&mut self, _ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {

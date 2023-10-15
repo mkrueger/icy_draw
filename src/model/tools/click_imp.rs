@@ -49,6 +49,11 @@ impl Tool for ClickTool {
         fl!(crate::LANGUAGE_LOADER, "tool-click_tooltip")
     }
 
+    fn use_caret(&self, editor: &AnsiEditor) -> bool {
+        let is_selected = editor.buffer_view.lock().get_edit_state().is_something_selected();
+        !is_selected
+    }
+
     fn show_ui(&mut self, ctx: &egui::Context, ui: &mut egui::Ui, editor_opt: Option<&mut AnsiEditor>) -> Option<Message> {
         if self.char_table.is_none() {
             self.char_table = Some(CharTableToolWindow::new(ctx, 16));
@@ -319,7 +324,6 @@ impl Tool for ClickTool {
             }
 
             MKey::Character(ch) => {
-                editor.buffer_view.lock().clear_selection();
                 let typed_char = unsafe { char::from_u32_unchecked(ch as u32) };
                 if editor.outline_font_mode {
                     let typed_char = typed_char.to_ascii_uppercase();

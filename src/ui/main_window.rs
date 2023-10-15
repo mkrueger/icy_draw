@@ -831,7 +831,6 @@ impl<'a> eframe::App for MainWindow<'a> {
             }
         }
 
-
         if let Some(id) = focus {
             if ctx.memory(|r| r.focus()).is_none() {
                 ctx.memory_mut(|r| {

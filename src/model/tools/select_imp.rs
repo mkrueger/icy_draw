@@ -80,7 +80,7 @@ impl Tool for SelectTool {
         fl!(crate::LANGUAGE_LOADER, "tool-select_tooltip")
     }
 
-    fn use_caret(&self) -> bool {
+    fn use_caret(&self, _editor: &AnsiEditor) -> bool {
         false
     }
 

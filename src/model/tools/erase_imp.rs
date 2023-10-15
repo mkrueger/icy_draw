@@ -97,7 +97,7 @@ impl Tool for EraseTool {
         fl!(crate::LANGUAGE_LOADER, "tool-eraser_tooltip")
     }
 
-    fn use_caret(&self) -> bool {
+    fn use_caret(&self, _editor: &AnsiEditor) -> bool {
         false
     }
 
