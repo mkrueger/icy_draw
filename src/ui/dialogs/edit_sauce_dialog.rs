@@ -8,13 +8,24 @@ use crate::{to_message, AnsiEditor, Message, ModalDialog, TerminalResult};
 pub struct EditSauceDialog {
     pub should_commit: bool,
     pub sauce_data: SauceData,
+    pub comments: String,
 }
 
 impl EditSauceDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
+        let mut comments = String::new();
+
+        if let Some(sauce) = buf.get_sauce() {
+            for s in &sauce.comments {
+                comments.push_str(&s.to_string());
+                comments.push('\n');
+            }
+        }
+
         EditSauceDialog {
             should_commit: false,
             sauce_data: buf.get_sauce().clone().unwrap_or_default(),
+            comments,
         }
     }
 }
@@ -82,25 +93,10 @@ impl ModalDialog for EditSauceDialog {
                 ui.add_space(16.0);
                 ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-comments-label"));
                 ui.add_space(4.0);
-                let mut tmp_str = String::new();
-                for s in &self.sauce_data.comments {
-                    tmp_str.push_str(&s.to_string());
-                    tmp_str.push('\n');
-                }
                 self.sauce_data.comments.clear();
                 egui::ScrollArea::vertical().max_height(180.0).show(ui, |ui| {
-                    ui.add(egui::TextEdit::multiline(&mut tmp_str).desired_rows(6).desired_width(f32::INFINITY));
+                    ui.add(egui::TextEdit::multiline(&mut self.comments).desired_rows(6).desired_width(f32::INFINITY));
                 });
-
-                let mut number = 0;
-                for line in tmp_str.lines() {
-                    self.sauce_data.comments.push(SauceString::from(line));
-                    number += 1;
-                    // limit to 255 chars which is the maximum for sauce comment lines.
-                    if number > 255 {
-                        break;
-                    }
-                }
             });
 
             modal.buttons(ui, |ui| {
@@ -122,7 +118,18 @@ impl ModalDialog for EditSauceDialog {
     }
 
     fn commit(&self, editor: &mut AnsiEditor) -> TerminalResult<Option<Message>> {
+        let mut data = self.sauce_data.clone();
+        let mut number = 0;
+        for line in self.comments.lines() {
+            data.comments.push(SauceString::from(line));
+            number += 1;
+            // limit to 255 chars which is the maximum for sauce comment lines.
+            if number > 255 {
+                break;
+            }
+        }
+
         let bv = &mut editor.buffer_view.lock();
-        Ok(to_message(bv.get_edit_state_mut().update_sauce_data(Some(self.sauce_data.clone()))))
+        Ok(to_message(bv.get_edit_state_mut().update_sauce_data(Some(data))))
     }
 }
