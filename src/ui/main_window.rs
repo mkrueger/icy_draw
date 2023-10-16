@@ -795,6 +795,7 @@ impl<'a> eframe::App for MainWindow<'a> {
         self.commands[0].check(ctx, &mut msg);
         self.handle_message(msg);
         self.handle_message(read_outline_keys(ctx));
+        self.handle_message(read_color_keys(ctx));
 
         ctx.input(|i| {
             for f in &i.raw.dropped_files {
@@ -892,7 +893,6 @@ fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
     if ctx.input(|i| i.key_pressed(Key::F12) && check_base_f_key_modifier(i)) {
         result = Some(Message::SelectOutline(11));
     }
-
     if ctx.input(|i| i.key_pressed(Key::F1) && i.modifiers.shift && (i.modifiers.ctrl || i.modifiers.alt)) {
         result = Some(Message::SelectOutline(12));
     }
@@ -903,6 +903,22 @@ fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
         result = Some(Message::SelectOutline(14));
     }
 
+    result
+}
+
+fn read_color_keys(ctx: &egui::Context) -> Option<Message> {
+    let mut result = None;
+
+    let keys = [Key::Num1, Key::Num2, Key::Num3, Key::Num4, Key::Num5, Key::Num6, Key::Num7, Key::Num8];
+
+    for (i, k) in keys.iter().enumerate() {
+        if ctx.input(|i| i.key_pressed(*k) && i.modifiers.command_only()) {
+            result = Some(Message::KeySwitchForeground(i));
+        }
+        if ctx.input(|i| i.key_pressed(*k) && i.modifiers.alt && !i.modifiers.shift && !i.modifiers.ctrl) {
+            result = Some(Message::KeySwitchBackground(i));
+        }
+    }
     result
 }
 

@@ -11,7 +11,7 @@ use icy_engine::{
     FontMode, IceMode, PaletteMode,
 };
 
-use crate::{button_with_shortcut, MainWindow, Message, Settings, LATEST_VERSION, MRU_FILES, PLUGINS, VERSION, SETTINGS};
+use crate::{button_with_shortcut, MainWindow, Message, Settings, LATEST_VERSION, MRU_FILES, PLUGINS, SETTINGS, VERSION};
 
 lazy_static::lazy_static! {
     pub static ref DOCK_LEFT_SVG: Image<'static> = Image::new(egui::include_image!("../../data/icons/dock_left.svg"));

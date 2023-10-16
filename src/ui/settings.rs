@@ -36,7 +36,17 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { font_outline_style: Default::default(), character_set: Default::default(), is_dark_mode: Default::default(), show_layer_borders: Default::default(), show_line_numbers: Default::default(), monitor_settings: Default::default(), marker_settings: Default::default(), save_options: Default::default(), scale: Vec2::splat(2.0) }
+        Self {
+            font_outline_style: Default::default(),
+            character_set: Default::default(),
+            is_dark_mode: Default::default(),
+            show_layer_borders: Default::default(),
+            show_line_numbers: Default::default(),
+            monitor_settings: Default::default(),
+            marker_settings: Default::default(),
+            save_options: Default::default(),
+            scale: Vec2::splat(2.0),
+        }
     }
 }
 

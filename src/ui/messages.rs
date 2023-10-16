@@ -151,6 +151,8 @@ pub enum Message {
     AddAnsiFont(usize),
     SetSauceFont(String),
     ToggleGrid,
+    KeySwitchForeground(usize),
+    KeySwitchBackground(usize),
 }
 
 pub const CTRL_SHIFT: egui::Modifiers = egui::Modifiers {
@@ -747,23 +749,17 @@ impl<'a> MainWindow<'a> {
                 self.is_fullscreen = !self.is_fullscreen;
             }
 
-            Message::ZoomReset => {
-                unsafe {
-                    SETTINGS.set_scale(Vec2::splat(2.0));
-                }
-            }
+            Message::ZoomReset => unsafe {
+                SETTINGS.set_scale(Vec2::splat(2.0));
+            },
 
-            Message::ZoomIn => {
-                unsafe {
-                    SETTINGS.set_scale(SETTINGS.get_scale() * 1.2);
-                }
-            }
+            Message::ZoomIn => unsafe {
+                SETTINGS.set_scale(SETTINGS.get_scale() * 1.2);
+            },
 
-            Message::ZoomOut => {
-                unsafe {
-                    SETTINGS.set_scale(SETTINGS.get_scale() * 0.8);
-                }
-            }
+            Message::ZoomOut => unsafe {
+                SETTINGS.set_scale(SETTINGS.get_scale() * 0.8);
+            },
 
             Message::OpenFontDirectory => match Settings::get_font_diretory() {
                 Ok(dir) => {
@@ -942,6 +938,40 @@ impl<'a> MainWindow<'a> {
                     self.handle_message(Some(Message::ShowError(format!("{err}"))));
                 }
             },
+
+            Message::KeySwitchForeground(k) => {
+                self.run_editor_command(k, |_, editor, k| {
+                    let palette_len = editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let mut fg = editor.buffer_view.lock().get_caret_mut().get_attribute().get_foreground();
+                    if fg % 8 == k as u32 {
+                        fg += 8;
+                    } else {
+                        fg = k as u32;
+                    }
+                    fg %= palette_len;
+                    if fg < 8 || editor.buffer_view.lock().get_buffer().font_mode.has_high_fg_colors() || palette_len > 16 {
+                        editor.buffer_view.lock().get_caret_mut().set_foreground(fg);
+                    }
+                    None
+                });
+            }
+
+            Message::KeySwitchBackground(k) => {
+                self.run_editor_command(k, |_, editor, k| {
+                    let palette_len = editor.buffer_view.lock().get_buffer_mut().palette.len() as u32;
+                    let mut bg = editor.buffer_view.lock().get_caret_mut().get_attribute().get_background();
+                    if bg % 8 == k as u32 {
+                        bg += 8;
+                    } else {
+                        bg = k as u32;
+                    }
+                    bg %= palette_len;
+                    if bg < 8 || editor.buffer_view.lock().get_buffer().ice_mode.has_high_bg_colors() || palette_len > 16 {
+                        editor.buffer_view.lock().get_caret_mut().set_background(bg);
+                    }
+                    None
+                });
+            }
 
             Message::NextFgColor => {
                 self.run_editor_command(0, |_, editor, _| {
