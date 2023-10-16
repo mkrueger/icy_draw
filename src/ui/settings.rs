@@ -1,5 +1,6 @@
 use directories::ProjectDirs;
 use eframe::egui::Modifiers;
+use egui::Vec2;
 use icy_engine::{Color, SaveOptions};
 use icy_engine_egui::{BackgroundEffect, MarkerSettings, MonitorSettings};
 use serde::{Deserialize, Serialize};
@@ -28,6 +29,15 @@ pub struct Settings {
     pub monitor_settings: MonitorSettings,
     pub marker_settings: MarkerSettings,
     pub save_options: SaveOptions,
+
+    #[serde(default)]
+    scale: Vec2,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self { font_outline_style: Default::default(), character_set: Default::default(), is_dark_mode: Default::default(), show_layer_borders: Default::default(), show_line_numbers: Default::default(), monitor_settings: Default::default(), marker_settings: Default::default(), save_options: Default::default(), scale: Vec2::splat(2.0) }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -287,6 +297,17 @@ impl Settings {
             egui::Visuals::light()
         }
     }
+
+    pub fn get_scale(&self) -> Vec2 {
+        self.scale
+    }
+
+    pub fn set_scale(&mut self, scale: Vec2) {
+        self.scale = scale.clamp(Vec2::new(0.5, 0.5), Vec2::new(5., 5.));
+        self.scale = (self.scale * 100.0).floor() / 100.0;
+
+        Settings::save().unwrap();
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -389,6 +410,7 @@ pub static mut SETTINGS: Settings = Settings {
         guide_alpha: 0.2,
         guide_color: Color::new(0xAB, 0xAB, 0xAB),
     },
+    scale: Vec2::splat(2.0),
 };
 
 #[derive(Debug, Clone)]

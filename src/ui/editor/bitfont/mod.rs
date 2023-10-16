@@ -501,7 +501,7 @@ impl Document for BitFontEditor {
         self.undo_stack.lock().len()
     }
 
-    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, options: &DocumentOptions) -> Option<Message> {
+    fn show_ui(&mut self, ui: &mut eframe::egui::Ui, _cur_tool: &mut Box<dyn Tool>, _selected_tool: usize, _options: &DocumentOptions) -> Option<Message> {
         let mut message = None;
         ui.add_space(16.);
         ui.vertical_centered(|ui| {
@@ -578,7 +578,7 @@ impl Document for BitFontEditor {
 
                 ui.vertical(|ui| {
                     ui.heading(fl!(crate::LANGUAGE_LOADER, "font-editor-tile_area"));
-                    let mut scale = options.get_scale();
+                    let mut scale = unsafe { SETTINGS.get_scale() };
                     if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
                         scale.y *= 1.35;
                     }

@@ -166,7 +166,7 @@ impl Document for AnsiEditor {
             self.buffer_view.lock().get_edit_state_mut().set_is_buffer_dirty();
         }
 
-        let mut scale = options.get_scale();
+        let mut scale = unsafe { SETTINGS.get_scale() };
         let is_visible = cur_tool.use_caret(self);
         self.buffer_view.lock().get_caret_mut().set_is_visible(is_visible);
         if self.buffer_view.lock().get_buffer().use_aspect_ratio() {

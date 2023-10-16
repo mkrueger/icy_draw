@@ -11,7 +11,7 @@ use icy_engine::{
     FontMode, IceMode, PaletteMode,
 };
 
-use crate::{button_with_shortcut, MainWindow, Message, Settings, LATEST_VERSION, MRU_FILES, PLUGINS, VERSION};
+use crate::{button_with_shortcut, MainWindow, Message, Settings, LATEST_VERSION, MRU_FILES, PLUGINS, VERSION, SETTINGS};
 
 lazy_static::lazy_static! {
     pub static ref DOCK_LEFT_SVG: Image<'static> = Image::new(egui::include_image!("../../data/icons/dock_left.svg"));
@@ -419,7 +419,7 @@ impl<'a> MainWindow<'a> {
                     fl!(
                         crate::LANGUAGE_LOADER,
                         "menu-zoom",
-                        zoom = format!("{}%", (100. * self.document_behavior.document_options.get_scale().x) as i32)
+                        zoom = format!("{}%", (100. * unsafe { SETTINGS.get_scale().x }) as i32)
                     ),
                     |ui| {
                         ui.style_mut().wrap = Some(false);
@@ -432,23 +432,23 @@ impl<'a> MainWindow<'a> {
                         ui.separator();
 
                         if ui.button("4:1 400%").clicked() {
-                            self.document_behavior.document_options.set_scale(Vec2::new(4.0, 4.0));
+                            unsafe { SETTINGS.set_scale(Vec2::new(4.0, 4.0)) };
                             ui.close_menu();
                         }
                         if ui.button("2:1 200%").clicked() {
-                            self.document_behavior.document_options.set_scale(Vec2::new(2.0, 2.0));
+                            unsafe { SETTINGS.set_scale(Vec2::new(2.0, 2.0)) };
                             ui.close_menu();
                         }
                         if ui.button("1:1 100%").clicked() {
-                            self.document_behavior.document_options.set_scale(Vec2::new(1.0, 1.0));
+                            unsafe { SETTINGS.set_scale(Vec2::new(1.0, 1.0)) };
                             ui.close_menu();
                         }
                         if ui.button("1:2 50%").clicked() {
-                            self.document_behavior.document_options.set_scale(Vec2::new(0.5, 0.5));
+                            unsafe { SETTINGS.set_scale(Vec2::new(0.5, 0.5)) };
                             ui.close_menu();
                         }
                         if ui.button("1:4 25%").clicked() {
-                            self.document_behavior.document_options.set_scale(Vec2::new(0.25, 0.25));
+                            unsafe { SETTINGS.set_scale(Vec2::new(0.25, 0.25)) };
                             ui.close_menu();
                         }
 

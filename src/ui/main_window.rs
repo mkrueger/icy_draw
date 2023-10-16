@@ -812,8 +812,10 @@ impl<'a> eframe::App for MainWindow<'a> {
                         self.handle_message(Some(Message::SelectTool(PIPETTE_TOOL)));
                     }
                     eframe::egui::Event::Zoom(vec) => {
-                        let scale = self.document_behavior.document_options.get_scale() * *vec;
-                        self.document_behavior.document_options.set_scale(scale);
+                        let scale = unsafe { SETTINGS.get_scale() } * *vec;
+                        unsafe {
+                            SETTINGS.set_scale(scale);
+                        }
                     }
                     _ => (),
                 }

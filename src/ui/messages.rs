@@ -10,7 +10,7 @@ use icy_engine::{util::pop_data, BitFont, EngineResult, IceMode, Layer, PaletteM
 
 use crate::{
     util::autosave::{self},
-    AnsiEditor, DocumentOptions, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog, SelectOutlineDialog, Settings, MRU_FILES, PLUGINS, SETTINGS,
+    AnsiEditor, MainWindow, NewFileDialog, SaveFileDialog, SelectCharacterDialog, SelectOutlineDialog, Settings, MRU_FILES, PLUGINS, SETTINGS,
 };
 
 #[derive(Clone)]
@@ -748,19 +748,21 @@ impl<'a> MainWindow<'a> {
             }
 
             Message::ZoomReset => {
-                self.document_behavior.document_options.set_scale(DocumentOptions::default().get_scale());
+                unsafe {
+                    SETTINGS.set_scale(Vec2::splat(2.0));
+                }
             }
 
             Message::ZoomIn => {
-                self.document_behavior
-                    .document_options
-                    .set_scale(self.document_behavior.document_options.get_scale() * 1.2);
+                unsafe {
+                    SETTINGS.set_scale(SETTINGS.get_scale() * 1.2);
+                }
             }
 
             Message::ZoomOut => {
-                self.document_behavior
-                    .document_options
-                    .set_scale(self.document_behavior.document_options.get_scale() * 0.8);
+                unsafe {
+                    SETTINGS.set_scale(SETTINGS.get_scale() * 0.8);
+                }
             }
 
             Message::OpenFontDirectory => match Settings::get_font_diretory() {
