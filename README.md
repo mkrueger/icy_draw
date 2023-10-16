@@ -32,10 +32,22 @@ IcyDraw is a full features ansi drawing tool doing things a bit different than o
  - Full SAUCE support including 9px & aspect ratio display
  - 3d accelerated output & output filters
 
+
 # Get binaries
 
 Get the latest release here:
 https://github.com/mkrueger/icy_draw/releases/latest
+
+## Requires
+
+IcyDraw needs a graphics card that can can do opengl 3.3+.
+(It's the 2010 version but some people have problems starting)
+
+If it doesn't run check if graphics card drivers are up to date.
+
+On Windows:
+opengl32.dll
+And VCRUNTIME140.dll is required. Usually these two are installed and it should run out of the box. If you can run any game with 3D graphics it should just work.
 
 ## File structure
 
