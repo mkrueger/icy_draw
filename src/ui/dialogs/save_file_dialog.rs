@@ -47,6 +47,7 @@ impl crate::ModalDialog for SaveFileDialog {
             if let Some(pane) = window.get_active_pane_mut() {
                 pane.set_path(file.clone());
                 pane.save();
+                window.current_id = None;
             }
         }
         Ok(None)
