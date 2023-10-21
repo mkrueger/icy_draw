@@ -172,6 +172,9 @@ impl Tool for BrushTool {
     }
 
     fn handle_no_hover(&mut self, editor: &mut AnsiEditor) {
+        if matches!(self.brush_mode, BrushMode::Custom) {
+            editor.clear_overlay_layer();
+        }
         let lock = &mut editor.buffer_view.lock();
         let get_edit_state_mut = lock.get_edit_state_mut();
         if get_edit_state_mut.get_tool_overlay_mask_mut().is_empty() {

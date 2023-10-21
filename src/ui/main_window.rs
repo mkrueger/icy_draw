@@ -54,7 +54,7 @@ pub struct MainWindow<'a> {
 
 pub const PASTE_TOOL: usize = 0;
 pub const FIRST_TOOL: usize = 1;
-pub const BRUSH_TOOL: usize = 3;
+pub const BRUSH_TOOL: usize = 4;
 pub const PIPETTE_TOOL: usize = 6;
 
 impl<'a> MainWindow<'a> {
