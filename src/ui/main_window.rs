@@ -909,7 +909,7 @@ fn read_outline_keys(ctx: &egui::Context) -> Option<Message> {
 fn read_color_keys(ctx: &egui::Context) -> Option<Message> {
     let mut result = None;
 
-    let keys = [Key::Num1, Key::Num2, Key::Num3, Key::Num4, Key::Num5, Key::Num6, Key::Num7, Key::Num8];
+    let keys = [Key::Num0, Key::Num1, Key::Num2, Key::Num3, Key::Num4, Key::Num5, Key::Num6, Key::Num7];
 
     for (i, k) in keys.iter().enumerate() {
         if ctx.input(|i| i.key_pressed(*k) && i.modifiers.command_only()) {

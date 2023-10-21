@@ -532,7 +532,7 @@ keys![
     (switch_to_default_color, "menu-default_color", SwitchToDefaultColor, BufferOpenState, D, CTRL),
     (toggle_color, "menu-toggle_color", ToggleColor, BufferOpenState, X, ALT),
     (fullscreen, "menu-toggle_fullscreen", ToggleFullScreen, AlwaysEnabledState, Enter, ALT),
-    (zoom_reset, "menu-zoom_reset", ZoomReset, BufferOpenState, Num0, CTRL),
+    (zoom_reset, "menu-zoom_reset", ZoomReset, BufferOpenState, Backspace, CTRL),
     (zoom_in, "menu-zoom_in", ZoomIn, BufferOpenState, PlusEquals, CTRL),
     (zoom_out, "menu-zoom_out", ZoomOut, BufferOpenState, Minus, CTRL),
     (open_tdf_directory, "menu-open_tdf_directoy", OpenTdfDirectory, AlwaysEnabledState),
