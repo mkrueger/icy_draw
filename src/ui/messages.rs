@@ -712,8 +712,8 @@ impl<'a> MainWindow<'a> {
                     let fg = attr.get_foreground();
                     let bg = attr.get_background();
                     let caret = bv.get_caret_mut();
-                    caret.set_foreground(bg);
-                    caret.set_background(fg);
+                    caret.set_foreground(fg);
+                    caret.set_background(bg);
                     None
                 });
             }
