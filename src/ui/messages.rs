@@ -6,7 +6,7 @@ use eframe::{
     epaint::Vec2,
 };
 use egui::mutex::Mutex;
-use icy_engine::{util::pop_data, BitFont, EngineResult, IceMode, Layer, PaletteMode, SauceData, Size, TextAttribute, TextPane, TheDrawFont};
+use icy_engine::{util::pop_data, BitFont, EngineResult, IceMode, Layer, PaletteMode, SauceData, Size, TextPane, TheDrawFont};
 
 use crate::{
     util::autosave::{self},
@@ -704,10 +704,9 @@ impl<'a> MainWindow<'a> {
                     let pos = bv.get_caret().get_position();
 
                     let attr = if let Some(layer) = bv.get_edit_state().get_cur_layer() {
-                        let ch = layer.get_char(pos);
-                        ch.attribute
+                        bv.get_buffer().get_char(pos + layer.get_offset()).attribute
                     } else {
-                        TextAttribute::default()
+                        bv.get_buffer().get_char(pos).attribute
                     };
 
                     let fg = attr.get_foreground();
