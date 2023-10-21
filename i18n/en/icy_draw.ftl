@@ -196,7 +196,7 @@ edit-sauce-author-label=Author:
 edit-sauce-author-label-length=(20 chars)
 edit-sauce-group-label=Group:
 edit-sauce-group-label-length=(20 chars)
-edit-sauce-comments-label=Comments
+edit-sauce-comments-label=Comments (64 chars in line limit)
 edit-sauce-letter-spacing=Use 9px mode:
 edit-sauce-aspect-ratio=Simulate classic aspect ratio:
 

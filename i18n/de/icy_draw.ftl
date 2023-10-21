@@ -199,7 +199,7 @@ edit-sauce-author-label=Autor:
 edit-sauce-author-label-length=(20 Zeichen)
 edit-sauce-group-label=Grupe:
 edit-sauce-group-label-length=(20 Zeichen)
-edit-sauce-comments-label=Kommentare:
+edit-sauce-comments-label=Kommentare (64 Zeichen pro Zeile):
 edit-sauce-letter-spacing=9 Pixel Modus:
 edit-sauce-aspect-ratio=Klassisches Seitenverhältnis:
 

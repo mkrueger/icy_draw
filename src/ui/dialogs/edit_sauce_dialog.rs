@@ -96,6 +96,16 @@ impl ModalDialog for EditSauceDialog {
                 self.sauce_data.comments.clear();
                 egui::ScrollArea::vertical().max_height(180.0).show(ui, |ui| {
                     ui.add(egui::TextEdit::multiline(&mut self.comments).desired_rows(6).desired_width(f32::INFINITY));
+                    let mut new_comments = String::new();
+                    for line in self.comments.lines() {
+                        if line.len() > 64 {
+                            new_comments.push_str(&line[..64]);
+                        } else {
+                            new_comments.push_str(line);
+                        }
+                        new_comments.push('\n');
+                    }
+                    self.comments = new_comments;
                 });
             });
 
