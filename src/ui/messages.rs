@@ -753,11 +753,11 @@ impl<'a> MainWindow<'a> {
             },
 
             Message::ZoomIn => unsafe {
-                SETTINGS.set_scale(SETTINGS.get_scale() * 1.2);
+                SETTINGS.set_scale(SETTINGS.get_scale() + Vec2::splat(0.5));
             },
 
             Message::ZoomOut => unsafe {
-                SETTINGS.set_scale(SETTINGS.get_scale() * 0.8);
+                SETTINGS.set_scale(SETTINGS.get_scale() - Vec2::splat(0.5));
             },
 
             Message::OpenFontDirectory => match Settings::get_font_diretory() {
