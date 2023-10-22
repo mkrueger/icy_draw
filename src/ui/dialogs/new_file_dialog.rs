@@ -8,7 +8,7 @@ use eframe::{
 use egui::{Image, Vec2};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, FontType, TheDrawFont};
+use icy_engine::{BitFont, Buffer, FontType, Palette, TheDrawFont, ATARI, ATARI_DEFAULT_PALETTE};
 
 use crate::{add_child, AnsiEditor, MainWindow, Message};
 
@@ -238,6 +238,51 @@ impl Template for FileIdTemplate {
     }
 }
 
+struct AtasciiTemplate {
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Template for AtasciiTemplate {
+    fn image(&self) -> &Image<'static> {
+        &crate::ANSI_TEMPLATE_IMG
+    }
+
+    fn title(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-atascii-title")
+    }
+
+    fn description(&self) -> String {
+        fl!(crate::LANGUAGE_LOADER, "new-file-template-atascii-description")
+    }
+
+    fn show_ui(&mut self, ui: &mut Ui) {
+        show_file_ui(ui, &mut self.width, &mut self.height);
+    }
+
+    fn create_file(&self, window: &mut MainWindow<'_>) -> crate::TerminalResult<Option<Message>> {
+        let mut buf = Buffer::create((self.width, self.height));
+        buf.buffer_type = icy_engine::BufferType::Atascii;
+        buf.ice_mode = icy_engine::IceMode::Ice;
+        buf.palette_mode = icy_engine::PaletteMode::Fixed16;
+        buf.font_mode = icy_engine::FontMode::Single;
+        buf.clear_font_table();
+        let mut font = BitFont::from_bytes("", ATARI).unwrap();
+        font.length = 128;
+        for k in 0..128u8 {
+            font.glyphs.remove(&((128 + k) as char));
+        }
+
+        buf.set_font(0, font);
+        buf.palette = Palette::from_slice(&ATARI_DEFAULT_PALETTE);
+
+        let id = window.create_id();
+        let editor = AnsiEditor::new(&window.gl, id, buf);
+        add_child(&mut window.document_tree, None, Box::new(editor));
+        Ok(None)
+    }
+}
+
 fn show_file_ui(ui: &mut Ui, width: &mut i32, height: &mut i32) {
     egui::Grid::new("some_unique_id").num_columns(2).spacing([4.0, 8.0]).show(ui, |ui| {
         ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
@@ -409,6 +454,7 @@ impl Default for NewFileDialog {
             Box::new(XBExtTemplate { width: 80, height: 25 }),
             Box::new(FileIdTemplate { width: 44, height: 25 }),
             Box::new(AnsiMationTemplate {}),
+            Box::new(AtasciiTemplate { width: 40, height: 24 }),
             Box::new(BitFontTemplate { width: 8, height: 16 }),
             Box::new(TdfFontTemplate { font_type: FontType::Color }),
             Box::new(TdfFontTemplate { font_type: FontType::Block }),

@@ -20,7 +20,7 @@ use egui::mutex::Mutex;
 use egui_tiles::{Container, TileId};
 use glow::Context;
 use i18n_embed_fl::fl;
-use icy_engine::{BitFont, Buffer, EngineResult, Palette, TextAttribute, TheDrawFont};
+use icy_engine::{BitFont, Buffer, BufferType, EngineResult, Palette, TextAttribute, TheDrawFont};
 
 pub struct MainWindow<'a> {
     pub document_tree: egui_tiles::Tree<DocumentTab>,
@@ -611,9 +611,11 @@ impl<'a> eframe::App for MainWindow<'a> {
                 let mut palette = Palette::dos_default();
                 let mut ice_mode = icy_engine::IceMode::Unlimited;
                 let mut font_mode = icy_engine::FontMode::Unlimited;
+                let mut buffer_type = BufferType::CP437;
 
                 if let Some(doc) = self.get_active_document() {
                     if let Some(editor) = doc.lock().get_ansi_editor() {
+                        buffer_type = editor.buffer_view.lock().get_buffer().buffer_type;
                         caret_attr = editor.buffer_view.lock().get_caret().get_attribute();
                         palette = editor.buffer_view.lock().get_buffer().palette.clone();
                         ice_mode = editor.buffer_view.lock().get_buffer().ice_mode;
@@ -630,25 +632,30 @@ impl<'a> eframe::App for MainWindow<'a> {
                 });
 
                 ui.separator();
-                let msg2 = crate::palette_editor_16(ui, &caret_attr, &palette, ice_mode, font_mode);
-                if msg.is_none() {
-                    msg = msg2;
-                }
 
-                if ice_mode.has_blink()
-                    && ui
-                        .selectable_label(caret_attr.is_blinking(), fl!(crate::LANGUAGE_LOADER, "color-is_blinking"))
-                        .clicked()
-                {
-                    if let Some(doc) = self.get_active_document() {
-                        if let Some(editor) = doc.lock().get_ansi_editor() {
-                            caret_attr.set_is_blinking(!caret_attr.is_blinking());
-                            editor.buffer_view.lock().get_caret_mut().set_attr(caret_attr);
+                let is_atari = matches!(buffer_type, BufferType::Atascii);
+
+                if !is_atari {
+                    let msg2 = crate::palette_editor_16(ui, &caret_attr, &palette, ice_mode, font_mode);
+                    if msg.is_none() {
+                        msg = msg2;
+                    }
+
+                    if ice_mode.has_blink()
+                        && ui
+                            .selectable_label(caret_attr.is_blinking(), fl!(crate::LANGUAGE_LOADER, "color-is_blinking"))
+                            .clicked()
+                    {
+                        if let Some(doc) = self.get_active_document() {
+                            if let Some(editor) = doc.lock().get_ansi_editor() {
+                                caret_attr.set_is_blinking(!caret_attr.is_blinking());
+                                editor.buffer_view.lock().get_caret_mut().set_attr(caret_attr);
+                            }
                         }
                     }
-                }
 
-                ui.separator();
+                    ui.separator();
+                }
 
                 self.handle_message(msg);
 

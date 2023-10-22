@@ -6,13 +6,14 @@ use eframe::egui::{self, TextEdit, Ui};
 use egui_file::FileDialog;
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{Rectangle, SaveOptions, TextPane};
+use icy_engine::{BufferType, Rectangle, SaveOptions, TextPane};
 
 use crate::{AnsiEditor, Message, ModalDialog, TerminalResult, SETTINGS};
 
 mod ansi;
 mod artworx;
 mod ascii;
+mod atascii;
 mod avatar;
 mod bin;
 mod ice_draw;
@@ -26,6 +27,7 @@ pub struct ExportFileDialog {
     pub file_name: PathBuf,
     folder_dialog: Option<FileDialog>,
     format_type: i32,
+    buffer_type: BufferType,
 }
 
 impl ExportFileDialog {
@@ -33,37 +35,48 @@ impl ExportFileDialog {
         let file_name = match &buf.file_name {
             Some(path) => {
                 let mut p = path.clone();
-                if get_format_type(&p) < 0 {
-                    p.set_extension("ans");
-                }
+                let desc: &[(&str, CreateSettingsFunction, &str)] = if matches!(buf.buffer_type, BufferType::Atascii) {
+                    &ATASCII_TYPE_DESCRIPTIONS
+                } else {
+                    &TYPE_DESCRIPTIONS
+                };
+                let format_type = get_format_type(buf.buffer_type, path) as usize;
+                let ext = desc[format_type].2;
+                p.set_extension(ext);
                 p
             }
             _ => PathBuf::from("Untitled.ans"),
         };
+        let format_type = get_format_type(buf.buffer_type, &file_name);
 
-        let format_type = get_format_type(&file_name);
         ExportFileDialog {
             should_commit: false,
             file_name,
             format_type,
             folder_dialog: None,
+            buffer_type: buf.buffer_type,
         } // self.file_name.set_extension(TYPE_DESCRIPTIONS[format_type].2);
     }
 }
 
-fn get_format_type(path: &std::path::Path) -> i32 {
+fn get_format_type(buf: BufferType, path: &std::path::Path) -> i32 {
     if let Some(ext) = path.extension() {
         if let Some(ext) = ext.to_str() {
             let ext = ext.to_lowercase();
-            for i in 0..TYPE_DESCRIPTIONS.len() {
-                let td = TYPE_DESCRIPTIONS[i];
+            let desc: &[(&str, CreateSettingsFunction, &str)] = if matches!(buf, BufferType::Atascii) {
+                &ATASCII_TYPE_DESCRIPTIONS
+            } else {
+                &TYPE_DESCRIPTIONS
+            };
+            for i in 0..desc.len() {
+                let td = desc[i];
                 if ext == td.2 {
                     return i as i32;
                 }
             }
         }
     }
-    -1
+    0
 }
 
 impl ModalDialog for ExportFileDialog {
@@ -89,6 +102,12 @@ impl ModalDialog for ExportFileDialog {
             modal.title(ui, fl!(crate::LANGUAGE_LOADER, "export-title"));
 
             modal.frame(ui, |ui| {
+                let desc: &[(&str, CreateSettingsFunction, &str)] = if matches!(self.buffer_type, BufferType::Atascii) {
+                    &ATASCII_TYPE_DESCRIPTIONS
+                } else {
+                    &TYPE_DESCRIPTIONS
+                };
+
                 egui::Grid::new("paste_mode_grid")
                     .num_columns(2)
                     .spacing([4.0, 8.0])
@@ -102,7 +121,7 @@ impl ModalDialog for ExportFileDialog {
                             let response = ui.add(TextEdit::singleline(&mut path_edit).desired_width(450.));
                             if response.changed() {
                                 self.file_name = path_edit.into();
-                                let format_type = get_format_type(&self.file_name);
+                                let format_type = get_format_type(self.buffer_type, &self.file_name);
                                 if format_type >= 0 {
                                     self.format_type = format_type;
                                 }
@@ -123,11 +142,11 @@ impl ModalDialog for ExportFileDialog {
                             ui.label(fl!(crate::LANGUAGE_LOADER, "export-format-label"));
                         });
                         egui::ComboBox::from_id_source("format_combo")
-                            .selected_text(TYPE_DESCRIPTIONS[self.format_type as usize].0)
+                            .selected_text(desc[self.format_type as usize].0)
                             .width(190.)
                             .show_ui(ui, |ui| {
-                                (0..TYPE_DESCRIPTIONS.len()).for_each(|i| {
-                                    let td = TYPE_DESCRIPTIONS[i];
+                                (0..desc.len()).for_each(|i| {
+                                    let td = desc[i];
                                     if ui.selectable_value(&mut self.format_type, i as i32, td.0).clicked() {
                                         self.file_name.set_extension(td.2);
                                     }
@@ -139,7 +158,7 @@ impl ModalDialog for ExportFileDialog {
                 ui.separator();
 
                 unsafe {
-                    TYPE_DESCRIPTIONS[self.format_type as usize].1(ui, &mut SETTINGS.save_options);
+                    desc[self.format_type as usize].1(ui, &mut SETTINGS.save_options);
                 }
             });
 
@@ -208,5 +227,11 @@ const TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 12] = [
     ("XBin (.xb)", xbin::create_settings_page, "xb"),
     ("CtrlA (.msg)", pcboard::create_settings_page, "msg"),
     ("Renegade (.an1)", pcboard::create_settings_page, "an1"),
+    ("PNG (.png)", png::create_settings_page, "png"),
+];
+
+const ATASCII_TYPE_DESCRIPTIONS: [(&str, CreateSettingsFunction, &str); 3] = [
+    ("Atascii (.ata)", atascii::create_settings_page, "ata"),
+    ("XBin (.xb)", xbin::create_settings_page, "xb"),
     ("PNG (.png)", png::create_settings_page, "png"),
 ];

@@ -151,6 +151,8 @@ impl LayerToolWindow {
                             let view = self.get_buffer_view(i);
                             if redraw_layer_views {
                                 view.lock().get_buffer_mut().layers.clear();
+                                let width = editor.buffer_view.lock().get_width();
+                                view.lock().get_buffer_mut().set_width(width);
                                 let lock = &editor.buffer_view.lock();
                                 if let Some(layer) = lock.get_buffer().layers.get(i) {
                                     let mut l = layer.clone();

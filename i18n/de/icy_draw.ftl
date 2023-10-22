@@ -423,6 +423,9 @@ new-file-template-ansi-title=Modernes ANSI
 new-file-template-ansi-description=
     Ein neues Ansi erstellen, ohne Restriktionen
     Freie Palette, mehrere Fonts, Blinken
+new-file-template-atascii-title=Atascii
+new-file-template-atascii-description=
+    Ein neues Atascii file erstellen
 
 new-file-template-file_id-title=FILE_ID.DIZ
 new-file-template-file_id-description=FILE_ID.DIZ erstellen

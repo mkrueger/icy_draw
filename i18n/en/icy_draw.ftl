@@ -417,6 +417,9 @@ new-file-template-ansi-title=Modern ANSI
 new-file-template-ansi-description=
     Create a new Ansi file without restrictions
     Unlimited palette, multiple fonts, blink
+new-file-template-atascii-title=Atascii
+new-file-template-atascii-description=
+    Create a new Atascii file
 
 new-file-template-file_id-title=FILE_ID.DIZ
 new-file-template-file_id-description=Create a new FILE_ID.DIZ file

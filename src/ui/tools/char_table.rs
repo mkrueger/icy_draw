@@ -196,9 +196,9 @@ pub fn create_font_image(
     selected_attribute: TextAttribute,
     selected: usize,
 ) -> TextureHandle {
-    let mut buffer = Buffer::new((buffer_width, 256 / buffer_width));
+    let mut buffer = Buffer::new((buffer_width, (font.length as usize) / buffer_width));
     buffer.set_font(0, font.clone());
-    for ch in 0..256 {
+    for ch in 0..font.length as usize {
         buffer.layers[0].set_char(
             (ch % buffer_width, ch / buffer_width),
             AttributedChar::new(
