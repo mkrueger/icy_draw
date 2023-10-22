@@ -554,13 +554,7 @@ impl AnsiEditor {
             let events = ui.input(|i| i.events.clone());
             for e in &events {
                 match e {
-                    egui::Event::Copy => {
-                        let buffer_view = self.buffer_view.clone();
-                        let mut l = buffer_view.lock();
-                        if let Some(txt) = l.get_copy_text() {
-                            ui.output_mut(|o| o.copied_text = txt);
-                        }
-                    }
+                    egui::Event::Copy => {}
                     egui::Event::Cut => {}
                     egui::Event::Paste(text) => {
                         self.output_string(text);
