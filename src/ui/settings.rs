@@ -308,14 +308,18 @@ impl Settings {
         }
     }
 
-    pub fn get_scale(&self) -> Vec2 {
+    fn clamp_scale(&mut self) {
+        self.scale = self.scale.clamp(Vec2::new(0.5, 0.5), Vec2::new(4., 4.));
+    }
+
+    pub fn get_scale(&mut self) -> Vec2 {
+        self.clamp_scale();
         self.scale
     }
 
     pub fn set_scale(&mut self, scale: Vec2) {
-        self.scale = scale.clamp(Vec2::new(0.5, 0.5), Vec2::new(5., 5.));
-        self.scale = (self.scale * 100.0).floor() / 100.0;
-
+        self.scale = (scale * 100.0).floor() / 100.0;
+        self.clamp_scale();
         Settings::save().unwrap();
     }
 }
