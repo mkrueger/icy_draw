@@ -15,7 +15,7 @@ egui = { version = "0.23.0" }
 egui_extras = { version="0.23.0", features = ["all_loaders"] }
 egui_glow = "0.23.0"
 egui-modal = "0.2.5"
-glow = "0.13.0"
+glow = "0.12.3"
 egui_file = "0.11.0"
 egui_tiles = { git ="https://github.com/mkrueger/egui_tiles"}
 #egui_tiles = { path = "../egui_tiles"  }
