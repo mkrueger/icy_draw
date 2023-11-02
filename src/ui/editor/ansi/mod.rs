@@ -471,6 +471,7 @@ impl AnsiEditor {
         }
         let mut attr = self.get_char(pos).attribute;
         let caret_attr = self.buffer_view.lock().get_caret().get_attribute();
+        attr.set_font_page(caret_attr.get_font_page());
         attr.attr = caret_attr.attr & !attribute::INVISIBLE;
         if self.color_mode.use_fore() {
             attr.set_foreground(caret_attr.get_foreground());
