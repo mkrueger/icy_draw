@@ -333,7 +333,7 @@ for i=0,9,1 do
     buf:print("Hello World " .. cur_frame)
     next_frame(buf)
 end"#;
-        let editor = crate::AnimationEditor::new(&window.gl, id, Path::new("."), txt.into());
+        let editor = crate::AnimationEditor::new(window.gl.clone(), id, Path::new("."), txt.into());
         add_child(&mut window.document_tree, None, Box::new(editor));
         Ok(None)
     }

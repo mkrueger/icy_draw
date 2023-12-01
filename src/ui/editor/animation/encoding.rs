@@ -3,6 +3,7 @@ use icy_engine::{Buffer, TextPane};
 use icy_engine_egui::{animations::Animator, BufferView, TerminalCalc};
 use std::{
     path::{Path, PathBuf},
+    rc::Rc,
     sync::{
         mpsc::{Receiver, Sender},
         Arc,
@@ -27,7 +28,7 @@ type EncodingThread = (Receiver<usize>, JoinHandle<TerminalResult<()>>);
 
 pub fn start_encoding_thread(
     encoder: usize,
-    gl: Arc<glow::Context>,
+    gl: Rc<glow::Context>,
     path: PathBuf,
     animator: Arc<std::sync::Mutex<Animator>>,
 ) -> TerminalResult<Option<EncodingThread>> {

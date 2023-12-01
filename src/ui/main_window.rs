@@ -1,6 +1,7 @@
 use std::{
     fs,
     path::Path,
+    rc::Rc,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -29,7 +30,7 @@ pub struct MainWindow<'a> {
 
     pub document_behavior: DocumentBehavior,
     pub tool_behavior: ToolBehavior,
-    pub gl: Arc<Context>,
+    pub gl: Rc<Context>,
 
     dialog_open: bool,
     modal_dialog: Option<Box<dyn ModalDialog>>,
@@ -185,7 +186,7 @@ impl<'a> MainWindow<'a> {
                         add_child(
                             &mut self.document_tree,
                             Some(full_path),
-                            Box::new(crate::AnimationEditor::new(&self.gl, id, path, txt.to_string())),
+                            Box::new(crate::AnimationEditor::new(self.gl.clone(), id, path, txt.to_string())),
                         );
                     }
                     Err(err) => {
@@ -467,7 +468,7 @@ impl<'a> MainWindow<'a> {
         result
     }
 
-    pub fn update_title(&mut self, frame: &mut eframe::Frame) {
+    pub fn update_title(&mut self, ctx: &egui::Context) {
         let id = if let Some((id, _)) = self.get_active_pane() { Some(id) } else { None };
 
         if let Some(id) = id {
@@ -478,7 +479,7 @@ impl<'a> MainWindow<'a> {
         } else {
             if self.current_id.is_some() {
                 self.current_id = None;
-                frame.set_window_title(&crate::DEFAULT_TITLE);
+                ctx.send_viewport_cmd(egui::ViewportCommand::Title(crate::DEFAULT_TITLE.clone()));
             }
             return;
         }
@@ -510,19 +511,18 @@ impl<'a> MainWindow<'a> {
                     } else {
                         parent.to_string_lossy().to_string()
                     };
-
-                    frame.set_window_title(&format!(
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
                         "{}{} - iCY DRAW {}",
                         directory,
                         path.file_name().unwrap_or_default().to_str().unwrap_or_default(),
                         *crate::VERSION
-                    ));
+                    )));
                 } else {
-                    frame.set_window_title(&format!(
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
                         "{} - iCY DRAW {}",
                         path.file_name().unwrap_or_default().to_str().unwrap_or_default(),
                         *crate::VERSION
-                    ));
+                    )));
                 }
             }
         }
@@ -591,10 +591,10 @@ impl<'a> eframe::App for MainWindow<'a> {
         }
 
         let msg = self.show_top_bar(ctx, frame);
-        self.update_title(frame);
+        self.update_title(ctx);
         self.handle_message(msg);
         if self.is_closed {
-            frame.close();
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
         SidePanel::left("left_panel")
             .exact_width(264.0)
@@ -830,7 +830,7 @@ impl<'a> eframe::App for MainWindow<'a> {
             }
         });
 
-        frame.set_fullscreen(self.is_fullscreen);
+        ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(self.is_fullscreen));
 
         if self.show_settings {
             self.show_settings = self.settings_dialog.show(ctx);

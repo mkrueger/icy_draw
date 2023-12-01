@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 
 use eframe::{
     egui::{self, color_picker, Layout, Modifiers, RichText},
@@ -34,7 +34,7 @@ const CHAR_SET_CAT: usize = 3;
 const KEYBIND_CAT: usize = 4;
 
 impl SettingsDialog {
-    pub fn new(ctx: &Context, gl: &Arc<glow::Context>) -> Self {
+    pub fn new(ctx: &Context, gl: &Rc<glow::Context>) -> Self {
         let mut views = Vec::new();
 
         for _ in 0..15 {

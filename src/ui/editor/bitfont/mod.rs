@@ -1,6 +1,6 @@
 mod undo;
 
-use std::{path::Path, sync::Arc};
+use std::{path::Path, rc::Rc, sync::Arc};
 
 use eframe::{
     egui::{self, Id, Layout, RichText, Sense},
@@ -44,7 +44,7 @@ pub enum DrawGlyphStyle {
 }
 
 impl BitFontEditor {
-    pub fn new(gl: &Arc<glow::Context>, id: usize, font: BitFont) -> Self {
+    pub fn new(gl: &Rc<glow::Context>, id: usize, font: BitFont) -> Self {
         let mut buffer = Buffer::new(Size::new(10, 10));
         buffer.is_terminal_buffer = false;
         let mut buffer_view = BufferView::from_buffer(gl, buffer);

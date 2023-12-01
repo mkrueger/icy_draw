@@ -4,7 +4,6 @@
 
 use std::path::PathBuf;
 
-use eframe::egui;
 mod model;
 mod paint;
 mod plugins;
@@ -67,17 +66,16 @@ pub struct Cli {
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    use eframe::IconData;
     use std::fs;
 
     let args = Cli::parse();
 
     use crate::plugins::Plugin;
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(1280., 841.)),
+        //initial_window_size: Some(egui::vec2(1280., 841.)),
         multisampling: 0,
         renderer: eframe::Renderer::Glow,
-        icon_data: Some(IconData::try_from_png_bytes(&include_bytes!("../build/linux/256x256.png")[..]).unwrap()),
+        //icon_data: Some(IconData::try_from_png_bytes(&include_bytes!("../build/linux/256x256.png")[..]).unwrap()),
         ..Default::default()
     };
 

@@ -245,7 +245,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
         true
     }
 
-    fn top_bar_rtl_ui(&mut self, tiles: &Tiles<DocumentTab>, ui: &mut Ui, _tile_id: TileId, tabs: &Tabs) {
+    fn top_bar_right_ui(&mut self, tiles: &Tiles<DocumentTab>, ui: &mut Ui, _tile_id: TileId, tabs: &Tabs, _scroll_offset: &mut f32) {
         if let Some(id) = tabs.active {
             if let Some(egui_tiles::Tile::Pane(pane)) = tiles.get(id) {
                 let doc = &mut pane.doc.lock();

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{rc::Rc, sync::Arc};
 
 use eframe::{
     egui::{self, CentralPanel, RichText, Sense, TextStyle, TopBottomPanel},
@@ -12,14 +12,14 @@ use icy_engine_egui::BufferView;
 use crate::{AnsiEditor, Document, Message, ToolWindow, INVISIBLE_SVG, VISIBLE_SVG};
 
 pub struct LayerToolWindow {
-    gl: Arc<glow::Context>,
+    gl: Rc<glow::Context>,
     view_cache_id: usize,
     stack_len: usize,
     view_cache: Vec<Arc<eframe::epaint::mutex::Mutex<BufferView>>>,
 }
 
 impl LayerToolWindow {
-    pub(crate) fn new(gl: Arc<glow::Context>) -> Self {
+    pub(crate) fn new(gl: Rc<glow::Context>) -> Self {
         Self {
             gl,
             view_cache: Vec::new(),

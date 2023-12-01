@@ -4,6 +4,7 @@ use std::{
     fs::File,
     io::Write,
     path::{Path, PathBuf},
+    rc::Rc,
     sync::Arc,
 };
 
@@ -221,7 +222,7 @@ impl Document for AnsiEditor {
 }
 
 impl AnsiEditor {
-    pub fn new(gl: &Arc<glow::Context>, id: usize, buf: Buffer) -> Self {
+    pub fn new(gl: &Rc<glow::Context>, id: usize, buf: Buffer) -> Self {
         let buffer_view = Arc::new(Mutex::new(BufferView::from_buffer(gl, buf)));
         // let buffer_parser = ansi::Parser::default();
         AnsiEditor {
