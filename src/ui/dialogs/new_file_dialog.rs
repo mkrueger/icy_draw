@@ -509,9 +509,9 @@ impl crate::ModalDialog for NewFileDialog {
                                 let mut title_rect = rect;
                                 title_rect.set_left(title_rect.left() + 40.0);
                                 title_rect.set_top(title_rect.top() + 4.0);
-                                ui.painter().galley_with_color(
+                                ui.painter().galley_with_override_text_color(
                                     egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), title_rect.shrink(4.0)).min,
-                                    galley.galley,
+                                    galley,
                                     ui.style().visuals.strong_text_color(),
                                 );
 
@@ -520,9 +520,9 @@ impl crate::ModalDialog for NewFileDialog {
                                 let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
                                 let mut descr_rect = rect;
                                 descr_rect.set_top(descr_rect.top() + 34.0);
-                                ui.painter().galley_with_color(
+                                ui.painter().galley_with_override_text_color(
                                     egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), descr_rect.shrink(4.0)).min,
-                                    galley.galley,
+                                    galley,
                                     ui.style().visuals.text_color(),
                                 );
 

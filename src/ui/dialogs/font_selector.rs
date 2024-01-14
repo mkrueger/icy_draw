@@ -334,9 +334,9 @@ impl FontSelector {
         let font_id = FontId::new(14.0, FontFamily::Proportional);
         let text: WidgetText = font.0.name.clone().into();
         let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
-        ui.painter().galley_with_color(
+        ui.painter().galley_with_override_text_color(
             egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), rect.shrink(4.0)).min,
-            galley.galley,
+            galley,
             text_color,
         );
 
@@ -401,9 +401,9 @@ fn print_source(font_type: String, ui: &egui::Ui, rect: Rect, text_color: Color3
 
     ui.painter().rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
 
-    ui.painter().galley_with_color(
+    ui.painter().galley_with_override_text_color(
         egui::Align2::CENTER_CENTER.align_size_within_rect(galley_size, rect).min,
-        galley.galley,
+        galley,
         text_color,
     );
     left_side

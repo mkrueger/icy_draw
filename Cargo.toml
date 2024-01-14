@@ -10,17 +10,17 @@ repository = "https://github.com/mkrueger/icy_draw"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = "0.24.1"
-egui = { version = "0.24.1" }
-egui_extras = { version="0.24.1", features = ["all_loaders"] }
-egui_glow = "0.24.1"
+eframe = "0.25.0"
+egui = { version = "0.25.0" }
+egui_extras = { version="0.25.0", features = ["all_loaders"] }
+egui_glow = "0.25.0"
 egui-modal = "0.3.0"
-glow = "0.12.3"
-egui_file = "0.12.0"
+glow = "0.13.0"
+egui_file = "0.14.0"
 egui_tiles = { git ="https://github.com/mkrueger/egui_tiles"}
 #egui_tiles = { path = "../egui_tiles"  }
-egui-bind = "=0.9.0"
-egui-notify = "0.11.0"
+egui-bind = "0.10.0"
+egui-notify = "0.12.0"
 log = "0.4.20"
 log4rs = "1.2.0"
 open = "5.0.0"
@@ -42,7 +42,7 @@ view_library = { git ="https://github.com/mkrueger/icy_view" }
 #icy_engine_egui = { path = "../icy_engine_egui" }
 #view_library = { path = "../icy_view/view_library" }
 
-egui_code_editor = "0.1.8"
+egui_code_editor = "0.2.2"
 mlua = { version = "0.9.1", features = ["lua54", "vendored"] }
 regex = "1.9.5"
 

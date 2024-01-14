@@ -1,5 +1,5 @@
 use super::Syntax;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 #[must_use]
 pub fn lua() -> Syntax {
@@ -8,12 +8,12 @@ pub fn lua() -> Syntax {
         case_sensitive: true,
         comment: "--",
         comment_multiline: ["--[[", "]]"],
-        keywords: HashSet::from([
+        keywords: BTreeSet::from([
             "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then",
             "true", "until", "while",
         ]),
-        types: HashSet::from(["nil", "boolean", "number", "string", "nil", "function", "userdata", "thread", "table"]),
-        special: HashSet::from([
+        types: BTreeSet::from(["nil", "boolean", "number", "string", "nil", "function", "userdata", "thread", "table"]),
+        special: BTreeSet::from([
             "new_buffer",
             "load_buffer",
             "next_frame",

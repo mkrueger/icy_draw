@@ -1,4 +1,4 @@
-use std::{path::Path, rc::Rc, sync::Arc};
+use std::{path::Path, sync::Arc};
 
 use eframe::{
     egui::{self, Button, ScrollArea, SidePanel, TextEdit, TopBottomPanel},
@@ -426,7 +426,7 @@ fn set_attribute(layer: &mut Layer, attr: TextAttribute) {
 }
 
 impl CharFontEditor {
-    pub fn new(gl: &Rc<glow::Context>, id: usize, fonts: Vec<TheDrawFont>) -> Self {
+    pub fn new(gl: &Arc<glow::Context>, id: usize, fonts: Vec<TheDrawFont>) -> Self {
         let mut buffer = Buffer::new(Size::new(30, 12));
         set_up_layers(&mut buffer);
         let ansi_editor = AnsiEditor::new(gl, id, buffer);

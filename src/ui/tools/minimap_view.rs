@@ -1,4 +1,4 @@
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 use eframe::{
     egui::{self, RichText},
@@ -137,7 +137,7 @@ impl MinimapToolWindow {
         None
     }
 
-    pub(crate) fn new(gl: Rc<glow::Context>) -> Self {
+    pub(crate) fn new(gl: Arc<glow::Context>) -> Self {
         let mut buffer_view = BufferView::new(&gl);
         buffer_view.interactive = false;
         buffer_view.get_buffer_mut().is_terminal_buffer = false;

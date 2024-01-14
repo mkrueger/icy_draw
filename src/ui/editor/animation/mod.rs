@@ -1,6 +1,5 @@
 use std::{
     path::{Path, PathBuf},
-    rc::Rc,
     sync::{mpsc::Receiver, Arc},
     time::Instant,
 };
@@ -24,7 +23,7 @@ mod highlighting;
 //mod mp4_encoder;
 
 pub struct AnimationEditor {
-    gl: Rc<glow::Context>,
+    gl: Arc<glow::Context>,
     id: usize,
 
     undostack: usize,
@@ -54,7 +53,7 @@ pub struct AnimationEditor {
 }
 
 impl AnimationEditor {
-    pub fn new(gl: Rc<glow::Context>, id: usize, path: &Path, txt: String) -> Self {
+    pub fn new(gl: Arc<glow::Context>, id: usize, path: &Path, txt: String) -> Self {
         let mut buffer = Buffer::new(Size::new(80, 25));
         buffer.is_terminal_buffer = false;
         let mut buffer_view = BufferView::from_buffer(&gl, buffer);

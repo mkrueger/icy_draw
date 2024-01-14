@@ -68,9 +68,9 @@ impl SelectFontDialog {
         let font_id = TextStyle::Button.resolve(ui.style());
         let text: WidgetText = font.name.clone().into();
         let galley = text.into_galley(ui, Some(false), f32::INFINITY, font_id);
-        ui.painter().galley_with_color(
+        ui.painter().galley_with_override_text_color(
             egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), rect.shrink(4.0)).min,
-            galley.galley,
+            galley,
             text_color,
         );
 
@@ -99,7 +99,7 @@ impl SelectFontDialog {
                 cnt = 0;
             }
             ui.painter()
-                .galley_with_color(egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), rect).min, galley.galley, color);
+                .galley_with_override_text_color(egui::Align2::LEFT_TOP.align_size_within_rect(galley.size(), rect).min, galley, color);
         }
 
         #[allow(clippy::map_entry)]
@@ -171,9 +171,9 @@ impl SelectFontDialog {
 
             ui.painter().rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
 
-            ui.painter().galley_with_color(
+            ui.painter().galley_with_override_text_color(
                 egui::Align2::CENTER_CENTER.align_size_within_rect(galley.size(), rect).min,
-                galley.galley,
+                galley,
                 text_color,
             );
         }

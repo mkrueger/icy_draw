@@ -1,7 +1,6 @@
 use std::{
     fs,
     path::Path,
-    rc::Rc,
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -30,7 +29,7 @@ pub struct MainWindow<'a> {
 
     pub document_behavior: DocumentBehavior,
     pub tool_behavior: ToolBehavior,
-    pub gl: Rc<Context>,
+    pub gl: Arc<Context>,
 
     dialog_open: bool,
     modal_dialog: Option<Box<dyn ModalDialog>>,
