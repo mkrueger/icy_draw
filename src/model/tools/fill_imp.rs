@@ -70,48 +70,52 @@ impl FillOperation {
     }
 
     pub fn fill(&mut self, editor: &mut AnsiEditor, pos: Position) {
-        if pos.x < 0 || pos.y < 0 || pos.x >= self.size.width || pos.y >= self.size.height || !self.visited.insert(pos) {
-            return;
-        }
+        let mut pos_stack = vec![pos];
 
-        if !self.use_selection || editor.buffer_view.lock().get_edit_state().get_is_selected(pos + self.offset) {
-            let cur_char = editor.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().get_char(pos);
+        while let Some(pos) = pos_stack.pop() {
+            if pos.x < 0 || pos.y < 0 || pos.x >= self.size.width || pos.y >= self.size.height || !self.visited.insert(pos) {
+                continue;
+            }
 
-            let mut repl_ch = cur_char;
+            if !self.use_selection || editor.buffer_view.lock().get_edit_state().get_is_selected(pos + self.offset) {
+                let cur_char = editor.buffer_view.lock().get_edit_state().get_cur_layer().unwrap().get_char(pos);
 
-            match &self.fill_type {
-                BrushMode::Char(_) => {
-                    if self.use_exact_matching && cur_char != self.base_char || !self.use_exact_matching && cur_char.ch != self.base_char.ch {
-                        return;
+                let mut repl_ch = cur_char;
+
+                match &self.fill_type {
+                    BrushMode::Char(_) => {
+                        if self.use_exact_matching && cur_char != self.base_char || !self.use_exact_matching && cur_char.ch != self.base_char.ch {
+                            continue;
+                        }
+                        repl_ch.ch = self.new_char.ch;
+                        repl_ch.set_font_page(self.new_char.get_font_page());
                     }
-                    repl_ch.ch = self.new_char.ch;
-                    repl_ch.set_font_page(self.new_char.get_font_page());
-                }
-                BrushMode::Colorize => {
-                    if self.use_exact_matching && cur_char != self.base_char || !self.use_exact_matching && cur_char.attribute != self.base_char.attribute {
-                        return;
+                    BrushMode::Colorize => {
+                        if self.use_exact_matching && cur_char != self.base_char || !self.use_exact_matching && cur_char.attribute != self.base_char.attribute {
+                            continue;
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
-            }
-            if self.color_mode.use_fore() {
-                repl_ch.attribute.set_foreground(self.new_char.attribute.get_foreground());
-                repl_ch.attribute.set_is_bold(self.new_char.attribute.is_bold());
+                if self.color_mode.use_fore() {
+                    repl_ch.attribute.set_foreground(self.new_char.attribute.get_foreground());
+                    repl_ch.attribute.set_is_bold(self.new_char.attribute.is_bold());
+                }
+
+                if self.color_mode.use_back() {
+                    repl_ch.attribute.set_background(self.new_char.attribute.get_background());
+                }
+
+                repl_ch.set_font_page(editor.buffer_view.lock().get_caret().get_attribute().get_font_page());
+                repl_ch.attribute.attr &= !icy_engine::attribute::INVISIBLE;
+                editor.set_char(pos, repl_ch);
             }
 
-            if self.color_mode.use_back() {
-                repl_ch.attribute.set_background(self.new_char.attribute.get_background());
-            }
-
-            repl_ch.set_font_page(editor.buffer_view.lock().get_caret().get_attribute().get_font_page());
-            repl_ch.attribute.attr &= !icy_engine::attribute::INVISIBLE;
-            editor.set_char(pos, repl_ch);
+            pos_stack.push(pos + Position::new(-1, 0));
+            pos_stack.push(pos + Position::new(1, 0));
+            pos_stack.push(pos + Position::new(0, -1));
+            pos_stack.push(pos + Position::new(0, 1));
         }
-
-        self.fill(editor, pos + Position::new(-1, 0));
-        self.fill(editor, pos + Position::new(1, 0));
-        self.fill(editor, pos + Position::new(0, -1));
-        self.fill(editor, pos + Position::new(0, 1));
     }
 }
 
