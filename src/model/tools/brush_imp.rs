@@ -95,6 +95,7 @@ impl BrushTool {
                         editor.set_char(pos, AttributedChar::new(char_code, attribute));
                     }
                     BrushMode::Char(ch) => {
+                        attribute.set_font_page(caret_attr.get_font_page());
                         editor.set_char(center + Position::new(x, y), AttributedChar::new(*ch.borrow(), attribute));
                     }
                     BrushMode::Colorize => {
