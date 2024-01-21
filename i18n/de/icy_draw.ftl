@@ -210,11 +210,11 @@ edit-canvas-size-resize=Größe ändern
 edit-canvas-size-resize_layers-label=Ebenen anpassen
 
 toolbar-size = {$colums ->
-     [1] 1 Zeile
-*[other] {$colums} Zeilen
-} x { $rows ->
      [1] 1 Spalte
-*[other] { $rows } Spalten
+*[other] {$colums} Spalten
+} x { $rows ->
+     [1] 1 Zeile
+*[other] { $rows } Zeilen
 }
 
 toolbar-position = Zeile { $line }, Spalte { $column }

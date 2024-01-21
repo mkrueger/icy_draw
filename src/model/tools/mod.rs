@@ -156,7 +156,7 @@ fn toolbar_pos_sel_text(editor: &AnsiEditor, show_selection: bool) -> String {
 
     if let Some(sel) = sel {
         let r = sel.as_rectangle();
-        fl!(crate::LANGUAGE_LOADER, "toolbar-size", colums = r.size.height, rows = r.size.width)
+        fl!(crate::LANGUAGE_LOADER, "toolbar-size", colums = r.size.width, rows = r.size.height)
     } else {
         fl!(crate::LANGUAGE_LOADER, "toolbar-position", line = (pos.y + 1), column = (pos.x + 1))
     }
