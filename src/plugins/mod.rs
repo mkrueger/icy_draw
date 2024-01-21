@@ -380,7 +380,7 @@ impl UserData for LuaBufferView {
             let layer = layer as usize;
             if layer < this.buffer_view.lock().get_buffer_mut().layers.len() {
                 // todo
-                this.buffer_view.lock().get_buffer_mut().layers[layer].is_visible = is_visible;
+                this.buffer_view.lock().get_buffer_mut().layers[layer].set_is_visible(is_visible);
                 Ok(())
             } else {
                 Err(mlua::Error::SyntaxError {
@@ -392,7 +392,7 @@ impl UserData for LuaBufferView {
 
         methods.add_method_mut("get_layer_visible", |_, this, layer: usize| {
             if layer < this.buffer_view.lock().get_buffer_mut().layers.len() {
-                Ok(this.buffer_view.lock().get_buffer_mut().layers[layer].is_visible)
+                Ok(this.buffer_view.lock().get_buffer_mut().layers[layer].get_is_visible())
             } else {
                 Err(mlua::Error::SyntaxError {
                     message: format!("Layer {} out of range (0..<{})", layer, this.buffer_view.lock().get_buffer_mut().layers.len()),

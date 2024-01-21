@@ -616,13 +616,13 @@ fn set_up_layers(buffer: &mut Buffer) {
     buffer.layers.clear();
 
     let mut new_layer = Layer::new("background", Size::new(30, 12));
-    new_layer.has_alpha_channel = false;
-    new_layer.is_locked = true;
-    new_layer.is_position_locked = true;
+    new_layer.properties.has_alpha_channel = false;
+    new_layer.properties.is_locked = true;
+    new_layer.properties.is_position_locked = true;
     buffer.layers.push(new_layer);
 
     let mut new_layer = Layer::new("edit layer", Size::new(30, 12));
-    new_layer.has_alpha_channel = true;
-    new_layer.is_position_locked = true;
+    new_layer.properties.has_alpha_channel = true;
+    new_layer.properties.is_position_locked = true;
     buffer.layers.push(new_layer);
 }

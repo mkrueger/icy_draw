@@ -155,7 +155,7 @@ impl Tool for BrushTool {
             layer.set_offset((0, 0));
             layer.role = icy_engine::Role::Normal;
             let mut buf = icy_engine::Buffer::new(layer.get_size());
-            layer.title = buf.layers[0].title.clone();
+            layer.set_title(buf.layers[0].get_title());
             buf.layers.clear();
             buf.layers.push(layer);
             self.image = Some(create_image(ctx, &buf));

@@ -156,7 +156,7 @@ impl LayerToolWindow {
                                 let lock = &editor.buffer_view.lock();
                                 if let Some(layer) = lock.get_buffer().layers.get(i) {
                                     let mut l = layer.clone();
-                                    l.is_visible = true;
+                                    l.set_is_visible(true);
                                     view.lock().get_buffer_mut().set_font_table(lock.get_buffer().get_font_table());
                                     view.lock().get_buffer_mut().palette = lock.get_buffer().palette.clone();
                                     view.lock().get_buffer_mut().layers.push(l);
@@ -170,7 +170,7 @@ impl LayerToolWindow {
                         let (is_visible, title, color) = {
                             let lock = editor.buffer_view.lock();
                             let layer = &lock.get_buffer().layers[i];
-                            (layer.is_visible, layer.title.clone(), layer.color.clone())
+                            (layer.get_is_visible(), layer.get_title().to_string(), layer.properties.color.clone())
                         };
                         let width = ui.available_width();
 
