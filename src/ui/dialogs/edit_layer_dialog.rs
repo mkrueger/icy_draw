@@ -11,7 +11,6 @@ pub struct EditLayerDialog {
     layer: usize,
 
     properties: Properties,
-
 }
 
 impl EditLayerDialog {
@@ -20,7 +19,7 @@ impl EditLayerDialog {
         EditLayerDialog {
             should_commit: false,
             layer,
-            properties: l.properties.clone()
+            properties: l.properties.clone(),
         }
     }
 }
@@ -70,10 +69,16 @@ impl ModalDialog for EditLayerDialog {
                     }
 
                     ui.label("");
-                    ui.checkbox(&mut self.properties.is_visible, fl!(crate::LANGUAGE_LOADER, "edit-layer-dialog-is-visible-checkbox"));
+                    ui.checkbox(
+                        &mut self.properties.is_visible,
+                        fl!(crate::LANGUAGE_LOADER, "edit-layer-dialog-is-visible-checkbox"),
+                    );
                     ui.end_row();
                     ui.label("");
-                    ui.checkbox(&mut self.properties.is_locked, fl!(crate::LANGUAGE_LOADER, "edit-layer-dialog-is-edit-locked-checkbox"));
+                    ui.checkbox(
+                        &mut self.properties.is_locked,
+                        fl!(crate::LANGUAGE_LOADER, "edit-layer-dialog-is-edit-locked-checkbox"),
+                    );
                     ui.end_row();
                     ui.label("");
                     ui.checkbox(
@@ -83,7 +88,10 @@ impl ModalDialog for EditLayerDialog {
                     ui.end_row();
 
                     ui.label("");
-                    ui.checkbox(&mut self.properties.has_alpha_channel, fl!(crate::LANGUAGE_LOADER, "edit-layer-dialog-has-alpha-checkbox"));
+                    ui.checkbox(
+                        &mut self.properties.has_alpha_channel,
+                        fl!(crate::LANGUAGE_LOADER, "edit-layer-dialog-has-alpha-checkbox"),
+                    );
                     ui.end_row();
 
                     if self.properties.has_alpha_channel {

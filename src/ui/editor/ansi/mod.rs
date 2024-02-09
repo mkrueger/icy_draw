@@ -193,14 +193,17 @@ impl Document for AnsiEditor {
             caret_shape: CaretShape::Block,
             ..Default::default()
         };
-        let (response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
+        let (mut response, calc) = show_terminal_area(ui, self.buffer_view.clone(), opt);
 
         if calc.has_focus {
             self.request_focus = false;
         }
-        let response = response.context_menu(|ui| {
+        let response_opt = response.context_menu(|ui| {
             message = terminal_context_menu(self, &options.commands, ui);
         });
+        if let Some(response_opt) = response_opt {
+            response = response_opt.response;
+        }
         self.handle_response(ui, response, calc, cur_tool, &mut message);
 
         message

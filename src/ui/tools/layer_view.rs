@@ -219,7 +219,7 @@ impl LayerToolWindow {
                         }
 
                         if paste_mode.is_none() {
-                            response = response.context_menu(|ui| {
+                            let response_opt = response.context_menu(|ui| {
                                 ui.set_width(250.);
                                 if ui.button(fl!(crate::LANGUAGE_LOADER, "layer_tool_menu_layer_properties")).clicked() {
                                     result = Some(Message::EditLayer(i));
@@ -253,6 +253,9 @@ impl LayerToolWindow {
                                     ui.close_menu();
                                 }
                             });
+                            if let Some(response_opt) = response_opt {
+                                response = response_opt.response;
+                            }
                         }
 
                         if paste_mode.is_none() && response.clicked() {

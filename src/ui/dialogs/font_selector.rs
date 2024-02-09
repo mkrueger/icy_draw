@@ -401,11 +401,8 @@ fn print_source(font_type: String, ui: &egui::Ui, rect: Rect, text_color: Color3
 
     ui.painter().rect_stroke(rect.expand(2.0), 4.0, Stroke::new(1.0, text_color));
 
-    ui.painter().galley_with_override_text_color(
-        egui::Align2::CENTER_CENTER.align_size_within_rect(galley_size, rect).min,
-        galley,
-        text_color,
-    );
+    ui.painter()
+        .galley_with_override_text_color(egui::Align2::CENTER_CENTER.align_size_within_rect(galley_size, rect).min, galley, text_color);
     left_side
 }
 

@@ -204,7 +204,7 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
     }
 
     fn on_tab_button(&mut self, tiles: &Tiles<DocumentTab>, tile_id: TileId, button_response: eframe::egui::Response) -> Response {
-        button_response.context_menu(|ui| {
+        let response_opt = button_response.context_menu(|ui| {
             if ui.button(fl!(crate::LANGUAGE_LOADER, "tab-context-menu-close")).clicked() {
                 self.on_close_requested(tiles, tile_id);
                 ui.close_menu();
@@ -227,7 +227,12 @@ impl egui_tiles::Behavior<DocumentTab> for DocumentBehavior {
                 }
                 ui.close_menu();
             }
-        })
+        });
+        if let Some(response_opt) = response_opt {
+            response_opt.response
+        } else {
+            button_response
+        }
     }
 
     fn on_close_requested(&mut self, _tiles: &Tiles<DocumentTab>, tile_id: TileId) {
