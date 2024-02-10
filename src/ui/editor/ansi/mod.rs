@@ -605,7 +605,7 @@ impl AnsiEditor {
         }
 
         if response.clicked_by(egui::PointerButton::Primary) {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
+            if let Some(mouse_pos) = response.hover_pos() {
                 if calc.buffer_rect.contains(mouse_pos) && !calc.vert_scrollbar_rect.contains(mouse_pos) && !calc.horiz_scrollbar_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
@@ -631,7 +631,7 @@ impl AnsiEditor {
         }
 
         if response.drag_started_by(egui::PointerButton::Primary) {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
+            if let Some(mouse_pos) = response.hover_pos() {
                 if calc.buffer_rect.contains(mouse_pos) && !calc.vert_scrollbar_rect.contains(mouse_pos) && !calc.horiz_scrollbar_rect.contains(mouse_pos) {
                     let click_pos = calc.calc_click_pos(mouse_pos);
                     let cp_abs = Position::new(click_pos.x as i32, click_pos.y as i32);
@@ -658,7 +658,7 @@ impl AnsiEditor {
         }
 
         if response.dragged_by(egui::PointerButton::Primary) && self.drag_started {
-            if let Some(mouse_pos) = response.interact_pointer_pos() {
+            if let Some(mouse_pos) = response.hover_pos() {
                 let layer_offset = self.get_cur_click_offset();
                 let click_pos2 = calc.calc_click_pos_half_block(mouse_pos);
                 let click_pos2 = Position::new(click_pos2.x as i32, click_pos2.y as i32);

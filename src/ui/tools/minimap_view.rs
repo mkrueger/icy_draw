@@ -126,7 +126,7 @@ impl MinimapToolWindow {
         }
 
         if response.dragged() {
-            if let Some(pos) = response.interact_pointer_pos() {
+            if let Some(pos) = response.hover_pos() {
                 let pos = (pos - ours.buffer_rect.min) / ours.scale + ours.char_scroll_position;
                 editor.next_scroll_x_position = Some(pos.x - theirs.buffer_char_width * theirs.font_width / 2.0);
                 editor.next_scroll_y_position = Some(pos.y - theirs.buffer_char_height * theirs.font_height / 2.0);

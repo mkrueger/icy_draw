@@ -177,7 +177,7 @@ impl BitFontEditor {
             }
 
             if response.dragged_by(egui::PointerButton::Primary) {
-                if let Some(pos) = response.interact_pointer_pos() {
+                if let Some(pos) = response.hover_pos() {
                     if let Some(number) = self.selected_char_opt {
                         if let Some(glyph) = self.font.get_glyph_mut(number) {
                             let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border)) as usize;
@@ -193,7 +193,7 @@ impl BitFontEditor {
             }
 
             if response.dragged_by(egui::PointerButton::Secondary) {
-                if let Some(pos) = response.interact_pointer_pos() {
+                if let Some(pos) = response.hover_pos() {
                     if let Some(number) = self.selected_char_opt {
                         if let Some(glyph) = self.font.get_glyph_mut(number) {
                             let y = ((pos.y - left_ruler - stroke_rect.top()) / (scale + border)) as usize;

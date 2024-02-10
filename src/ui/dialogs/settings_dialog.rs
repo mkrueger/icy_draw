@@ -355,7 +355,7 @@ impl SettingsDialog {
                     self.selected_view = i;
                 }
                 if response.clicked() {
-                    if let Some(click_pos) = response.interact_pointer_pos() {
+                    if let Some(click_pos) = response.hover_pos() {
                         let pos = calc.calc_click_pos(click_pos);
                         let pos = Position::new(pos.x as i32, pos.y as i32);
                         view.lock().get_caret_mut().set_position(pos);
