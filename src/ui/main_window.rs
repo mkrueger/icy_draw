@@ -128,7 +128,7 @@ impl<'a> MainWindow<'a> {
         }
 
         tool_tree.root = Some(vert_id);
-        let open_file_window = view_library::MainWindow::new(&gl, None);
+        let open_file_window = view_library::MainWindow::new(&gl, None, view_library::options::Options::default());
         let mut c = Box::<Commands>::default();
         unsafe {
             c.apply_key_bindings(&KEYBINDINGS.key_bindings);

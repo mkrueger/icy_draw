@@ -7,6 +7,7 @@ pub fn lua() -> Syntax {
         language: "Lua",
         case_sensitive: true,
         comment: "--",
+        hyperlinks: BTreeSet::from([""]),
         comment_multiline: ["--[[", "]]"],
         keywords: BTreeSet::from([
             "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then",
