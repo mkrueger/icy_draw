@@ -2,7 +2,7 @@ use eframe::egui::{self, RichText};
 use egui::{load::SizedTexture, Color32, FontId, Image, Rect, Rounding, Sense, Stroke, TextureHandle, Vec2, Widget};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, Position, TextAttribute, TextPane, TheDrawFont};
-use icy_engine_egui::BufferView;
+use icy_engine_gui::BufferView;
 
 use crate::{create_font_image, create_hover_image, AnsiEditor, Message};
 

@@ -1,6 +1,6 @@
 use egui::Vec2;
 use icy_engine::{Buffer, TextPane};
-use icy_engine_egui::{animations::Animator, BufferView, TerminalCalc};
+use icy_engine_gui::{animations::Animator, BufferView, TerminalCalc};
 use std::{
     path::{Path, PathBuf},
     sync::{
@@ -51,7 +51,7 @@ pub fn start_encoding_thread(
 
     let mut data = Vec::new();
 
-    let mut opt = icy_engine_egui::TerminalOptions {
+    let mut opt = icy_engine_gui::TerminalOptions {
         stick_to_bottom: false,
         scale: Some(Vec2::new(1.0, 1.0)),
         id: Some(egui::Id::new("gif")),

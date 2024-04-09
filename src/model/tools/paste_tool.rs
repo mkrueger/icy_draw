@@ -2,7 +2,7 @@ use super::{move_layer_imp::get_layer_offset_text, Event, MKey, Position, Tool};
 use crate::{to_message, AnsiEditor, Message};
 use eframe::egui::{self, Key};
 use i18n_embed_fl::fl;
-use icy_engine_egui::TerminalCalc;
+use icy_engine_gui::TerminalCalc;
 
 #[derive(Default)]
 pub struct PasteTool {

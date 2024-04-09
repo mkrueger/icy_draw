@@ -6,7 +6,7 @@ use eframe::{
 };
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine_egui::BufferView;
+use icy_engine_gui::BufferView;
 
 use crate::{AnsiEditor, Message, ModalDialog, TerminalResult};
 

@@ -1,6 +1,6 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
-use icy_engine_egui::TerminalCalc;
+use icy_engine_gui::TerminalCalc;
 
 use crate::{
     paint::{draw_line, BrushMode, ColorMode},

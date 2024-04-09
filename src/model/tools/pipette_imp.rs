@@ -123,7 +123,7 @@ impl Tool for PipetteTool {
         }
         self.cur_pos = None;
 
-        let lock: &mut eframe::epaint::mutex::MutexGuard<'_, icy_engine_egui::BufferView> = &mut editor.buffer_view.lock();
+        let lock: &mut eframe::epaint::mutex::MutexGuard<'_, icy_engine_gui::BufferView> = &mut editor.buffer_view.lock();
         let get_edit_state_mut = lock.get_edit_state_mut();
         if !get_edit_state_mut.get_tool_overlay_mask_mut().is_empty() {
             get_edit_state_mut.get_tool_overlay_mask_mut().clear();

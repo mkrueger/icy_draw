@@ -1,7 +1,7 @@
 use eframe::egui;
 use i18n_embed_fl::fl;
 use icy_engine::Position;
-use icy_engine_egui::TerminalCalc;
+use icy_engine_gui::TerminalCalc;
 
 use crate::{
     paint::{fill_rectangle, BrushMode, ColorMode},

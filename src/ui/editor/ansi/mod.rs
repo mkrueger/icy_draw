@@ -19,7 +19,7 @@ use icy_engine::{
     AttributedChar, Buffer, EngineResult, Line, Position, Rectangle, SaveOptions, TextAttribute, TextPane,
 };
 
-use icy_engine_egui::{show_terminal_area, BufferView, CaretShape, TerminalCalc};
+use icy_engine_gui::{show_terminal_area, BufferView, CaretShape, TerminalCalc};
 
 use crate::{
     model::{DragPos, MKey, MModifiers, Tool},
@@ -176,7 +176,7 @@ impl Document for AnsiEditor {
                 scale.y *= 1.35;
             }
         }
-        let opt = icy_engine_egui::TerminalOptions {
+        let opt = icy_engine_gui::TerminalOptions {
             stick_to_bottom: false,
             scale: Some(scale),
             fit_width: options.fit_width,

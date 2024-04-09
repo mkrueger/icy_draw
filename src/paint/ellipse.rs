@@ -1,6 +1,6 @@
 use egui::ahash::HashSet;
 use icy_engine::Position;
-use icy_engine_egui::BufferView;
+use icy_engine_gui::BufferView;
 
 use super::{plot_point, BrushMode, ColorMode, PointRole};
 

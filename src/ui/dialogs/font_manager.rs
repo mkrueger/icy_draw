@@ -12,7 +12,7 @@ pub struct FontManager {
     selected: usize,
     replace_with: usize,
     do_select: bool,
-    buffer_view: Arc<eframe::epaint::mutex::Mutex<icy_engine_egui::BufferView>>,
+    buffer_view: Arc<eframe::epaint::mutex::Mutex<icy_engine_gui::BufferView>>,
     used_fonts: Vec<usize>,
 }
 

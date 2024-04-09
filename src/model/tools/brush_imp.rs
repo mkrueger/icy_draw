@@ -2,7 +2,7 @@ use eframe::egui::Response;
 use egui::{load::SizedTexture, Image, TextureHandle, Widget};
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AttributedChar, Layer, TextPane};
-use icy_engine_egui::TerminalCalc;
+use icy_engine_gui::TerminalCalc;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{

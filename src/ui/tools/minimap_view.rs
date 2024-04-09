@@ -7,7 +7,7 @@ use eframe::{
 use egui::mutex::Mutex;
 use i18n_embed_fl::fl;
 use icy_engine::TextPane;
-use icy_engine_egui::BufferView;
+use icy_engine_gui::BufferView;
 
 use crate::{AnsiEditor, Document, Message, ToolWindow};
 
@@ -67,7 +67,7 @@ impl MinimapToolWindow {
             scalex
         };
 
-        let mut opt = icy_engine_egui::TerminalOptions {
+        let mut opt = icy_engine_gui::TerminalOptions {
             filter: glow::LINEAR as i32,
             stick_to_bottom: false,
             scale: Some(Vec2::new(scalex, scaley)),
@@ -84,7 +84,7 @@ impl MinimapToolWindow {
             opt.scroll_offset_y = Some(next_scroll_pos.y);
         }
 
-        let (response, ours) = icy_engine_egui::show_terminal_area(ui, self.buffer_view.clone(), opt);
+        let (response, ours) = icy_engine_gui::show_terminal_area(ui, self.buffer_view.clone(), opt);
 
         let theirs = editor.buffer_view.lock().calc.clone();
 

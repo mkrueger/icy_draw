@@ -2,7 +2,7 @@ use directories::ProjectDirs;
 use eframe::egui::Modifiers;
 use egui::Vec2;
 use icy_engine::{Color, SaveOptions};
-use icy_engine_egui::{BackgroundEffect, MarkerSettings, MonitorSettings};
+use icy_engine_gui::{BackgroundEffect, MarkerSettings, MonitorSettings};
 use serde::{Deserialize, Serialize};
 use std::{
     error::Error,

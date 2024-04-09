@@ -1,13 +1,14 @@
+use bstr::{BStr, BString};
 use eframe::egui::{self, Layout};
 use egui_modal::Modal;
 use i18n_embed_fl::fl;
-use icy_engine::{SauceData, SauceString};
+use icy_sauce::SauceMetaInformation;
 
 use crate::{to_message, AnsiEditor, Message, ModalDialog, TerminalResult};
 
 pub struct EditSauceDialog {
     pub should_commit: bool,
-    pub sauce_data: SauceData,
+    pub sauce_data: SauceMetaInformation,
     pub comments: String,
 }
 
@@ -15,16 +16,14 @@ impl EditSauceDialog {
     pub fn new(buf: &icy_engine::Buffer) -> Self {
         let mut comments = String::new();
 
-        if let Some(sauce) = buf.get_sauce() {
-            for s in &sauce.comments {
-                comments.push_str(&s.to_string());
-                comments.push('\n');
-            }
+        for s in &buf.get_sauce_meta().comments {
+            comments.push_str(&s.to_string());
+            comments.push('\n');
         }
 
         EditSauceDialog {
             should_commit: false,
-            sauce_data: buf.get_sauce().clone().unwrap_or_default(),
+            sauce_data: buf.get_sauce_meta().clone(),
             comments,
         }
     }
@@ -46,7 +45,7 @@ impl ModalDialog for EditSauceDialog {
                     ui.horizontal(|ui| {
                         let mut tmp_str = self.sauce_data.title.to_string();
                         ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(35));
-                        self.sauce_data.title = SauceString::from(&tmp_str);
+                        self.sauce_data.title = BString::from(tmp_str);
                         ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-title-label-length"));
                     });
                     ui.end_row();
@@ -58,7 +57,7 @@ impl ModalDialog for EditSauceDialog {
                     ui.horizontal(|ui| {
                         let mut tmp_str = self.sauce_data.author.to_string();
                         ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(20));
-                        self.sauce_data.author = SauceString::from(&tmp_str);
+                        self.sauce_data.author = BString::from(tmp_str);
                         ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-author-label-length"));
                     });
                     ui.end_row();
@@ -69,11 +68,11 @@ impl ModalDialog for EditSauceDialog {
                     ui.horizontal(|ui| {
                         let mut tmp_str = self.sauce_data.group.to_string();
                         ui.add(egui::TextEdit::singleline(&mut tmp_str).char_limit(20));
-                        self.sauce_data.group = SauceString::from(&tmp_str);
+                        self.sauce_data.group = BString::from(tmp_str);
                         ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-group-label-length"));
                     });
                     ui.end_row();
-
+                    /*
                     ui.with_layout(Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-letter-spacing"));
                     });
@@ -88,7 +87,7 @@ impl ModalDialog for EditSauceDialog {
                     ui.horizontal(|ui| {
                         ui.checkbox(&mut self.sauce_data.use_aspect_ratio, "");
                     });
-                    ui.end_row();
+                    ui.end_row();*/
                 });
                 ui.add_space(16.0);
                 ui.label(fl!(crate::LANGUAGE_LOADER, "edit-sauce-comments-label"));
@@ -131,7 +130,7 @@ impl ModalDialog for EditSauceDialog {
         let mut data = self.sauce_data.clone();
         let mut number = 0;
         for line in self.comments.lines() {
-            data.comments.push(SauceString::from(line));
+            data.comments.push(BString::from(line));
             number += 1;
             // limit to 255 chars which is the maximum for sauce comment lines.
             if number > 255 {
@@ -140,6 +139,6 @@ impl ModalDialog for EditSauceDialog {
         }
 
         let bv = &mut editor.buffer_view.lock();
-        Ok(to_message(bv.get_edit_state_mut().update_sauce_data(Some(data))))
+        Ok(to_message(bv.get_edit_state_mut().update_sauce_data(data)))
     }
 }

@@ -7,7 +7,7 @@ use eframe::{
 use egui::Context;
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, Color, Position, Size, TextAttribute};
-use icy_engine_egui::{show_monitor_settings, show_terminal_area, BufferView, MarkerSettings, MonitorSettings};
+use icy_engine_gui::{show_monitor_settings, show_terminal_area, BufferView, MarkerSettings, MonitorSettings};
 
 use crate::{CharSetMapping, CharTableToolWindow, Commands, FontSelector, ModalDialog, SelectOutlineDialog, Settings, CHARACTER_SETS, KEYBINDINGS, SETTINGS};
 pub struct SettingsDialog {
@@ -325,7 +325,7 @@ impl SettingsDialog {
             for (i, view) in self.views.iter().enumerate() {
                 let font_dims = view.lock().get_buffer_mut().get_font_dimensions();
 
-                let opt = icy_engine_egui::TerminalOptions {
+                let opt = icy_engine_gui::TerminalOptions {
                     stick_to_bottom: false,
                     scale: Some(Vec2::new(2.0, 2.0)),
                     id: Some(egui::Id::new(200 + id)),

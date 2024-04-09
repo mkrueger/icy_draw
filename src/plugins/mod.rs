@@ -104,7 +104,7 @@ impl Plugin {
 }
 
 struct LuaBufferView {
-    buffer_view: Arc<eframe::epaint::mutex::Mutex<icy_engine_egui::BufferView>>,
+    buffer_view: Arc<eframe::epaint::mutex::Mutex<icy_engine_gui::BufferView>>,
 }
 
 impl LuaBufferView {

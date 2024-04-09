@@ -7,7 +7,7 @@ use eframe::{
 use egui::{load::SizedTexture, Image, Rect, TextureHandle};
 use i18n_embed_fl::fl;
 use icy_engine::{AttributedChar, BitFont, Buffer, EngineResult, FontGlyph, Layer, Size, TextAttribute, TextPane, TheDrawFont};
-use icy_engine_egui::{show_terminal_area, BufferView};
+use icy_engine_gui::{show_terminal_area, BufferView};
 
 use crate::{
     model::{click_imp::VALID_OUTLINE_CHARS, Tool},
@@ -279,7 +279,7 @@ impl Document for CharFontEditor {
                                     }
                                 });
 
-                                let opt = icy_engine_egui::TerminalOptions {
+                                let opt = icy_engine_gui::TerminalOptions {
                                     stick_to_bottom: false,
                                     scale: Some(Vec2::new(2.0, 2.0)),
                                     monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },

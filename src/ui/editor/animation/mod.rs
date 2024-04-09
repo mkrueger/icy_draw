@@ -13,7 +13,7 @@ use egui::{Image, ProgressBar};
 use egui_code_editor::{CodeEditor, Syntax};
 use i18n_embed_fl::fl;
 use icy_engine::{ascii, AttributedChar, Buffer, EngineResult, Size, TextAttribute, UnicodeConverter};
-use icy_engine_egui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
+use icy_engine_gui::{animations::Animator, show_terminal_area, BufferView, MonitorSettings};
 
 use self::encoding::{start_encoding_thread, ENCODERS};
 mod asciicast_encoder;
@@ -281,7 +281,7 @@ impl Document for AnimationEditor {
                     if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
                         scale.y *= 1.35;
                     }
-                    let opt = icy_engine_egui::TerminalOptions {
+                    let opt = icy_engine_gui::TerminalOptions {
                         stick_to_bottom: false,
                         scale: Some(scale),
                         monitor_settings,

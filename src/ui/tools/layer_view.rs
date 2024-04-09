@@ -7,7 +7,7 @@ use eframe::{
 };
 use egui::{mutex::Mutex, Image};
 use i18n_embed_fl::fl;
-use icy_engine_egui::BufferView;
+use icy_engine_gui::BufferView;
 
 use crate::{AnsiEditor, Document, Message, ToolWindow, INVISIBLE_SVG, VISIBLE_SVG};
 
@@ -138,7 +138,7 @@ impl LayerToolWindow {
                         let scale = row_height / size;
 
                         ui.allocate_ui(Vec2::new(scale * dims.width as f32 * 80.0, row_height), |ui| {
-                            let opt = icy_engine_egui::TerminalOptions {
+                            let opt = icy_engine_gui::TerminalOptions {
                                 filter: glow::LINEAR as i32,
                                 stick_to_bottom: false,
                                 scale: Some(Vec2::new(scale, scale)),
@@ -164,7 +164,7 @@ impl LayerToolWindow {
                                 }
                             }
 
-                            let (_, _) = icy_engine_egui::show_terminal_area(ui, view, opt);
+                            let (_, _) = icy_engine_gui::show_terminal_area(ui, view, opt);
                         });
 
                         let (is_visible, title, color) = {

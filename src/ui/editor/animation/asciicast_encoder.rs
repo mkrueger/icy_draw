@@ -1,5 +1,5 @@
 use icy_engine::{ColorOptimizer, SaveOptions, StringGenerator, TextPane};
-use icy_engine_egui::animations::Animator;
+use icy_engine_gui::animations::Animator;
 use std::{
     fs::File,
     io::Write,

@@ -4,7 +4,7 @@ use eframe::egui;
 use egui::mutex::Mutex;
 use i18n_embed_fl::fl;
 use icy_engine::{editor::AtomicUndoGuard, AddType, Rectangle, TextPane};
-use icy_engine_egui::TerminalCalc;
+use icy_engine_gui::TerminalCalc;
 
 use crate::{model::MKey, AnsiEditor, CharTableToolWindow, Document, Message};
 

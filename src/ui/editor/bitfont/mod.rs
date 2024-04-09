@@ -12,7 +12,7 @@ use icy_engine::{
     util::{pop_data, push_data, BITFONT_GLYPH},
     BitFont, Buffer, EngineResult, Glyph, Size, TextAttribute, TextPane,
 };
-use icy_engine_egui::{show_terminal_area, BufferView};
+use icy_engine_gui::{show_terminal_area, BufferView};
 
 use crate::{model::Tool, to_message, AnsiEditor, ClipboardHandler, Document, DocumentOptions, Message, TerminalResult, UndoHandler, SETTINGS};
 
@@ -582,7 +582,7 @@ impl Document for BitFontEditor {
                     if self.buffer_view.lock().get_buffer().use_aspect_ratio() {
                         scale.y *= 1.35;
                     }
-                    let opt = icy_engine_egui::TerminalOptions {
+                    let opt = icy_engine_gui::TerminalOptions {
                         stick_to_bottom: false,
                         scale: Some(Vec2::new(2.0, 2.0)),
                         monitor_settings: unsafe { SETTINGS.monitor_settings.clone() },
